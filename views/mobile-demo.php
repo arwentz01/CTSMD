@@ -11,68 +11,117 @@
 /** @var array<string, int> $reportCounts */
 /** @var int $pendingNotifications */
 $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$firstName = (string) ($user['first_name'] ?? 'Member');
+$initial = strtoupper(substr($firstName, 0, 1));
+$isStudent = (int) ($user['is_student'] ?? 0) === 1;
+$roleLabel = $isStudent ? 'Student performer' : (in_array('guardian', $roles, true) ? 'Parent / guardian' : 'Staff / admin');
+$activeReviews = (int) ($reportCounts['open'] ?? 0) + (int) ($reportCounts['reviewing'] ?? 0);
 $firstConversation = $conversations[0] ?? null;
 ?>
-<section class="mobile-demo-stage">
-    <div class="mobile-demo-copy">
-        <p class="eyebrow">Future app experience</p>
-        <h1>CTSMD Connect on iOS and Android.</h1>
-        <p><?= $isPreviewing ? 'Previewing the mobile app as a demo ' . ((int) ($user['is_student'] ?? 0) === 1 ? 'student' : 'parent or staff member') . '.' : 'This screen is a web-rendered prototype of the mobile app direction: simple tabs, glanceable updates, protected conversations, and safety visibility up front.' ?></p>
-        <a class="button button-primary" href="/dashboard">Back to dashboard <span>→</span></a>
-        <?php if ($isAdmin): ?>
-            <div class="persona-strip mobile-personas">
-                <a href="/mobile-demo?persona=parent">Parent</a>
-                <a href="/mobile-demo?persona=student">Student</a>
-                <a href="/dashboard?persona=parent">Parent web</a>
-                <a href="/dashboard?persona=student">Student web</a>
-            </div>
-        <?php endif; ?>
-    </div>
-    <div class="phone-shell" aria-label="Mobile app demo">
-        <div class="phone-status"><span>9:41</span><span>CTSMD</span></div>
-        <div class="app-topbar">
-            <div>
-                <p>Welcome back</p>
-                <h2><?= $h($user['first_name'] ?? 'Member') ?></h2>
-            </div>
-            <span class="avatar"><?= $h(strtoupper(substr((string) ($user['first_name'] ?? 'C'), 0, 1))) ?></span>
+<section class="mobile-app" aria-label="CTSMD Connect mobile app demo">
+    <header class="mobile-app-bar">
+        <div>
+            <p class="eyebrow">CTSMD Connect</p>
+            <h1><?= $h($firstName) ?></h1>
+            <span><?= $h($roleLabel) ?><?= $isPreviewing ? ' preview' : '' ?></span>
         </div>
-        <div class="safety-strip">
+        <a class="mobile-avatar" href="/dashboard" aria-label="Back to dashboard"><?= $h($initial) ?></a>
+    </header>
+
+    <?php if ($isAdmin): ?>
+        <nav class="mobile-persona-switch" aria-label="Preview personas">
+            <a href="/mobile-demo">Admin</a>
+            <a href="/mobile-demo?persona=parent">Parent</a>
+            <a href="/mobile-demo?persona=student">Student</a>
+            <a href="/mobile-demo?persona=instructor">Instructor</a>
+        </nav>
+    <?php endif; ?>
+
+    <nav class="mobile-segments" aria-label="Mobile sections">
+        <a href="#mobile-channels">Channels</a>
+        <a href="#mobile-messages">Messages</a>
+        <a href="#mobile-safety">Safety</a>
+        <a href="#mobile-roadmap">More</a>
+    </nav>
+
+    <section id="mobile-safety" class="mobile-alert">
+        <div>
             <strong>Guardian visibility active</strong>
-            <span><?= $h(($reportCounts['open'] ?? 0) + ($reportCounts['reviewing'] ?? 0)) ?> review items · <?= $h($pendingNotifications) ?> notices</span>
+            <span><?= $h($activeReviews) ?> review items · <?= $h($pendingNotifications) ?> pending notice<?= $pendingNotifications === 1 ? '' : 's' ?></span>
         </div>
-        <div class="mobile-section">
-            <div class="mobile-heading"><h3>Today</h3><a href="/channels?id=1">All</a></div>
+        <a href="/reports">Review</a>
+    </section>
+
+    <section id="mobile-channels" class="mobile-pane">
+        <div class="mobile-pane-heading">
+            <h2>Channels</h2>
+            <a href="/channels">See all</a>
+        </div>
+        <div class="mobile-list">
+            <?php foreach ($channels as $channel): ?>
+                <a class="mobile-list-card" href="/channels?id=<?= $h($channel['id'] ?? '') ?>">
+                    <span><?= $h($channel['type'] ?? 'Channel') ?> · <?= $h($channel['posting_policy'] ?? 'Members') ?></span>
+                    <strong><?= $h($channel['name'] ?? '') ?></strong>
+                    <p><?= $h($channel['description'] ?? '') ?></p>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <section class="mobile-pane">
+        <div class="mobile-pane-heading">
+            <h2>Latest Posts</h2>
+            <a href="/channels/posts">Post</a>
+        </div>
+        <div class="mobile-feed">
             <?php foreach ($recentPosts as $post): ?>
-                <a class="mobile-card" href="/channels?id=<?= $h($post['channel_id'] ?? '') ?>">
+                <a class="mobile-feed-item" href="/channels?id=<?= $h($post['channel_id'] ?? '') ?>">
                     <span><?= $h($post['channel_name'] ?? '') ?></span>
-                    <strong><?= $h($post['body'] ?? '') ?></strong>
+                    <p><?= $h($post['body'] ?? '') ?></p>
                     <small><?= (int) ($post['is_pinned'] ?? 0) === 1 ? 'Pinned update' : 'Community post' ?></small>
                 </a>
             <?php endforeach; ?>
         </div>
-        <div class="mobile-section">
-            <div class="mobile-heading"><h3>Safeguarded</h3><a href="<?= $firstConversation ? '/conversations?id=' . $h($firstConversation['id'] ?? '') : '#' ?>">Open</a></div>
-            <div class="mobile-message-preview">
-                <span>Protected thread</span>
-                <strong><?= $firstConversation ? $h($firstConversation['participants'] ?? '') : 'No visible conversations yet.' ?></strong>
-                <small>Required guardians cannot be removed while the student remains.</small>
-            </div>
+    </section>
+
+    <section id="mobile-messages" class="mobile-pane">
+        <div class="mobile-pane-heading">
+            <h2>Messages</h2>
+            <a href="<?= $firstConversation ? '/conversations?id=' . $h($firstConversation['id'] ?? '') : '/conversations' ?>">Open</a>
         </div>
-        <div class="mobile-section">
-            <div class="mobile-heading"><h3>Coming next</h3><a href="/dashboard">Roadmap</a></div>
-            <div class="mobile-action-grid">
-                <a href="/events">Events</a>
-                <a href="/playbills">Playbills</a>
-                <a href="/registrations">Signups</a>
-                <a href="/website">Website</a>
-            </div>
+        <div class="mobile-list">
+            <?php if ($conversations === []): ?>
+                <div class="mobile-empty">No conversations are visible for this persona yet.</div>
+            <?php endif; ?>
+            <?php foreach ($conversations as $conversation): ?>
+                <a class="mobile-list-card message" href="/conversations?id=<?= $h($conversation['id'] ?? '') ?>">
+                    <span>Protected thread</span>
+                    <strong><?= $h($conversation['participants'] ?? 'Conversation') ?></strong>
+                    <p><?= $h($conversation['topic'] ?? 'Safeguarded message thread') ?></p>
+                    <small>Required guardians remain included while a student is in the thread.</small>
+                </a>
+            <?php endforeach; ?>
         </div>
-        <div class="mobile-tabs">
-            <a class="active" href="/mobile-demo"><span>●</span>Home</a>
-            <a href="/channels?id=1"><span>◆</span>Channels</a>
-            <a href="<?= $firstConversation ? '/conversations?id=' . $h($firstConversation['id'] ?? '') : '/dashboard' ?>"><span>◫</span>Messages</a>
-            <a href="/dashboard"><span>≡</span>More</a>
+    </section>
+
+    <section id="mobile-roadmap" class="mobile-pane mobile-roadmap-pane">
+        <div class="mobile-pane-heading">
+            <h2>Next Modules</h2>
+            <a href="/dashboard">Web</a>
         </div>
-    </div>
+        <div class="mobile-action-grid">
+            <a href="/events"><strong>Events</strong><span>Schedules and call times</span></a>
+            <a href="/playbills"><strong>Playbills</strong><span>Production programs</span></a>
+            <a href="/registrations"><strong>Signups</strong><span>Auditions and forms</span></a>
+            <a href="/website"><strong>Website</strong><span>Public content path</span></a>
+        </div>
+    </section>
+
+    <nav class="mobile-bottom-nav" aria-label="Mobile app navigation">
+        <a class="active" href="/mobile-demo"><span aria-hidden="true">H</span>Home</a>
+        <a href="#mobile-channels"><span aria-hidden="true">#</span>Channels</a>
+        <a href="#mobile-messages"><span aria-hidden="true">M</span>Messages</a>
+        <a href="#mobile-safety"><span aria-hidden="true">!</span>Safety</a>
+        <a href="#mobile-roadmap"><span aria-hidden="true">+</span>More</a>
+    </nav>
 </section>
