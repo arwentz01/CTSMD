@@ -18,6 +18,18 @@ final class AdminRepository
         return (int) $this->pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() > 0;
     }
 
+    /** @return array<string, mixed>|null */
+    public function userByEmail(string $email): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT id, email, first_name, last_name, is_student, status FROM users WHERE email = ? AND status = "active" AND deleted_at IS NULL LIMIT 1'
+        );
+        $statement->execute([strtolower(trim($email))]);
+        $user = $statement->fetch();
+
+        return is_array($user) ? $user : null;
+    }
+
     public function organizationId(): int
     {
         $statement = $this->pdo->prepare('SELECT id FROM organizations WHERE slug = ? LIMIT 1');

@@ -1,6 +1,8 @@
 <?php
 /** @var array<string, mixed> $user */
+/** @var array<string, mixed> $viewer */
 /** @var bool $isAdmin */
+/** @var bool $isPreviewing */
 /** @var array<string, int> $counts */
 /** @var list<string> $roles */
 /** @var array<int, array<string, mixed>> $channels */
@@ -14,13 +16,23 @@ $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_Q
     <div class="dashboard-hero">
         <p class="eyebrow">CTSMD Connect demo</p>
         <h1>Welcome, <?= $h($user['first_name'] ?? 'there') ?>.</h1>
-        <p>One private place for announcements, parent questions, safeguarded messages, and moderation visibility.</p>
+        <p><?= $isPreviewing ? 'Admin preview of this demo persona: channels, conversations, and messaging from their side.' : 'One private place for announcements, parent questions, safeguarded messages, and moderation visibility.' ?></p>
         <div class="hero-actions">
             <?php if ($isAdmin): ?><a class="button button-primary" href="/admin">Open admin controls <span>→</span></a><?php endif; ?>
             <a class="button button-primary" href="/channels?id=1">View announcements <span>→</span></a>
             <a class="button button-primary" href="/mobile-demo">Preview mobile app <span>→</span></a>
         </div>
     </div>
+    <?php if ($isAdmin): ?>
+        <div class="persona-strip">
+            <a href="/dashboard">Admin web</a>
+            <a href="/dashboard?persona=parent">Parent web</a>
+            <a href="/dashboard?persona=student">Student web</a>
+            <a href="/mobile-demo">Admin mobile</a>
+            <a href="/mobile-demo?persona=parent">Parent mobile</a>
+            <a href="/mobile-demo?persona=student">Student mobile</a>
+        </div>
+    <?php endif; ?>
 
     <div class="metric-grid dashboard-metrics">
         <article><span>Members</span><strong><?= $h($counts['members'] ?? 0) ?></strong><small><?= $h(implode(', ', $roles)) ?></small></article>

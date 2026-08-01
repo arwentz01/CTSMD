@@ -1,6 +1,8 @@
 <?php
 /** @var array<string, mixed> $user */
+/** @var array<string, mixed> $viewer */
 /** @var bool $isAdmin */
+/** @var bool $isPreviewing */
 /** @var array<string, int> $counts */
 /** @var list<string> $roles */
 /** @var array<int, array<string, mixed>> $channels */
@@ -15,8 +17,16 @@ $firstConversation = $conversations[0] ?? null;
     <div class="mobile-demo-copy">
         <p class="eyebrow">Future app experience</p>
         <h1>CTSMD Connect on iOS and Android.</h1>
-        <p>This screen is a web-rendered prototype of the mobile app direction: simple tabs, glanceable updates, protected conversations, and safety visibility up front.</p>
+        <p><?= $isPreviewing ? 'Previewing the mobile app as a demo ' . ((int) ($user['is_student'] ?? 0) === 1 ? 'student' : 'parent or staff member') . '.' : 'This screen is a web-rendered prototype of the mobile app direction: simple tabs, glanceable updates, protected conversations, and safety visibility up front.' ?></p>
         <a class="button button-primary" href="/dashboard">Back to dashboard <span>→</span></a>
+        <?php if ($isAdmin): ?>
+            <div class="persona-strip mobile-personas">
+                <a href="/mobile-demo?persona=parent">Parent</a>
+                <a href="/mobile-demo?persona=student">Student</a>
+                <a href="/dashboard?persona=parent">Parent web</a>
+                <a href="/dashboard?persona=student">Student web</a>
+            </div>
+        <?php endif; ?>
     </div>
     <div class="phone-shell" aria-label="Mobile app demo">
         <div class="phone-status"><span>9:41</span><span>CTSMD</span></div>

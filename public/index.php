@@ -101,6 +101,25 @@ $isAdminUser = static fn (array $user): bool => $auth->hasAnyRole(
     (int) $user['id'],
     ['owner', 'administrator', 'safeguarding_administrator']
 );
+$demoPersonaUser = static function (array $viewer) use ($admin, $isAdminUser): array {
+    if (!$isAdminUser($viewer)) {
+        return $viewer;
+    }
+
+    $persona = (string) ($_GET['persona'] ?? '');
+    $email = match ($persona) {
+        'parent' => 'demo.parent@ctsmd.test',
+        'student' => 'demo.student@ctsmd.test',
+        'instructor' => 'demo.instructor@ctsmd.test',
+        default => '',
+    };
+
+    if ($email === '') {
+        return $viewer;
+    }
+
+    return $admin->userByEmail($email) ?? $viewer;
+};
 
 $router = new Router();
 $router->get('/', static fn () => Response::html(View::render('home', [
@@ -205,34 +224,42 @@ $router->get('/admin', static function () use ($admin, $safeguarding, $channels,
         'inviteUrl' => null,
     ]));
 });
-$router->get('/dashboard', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $requireUser): never {
+$router->get('/dashboard', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $demoPersonaUser, $requireUser): never {
     $user = $requireUser();
+    $displayUser = $demoPersonaUser($user);
+    $isPreviewing = (int) $displayUser['id'] !== (int) $user['id'];
     Response::html(View::render('dashboard', [
         'title' => 'Dashboard',
         'page' => 'dashboard',
-        'user' => $user,
+        'user' => $displayUser,
+        'viewer' => $user,
+        'isPreviewing' => $isPreviewing,
         'isAdmin' => $isAdminUser($user),
         'counts' => $admin->counts(),
-        'roles' => $auth->roleCodes((int) $user['id']),
+        'roles' => $auth->roleCodes((int) $displayUser['id']),
         'channels' => $channels->channels(),
         'recentPosts' => $channels->recentPosts(),
-        'conversations' => $isAdminUser($user) ? $safeguarding->conversations() : $safeguarding->conversationsForUser((int) $user['id']),
+        'conversations' => $isPreviewing || !$isAdminUser($user) ? $safeguarding->conversationsForUser((int) $displayUser['id']) : $safeguarding->conversations(),
         'reportCounts' => $moderation->counts(),
         'pendingNotifications' => $notifications->pendingCount(),
     ]));
 });
-$router->get('/mobile-demo', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $requireUser): never {
+$router->get('/mobile-demo', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $demoPersonaUser, $requireUser): never {
     $user = $requireUser();
+    $displayUser = $demoPersonaUser($user);
+    $isPreviewing = (int) $displayUser['id'] !== (int) $user['id'];
     Response::html(View::render('mobile-demo', [
         'title' => 'Mobile app demo',
         'page' => 'mobile',
-        'user' => $user,
+        'user' => $displayUser,
+        'viewer' => $user,
+        'isPreviewing' => $isPreviewing,
         'isAdmin' => $isAdminUser($user),
         'counts' => $admin->counts(),
-        'roles' => $auth->roleCodes((int) $user['id']),
+        'roles' => $auth->roleCodes((int) $displayUser['id']),
         'channels' => $channels->channels(),
         'recentPosts' => $channels->recentPosts(4),
-        'conversations' => $isAdminUser($user) ? $safeguarding->conversations() : $safeguarding->conversationsForUser((int) $user['id']),
+        'conversations' => $isPreviewing || !$isAdminUser($user) ? $safeguarding->conversationsForUser((int) $displayUser['id']) : $safeguarding->conversations(),
         'reportCounts' => $moderation->counts(),
         'pendingNotifications' => $notifications->pendingCount(),
     ]));
@@ -570,7 +597,7 @@ $router->get('/health', static function () use ($database): never {
     Response::json([
         'status' => $databaseStatus === 'ok' ? 'ok' : 'degraded',
         'service' => 'ctsmd-connect',
-        'version' => 'build-011',
+        'version' => 'build-012',
         'checks' => [
             'database' => $databaseStatus,
         ],

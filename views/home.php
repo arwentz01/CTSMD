@@ -41,7 +41,7 @@
 <section class="now-playing">
     <div>
         <p class="eyebrow">Now in development</p>
-        <h2>Build 011: Mobile demo ready</h2>
+        <h2>Build 012: Persona demos ready</h2>
     </div>
-    <p>A phone-framed mobile demo now shows the future iOS/Android direction using the same channels, safeguarded conversations, and safety signals.</p>
+    <p>Admin previews now show parent and student experiences across web and mobile, using the same safeguarded conversations and channel data.</p>
 </section>
