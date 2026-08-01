@@ -41,7 +41,7 @@
 <section class="now-playing">
     <div>
         <p class="eyebrow">Now in development</p>
-        <h2>Build 013: Mobile app demo ready</h2>
+        <h2>Build 014: Mobile app demo polished</h2>
     </div>
     <p>Admin previews now show parent, student, and instructor experiences in an app-style mobile interface using the same safeguarded conversations and channel data.</p>
 </section>

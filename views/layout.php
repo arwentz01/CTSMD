@@ -30,7 +30,7 @@ $url = static fn (string $path): string => htmlspecialchars($assetBase . $path, 
             <a href="<?= $url('/admin') ?>" <?= $page === 'admin' ? 'aria-current="page"' : '' ?>>Admin</a>
             <a href="<?= $url('/login') ?>" <?= $page === 'login' ? 'aria-current="page"' : '' ?>>Sign in</a>
         </nav>
-        <span class="build-badge">Build 013</span>
+        <span class="build-badge">Build 014</span>
     </header>
     <main id="main"><?= $content ?></main>
     <footer>

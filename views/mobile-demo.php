@@ -17,6 +17,7 @@ $isStudent = (int) ($user['is_student'] ?? 0) === 1;
 $roleLabel = $isStudent ? 'Student performer' : (in_array('guardian', $roles, true) ? 'Parent / guardian' : 'Staff / admin');
 $activeReviews = (int) ($reportCounts['open'] ?? 0) + (int) ($reportCounts['reviewing'] ?? 0);
 $firstConversation = $conversations[0] ?? null;
+$channelIcon = static fn (mixed $name): string => strtoupper(substr((string) $name, 0, 1));
 ?>
 <section class="mobile-app" aria-label="CTSMD Connect mobile app demo">
     <header class="mobile-app-bar">
@@ -45,6 +46,7 @@ $firstConversation = $conversations[0] ?? null;
     </nav>
 
     <section id="mobile-safety" class="mobile-alert">
+        <span class="mobile-alert-icon" aria-hidden="true">✓</span>
         <div>
             <strong>Guardian visibility active</strong>
             <span><?= $h($activeReviews) ?> review items · <?= $h($pendingNotifications) ?> pending notice<?= $pendingNotifications === 1 ? '' : 's' ?></span>
@@ -60,9 +62,11 @@ $firstConversation = $conversations[0] ?? null;
         <div class="mobile-list">
             <?php foreach ($channels as $channel): ?>
                 <a class="mobile-list-card" href="/channels?id=<?= $h($channel['id'] ?? '') ?>">
-                    <span><?= $h($channel['type'] ?? 'Channel') ?> · <?= $h($channel['posting_policy'] ?? 'Members') ?></span>
+                    <span class="mobile-card-icon" aria-hidden="true"><?= $h($channelIcon($channel['name'] ?? 'C')) ?></span>
+                    <span class="mobile-card-kicker"><?= $h($channel['type'] ?? 'Channel') ?> · <?= $h($channel['posting_policy'] ?? 'Members') ?></span>
                     <strong><?= $h($channel['name'] ?? '') ?></strong>
                     <p><?= $h($channel['description'] ?? '') ?></p>
+                    <span class="mobile-card-arrow" aria-hidden="true">›</span>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -76,7 +80,8 @@ $firstConversation = $conversations[0] ?? null;
         <div class="mobile-feed">
             <?php foreach ($recentPosts as $post): ?>
                 <a class="mobile-feed-item" href="/channels?id=<?= $h($post['channel_id'] ?? '') ?>">
-                    <span><?= $h($post['channel_name'] ?? '') ?></span>
+                    <span class="mobile-feed-dot" aria-hidden="true"></span>
+                    <span class="mobile-card-kicker"><?= $h($post['channel_name'] ?? '') ?></span>
                     <p><?= $h($post['body'] ?? '') ?></p>
                     <small><?= (int) ($post['is_pinned'] ?? 0) === 1 ? 'Pinned update' : 'Community post' ?></small>
                 </a>
@@ -95,10 +100,12 @@ $firstConversation = $conversations[0] ?? null;
             <?php endif; ?>
             <?php foreach ($conversations as $conversation): ?>
                 <a class="mobile-list-card message" href="/conversations?id=<?= $h($conversation['id'] ?? '') ?>">
-                    <span>Protected thread</span>
+                    <span class="mobile-card-icon message-icon" aria-hidden="true">M</span>
+                    <span class="mobile-card-kicker">Protected thread</span>
                     <strong><?= $h($conversation['participants'] ?? 'Conversation') ?></strong>
                     <p><?= $h($conversation['topic'] ?? 'Safeguarded message thread') ?></p>
                     <small>Required guardians remain included while a student is in the thread.</small>
+                    <span class="mobile-card-arrow" aria-hidden="true">›</span>
                 </a>
             <?php endforeach; ?>
         </div>
