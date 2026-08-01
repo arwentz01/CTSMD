@@ -41,7 +41,7 @@
 <section class="now-playing">
     <div>
         <p class="eyebrow">Now in development</p>
-        <h2>Build 010: Board demo ready</h2>
+        <h2>Build 011: Mobile demo ready</h2>
     </div>
-    <p>A member dashboard now brings channels, safeguarded conversations, moderation signals, and demo walkthrough links together for a cleaner board presentation.</p>
+    <p>A phone-framed mobile demo now shows the future iOS/Android direction using the same channels, safeguarded conversations, and safety signals.</p>
 </section>

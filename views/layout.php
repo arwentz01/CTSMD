@@ -25,10 +25,12 @@ $url = static fn (string $path): string => htmlspecialchars($assetBase . $path, 
         <nav aria-label="Main navigation">
             <a href="<?= $url('/') ?>" <?= $page === 'home' ? 'aria-current="page"' : '' ?>>Welcome</a>
             <a href="<?= $url('/dashboard') ?>" <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>Dashboard</a>
+            <a href="<?= $url('/mobile-demo') ?>" <?= $page === 'mobile' ? 'aria-current="page"' : '' ?>>Mobile demo</a>
+            <a href="<?= $url('/events') ?>" <?= $page === 'events' ? 'aria-current="page"' : '' ?>>Events</a>
             <a href="<?= $url('/admin') ?>" <?= $page === 'admin' ? 'aria-current="page"' : '' ?>>Admin</a>
             <a href="<?= $url('/login') ?>" <?= $page === 'login' ? 'aria-current="page"' : '' ?>>Sign in</a>
         </nav>
-        <span class="build-badge">Build 010</span>
+        <span class="build-badge">Build 011</span>
     </header>
     <main id="main"><?= $content ?></main>
     <footer>

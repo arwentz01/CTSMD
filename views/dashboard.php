@@ -18,6 +18,7 @@ $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_Q
         <div class="hero-actions">
             <?php if ($isAdmin): ?><a class="button button-primary" href="/admin">Open admin controls <span>→</span></a><?php endif; ?>
             <a class="button button-primary" href="/channels?id=1">View announcements <span>→</span></a>
+            <a class="button button-primary" href="/mobile-demo">Preview mobile app <span>→</span></a>
         </div>
     </div>
 
@@ -64,5 +65,11 @@ $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_Q
             <p>Start here, open Announcements, then Parent Questions, then the safeguarded conversation. Finish in Admin to show guardian links, moderation, and the notification outbox.</p>
             <span class="policy-status">Demo ready</span>
         </article>
+    </div>
+    <div class="future-strip">
+        <a href="/events"><strong>Events</strong><span>Schedules, call times, attendance</span></a>
+        <a href="/playbills"><strong>Playbills</strong><span>Digital programs and archives</span></a>
+        <a href="/registrations"><strong>Registrations</strong><span>Auditions, classes, waivers</span></a>
+        <a href="/website"><strong>Website</strong><span>Public content integration</span></a>
     </div>
 </section>

@@ -221,6 +221,50 @@ $router->get('/dashboard', static function () use ($auth, $admin, $safeguarding,
         'pendingNotifications' => $notifications->pendingCount(),
     ]));
 });
+$router->get('/mobile-demo', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $requireUser): never {
+    $user = $requireUser();
+    Response::html(View::render('mobile-demo', [
+        'title' => 'Mobile app demo',
+        'page' => 'mobile',
+        'user' => $user,
+        'isAdmin' => $isAdminUser($user),
+        'counts' => $admin->counts(),
+        'roles' => $auth->roleCodes((int) $user['id']),
+        'channels' => $channels->channels(),
+        'recentPosts' => $channels->recentPosts(4),
+        'conversations' => $isAdminUser($user) ? $safeguarding->conversations() : $safeguarding->conversationsForUser((int) $user['id']),
+        'reportCounts' => $moderation->counts(),
+        'pendingNotifications' => $notifications->pendingCount(),
+    ]));
+});
+$router->get('/events', static fn () => Response::html(View::render('placeholder', [
+    'title' => 'Events and schedules',
+    'page' => 'events',
+    'eyebrow' => 'Future module',
+    'heading' => 'Events and schedules',
+    'body' => 'Rehearsals, performances, call times, location details, reminders, and absence reporting will live here.',
+])));
+$router->get('/playbills', static fn () => Response::html(View::render('placeholder', [
+    'title' => 'Digital Playbills',
+    'page' => 'playbills',
+    'eyebrow' => 'Future module',
+    'heading' => 'Digital Playbills',
+    'body' => 'Device-friendly Playbills, downloadable PDFs, archives by production, and future structured Playbill building will live here.',
+])));
+$router->get('/registrations', static fn () => Response::html(View::render('placeholder', [
+    'title' => 'Registrations',
+    'page' => 'registrations',
+    'eyebrow' => 'Future module',
+    'heading' => 'Registrations and signups',
+    'body' => 'Auditions, classes, camps, volunteer shifts, forms, waivers, and registration workflows will live here.',
+])));
+$router->get('/website', static fn () => Response::html(View::render('placeholder', [
+    'title' => 'Website integration',
+    'page' => 'website',
+    'eyebrow' => 'Future module',
+    'heading' => 'Website integration',
+    'body' => 'Selected public website content can be pulled in first, with a path toward replacing the full CTSMD website and registration system later.',
+])));
 $router->post('/admin/invitations', static function () use ($admin, $flash, $requireAdmin, $app): never {
     $user = $requireAdmin();
     if (!Csrf::verify($_POST['_csrf'] ?? null)) {
@@ -526,7 +570,7 @@ $router->get('/health', static function () use ($database): never {
     Response::json([
         'status' => $databaseStatus === 'ok' ? 'ok' : 'degraded',
         'service' => 'ctsmd-connect',
-        'version' => 'build-010',
+        'version' => 'build-011',
         'checks' => [
             'database' => $databaseStatus,
         ],

@@ -43,6 +43,8 @@ $requiredFiles = [
     'views/channel.php',
     'views/conversation.php',
     'views/dashboard.php',
+    'views/mobile-demo.php',
+    'views/placeholder.php',
 ];
 
 foreach ($requiredFiles as $file) {
