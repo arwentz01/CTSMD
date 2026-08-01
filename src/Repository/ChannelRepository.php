@@ -32,6 +32,25 @@ final class ChannelRepository
         return $statement->fetchAll();
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function recentPosts(int $limit = 6): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT cp.id, cp.channel_id, cp.body, cp.is_pinned, cp.created_at, c.name AS channel_name, c.type AS channel_type,
+                u.first_name, u.last_name
+             FROM channel_posts cp
+             INNER JOIN channels c ON c.id = cp.channel_id
+             INNER JOIN users u ON u.id = cp.author_user_id
+             WHERE cp.deleted_at IS NULL AND c.archived_at IS NULL
+             ORDER BY cp.is_pinned DESC, cp.created_at DESC, cp.id DESC
+             LIMIT ?'
+        );
+        $statement->bindValue(1, $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
     public function createChannel(string $name, string $description, string $type, string $postingPolicy, int $actorId): int
     {
         $name = trim($name);

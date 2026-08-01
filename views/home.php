@@ -41,7 +41,7 @@
 <section class="now-playing">
     <div>
         <p class="eyebrow">Now in development</p>
-        <h2>Build 009: Safeguarding queue begins</h2>
+        <h2>Build 010: Board demo ready</h2>
     </div>
-    <p>Members can report messages or posts, admins can review reports, and notification records are queued for future email or push delivery.</p>
+    <p>A member dashboard now brings channels, safeguarded conversations, moderation signals, and demo walkthrough links together for a cleaner board presentation.</p>
 </section>

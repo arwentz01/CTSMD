@@ -42,6 +42,7 @@ $requiredFiles = [
     'docs/PRODUCT_CHARTER.md',
     'views/channel.php',
     'views/conversation.php',
+    'views/dashboard.php',
 ];
 
 foreach ($requiredFiles as $file) {

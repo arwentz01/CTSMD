@@ -4,6 +4,7 @@
 /** @var string $page */
 /** @var array<string, mixed> $app */
 $assetBase = (string) ($app['base_path'] ?? '');
+$url = static fn (string $path): string => htmlspecialchars($assetBase . $path, ENT_QUOTES, 'UTF-8');
 ?>
 <!doctype html>
 <html lang="en">
@@ -17,16 +18,17 @@ $assetBase = (string) ($app['base_path'] ?? '');
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
-        <a class="brand" href="/" aria-label="CTSMD Connect home">
+        <a class="brand" href="<?= $url('/') ?>" aria-label="CTSMD Connect home">
             <span class="brand-mark" aria-hidden="true">C</span>
             <span><strong>CTSMD</strong><small>Connect</small></span>
         </a>
         <nav aria-label="Main navigation">
-            <a href="/" <?= $page === 'home' ? 'aria-current="page"' : '' ?>>Welcome</a>
-            <a href="/admin" <?= $page === 'admin' ? 'aria-current="page"' : '' ?>>Admin preview</a>
-            <a href="/login" <?= $page === 'login' ? 'aria-current="page"' : '' ?>>Sign in</a>
+            <a href="<?= $url('/') ?>" <?= $page === 'home' ? 'aria-current="page"' : '' ?>>Welcome</a>
+            <a href="<?= $url('/dashboard') ?>" <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>Dashboard</a>
+            <a href="<?= $url('/admin') ?>" <?= $page === 'admin' ? 'aria-current="page"' : '' ?>>Admin</a>
+            <a href="<?= $url('/login') ?>" <?= $page === 'login' ? 'aria-current="page"' : '' ?>>Sign in</a>
         </nav>
-        <span class="build-badge">Build 009</span>
+        <span class="build-badge">Build 010</span>
     </header>
     <main id="main"><?= $content ?></main>
     <footer>

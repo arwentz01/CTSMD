@@ -71,6 +71,15 @@ final class ModerationRepository
         return $statement->fetchAll();
     }
 
+    /** @return array<string, int> */
+    public function counts(): array
+    {
+        return [
+            'open' => (int) $this->pdo->query('SELECT COUNT(*) FROM content_reports WHERE status = "open"')->fetchColumn(),
+            'reviewing' => (int) $this->pdo->query('SELECT COUNT(*) FROM content_reports WHERE status = "reviewing"')->fetchColumn(),
+        ];
+    }
+
     public function updateStatus(int $reportId, string $status, int $reviewerId): void
     {
         if (!in_array($status, ['open', 'reviewing', 'resolved', 'dismissed'], true)) {

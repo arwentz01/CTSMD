@@ -19,3 +19,6 @@
 
 /* Build 008-009 reports and notification outbox */
 .inline-report{display:flex;gap:.5rem;margin-top:.8rem}.inline-report input{flex:1;border:1px solid var(--line);padding:.55rem;font:inherit}.inline-report button,.report-row button{border:0;background:#171412;color:#fff;padding:.55rem .75rem;text-transform:uppercase;letter-spacing:.08em;font-size:.65rem;font-weight:800}.report-row{display:grid;gap:.5rem;padding:.75rem;border:1px solid #eee7dc;background:#fbf8f2}.report-row p{border:0!important;padding:0!important;background:transparent!important}.report-row select{border:1px solid var(--line);padding:.55rem;font:inherit}
+
+/* Build 010 board demo dashboard */
+.dashboard{padding:2.5rem clamp(1.2rem,4vw,4rem);background:#f4f0e8}.dashboard-hero{background:#171412;color:#fff;padding:2.2rem;border-bottom:5px solid var(--gold);margin-bottom:1rem}.dashboard-hero h1{font:400 clamp(2.5rem,5vw,4.5rem)/1 var(--serif);margin:.2rem 0 1rem}.dashboard-hero p:not(.eyebrow){max-width:760px;color:#d4ccc3}.dashboard-hero .button-primary{box-shadow:none}.dashboard-metrics{margin-bottom:1rem}

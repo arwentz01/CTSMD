@@ -41,4 +41,9 @@ final class NotificationRepository
 
         return $statement->fetchAll();
     }
+
+    public function pendingCount(): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM notifications WHERE status = "pending"')->fetchColumn();
+    }
 }

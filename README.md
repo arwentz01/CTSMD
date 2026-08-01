@@ -2,13 +2,13 @@
 
 CTSMD Connect is the private, invitation-only community platform for the Children’s Theatre of Southern Maryland. Its guiding product rule is simple: student safety and guardian visibility are enforced by the server, never left to client behavior.
 
-This repository currently contains **Build 009**, the first moderation and notification slice: a framework-free PHP front controller, small router, responsive branded pages, a database-aware health endpoint, first-owner setup, login/logout, invitation acceptance, admin-created invitations, live admin people counts, guardian-student linking, server-created safeguarded conversations, participant-only message threads, admin-created channels, channel posts, channel posting permissions, session-backed JSON endpoints, content reports, moderation review, notification outbox records, architecture notes, and the first MySQL schema.
+This repository currently contains **Build 010**, a board-demo-ready MVP: a framework-free PHP front controller, small router, responsive branded pages, a database-aware health endpoint, first-owner setup, login/logout, invitation acceptance, admin-created invitations, live admin people counts, guardian-student linking, server-created safeguarded conversations, participant-only message threads, admin-created channels, channel posts, channel posting permissions, session-backed JSON endpoints, content reports, moderation review, notification outbox records, a member dashboard, architecture notes, and the first MySQL schema.
 
 ## Requirements
 
 - PHP 8.1 or newer (PHP 8.3 recommended)
 - MySQL 8+ or MariaDB 10.6+ for future database-backed builds
-- No Composer or Node.js dependencies are required for Build 009
+- No Composer or Node.js dependencies are required for Build 010
 
 ## Run locally
 

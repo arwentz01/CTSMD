@@ -121,7 +121,7 @@ $router->post('/login', static function () use ($auth): never {
     }
 
     if ($auth->attempt((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''))) {
-        Response::redirect('/admin');
+        Response::redirect('/dashboard');
     }
 
     Response::html(View::render('login', ['title' => 'Sign in', 'page' => 'login', 'csrf' => Csrf::token(), 'error' => 'Those credentials did not match an active account.']), 422);
@@ -203,6 +203,22 @@ $router->get('/admin', static function () use ($admin, $safeguarding, $channels,
         'notifications' => $notifications->pending(),
         'flash' => $flash(),
         'inviteUrl' => null,
+    ]));
+});
+$router->get('/dashboard', static function () use ($auth, $admin, $safeguarding, $channels, $moderation, $notifications, $isAdminUser, $requireUser): never {
+    $user = $requireUser();
+    Response::html(View::render('dashboard', [
+        'title' => 'Dashboard',
+        'page' => 'dashboard',
+        'user' => $user,
+        'isAdmin' => $isAdminUser($user),
+        'counts' => $admin->counts(),
+        'roles' => $auth->roleCodes((int) $user['id']),
+        'channels' => $channels->channels(),
+        'recentPosts' => $channels->recentPosts(),
+        'conversations' => $isAdminUser($user) ? $safeguarding->conversations() : $safeguarding->conversationsForUser((int) $user['id']),
+        'reportCounts' => $moderation->counts(),
+        'pendingNotifications' => $notifications->pendingCount(),
     ]));
 });
 $router->post('/admin/invitations', static function () use ($admin, $flash, $requireAdmin, $app): never {
@@ -510,7 +526,7 @@ $router->get('/health', static function () use ($database): never {
     Response::json([
         'status' => $databaseStatus === 'ok' ? 'ok' : 'degraded',
         'service' => 'ctsmd-connect',
-        'version' => 'build-009',
+        'version' => 'build-010',
         'checks' => [
             'database' => $databaseStatus,
         ],
