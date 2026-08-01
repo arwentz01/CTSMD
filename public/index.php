@@ -597,7 +597,7 @@ $router->get('/health', static function () use ($database): never {
     Response::json([
         'status' => $databaseStatus === 'ok' ? 'ok' : 'degraded',
         'service' => 'ctsmd-connect',
-        'version' => 'build-014',
+        'version' => 'build-015',
         'checks' => [
             'database' => $databaseStatus,
         ],

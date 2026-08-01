@@ -13,7 +13,7 @@ $url = static fn (string $path): string => htmlspecialchars($assetBase . $path, 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="CTSMD Connect — a safer, smarter way to keep our theatre community connected.">
     <title><?= htmlspecialchars($title) ?> · CTSMD Connect</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars($assetBase, ENT_QUOTES, 'UTF-8') ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= htmlspecialchars($assetBase, ENT_QUOTES, 'UTF-8') ?>/assets/css/app.css?v=build-015">
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -30,7 +30,7 @@ $url = static fn (string $path): string => htmlspecialchars($assetBase . $path, 
             <a href="<?= $url('/admin') ?>" <?= $page === 'admin' ? 'aria-current="page"' : '' ?>>Admin</a>
             <a href="<?= $url('/login') ?>" <?= $page === 'login' ? 'aria-current="page"' : '' ?>>Sign in</a>
         </nav>
-        <span class="build-badge">Build 014</span>
+        <span class="build-badge">Build 015</span>
     </header>
     <main id="main"><?= $content ?></main>
     <footer>
