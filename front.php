@@ -23,6 +23,11 @@ if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) {
 }
 $route = rtrim($route, '/') ?: '/';
 
+if ($route === '/dev/identity') {
+    require_once __DIR__ . '/src/DevIdentityExperience.php';
+    DevIdentityExperience::render($detectedBasePath);
+}
+
 if ($route === '/navigation') {
     require_once __DIR__ . '/src/NavigationReview.php';
     $data = require __DIR__ . '/src/mock-data.php';
