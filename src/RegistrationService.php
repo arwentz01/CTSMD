@@ -6,9 +6,11 @@ require_once __DIR__ . '/MailService.php';
 
 final class RegistrationService
 {
+    private const CONNECT_PUBLIC_TYPES = ['audition','event','interest'];
+
     public static function publicOpportunities(PDO $db): array
     {
-        $stmt=$db->query("SELECT ro.*,p.title production_title,p.season FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.status='published' AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW()) ORDER BY ro.starts_at IS NULL,ro.starts_at,ro.title");
+        $stmt=$db->query("SELECT ro.*,p.title production_title,p.season FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.status='published' AND ro.opportunity_type IN ('audition','event','interest') AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW()) ORDER BY ro.starts_at IS NULL,ro.starts_at,ro.title");
         $rows=$stmt->fetchAll();
         foreach($rows as &$row){$row['registration_count']=self::activeCount($db,(int)$row['id']);$row['is_full']=$row['capacity']!==null && $row['registration_count'] >= (int)$row['capacity'];}
         unset($row);
@@ -19,13 +21,14 @@ final class RegistrationService
     {
         $slug=trim(strtolower($slug));if($slug==='')return null;
         $sql="SELECT ro.*,p.title production_title,p.season FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.slug=:slug";
-        if($publicOnly)$sql.=" AND ro.status='published' AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW())";
+        if($publicOnly)$sql.=" AND ro.status='published' AND ro.opportunity_type IN ('audition','event','interest') AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW())";
         $sql.=' LIMIT 1';$stmt=$db->prepare($sql);$stmt->execute(['slug'=>$slug]);$row=$stmt->fetch();if(!$row)return null;
         $row['registration_count']=self::activeCount($db,(int)$row['id']);$row['is_full']=$row['capacity']!==null && $row['registration_count'] >= (int)$row['capacity'];return $row;
     }
 
     public static function submit(PDO $db,array $opportunity,array $input,string $basePath): array
     {
+        if(!in_array((string)($opportunity['opportunity_type']??''),self::CONNECT_PUBLIC_TYPES,true))throw new RuntimeException('This opportunity is not registered through CTSMD Connect.');
         $first=trim((string)($input['participant_first_name']??''));$last=trim((string)($input['participant_last_name']??''));$age=(string)($input['participant_age_group']??'');$email=strtolower(trim((string)($input['registrant_email']??'')));$phone=trim((string)($input['registrant_phone']??''));$guardianName=trim((string)($input['guardian_name']??''));$guardianEmail=strtolower(trim((string)($input['guardian_email']??'')));$guardianPhone=trim((string)($input['guardian_phone']??''));$notes=trim((string)($input['notes']??''));
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter the participant’s first and last name.');
         if(!in_array($age,['under_13','13_17','adult'],true))throw new RuntimeException('Choose the participant age group.');
@@ -39,7 +42,7 @@ final class RegistrationService
         $token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);
         $db->beginTransaction();
         try{
-            $lock=$db->prepare("SELECT * FROM registration_opportunities WHERE id=:id AND status='published' AND (registration_opens_at IS NULL OR registration_opens_at<=NOW()) AND (registration_closes_at IS NULL OR registration_closes_at>=NOW()) FOR UPDATE");$lock->execute(['id'=>(int)$opportunity['id']]);$current=$lock->fetch();if(!$current)throw new RuntimeException('Registration for this opportunity is no longer open.');
+            $lock=$db->prepare("SELECT * FROM registration_opportunities WHERE id=:id AND status='published' AND opportunity_type IN ('audition','event','interest') AND (registration_opens_at IS NULL OR registration_opens_at<=NOW()) AND (registration_closes_at IS NULL OR registration_closes_at>=NOW()) FOR UPDATE");$lock->execute(['id'=>(int)$opportunity['id']]);$current=$lock->fetch();if(!$current)throw new RuntimeException('Registration for this opportunity is no longer open in CTSMD Connect.');
             $count=self::activeCount($db,(int)$current['id']);$status=$current['capacity']!==null&&$count>=(int)$current['capacity']?'waitlisted':'submitted';
             $stmt=$db->prepare("INSERT INTO registration_submissions (opportunity_id,participant_first_name,participant_last_name,participant_age_group,registrant_email,registrant_phone,guardian_name,guardian_email,guardian_phone,notes,status,manage_token_hash) VALUES (:opportunity,:first,:last,:age,:email,:phone,:guardian_name,:guardian_email,:guardian_phone,:notes,:status,:token)");
             $stmt->execute(['opportunity'=>(int)$current['id'],'first'=>$first,'last'=>$last,'age'=>$age,'email'=>$email,'phone'=>$phone!==''?$phone:null,'guardian_name'=>$guardianName,'guardian_email'=>$guardianEmail,'guardian_phone'=>$guardianPhone!==''?$guardianPhone:null,'notes'=>$notes!==''?$notes:null,'status'=>$status,'token'=>$hash]);$id=(int)$db->lastInsertId();
