@@ -40,7 +40,7 @@ final class ScheduleAudience
 
     public static function validateGroupIds(PDO $db, int $productionId, array $groupIds): array
     {
-        $ids=array_values(array_unique(array_filter(array_map('intval',$groupIds),static fn(int $id):bool=>$id>0)));
+        $ids=self::normalizeGroupIds($groupIds);
         if (!$ids) return [];
         $placeholders=implode(',',array_fill(0,count($ids),'?'));
         $stmt=$db->prepare("SELECT id FROM production_groups WHERE production_id=? AND active=1 AND id IN ($placeholders)");
@@ -79,7 +79,9 @@ final class ScheduleAudience
         if (!in_array($visibility,['family','staff','all'],true)) return [];
         if ($audienceMode !== 'groups') return self::productionAudience($db,$productionId,$visibility);
 
-        $groupIds=self::validateGroupIds($db,$productionId,$groupIds);
+        // Read-time audience resolution must fail closed rather than throw if a previously
+        // targeted group has since been deactivated. Strict validation remains on writes.
+        $groupIds=self::normalizeGroupIds($groupIds);
         if(!$groupIds) return [];
         $placeholders=implode(',',array_fill(0,count($groupIds),'?'));
         $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff']};
@@ -96,7 +98,6 @@ final class ScheduleAudience
         $byId=[];
         foreach($rows as $row) $byId[(int)$row['id']]=$row;
 
-        // Family-facing group calls should follow the student/guardian relationship automatically.
         if(in_array($visibility,['family','all'],true)){
             $studentStmt=$db->prepare("SELECT DISTINCT pm.user_id
                 FROM production_group_members pgm
@@ -143,8 +144,13 @@ final class ScheduleAudience
 
         $scheduleItemId=(int)($item['id']??0);
         if($scheduleItemId<1) return false;
-        $direct=$db->prepare("SELECT 1 FROM schedule_item_groups sig JOIN production_group_members pgm ON pgm.group_id=sig.group_id AND pgm.status='active' JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active' WHERE sig.schedule_item_id=:item AND pm.user_id=:user LIMIT 1");
-        $direct->execute(['item'=>$scheduleItemId,'user'=>(int)$user['id']]);
+        $direct=$db->prepare("SELECT 1
+            FROM schedule_item_groups sig
+            JOIN production_groups pg ON pg.id=sig.group_id AND pg.active=1 AND pg.production_id=:production
+            JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
+            JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
+            WHERE sig.schedule_item_id=:item AND pm.user_id=:user LIMIT 1");
+        $direct->execute(['production'=>$productionId,'item'=>$scheduleItemId,'user'=>(int)$user['id']]);
         if($direct->fetchColumn()) return true;
 
         if($audienceType==='guardian' && in_array($visibility,['family','all'],true)){
@@ -152,9 +158,10 @@ final class ScheduleAudience
                 FROM family_relationships fr
                 JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=:production AND spm.audience_type='student' AND spm.status='active'
                 JOIN production_group_members pgm ON pgm.production_membership_id=spm.id AND pgm.status='active'
-                JOIN schedule_item_groups sig ON sig.group_id=pgm.group_id AND sig.schedule_item_id=:item
+                JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1 AND pg.production_id=:production_group
+                JOIN schedule_item_groups sig ON sig.group_id=pg.id AND sig.schedule_item_id=:item
                 WHERE fr.guardian_user_id=:guardian AND fr.status='active' LIMIT 1");
-            $guardian->execute(['production'=>$productionId,'item'=>$scheduleItemId,'guardian'=>(int)$user['id']]);
+            $guardian->execute(['production'=>$productionId,'production_group'=>$productionId,'item'=>$scheduleItemId,'guardian'=>(int)$user['id']]);
             return (bool)$guardian->fetchColumn();
         }
         return false;
@@ -166,5 +173,10 @@ final class ScheduleAudience
         $stmt->execute(['production'=>$productionId,'user'=>$userId]);
         $value=$stmt->fetchColumn();
         return $value===false?null:(string)$value;
+    }
+
+    private static function normalizeGroupIds(array $groupIds): array
+    {
+        return array_values(array_unique(array_filter(array_map('intval',$groupIds),static fn(int $id):bool=>$id>0)));
     }
 }
