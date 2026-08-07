@@ -1,24 +1,44 @@
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE messages;
-TRUNCATE TABLE conversation_participants;
-TRUNCATE TABLE conversations;
-TRUNCATE TABLE playbills;
-TRUNCATE TABLE form_assignments;
-TRUNCATE TABLE forms;
-TRUNCATE TABLE volunteer_shift_signups;
-TRUNCATE TABLE volunteer_shift_requirements;
-TRUNCATE TABLE volunteer_shifts;
-TRUNCATE TABLE volunteer_credentials;
-TRUNCATE TABLE volunteer_requirements;
-TRUNCATE TABLE volunteer_profiles;
-TRUNCATE TABLE channel_posts;
-TRUNCATE TABLE channels;
-TRUNCATE TABLE schedule_items;
-TRUNCATE TABLE announcements;
-TRUNCATE TABLE productions;
-TRUNCATE TABLE users;
+-- Build 001 demo reset.
+-- Use DELETE rather than TRUNCATE so foreign-key relationships remain enforced.
+-- Child/dependent records are removed before their parents.
+DELETE FROM messages;
+DELETE FROM conversation_participants;
+DELETE FROM conversations;
+DELETE FROM playbills;
+DELETE FROM form_assignments;
+DELETE FROM forms;
+DELETE FROM volunteer_shift_signups;
+DELETE FROM volunteer_shift_requirements;
+DELETE FROM volunteer_shifts;
+DELETE FROM volunteer_credentials;
+DELETE FROM volunteer_requirements;
+DELETE FROM volunteer_profiles;
+DELETE FROM channel_posts;
+DELETE FROM channels;
+DELETE FROM schedule_items;
+DELETE FROM announcements;
+DELETE FROM productions;
+DELETE FROM users;
+
+-- Reset demo IDs so the explicit IDs and relational references below remain deterministic.
+ALTER TABLE messages AUTO_INCREMENT = 1;
+ALTER TABLE conversations AUTO_INCREMENT = 1;
+ALTER TABLE playbills AUTO_INCREMENT = 1;
+ALTER TABLE form_assignments AUTO_INCREMENT = 1;
+ALTER TABLE forms AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_shift_signups AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_shifts AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_credentials AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_requirements AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_profiles AUTO_INCREMENT = 1;
+ALTER TABLE channel_posts AUTO_INCREMENT = 1;
+ALTER TABLE channels AUTO_INCREMENT = 1;
+ALTER TABLE schedule_items AUTO_INCREMENT = 1;
+ALTER TABLE announcements AUTO_INCREMENT = 1;
+ALTER TABLE productions AUTO_INCREMENT = 1;
+ALTER TABLE users AUTO_INCREMENT = 1;
 
 INSERT INTO users (id, first_name, last_name, email, initials, display_role, is_demo_current_user) VALUES
 (1, 'Jamie', 'Carter', 'jamie@example.test', 'JC', 'Parent + Volunteer', 1),
@@ -134,5 +154,3 @@ INSERT INTO messages (conversation_id, sender_user_id, body, created_at) VALUES
 (1,3,'Bring both your black jazz shoes and character shoes, please. We’ll check both with the costume.','2026-08-06 16:02:00'),
 (1,1,'Thanks! We’ll make sure she has both.','2026-08-06 16:22:00'),
 (2,4,'Can you help with the lobby table?','2026-08-04 12:15:00');
-
-SET FOREIGN_KEY_CHECKS = 1;
