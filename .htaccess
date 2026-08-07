@@ -1,6 +1,10 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# Local Build 001 default when the repository lives at MAMP htdocs/CTSMD.
+# Remove or change this when deploying at a different base path.
+SetEnv APP_BASE_PATH /CTSMD
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
