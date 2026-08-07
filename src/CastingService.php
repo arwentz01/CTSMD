@@ -23,7 +23,7 @@ final class CastingService
 
     public static function peopleCandidates(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE u.active=1 AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
+        $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE u.active=1 AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
         $s->execute(['production'=>$productionId]);return $s->fetchAll();
     }
 
@@ -35,11 +35,12 @@ final class CastingService
         $db->beginTransaction();
         try{
             $p=$db->prepare('SELECT id,active FROM users WHERE id=:id FOR UPDATE');$p->execute(['id'=>$userId]);$person=$p->fetch();if(!$person||(int)$person['active']!==1)throw new RuntimeException('That person is not an active CTSMD person.');
+            if(!self::isStudent($db,$userId))throw new RuntimeException('Casting currently supports Student identities. Adult/staff production participation remains managed through Production Roster.');
             if($submissionId){$r=$db->prepare("SELECT rsl.participant_user_id,ro.production_id,ro.opportunity_type FROM registration_submission_links rsl JOIN registration_submissions rs ON rs.id=rsl.submission_id JOIN registration_opportunities ro ON ro.id=rs.opportunity_id WHERE rsl.submission_id=:submission LIMIT 1");$r->execute(['submission'=>$submissionId]);$link=$r->fetch();if(!$link||(int)$link['participant_user_id']!==$userId||(int)$link['production_id']!==$productionId||$link['opportunity_type']!=='audition')throw new RuntimeException('That audition intake is not linked to this person and Working Production.');}
             $i=$db->prepare("INSERT INTO production_casting_records (production_id,user_id,registration_submission_id,casting_status,created_by_user_id) VALUES (:production,:user,:submission,'under_review',:actor) ON DUPLICATE KEY UPDATE registration_submission_id=COALESCE(VALUES(registration_submission_id),registration_submission_id),updated_at=CURRENT_TIMESTAMP");
             $i->execute(['production'=>$productionId,'user'=>$userId,'submission'=>$submissionId,'actor'=>$actorId]);
             $id=(int)$db->lastInsertId();if($id<1){$q=$db->prepare('SELECT id FROM production_casting_records WHERE production_id=:production AND user_id=:user');$q->execute(['production'=>$productionId,'user'=>$userId]);$id=(int)$q->fetchColumn();}
-            self::audit($db,$actorId,'casting.person_added',$id,'Added person to production casting board.',['production_id'=>$productionId,'user_id'=>$userId,'registration_submission_id'=>$submissionId]);$db->commit();return $id;
+            self::audit($db,$actorId,'casting.person_added',$id,'Added student to production casting board.',['production_id'=>$productionId,'user_id'=>$userId,'registration_submission_id'=>$submissionId]);$db->commit();return $id;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The person could not be added to casting.');}
     }
 
@@ -59,14 +60,11 @@ final class CastingService
     {
         $groupIds=ScheduleAudience::validateGroupIds($db,$productionId,$groupIds);
         $db->beginTransaction();try{
-            $s=$db->prepare("SELECT cr.*,u.display_role,CONCAT(u.first_name,' ',u.last_name) person_name FROM production_casting_records cr JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");$s->execute(['id'=>$recordId,'production'=>$productionId]);$record=$s->fetch();if(!$record)throw new RuntimeException('That casting record no longer exists.');if($record['casting_status']!=='cast')throw new RuntimeException('Mark the casting decision Cast before finalizing production access.');
+            $s=$db->prepare("SELECT cr.*,CONCAT(u.first_name,' ',u.last_name) person_name FROM production_casting_records cr JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");$s->execute(['id'=>$recordId,'production'=>$productionId]);$record=$s->fetch();if(!$record)throw new RuntimeException('That casting record no longer exists.');if($record['casting_status']!=='cast')throw new RuntimeException('Mark the casting decision Cast before finalizing production access.');
             $role=trim((string)($record['role_title']??''));if($role==='')throw new RuntimeException('Enter a character or participation role before finalizing the roster.');
-            $student=self::isStudent($db,(int)$record['user_id']);$audience=$student?'student':'staff';
-            if(!$student && !self::isStaff($db,(int)$record['user_id']))$audience='student';
-            if($audience==='student'&&!$student)throw new RuntimeException('Only Student or staff identities can be finalized through Casting. Add adult non-staff participants through Production Roster.');
-            $guardianIds=[];
-            if($student){$g=$db->prepare("SELECT fr.guardian_user_id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 WHERE fr.student_user_id=:student AND fr.status='active' ORDER BY fr.is_primary DESC,fr.id");$g->execute(['student'=>(int)$record['user_id']]);$guardians=$g->fetchAll();if(!$guardians)throw new RuntimeException('This student has no active guardian relationship. Add the guardian in People before finalizing casting.');foreach($guardians as $guardian){$guardianIds[]=(int)$guardian['guardian_user_id'];self::upsertMembership($db,$productionId,(int)$guardian['guardian_user_id'],'guardian',ucfirst((string)$guardian['relationship_type']));}}
-            $membershipId=self::upsertMembership($db,$productionId,(int)$record['user_id'],$audience,$role);
+            if(!self::isStudent($db,(int)$record['user_id']))throw new RuntimeException('Casting roster finalization currently supports Student identities.');
+            $g=$db->prepare("SELECT fr.guardian_user_id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 WHERE fr.student_user_id=:student AND fr.status='active' ORDER BY fr.is_primary DESC,fr.id");$g->execute(['student'=>(int)$record['user_id']]);$guardians=$g->fetchAll();if(!$guardians)throw new RuntimeException('This student has no active guardian relationship. Add the guardian in People before finalizing casting.');$guardianIds=[];foreach($guardians as $guardian){$guardianIds[]=(int)$guardian['guardian_user_id'];self::upsertMembership($db,$productionId,(int)$guardian['guardian_user_id'],'guardian',ucfirst((string)$guardian['relationship_type']));}
+            $membershipId=self::upsertMembership($db,$productionId,(int)$record['user_id'],'student',$role);
             $db->prepare("UPDATE production_group_members SET status='inactive',updated_at=CURRENT_TIMESTAMP WHERE production_membership_id=:membership")->execute(['membership'=>$membershipId]);
             if($groupIds){$link=$db->prepare("INSERT INTO production_group_members (group_id,production_membership_id,status,added_by_user_id) VALUES (:group_id,:membership,'active',:actor) ON DUPLICATE KEY UPDATE status='active',added_by_user_id=VALUES(added_by_user_id),updated_at=CURRENT_TIMESTAMP");foreach($groupIds as $groupId)$link->execute(['group_id'=>$groupId,'membership'=>$membershipId,'actor'=>$actorId]);}
             $db->prepare('UPDATE production_casting_records SET production_membership_id=:membership,rostered_by_user_id=:actor,rostered_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['membership'=>$membershipId,'actor'=>$actorId,'id'=>$recordId]);
@@ -80,8 +78,7 @@ final class CastingService
         $q=$db->prepare('SELECT id FROM production_memberships WHERE production_id=:production AND user_id=:user AND audience_type=:audience LIMIT 1');$q->execute(['production'=>$productionId,'user'=>$userId,'audience'=>$audience]);$id=(int)$q->fetchColumn();if($id<1)throw new RuntimeException('The production membership could not be resolved.');return $id;
     }
 
-    private static function isStudent(PDO $db,int $userId):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.slug='student' LIMIT 1");$s->execute(['user'=>$userId]);return (bool)$s->fetchColumn();}
-    private static function isStaff(PDO $db,int $userId):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.slug IN ('production_staff','administrator') LIMIT 1");$s->execute(['user'=>$userId]);return (bool)$s->fetchColumn();}
+    private static function isStudent(PDO $db,int $userId):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.code='student' LIMIT 1");$s->execute(['user'=>$userId]);return (bool)$s->fetchColumn();}
     private static function groupsForMembership(PDO $db,int $membershipId):array{if($membershipId<1)return [];$s=$db->prepare("SELECT pg.id,pg.name FROM production_group_members pgm JOIN production_groups pg ON pg.id=pgm.group_id WHERE pgm.production_membership_id=:membership AND pgm.status='active' AND pg.active=1 ORDER BY pg.sort_order,pg.name");$s->execute(['membership'=>$membershipId]);return $s->fetchAll();}
     private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'casting_record',:id,:summary,:meta)");$s->execute(['actor'=>$actor,'event'=>$event,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
 }
