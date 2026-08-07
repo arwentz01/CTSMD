@@ -1,0 +1,7 @@
+/*
+ * CTSMD Connect local asset entrypoint.
+ *
+ * Keep the browser-facing asset URL real on disk so local MAMP builds do not
+ * depend on mod_rewrite to load CSS. The visual source remains under /public.
+ */
+@import url("../../public/assets/css/app.css");
