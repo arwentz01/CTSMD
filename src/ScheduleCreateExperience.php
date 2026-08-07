@@ -52,7 +52,7 @@ final class ScheduleCreateExperience
 
         try {
             $itemId = self::createScheduleItem($db, $user, $production, $_POST);
-            self::flash('success', 'Schedule item created.');
+            $_SESSION['production_flash'] = ['type' => 'success', 'message' => 'Schedule item created. Review it below or return to the schedule.'];
             self::redirect($basePath . '/production/edit?id=' . $itemId);
         } catch (RuntimeException $e) {
             self::flash('error', $e->getMessage());
