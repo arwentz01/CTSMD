@@ -1,28 +1,68 @@
 # Visual-First Architecture
 
-## Build 001 intent
+## Build intent
 
-Build 001 is a functional visual prototype, not a production backend. It proves the navigation, responsive behavior, information hierarchy, safety language, and operational workflows before database and API decisions become expensive to change.
+CTSMD Connect uses a visual-first process, but visual-first does not mean disposable implementation. Screens should be fast to build and easy to change while still consuming realistic data through stable read boundaries.
+
+The governing principle remains:
+
+> Experience defines the product. Background logic exists to support the approved experience.
 
 ## Current technical shape
 
 - PHP 8.x
 - Apache + `.htaccess`
 - One front controller (`index.php`)
-- Shared mocked theatre data (`src/mock-data.php`)
+- MySQL/MariaDB-backed seeded prototype records
+- PDO-based database access
+- Prototype read repository (`src/PrototypeDataRepository.php`)
 - Server-rendered HTML
 - CSS variables and responsive component styles
 - Minimal vanilla JavaScript
 - No framework dependency
-- No required database connection for Build 001
 
 This intentionally keeps local development MAMP-friendly and future deployment compatible with typical shared-hosting PHP environments.
 
+## Demo data policy
+
+Prototype data must be seeded, not hardcoded.
+
+Anything that represents a record or system state belongs in the database and versioned seed files. Examples include users, productions, schedules, announcements, posts, conversations, messages, forms, volunteer credentials, shifts, signups, Playbills, statuses, and operational counts derived from those records.
+
+Views may hardcode stable interface language such as headings, button labels, help text, empty-state copy, and safety explanations. They may not embed fictional application records simply to make a screen look populated.
+
+The prototype should fail clearly when its seed data is unavailable rather than silently swapping in a second hardcoded fixture source.
+
+Current local sources:
+
+```text
+database/schema.sql
+database/seeds/001_demo.sql
+src/Database.php
+src/PrototypeDataRepository.php
+```
+
+`src/mock-data.php` remains temporarily as a compatibility entry point for Build 001, but it contains no demo records. It opens the database and delegates to the repository.
+
+## Visual-first data workflow
+
+When a new visual workflow needs representative content:
+
+1. Design the experience and identify the records the screen needs.
+2. Reuse existing domain tables where appropriate.
+3. Add only the smallest new schema required to support the approved experience.
+4. Add realistic local records to a versioned seed.
+5. Expose those records through a repository/read model.
+6. Render the screen from that read model.
+7. Keep write logic mocked or disabled until the interaction itself is approved.
+
+This gives us realistic, relational demo behavior without prematurely building the full production service layer.
+
 ## Planned evolution
 
-### Phase 1: visual contract
+### Phase 1: visual contract with seeded reads
 
-Build screens with mocked data. Validate:
+Build screens and validate:
 
 - role-specific information density
 - member vs staff navigation
@@ -32,6 +72,8 @@ Build screens with mocked data. Validate:
 - schedule hierarchy
 - admin workflows
 - accessibility patterns
+
+Seeded relational records support the screens, but production-grade write workflows are intentionally deferred.
 
 ### Phase 2: thin application foundation
 
@@ -54,7 +96,7 @@ Keep routing and dependency management lightweight. Do not introduce a heavy fra
 
 ### Phase 3: persistence by approved workflow
 
-Add database tables and services only as required by approved screens. The likely order is:
+Expand database tables and services only as required by approved screens. The likely order is:
 
 1. users, profiles, roles, memberships
 2. students, guardians, guardian/student relationships
@@ -67,6 +109,8 @@ Add database tables and services only as required by approved screens. The likel
 9. forms/acknowledgments
 10. Playbills/assets/sponsors
 11. notifications, audit logs, reports, settings
+
+The Build 001 schema establishes only the subset needed to seed the current visual experiences. It is not permission to prematurely fill in every future entity.
 
 ## Safeguarded messaging boundary
 
@@ -83,9 +127,13 @@ The future conversation creation flow must work like this:
 
 The client must never be considered authoritative for the final safeguarded participant list.
 
+The seeded safeguarded conversation in Build 001 demonstrates the intended record shape only. It does not yet constitute server-side enforcement.
+
 ## Volunteer eligibility boundary
 
-Shift signup should eventually use requirement rules rather than hard-coded role names.
+Shift signup should use requirement rules rather than hard-coded role names.
+
+Build 001 already seeds volunteer requirements, volunteer credentials, shift requirements, and signups so the prototype read model can determine whether the demo user is eligible for each shift.
 
 A future eligibility evaluator should compare:
 
