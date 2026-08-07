@@ -7,6 +7,7 @@ require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ScheduleAudience.php';
+require_once __DIR__ . '/ModerationService.php';
 
 final class ScheduleNoticeExperience
 {
@@ -33,12 +34,19 @@ final class ScheduleNoticeExperience
     {
         if(!hash_equals((string)($_SESSION['schedule_notice_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired. Please try again.');self::redirect($basePath.'/production/notices');}
         $noticeId=filter_input(INPUT_POST,'notice_id',FILTER_VALIDATE_INT)?:0;$action=(string)($_POST['action']??'');
-        try{if($action==='publish'){self::publish($db,$user,(int)$noticeId,$_POST);self::flash('success','Schedule update published to the selected CTSMD destinations.');}elseif($action==='cancel'){self::cancel($db,$user,(int)$noticeId);self::flash('success','Draft cancelled. No communication was sent.');}else throw new RuntimeException('That update action is not available.');}
-        catch(RuntimeException $e){self::flash('error',$e->getMessage());}
+        try{
+            if($action==='publish'){
+                $channelStatus=self::publish($db,$user,(int)$noticeId,$_POST);
+                if($channelStatus==='pending')self::flash('success','Schedule update published. The Community channel copy is awaiting moderator review and is not visible yet.');
+                elseif($channelStatus==='rejected')self::flash('success','Schedule update published. The Community channel copy was blocked by the moderation rules and was not shown.');
+                else self::flash('success','Schedule update published to the selected CTSMD destinations.');
+            }elseif($action==='cancel'){self::cancel($db,$user,(int)$noticeId);self::flash('success','Draft cancelled. No communication was sent.');}
+            else throw new RuntimeException('That update action is not available.');
+        }catch(RuntimeException $e){self::flash('error',$e->getMessage());}
         self::redirect($basePath.'/production/notice?id='.(int)$noticeId);
     }
 
-    private static function publish(PDO $db,array $user,int $noticeId,array $input):void
+    private static function publish(PDO $db,array $user,int $noticeId,array $input):?string
     {
         if($noticeId<1)throw new RuntimeException('That communication draft could not be found.');
         $selectedProduction=ProductionContext::selected($db,$user);if(!$selectedProduction)throw new RuntimeException('Select an active production before publishing its updates.');
@@ -58,11 +66,18 @@ final class ScheduleNoticeExperience
             $audience=ScheduleAudience::audienceMembersForItem($db,(int)$notice['schedule_item_id']);
             if(!$audience)throw new RuntimeException('This schedule item currently resolves to an empty audience. Review its Production Groups before publishing.');
 
-            $channelPostId=null;
+            $channelPostId=null;$channelModerationStatus=null;
             if($sendChannel){
                 $channelStmt=$db->prepare('SELECT id FROM channels WHERE id=:id AND production_id=:production AND archived_at IS NULL');$channelStmt->execute(['id'=>$channelId,'production'=>(int)$notice['production_id']]);if(!$channelStmt->fetchColumn())throw new RuntimeException('That Community channel is unavailable for this production.');
-                $post=$db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,0,NULL,CURRENT_TIMESTAMP)');$post->execute(['channel'=>$channelId,'author'=>(int)$user['id'],'body'=>$subject."\n\n".$body]);$channelPostId=(int)$db->lastInsertId();
-                $delivery=$db->prepare("INSERT INTO schedule_notice_deliveries (notice_id,destination_type,destination_id,recipient_count,created_by_user_id) VALUES (:notice,'channel',:destination,:count,:actor)");$delivery->execute(['notice'=>$noticeId,'destination'=>$channelId,'count'=>count($audience),'actor'=>(int)$user['id']]);
+                $postBody=$subject."\n\n".$body;
+                $decision=ModerationService::evaluate($db,$postBody);$channelModerationStatus=(string)($decision['status']??'');
+                if(!in_array($channelModerationStatus,['published','pending','rejected'],true))throw new RuntimeException('We could not verify the Community channel copy right now. Try publishing in-app only or try again.');
+                $term=is_array($decision['term']??null)?$decision['term']:null;
+                $post=$db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,moderation_status,moderation_term_id,moderation_reason,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,:status,:term_id,:reason,0,NULL,CURRENT_TIMESTAMP)');
+                $post->execute(['channel'=>$channelId,'author'=>(int)$user['id'],'body'=>$postBody,'status'=>$channelModerationStatus,'term_id'=>$term?(int)$term['id']:null,'reason'=>$decision['reason']??null]);$channelPostId=(int)$db->lastInsertId();
+                if($channelModerationStatus==='published'){
+                    $delivery=$db->prepare("INSERT INTO schedule_notice_deliveries (notice_id,destination_type,destination_id,recipient_count,created_by_user_id) VALUES (:notice,'channel',:destination,:count,:actor)");$delivery->execute(['notice'=>$noticeId,'destination'=>$channelId,'count'=>count($audience),'actor'=>(int)$user['id']]);
+                }
             }
             $notificationCount=0;
             if($sendInApp){
@@ -71,8 +86,8 @@ final class ScheduleNoticeExperience
                 $delivery=$db->prepare("INSERT INTO schedule_notice_deliveries (notice_id,destination_type,destination_id,recipient_count,created_by_user_id) VALUES (:notice,'in_app',NULL,:count,:actor)");$delivery->execute(['notice'=>$noticeId,'count'=>$notificationCount,'actor'=>(int)$user['id']]);
             }
             $db->prepare("UPDATE schedule_change_notices SET subject=:subject,body=:body,audience_count=:count,status='published',published_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['subject'=>$subject,'body'=>$body,'count'=>count($audience),'id'=>$noticeId]);
-            self::audit($db,(int)$user['id'],'schedule.notice_published',$noticeId,'Published schedule change communication.',['production_id'=>(int)$notice['production_id'],'schedule_item_id'=>(int)$notice['schedule_item_id'],'audience_mode'=>$notice['audience_mode'],'group_ids'=>ScheduleAudience::groupIdsForItem($db,(int)$notice['schedule_item_id']),'destinations'=>['in_app'=>$sendInApp,'channel'=>$sendChannel],'channel_id'=>$sendChannel?$channelId:null,'channel_post_id'=>$channelPostId,'recipient_count'=>count($audience),'audience_user_ids'=>array_map(static fn(array $r):int=>(int)$r['id'],$audience)]);
-            $db->commit();
+            self::audit($db,(int)$user['id'],'schedule.notice_published',$noticeId,'Published schedule change communication.',['production_id'=>(int)$notice['production_id'],'schedule_item_id'=>(int)$notice['schedule_item_id'],'audience_mode'=>$notice['audience_mode'],'group_ids'=>ScheduleAudience::groupIdsForItem($db,(int)$notice['schedule_item_id']),'destinations'=>['in_app'=>$sendInApp,'channel'=>$sendChannel],'channel_id'=>$sendChannel?$channelId:null,'channel_post_id'=>$channelPostId,'channel_moderation_status'=>$channelModerationStatus,'recipient_count'=>count($audience),'audience_user_ids'=>array_map(static fn(array $r):int=>(int)$r['id'],$audience)]);
+            $db->commit();return $channelModerationStatus;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The schedule update could not be published.');}
     }
 
