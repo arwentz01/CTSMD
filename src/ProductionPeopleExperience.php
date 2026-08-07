@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionContext.php';
 
 final class ProductionPeopleExperience
 {
@@ -28,7 +29,7 @@ final class ProductionPeopleExperience
         }
 
         $_SESSION['production_people_csrf'] ??= bin2hex(random_bytes(24));
-        $production = self::currentProduction($db);
+        $production = ProductionContext::selected($db, $user);
         if (!$production) {
             self::page($basePath, $user, null, [], [], []);
         }
@@ -48,6 +49,12 @@ final class ProductionPeopleExperience
         $token = (string)($_POST['csrf_token'] ?? '');
         if (!hash_equals((string)($_SESSION['production_people_csrf'] ?? ''), $token)) {
             self::flash('error', 'Your session token expired. Please try again.');
+            self::redirect($basePath . '/production/people');
+        }
+
+        $selected = ProductionContext::selected($db, $user);
+        if (!$selected || (int)$selected['id'] !== $productionId) {
+            self::flash('error', 'The working production changed before this roster action was saved. Review the production selector and try again.');
             self::redirect($basePath . '/production/people');
         }
 
@@ -237,12 +244,6 @@ final class ProductionPeopleExperience
         return $row;
     }
 
-    private static function currentProduction(PDO $db): ?array
-    {
-        $row = $db->query("SELECT id, title, season, status FROM productions WHERE status = 'current' ORDER BY id DESC LIMIT 1")->fetch();
-        return $row ?: null;
-    }
-
     private static function audit(PDO $db, int $actorId, string $eventType, string $subjectType, int $subjectId, string $summary, array $metadata): void
     {
         $stmt = $db->prepare('INSERT INTO audit_events (actor_user_id, event_type, subject_type, subject_id, summary, metadata_json) VALUES (:actor, :event_type, :subject_type, :subject_id, :summary, :metadata)');
@@ -260,8 +261,8 @@ final class ProductionPeopleExperience
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $flash = $_SESSION['production_people_flash'] ?? null;
-        unset($_SESSION['production_people_flash']);
+        $flash = $_SESSION['production_people_flash'] ?? $_SESSION['production_context_flash'] ?? null;
+        unset($_SESSION['production_people_flash'], $_SESSION['production_context_flash']);
         $active = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active'));
         $students = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'student'));
         $guardians = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'guardian'));
@@ -278,14 +279,14 @@ final class ProductionPeopleExperience
         header('Content-Type: text/html; charset=utf-8');
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>Production people · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-people.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production/people', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production', 'People & cast', $basePath, $subnav); ?><div class="production-people-page">
         <?php if ($flash): ?><div class="production-people-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
-        <?php if (!$production): ?><section class="production-people-empty"><h2>No current production</h2><p>Mark a production current before managing its membership.</p></section><?php else: ?>
-        <section class="production-people-hero"><div><small><?= $esc(strtoupper((string)$production['season'])) ?></small><h2><?= $esc($production['title']) ?></h2><p>Manage the people who actually belong to this production. Student additions automatically carry their active guardian relationships into the production audience.</p></div><div class="production-people-metrics"><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
+        <?php if (!$production): ?><section class="production-people-empty"><h2>No active production selected</h2><p>Activate a production or switch the working production before managing its membership.</p></section><?php else: ?>
+        <section class="production-people-hero"><div><small><?= $esc(strtoupper((string)$production['season'])) ?> · WORKING PRODUCTION</small><h2><?= $esc($production['title']) ?></h2><p>Manage only the people who belong to this selected production. Student additions automatically carry their active guardian relationships into this production audience.</p></div><div class="production-people-metrics"><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
 
         <div class="production-people-layout"><section class="production-people-panel"><header><div><small>ACTIVE ROSTER</small><h3>Production membership</h3></div><span><?= count($active) ?> active</span></header>
         <?php foreach (['student' => 'Students / Cast', 'guardian' => 'Guardians', 'staff' => 'Production Staff'] as $type => $label): ?><div class="production-people-group"><h4><?= $esc($label) ?></h4><?php $group = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === $type)); if (!$group): ?><p class="production-people-muted">No active <?= $esc($label) ?>.</p><?php else: foreach ($group as $member): ?><article class="production-member"><i><?= $esc($member['initials']) ?></i><div><b><?= $esc($member['name']) ?></b><span><?= $esc((string)$member['participation_role']) ?></span><small><?= $esc($member['account_role']) ?></small></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="remove"><input type="hidden" name="membership_id" value="<?= (int)$member['id'] ?>"><button type="submit">Remove</button></form></article><?php endforeach; endif; ?></div><?php endforeach; ?>
         </section>
 
-        <aside class="production-people-panel add"><header><div><small>ADD TO PRODUCTION</small><h3>Assign a person</h3></div></header><form method="post" class="production-people-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="add"><label>Person<select name="user_id" required><option value="">Choose a person</option><?php foreach ($candidates as $candidate): ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?> · <?= $esc($candidate['role']) ?><?= (bool)$candidate['already_active'] ? ' · already active' : '' ?></option><?php endforeach; ?></select></label><label>Production audience<select name="audience_type" required><option value="student">Student / cast</option><option value="guardian">Guardian</option><option value="staff">Staff</option></select></label><label>Participation role<input name="participation_role" maxlength="120" required placeholder="e.g. Matilda, Parent / Guardian, Director"></label><button class="button full" type="submit">Add to production</button></form><div class="production-people-rule"><b>Guardian safety is automatic.</b><p>Students cannot be added without an active guardian relationship. Their active guardians are added to the production audience automatically.</p></div></aside></div>
+        <aside class="production-people-panel add"><header><div><small>ADD TO <?= $esc(strtoupper($production['title'])) ?></small><h3>Assign a person</h3></div></header><form method="post" class="production-people-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="add"><label>Person<select name="user_id" required><option value="">Choose a person</option><?php foreach ($candidates as $candidate): ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?> · <?= $esc($candidate['role']) ?><?= (bool)$candidate['already_active'] ? ' · already active' : '' ?></option><?php endforeach; ?></select></label><label>Production audience<select name="audience_type" required><option value="student">Student / cast</option><option value="guardian">Guardian</option><option value="staff">Staff</option></select></label><label>Participation role<input name="participation_role" maxlength="120" required placeholder="e.g. Matilda, Parent / Guardian, Director"></label><button class="button full" type="submit">Add to <?= $esc($production['title']) ?></button></form><div class="production-people-rule"><b>Guardian safety is automatic.</b><p>Students cannot be added without an active guardian relationship. Their active guardians are added to this production audience automatically.</p></div></aside></div>
 
         <section class="production-people-panel coverage"><header><div><small>SAFEGUARDING CHECK</small><h3>Student guardian coverage</h3></div></header><?php if (!$coverage): ?><p class="production-people-muted">No active students are assigned.</p><?php else: foreach ($coverage as $row): ?><article><span><b><?= $esc($row['student_name']) ?></b><small>Active production student</small></span><em class="<?= (int)$row['guardian_count'] > 0 ? 'good' : 'danger' ?>"><?= (int)$row['guardian_count'] ?> guardian<?= (int)$row['guardian_count'] === 1 ? '' : 's' ?></em></article><?php endforeach; endif; ?></section>
         <?php endif; ?>
