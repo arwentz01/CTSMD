@@ -1,10 +1,18 @@
 Options -Indexes
 DirectoryIndex front.php
 
+# MAMP may honor .htaccess while mod_rewrite is unavailable or disabled.
+# FallbackResource keeps application routes such as /ctsmd/app working without
+# requiring rewrite rules. This local path should be adjusted for deployment.
+<IfModule mod_dir.c>
+    FallbackResource /ctsmd/front.php
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Keep internal project directories out of direct web access.
+    # Keep internal project directories out of direct web access when rewrite
+    # support is available.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
 
     # Let real files and directories bypass the front controller.
