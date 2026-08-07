@@ -75,6 +75,11 @@ if (ProductionPeopleExperience::handles($route)) {
     ProductionPeopleExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/ScheduleCreateExperience.php';
+if (ScheduleCreateExperience::handles($route)) {
+    ScheduleCreateExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/ScheduleNoticeExperience.php';
 if (ScheduleNoticeExperience::handles($route)) {
     ScheduleNoticeExperience::render($route, $detectedBasePath);
