@@ -62,14 +62,18 @@ final class Auth
         if(!$row || !(bool)$row['active'] || $row['account_status']!=='active' || empty($row['password_hash']) || !password_verify($password,(string)$row['password_hash'])) {
             throw new RuntimeException('Email or password was not recognized.');
         }
-        self::startSession();
-        session_regenerate_id(true);
-        $_SESSION[self::SESSION_USER_ID]=(int)$row['id'];
-        $_SESSION['auth_authenticated_at']=time();
-        $db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>(int)$row['id']]);
+        self::establishSession($db,(int)$row['id']);
         $user=self::currentUser($db);
         if(!$user) throw new RuntimeException('This account is unavailable.');
         return $user;
+    }
+
+    public static function establishSession(PDO $db,int $userId): void
+    {
+        $stmt=$db->prepare("SELECT id FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$stmt->execute(['id'=>$userId]);
+        if(!$stmt->fetchColumn())throw new RuntimeException('This account is unavailable.');
+        self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_authenticated_at']=time();unset($_SESSION['auth_local_identity']);
+        $db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
     }
 
     public static function loginAsLocalUser(PDO $db,int $userId): void
