@@ -14,6 +14,20 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Production readiness + checklist dashboard
+
+- `/production/readiness` is a staff-only Working-Production readiness workspace.
+- Readiness remains intentionally scoped to the selected Working Production; `/staff` remains the cross-production operational overview.
+- Automated readiness signals currently cover active student/guardian roster coverage, open production form assignments, uncovered upcoming volunteer slots, future active schedule items, draft schedule-change notices, Playbill publication state, and production resource/file counts.
+- Automated signals link back to their authoritative management screens rather than duplicating mutation workflows.
+- Migration 024 adds `production_checklist_items` for staff-defined production tasks with category, notes, due date/time, status, optional active-production-staff assignee, ordering, creator, completion actor, and completion timestamp.
+- Checklist states are `open`, `in_progress`, `blocked`, and `done`; checklist writes are restricted to the current Working Production and audit logged.
+- Readiness percentage is deliberately based only on explicit checklist completion. Automated system warnings are not mixed into a fake weighted readiness score.
+- Overdue incomplete checklist items are surfaced separately.
+- The Production workspace and Operations navigation now link directly to Production Readiness.
+- No checklist/demo items are hardcoded in PHP; the production team defines the checklist records it actually needs.
+- **Runtime verification:** pending local MAMP test after migration 024, including Working Production isolation, guardian-coverage signal, forms/volunteer/schedule/notices/Playbill signals, checklist creation/completion/reopen, overdue display, staff assignee validation, and audit events.
+
 ### Implemented — Staff cross-production dashboard
 
 - `/staff` is now the canonical staff cross-production operations overview.
@@ -27,9 +41,9 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Community moderators see the count of Community posts pending moderation review.
 - Short membership-review, registration-intake, and volunteer-gap lists link directly into the existing authoritative management screens instead of duplicating mutation workflows on the dashboard.
 - Staff Overview is the first Operations navigation destination; `/app` remains the staff member's personal/account-wide Home.
-- No new migration was required for this build; it composes existing canonical production, schedule, registration, membership, form, volunteer and moderation data.
-- A safeguarding incident count is intentionally not fabricated because the current safeguarding experience does not yet have a canonical incident/review queue table; adding that queue remains a safeguarding backlog item.
-- **Runtime verification:** pending local MAMP test, including RBAC-specific cards, concurrent-production calls, uncovered-shift counts, pending membership review, unlinked registration intake, moderation count, and independence from Working Production switching.
+- No new migration was required for this build.
+- A safeguarding incident count is intentionally not fabricated because the current safeguarding experience does not yet have a canonical incident/review queue table.
+- **Runtime verification:** pending local MAMP test.
 
 ### Implemented — Organization-wide member resources
 
@@ -38,58 +52,35 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Approved CTSMD organization membership is the member access gate; production membership is not required for CTSMD-wide resources.
 - Member `/resources` and `/files` now combine approved organization material with all currently authorized active-production material in one account-wide library.
 - Member library filters are organizational only: **All**, **CTSMD**, and active productions. No production switch is required to discover content.
-- Organization file downloads are routed through PHP and re-check approved membership/resource-management authorization before streaming private bytes.
-- Staff `Member Resource Operations` at `/admin/member-resources` is separate from Working-Production `Resource Operations` and `File Operations`.
-- Staff can create, edit, pin, archive/restore, and version organization-wide resources.
-- Organization resources are intentionally all-approved-member in this first slice; narrower organization audiences are deferred until real content demonstrates the need.
-- Archiving removes organization resources from member libraries without deleting domain/file history.
-- Fixed the account library's stale `StorageService::humanBytes()` calls to the canonical `humanSize()` helper while integrating organization files.
+- Staff `Member Resource Operations` is separate from Working-Production `Resource Operations` and `File Operations`.
 - **Runtime verification:** pending local MAMP test after migration 023.
 
 ### Implemented — DB-backed Home + account-wide member libraries
 
-- `/app` is now DB-backed rather than mock-driven.
-- Pending, approved and staff accounts receive intentional Home states based on real CTSMD membership/account data.
+- `/app` is DB-backed rather than mock-driven.
 - Parent/student/volunteer Home aggregates schedule, forms, notifications, volunteer commitments, linked children and active productions across the account rather than requiring a production switch.
-- Guardian-visible schedule items are deduplicated when the same call is already represented through a linked child; the child-labeled event is preferred.
 - Staff Home remains account-wide and shows Working Production only as a separate operations-context card.
-- Member `/files` and `/resources` aggregate accessible content across all active productions with optional filters; filters organize but do not gate discovery.
-- File/resource audience authorization is re-checked item by item.
-- `/admin/files` and `/admin/resources` remain Working-Production operational tools.
-- No migration was required for this build.
+- Member `/files` and `/resources` aggregate accessible content across all active productions with optional filters.
 - **Runtime verification:** pending local MAMP test.
 
 ### Implemented — Registration intake follow-through
 
 - Migration 022 adds `registration_submission_links`, preserving the reviewed connection between a public signup and canonical CTSMD people/household records.
-- Registration Operations now provides a dedicated Intake Review screen for each registrant.
-- Intake Review shows submitted participant/guardian information and likely existing CTSMD matches before staff links anything.
-- Adult matching prioritizes the submitted email address; minor/student matching uses the participant name plus guardian-email relationship context.
-- Staff may explicitly link a registration to existing CTSMD people rather than creating duplicates.
-- When no safe match exists, staff may explicitly create/reuse CTSMD records from the reviewed registration.
-- Minor conversion is transactional: guardian is reused/created by email, Student is reused/created as a managed profile, and the active guardian relationship is established in the same workflow.
-- Adult conversion creates/reuses a canonical person record but does not silently activate, approve or invite the account.
-- Registration intake conversion does **not** automatically add anyone to a production roster or unlock production channels. Casting/participation remains an explicit Production Roster decision.
-- Accepted, waitlisted, declined and cancelled staff status changes now queue family-facing email updates when the status actually changes.
-- Registration linking/creation and status changes remain audit logged.
-- Audition-session/time-slot scheduling is intentionally deferred until CTSMD's real audition workflow demonstrates the needed slot model.
+- Registration Operations provides a dedicated Intake Review screen for each registrant.
+- Staff may explicitly link a registration to existing CTSMD people or create/reuse reviewed household records without silently granting production membership.
+- Accepted, waitlisted, declined and cancelled staff status changes queue family-facing email updates when the status actually changes.
+- Audition-session/time-slot scheduling remains intentionally deferred until CTSMD's real audition workflow demonstrates the needed slot model.
 - Classes, camps and workshops remain in the existing external registration system.
 - **Runtime verification:** pending local MAMP test after migration 022.
 
 ### Implemented — Platform registration + household onboarding
 
 - Public `/join` is the primary CTSMD Connect account-creation path for adults/guardians.
-- Self-registration creates an organization-wide identity; it does not create a class registration, audition registration, production membership, Community entitlement, student access, volunteer clearance or staff authority.
-- Self-registered accounts begin as `pending_verification`; email verification activates sign-in but leaves CTSMD organization membership pending staff approval.
-- Organization membership approval is independent from authentication status and production membership: `pending`, `approved` or `denied`.
-- Approved organization members gain the general member layer; Community enforces approval server-side for organization-wide channels.
-- Production-scoped Community access remains independently granted by active production membership.
+- Email verification activates sign-in but leaves CTSMD organization membership pending staff approval.
+- Approved organization membership, authentication, and production membership remain separate concepts.
 - Parents/guardians create child profiles through Household Setup / Manage Household; child creation and guardian relationship are transactional.
-- Child profiles use the `managed` lifecycle state and Student role without independent login credentials.
 - Creating a child profile does not add the child to a production.
-- Public `/` makes **Create your Connect account** the primary CTA; auditions/selected signups and Playbills are secondary.
-- Migration 021 contains platform-registration and organization-membership lifecycle fields.
-- **Runtime verification:** pending local MAMP test.
+- **Runtime verification:** pending local MAMP test after migration 021.
 
 ### Implemented — Lean public landing + restrained registration
 
@@ -102,13 +93,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Production readiness + checklist dashboard
+### Next — Call sheets + production-day operations
 
-- Add a Working-Production readiness view for staff that answers what must be completed before rehearsals, tech and performances.
-- Surface production-specific readiness signals such as roster/guardian completeness, required forms, volunteer coverage, schedule gaps, pending notices, Playbill readiness, files/resources and staff-defined checklist items.
-- Keep this intentionally production-scoped because it is an operational planning surface; the cross-production `/staff` dashboard remains the organization-level triage view.
-- Support staff-owned checklist items and completion state without hardcoding a single CTSMD production process into PHP.
-- Reuse existing canonical services/counts wherever possible rather than creating duplicate state.
+- Build a Working-Production day-of-operations workspace from existing schedule, Production Groups, attendance, volunteer coverage, notices and readiness data.
+- Allow staff to open a rehearsal/performance date and see the run of day in chronological order with locations, targeted groups, expected attendees and operational notes.
+- Add a first-class call-sheet experience that can be reviewed before publication rather than requiring staff to assemble the same information manually from several screens.
+- Keep member schedule/calendar as the authoritative personal discovery surface; production-day operations is a staff execution tool.
+- Avoid creating a second attendance or volunteer system: deep-link to existing authoritative workflows where action is required.
 
 ### Next — Registration operations later follow-through
 
@@ -132,11 +123,10 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Deactivating or archiving a production removes its production-owned channels and operational content from normal active member views without deleting history.
 - Archived production channels move to a clearly designated read-only archive rather than remaining mixed into current Community.
 - Production-owned schedules, files/resources, notices, roster credits, Playbill data and relevant communication history remain preserved and viewable according to historical access/safeguarding rules.
-- Account-wide direct messages are not automatically hidden just because a production closes; any future production-specific conversation archival must be explicit and must preserve safeguarding/audit history.
+- Account-wide direct messages are not automatically hidden just because a production closes.
 - Student accounts receive a **My Theatre History** area showing verified CTSMD production credits, including production, season/year, character/role, cast/crew participation and Production Group involvement where appropriate.
 - Guardian accounts can view theatre history for linked students.
 - Volunteer accounts receive a service-history version showing productions served, volunteer roles/categories, verified hours, training/credentials and leadership/coordinator service where recorded.
-- Theatre history should distinguish CTSMD-verified records from any future user-entered external credits.
 - Future **Generate Acting Résumé** workflow can build PDF/DOCX résumé output from verified CTSMD credits plus optional external credits, training and special skills.
 - Future volunteer-history exports may support school/community-service verification and recognition.
 - Historical production records are archival records, not hard-deleted domain data.
@@ -145,13 +135,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 - Audition-session management when needed.
 - Casting workflow and role/character assignment improvements.
-- Production checklist/readiness dashboard.
-- Call sheets and production-day operational checklist.
+- Call sheets and production-day operational checklist beyond the first day-of workspace.
 - Production group reuse/templates between shows where appropriate.
 - Production archive/history browser.
 - Season setup and season-level reporting.
 - Attendance aggregate reports, trends and exports.
 - Rich recurring-schedule rules beyond duplicate +7 days.
+- Readiness checklist templates/reuse only if real CTSMD workflows demonstrate useful repeatable patterns.
 
 ## Community backlog
 
@@ -175,7 +165,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Message attachments using the shared storage layer, with safeguarding-aware download access.
 - Staff escalation/reporting workflow.
 - Safeguarded group conversations where product rules allow them.
-- Messages and unread state remain account-wide for all users, including staff; working-production context must never filter the inbox.
+- Messages and unread state remain account-wide for all users, including staff; Working Production must never filter the inbox.
 
 ## Forms backlog
 
@@ -221,7 +211,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Full daily digest composer/worker for digest-enabled users; preference storage already exists.
 - Additional reminder types as real operations identify them.
 - Push notifications later.
-- Notifications remain account-wide and must not be hidden by staff working-production context.
+- Notifications remain account-wide and must not be hidden by staff Working Production context.
 
 ## Home/dashboard backlog
 
@@ -266,7 +256,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Improve duplicate-account recovery so an existing invited/active email gets a helpful activation/sign-in/recovery path without leaking account existence.
 - Consider persistent server-side session storage if Bluehost/PHP session behavior requires it.
 - Validate Bluehost/PHP upload limits (`upload_max_filesize`, `post_max_size`) and write permissions for the configured `STORAGE_PATH`.
-- Add remote/object-storage driver only if shared-hosting filesystem constraints require one later.
 - Validate Bluehost cron availability, PHP CLI path and authenticated SMTP settings; configure queue/reminder workers in deployment.
 - Automated tests, especially auth/RBAC/storage/email/registration/membership/access regression tests.
 - Accessibility review and keyboard/focus polish.
@@ -282,11 +271,12 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 ## Architectural notes
 
 - Multiple productions may be active concurrently.
-- Production activity is independent from the per-session working-production selector.
-- **Working-production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
+- Production activity is independent from the per-session Working Production selector.
+- **Working Production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
 - **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and member files/resources aggregate everything the account is permitted to see across active productions and the approved organization layer.
-- **Staff operational overview is also account/organization scoped:** `/staff` aggregates active productions and permitted operational queues, while Working Production remains the editing context for one show.
-- Staff/admin accounts participate in both scopes: production operations may be scoped to the selected working production, while Messages, Community, Notifications, personal Calendar, unread state and `/staff` remain account-wide/cross-production.
+- **Staff operational overview is also organization scoped:** `/staff` aggregates active productions and permitted operational queues, while Working Production remains the editing context for one show.
+- **Production readiness is Working-Production scoped:** it evaluates one show's operational state and checklist without affecting account-wide communication or staff overview behavior.
+- Staff/admin accounts participate in both scopes: production operations may be scoped to the selected Working Production, while Messages, Community, Notifications, personal Calendar, unread state and `/staff` remain account-wide/cross-production.
 - Production/library filters are organizational filters only; they must never function as required context gates that can hide unread or actionable information.
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
