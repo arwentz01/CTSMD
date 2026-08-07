@@ -30,7 +30,6 @@ DELETE FROM productions;
 DELETE FROM family_relationships;
 DELETE FROM users;
 
--- Reset demo IDs so explicit IDs and relational references remain deterministic.
 ALTER TABLE schedule_notice_deliveries AUTO_INCREMENT = 1;
 ALTER TABLE app_notifications AUTO_INCREMENT = 1;
 ALTER TABLE audit_events AUTO_INCREMENT = 1;
@@ -179,3 +178,23 @@ INSERT INTO messages (conversation_id, sender_user_id, body, created_at) VALUES
 (1,3,'Bring both your black jazz shoes and character shoes, please. We’ll check both with the costume.','2026-08-06 16:02:00'),
 (1,1,'Thanks! We’ll make sure she has both.','2026-08-06 16:22:00'),
 (2,4,'Can you help with the lobby table?','2026-08-04 12:15:00');
+
+-- Migration-aware runtime state. Re-establish active production and flexible audience JSON after every demo reset.
+UPDATE productions
+SET is_active = CASE WHEN status = 'current' THEN 1 ELSE 0 END,
+    activated_at = CASE WHEN status = 'current' THEN CURRENT_TIMESTAMP ELSE NULL END,
+    deactivated_at = CASE WHEN status = 'archived' THEN CURRENT_TIMESTAMP ELSE NULL END;
+
+UPDATE channels
+SET read_audiences_json = CASE read_scope
+        WHEN 'all_members' THEN JSON_ARRAY('all_members')
+        WHEN 'production_members' THEN JSON_ARRAY('production_members')
+        WHEN 'staff' THEN JSON_ARRAY('staff')
+        ELSE JSON_ARRAY('staff')
+    END,
+    post_audiences_json = CASE post_scope
+        WHEN 'all_members' THEN JSON_ARRAY('all_members')
+        WHEN 'production_members' THEN JSON_ARRAY('production_members')
+        WHEN 'staff' THEN JSON_ARRAY('staff')
+        ELSE JSON_ARRAY('staff')
+    END;
