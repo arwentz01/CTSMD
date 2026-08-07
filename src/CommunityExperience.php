@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ModerationService.php';
 
 final class CommunityExperience
 {
@@ -39,15 +40,21 @@ final class CommunityExperience
         $channelId = filter_input(INPUT_POST, 'channel_id', FILTER_VALIDATE_INT) ?: 0;
         $body = trim((string)($_POST['body'] ?? ''));
         try {
-            self::createPost($db, $user, (int)$channelId, $body);
-            self::flash('success', 'Post published to the channel.');
+            $status = self::createPost($db, $user, (int)$channelId, $body);
+            if ($status === 'pending') {
+                self::flash('success', 'Your post is awaiting moderator review and is not visible yet.');
+            } elseif ($status === 'rejected') {
+                self::flash('error', 'This post contains language that is not permitted in CTSMD Community.');
+            } else {
+                self::flash('success', 'Post published to the channel.');
+            }
         } catch (RuntimeException $e) {
             self::flash('error', $e->getMessage());
         }
         self::redirect($basePath . '/channels/view?id=' . (int)$channelId);
     }
 
-    private static function createPost(PDO $db, array $user, int $channelId, string $body): void
+    private static function createPost(PDO $db, array $user, int $channelId, string $body): string
     {
         if ($channelId < 1) throw new RuntimeException('That channel could not be found.');
         if ($body === '' || mb_strlen($body) > 5000) throw new RuntimeException('Write a post up to 5,000 characters.');
@@ -59,21 +66,46 @@ final class CommunityExperience
             if (!$channel || $channel['archived_at'] !== null) throw new RuntimeException('That channel is no longer available.');
             if (!self::canRead($db,$user,$channel)) throw new RuntimeException('You do not have access to that channel.');
             if (!self::canPost($db,$user,$channel)) throw new RuntimeException('This channel is read-only for your account.');
-            $insert = $db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,0,NULL,CURRENT_TIMESTAMP)');
-            $insert->execute(['channel'=>$channelId,'author'=>(int)$user['id'],'body'=>$body]);
+
+            // Moderation is exception-based: clean posts publish immediately. If the scan fails,
+            // the transaction fails closed and no post becomes visible.
+            $decision = ModerationService::evaluate($db, $body);
+            $status = (string)($decision['status'] ?? '');
+            if (!in_array($status, ['published','pending','rejected'], true)) {
+                throw new RuntimeException('We could not verify this post right now. Please try again.');
+            }
+            $term = is_array($decision['term'] ?? null) ? $decision['term'] : null;
+            $termId = $term ? (int)$term['id'] : null;
+            $reason = $decision['reason'] ?? null;
+
+            $insert = $db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,moderation_status,moderation_term_id,moderation_reason,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,:status,:term_id,:reason,0,NULL,CURRENT_TIMESTAMP)');
+            $insert->execute([
+                'channel'=>$channelId,
+                'author'=>(int)$user['id'],
+                'body'=>$body,
+                'status'=>$status,
+                'term_id'=>$termId,
+                'reason'=>$reason,
+            ]);
             $postId = (int)$db->lastInsertId();
-            self::audit($db,(int)$user['id'],'community.post_created','channel_post',$postId,'Published a community channel post.',['channel_id'=>$channelId,'channel_name'=>$channel['name']]);
+
+            if ($status === 'published') {
+                self::audit($db,(int)$user['id'],'community.post_created','channel_post',$postId,'Published a community channel post.',['channel_id'=>$channelId,'channel_name'=>$channel['name'],'moderation_status'=>'published']);
+            } else {
+                self::audit($db,(int)$user['id'],'community.post_flagged','channel_post',$postId,'Community post intercepted by moderation.',['channel_id'=>$channelId,'channel_name'=>$channel['name'],'moderation_status'=>$status,'moderation_term_id'=>$termId,'category'=>$term['category']??null,'severity'=>$term['severity']??null]);
+            }
             $db->commit();
+            return $status;
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             if ($e instanceof RuntimeException) throw $e;
-            throw new RuntimeException('The post could not be published.');
+            throw new RuntimeException('We could not verify and publish this post right now. Please try again.');
         }
     }
 
     private static function channels(PDO $db, array $user): array
     {
-        $rows = $db->query("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count,MAX(cp.created_at) latest_at FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id WHERE c.archived_at IS NULL GROUP BY c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title,p.is_active,c.sort_order ORDER BY c.sort_order,c.name")->fetchAll();
+        $rows = $db->query("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count,MAX(cp.created_at) latest_at FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id AND cp.moderation_status='published' WHERE c.archived_at IS NULL GROUP BY c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title,p.is_active,c.sort_order ORDER BY c.sort_order,c.name")->fetchAll();
         $visible=[];
         foreach($rows as $row){ if(self::canRead($db,$user,$row)){ $row['can_post']=self::canPost($db,$user,$row); $visible[]=$row; } }
         return $visible;
@@ -86,7 +118,7 @@ final class CommunityExperience
         $stmt->execute(['id'=>$id]); $channel=$stmt->fetch();
         if(!$channel || !self::canRead($db,$user,$channel)) return null;
         $channel['can_post']=self::canPost($db,$user,$channel);
-        $posts=$db->prepare("SELECT cp.id,cp.body,cp.pinned,cp.reactions_json,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id ORDER BY cp.pinned DESC,cp.created_at DESC,cp.id DESC");
+        $posts=$db->prepare("SELECT cp.id,cp.body,cp.pinned,cp.reactions_json,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' ORDER BY cp.pinned DESC,cp.created_at DESC,cp.id DESC");
         $posts->execute(['id'=>$id]); $channel['posts']=$posts->fetchAll(); return $channel;
     }
 
