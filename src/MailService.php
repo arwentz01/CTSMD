@@ -44,6 +44,7 @@ final class MailService
     public static function process(PDO $db, string $projectRoot, int $limit = 25): array
     {
         $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;
+        $db->exec("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
         for($i=0;$i<$limit;$i++){
             $db->beginTransaction();
             try{
@@ -58,8 +59,8 @@ final class MailService
                 $db->prepare("UPDATE email_queue SET status='sent',sent_at=CURRENT_TIMESTAMP,last_error=NULL WHERE id=:id")->execute(['id'=>(int)$row['id']]);
                 self::log($db,(int)$row['id'],self::driver(),'sent',null);$sent++;
             }catch(Throwable $e){
-                $attempts=(int)$row['attempts']+1;$status=$attempts>=3?'failed':'queued';$delay=min(60,$attempts*5);
-                $db->prepare("UPDATE email_queue SET status=:status,available_at=DATE_ADD(NOW(),INTERVAL :delay MINUTE),last_error=:error WHERE id=:id")->execute(['status'=>$status,'delay'=>$delay,'error'=>mb_substr($e->getMessage(),0,1000),'id'=>(int)$row['id']]);
+                $attempts=(int)$row['attempts']+1;$status=$attempts>=3?'failed':'queued';$delay=min(60,$attempts*5);$available=(new DateTimeImmutable('+'.$delay.' minutes'))->format('Y-m-d H:i:s');
+                $db->prepare("UPDATE email_queue SET status=:status,available_at=:available,last_error=:error WHERE id=:id")->execute(['status'=>$status,'available'=>$available,'error'=>mb_substr($e->getMessage(),0,1000),'id'=>(int)$row['id']]);
                 self::log($db,(int)$row['id'],self::driver(),'failed',$e->getMessage());$failed++;
             }
         }
