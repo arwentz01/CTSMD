@@ -34,6 +34,11 @@ if ($route === '/navigation') {
     NavigationReview::render($detectedBasePath, $data);
 }
 
+require_once __DIR__ . '/src/ProductionContextExperience.php';
+if (ProductionContextExperience::handles($route)) {
+    ProductionContextExperience::render($detectedBasePath);
+}
+
 require_once __DIR__ . '/src/PeopleExperience.php';
 if (PeopleExperience::handles($route)) {
     PeopleExperience::render($route, $detectedBasePath);
