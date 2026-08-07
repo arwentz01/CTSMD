@@ -40,6 +40,11 @@ if (VolunteerExperience::handles($route)) {
     VolunteerExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/ProductionExperience.php';
+if (ProductionExperience::handles($route)) {
+    ProductionExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/VisualPass3.php';
 if (VisualPass3::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
