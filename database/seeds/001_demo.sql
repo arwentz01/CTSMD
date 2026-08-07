@@ -18,8 +18,10 @@ DELETE FROM volunteer_requirements;
 DELETE FROM volunteer_profiles;
 DELETE FROM channel_posts;
 DELETE FROM channels;
+DELETE FROM schedule_change_notices;
 DELETE FROM schedule_items;
 DELETE FROM announcements;
+DELETE FROM production_memberships;
 DELETE FROM productions;
 DELETE FROM family_relationships;
 DELETE FROM users;
@@ -38,8 +40,10 @@ ALTER TABLE volunteer_requirements AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_profiles AUTO_INCREMENT = 1;
 ALTER TABLE channel_posts AUTO_INCREMENT = 1;
 ALTER TABLE channels AUTO_INCREMENT = 1;
+ALTER TABLE schedule_change_notices AUTO_INCREMENT = 1;
 ALTER TABLE schedule_items AUTO_INCREMENT = 1;
 ALTER TABLE announcements AUTO_INCREMENT = 1;
+ALTER TABLE production_memberships AUTO_INCREMENT = 1;
 ALTER TABLE productions AUTO_INCREMENT = 1;
 ALTER TABLE family_relationships AUTO_INCREMENT = 1;
 ALTER TABLE users AUTO_INCREMENT = 1;
@@ -61,6 +65,12 @@ INSERT INTO productions (id, title, season, status) VALUES
 (1, 'Matilda Jr.', 'Summer 2026', 'current'),
 (2, 'The Lion, the Witch and the Wardrobe', 'Spring 2026', 'archived'),
 (3, 'Frozen Jr.', 'Winter 2025', 'archived');
+
+INSERT INTO production_memberships (production_id, user_id, audience_type, participation_role) VALUES
+(1,2,'student','Cast'),
+(1,1,'guardian','Parent / Guardian'),
+(1,3,'staff','Production Manager'),
+(1,4,'staff','Director');
 
 INSERT INTO announcements (production_id, author_user_id, title, body, context_label, tone, published_at, pinned) VALUES
 (1, 3, 'Tech week schedule updated', 'Thursday call time moved to 5:30 PM. Please review the updated family notes before arrival.', 'Current Production', 'urgent', '2026-08-06 16:45:00', 1),
