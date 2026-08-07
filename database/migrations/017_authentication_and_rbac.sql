@@ -94,20 +94,16 @@ INSERT IGNORE INTO auth_permissions (code,name,description) VALUES
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
 WHERE r.code='production_staff' AND p.code IN ('production.manage','resources.manage','playbill.manage','forms.manage');
-
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
 WHERE r.code='moderator' AND p.code IN ('community.manage','community.moderate');
-
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
 WHERE r.code='safeguarding' AND p.code='safeguarding.manage';
-
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
-SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
-WHERE r.code='administrator';
+SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p WHERE r.code='administrator';
 
--- One-time compatibility bootstrap from the prototype display-role labels.
+-- One-time compatibility bootstrap from prototype labels. Runtime access does not use these strings.
 INSERT IGNORE INTO auth_user_roles (user_id,role_id)
 SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='student' WHERE LOWER(u.display_role) LIKE '%student%';
 INSERT IGNORE INTO auth_user_roles (user_id,role_id)
@@ -120,5 +116,7 @@ INSERT IGNORE INTO auth_user_roles (user_id,role_id)
 SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='moderator' WHERE LOWER(u.display_role) LIKE '%director%' OR LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%staff%';
 INSERT IGNORE INTO auth_user_roles (user_id,role_id)
 SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='safeguarding' WHERE LOWER(u.display_role) LIKE '%director%' OR LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%staff%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='administrator' WHERE LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%admin%';
 
 UPDATE users SET account_status='active' WHERE is_demo_current_user=1;
