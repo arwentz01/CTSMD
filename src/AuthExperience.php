@@ -5,14 +5,16 @@ declare(strict_types=1);
 require_once __DIR__.'/Database.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/MailService.php';
+require_once __DIR__.'/PlatformOnboardingExperience.php';
 
 final class AuthExperience
 {
-    private const ROUTES=['/login','/logout','/activate','/forgot-password','/reset-password'];
+    private const ROUTES=['/login','/logout','/activate','/forgot-password','/reset-password','/join','/verify-email'];
     public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath):never
     {
+        if(PlatformOnboardingExperience::isPublic($route))PlatformOnboardingExperience::render($route,$basePath);
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['auth_csrf']??=bin2hex(random_bytes(24));
         if($route==='/logout'){if($_SERVER['REQUEST_METHOD']==='POST')self::csrf();Auth::logout();self::redirect($basePath.'/login');}
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath);
@@ -49,7 +51,7 @@ final class AuthExperience
         $title=match($route){'/activate'=>'Activate your account','/forgot-password'=>'Reset your password','/reset-password'=>'Choose a new password',default=>'Welcome back'};
         header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $e($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/auth.css') ?>"></head><body><main class="auth-shell"><section class="auth-brand"><small>CHILDREN'S THEATRE OF SOUTHERN MARYLAND</small><h1>CTSMD <span>Connect</span></h1><p>One secure place for productions, families, volunteers, schedules and communication.</p></section><section class="auth-card"><header><small>CTSMD CONNECT</small><h2><?= $e($title) ?></h2></header><?php if($flash):?><div class="auth-flash <?= $e($flash['type']) ?>"><?= $e($flash['message']) ?></div><?php endif;?>
         <?php if($route==='/login'):?>
-        <form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><input type="hidden" name="return_to" value="<?= $e($returnTo) ?>"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button type="submit">Sign in</button></form><footer><a href="<?= $url('/forgot-password') ?>">Forgot password?</a><?php if(Auth::localIdentitySwitchEnabled()):?><a href="<?= $url('/dev/identity') ?>">Local test identities</a><?php endif;?></footer>
+        <form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><input type="hidden" name="return_to" value="<?= $e($returnTo) ?>"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button type="submit">Sign in</button></form><footer><a href="<?= $url('/join') ?>">Create a parent/guardian account</a><a href="<?= $url('/forgot-password') ?>">Forgot password?</a><?php if(Auth::localIdentitySwitchEnabled()):?><a href="<?= $url('/dev/identity') ?>">Local test identities</a><?php endif;?></footer>
         <?php elseif($route==='/activate'):?>
         <?php if(!$invitation):?><div class="auth-empty"><b>This invitation is invalid or expired.</b><p>Ask a CTSMD administrator to issue a new invitation.</p></div><?php else:?><p class="auth-intro">Hi <?= $e($invitation['first_name']) ?>. Create a password to activate <b><?= $e($invitation['email']) ?></b>.</p><form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><input type="hidden" name="token" value="<?= $e($token) ?>"><label>New password<input type="password" name="password" minlength="12" autocomplete="new-password" required><small>At least 12 characters.</small></label><label>Confirm password<input type="password" name="password_confirm" minlength="12" autocomplete="new-password" required></label><button type="submit">Activate account</button></form><?php endif;?>
         <?php elseif($route==='/forgot-password'):?>
