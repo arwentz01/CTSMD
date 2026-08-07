@@ -1,3 +1,5 @@
 .DS_Store
 .env
 /storage/logs/*.log
+/storage/private/*
+!/storage/private/.htaccess
