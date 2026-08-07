@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionContext.php';
 
 final class ScheduleCreateExperience
 {
@@ -28,7 +29,7 @@ final class ScheduleCreateExperience
         }
 
         $_SESSION['schedule_create_csrf'] ??= bin2hex(random_bytes(24));
-        $production = self::currentProduction($db);
+        $production = ProductionContext::selected($db, $user);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             self::handlePost($db, $user, $production, $basePath);
@@ -46,13 +47,13 @@ final class ScheduleCreateExperience
         }
 
         if (!$production) {
-            self::flash('error', 'There is no current production. Make a production current before creating schedule items.');
+            self::flash('error', 'Select an active production before creating schedule items.');
             self::redirect($basePath . '/admin/productions');
         }
 
         try {
             $itemId = self::createScheduleItem($db, $user, $production, $_POST);
-            $_SESSION['production_flash'] = ['type' => 'success', 'message' => 'Schedule item created. Review it below or return to the schedule.'];
+            $_SESSION['production_flash'] = ['type' => 'success', 'message' => 'Schedule item created in ' . $production['title'] . '. Review it below or return to the schedule.'];
             self::redirect($basePath . '/production/edit?id=' . $itemId);
         } catch (RuntimeException $e) {
             self::flash('error', $e->getMessage());
@@ -62,6 +63,11 @@ final class ScheduleCreateExperience
 
     private static function createScheduleItem(PDO $db, array $user, array $production, array $input): int
     {
+        $selected = ProductionContext::selected($db, $user);
+        if (!$selected || (int)$selected['id'] !== (int)$production['id']) {
+            throw new RuntimeException('The working production changed before this item was saved. Review the production selector and try again.');
+        }
+
         $title = trim((string)($input['title'] ?? ''));
         $location = trim((string)($input['location'] ?? ''));
         $itemType = trim((string)($input['item_type'] ?? 'rehearsal'));
@@ -181,7 +187,7 @@ final class ScheduleCreateExperience
         if (!empty($item['family_call_at'])) {
             $parts[] = 'Family call: ' . (new DateTimeImmutable($item['family_call_at']))->format('g:i A') . '.';
         }
-        $parts[] = 'Please review the production schedule in CTSMD Connect for the current details.';
+        $parts[] = 'Please review the selected production schedule in CTSMD Connect for the current details.';
         return implode(' ', $parts);
     }
 
@@ -206,12 +212,6 @@ final class ScheduleCreateExperience
         return $date;
     }
 
-    private static function currentProduction(PDO $db): ?array
-    {
-        $row = $db->query("SELECT id, title, season, status FROM productions WHERE status = 'current' ORDER BY id DESC LIMIT 1")->fetch();
-        return $row ?: null;
-    }
-
     private static function currentUser(PDO $db): array
     {
         $row = $db->query("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user = 1 AND active = 1 LIMIT 1")->fetch();
@@ -225,8 +225,8 @@ final class ScheduleCreateExperience
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $flash = $_SESSION['schedule_create_flash'] ?? null;
-        unset($_SESSION['schedule_create_flash']);
+        $flash = $_SESSION['schedule_create_flash'] ?? $_SESSION['production_context_flash'] ?? null;
+        unset($_SESSION['schedule_create_flash'], $_SESSION['production_context_flash']);
         $defaultStart = (new DateTimeImmutable('tomorrow 18:00'))->format('Y-m-d\\TH:i');
         $defaultEnd = (new DateTimeImmutable('tomorrow 20:30'))->format('Y-m-d\\TH:i');
 
@@ -246,17 +246,17 @@ final class ScheduleCreateExperience
 ]); ?><div class="sc-page">
 <?php if ($flash): ?><div class="sc-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
 <?php if (!$production): ?>
-<section class="sc-empty"><small>NO CURRENT PRODUCTION</small><h2>Create the production context first.</h2><p>Schedule items belong to one production. Make a planning production current before building its schedule.</p><a class="button" href="<?= $url('/admin/productions') ?>">Manage productions</a></section>
+<section class="sc-empty"><small>NO ACTIVE PRODUCTION</small><h2>Select the production context first.</h2><p>Schedule items belong to one active production. Activate a show or switch the working production before building its schedule.</p><a class="button" href="<?= $url('/admin/productions') ?>">Manage productions</a></section>
 <?php else: ?>
-<section class="sc-hero"><div><small><?= $esc(strtoupper($production['title'])) ?></small><h2>Add something to the callboard.</h2><p>Create the operational event first, then decide whether CTSMD should prepare a communication draft for its audience.</p></div><a href="<?= $url('/schedule') ?>">← Back to schedule</a></section>
+<section class="sc-hero"><div><small><?= $esc(strtoupper($production['title'])) ?></small><h2>Add something to the callboard.</h2><p>This item will be created in the currently selected production workspace.</p></div><a href="<?= $url('/schedule') ?>">← Back to schedule</a></section>
 <div class="sc-layout"><form class="sc-form" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['schedule_create_csrf']) ?>">
 <label>Title<input name="title" maxlength="190" required placeholder="Full Cast Rehearsal"></label>
 <div class="sc-pair"><label>Activity type<select name="item_type"><option value="rehearsal">Rehearsal</option><option value="performance">Performance</option><option value="meeting">Meeting</option><option value="orientation">Orientation</option><option value="volunteer">Volunteer activity</option><option value="call">Call / check-in</option><option value="other">Other</option></select></label><label>Audience<select name="visibility"><option value="all">Everyone in production</option><option value="family">Students + guardians</option><option value="staff">Staff only</option></select></label></div>
 <div class="sc-pair"><label>Start<input type="datetime-local" name="starts_at" required value="<?= $esc($defaultStart) ?>"></label><label>End<input type="datetime-local" name="ends_at" value="<?= $esc($defaultEnd) ?>"></label></div>
 <div class="sc-pair"><label>Family call <span>optional</span><input type="datetime-local" name="family_call_at"></label><label>Location<input name="location" maxlength="190" required placeholder="Main Stage"></label></div>
-<label class="sc-check"><input type="checkbox" name="prepare_notice" value="1" checked><span><b>Prepare a communication draft</b><small>Creates a reviewable draft for the selected audience. Nothing is sent automatically.</small></span></label>
+<label class="sc-check"><input type="checkbox" name="prepare_notice" value="1" checked><span><b>Prepare a communication draft</b><small>Creates a reviewable draft for this production's selected audience. Nothing is sent automatically.</small></span></label>
 <footer><a href="<?= $url('/schedule') ?>">Cancel</a><button class="button" type="submit">Create schedule item</button></footer></form>
-<aside class="sc-side"><small>WHAT HAPPENS NEXT</small><h3>The schedule becomes the source of truth.</h3><ol><li>The item is written to the current production.</li><li>The audience is resolved from active production memberships.</li><li>If selected, a communication draft is prepared.</li><li>The creation is recorded in the audit trail.</li></ol><div><b>No automatic blast.</b><span>Staff still reviews and publishes communication separately.</span></div></aside></div>
+<aside class="sc-side"><small>WHAT HAPPENS NEXT</small><h3>The schedule becomes the source of truth.</h3><ol><li>The item is written to <?= $esc($production['title']) ?>.</li><li>The audience is resolved from that production's active memberships.</li><li>If selected, a communication draft is prepared.</li><li>The creation is recorded in the audit trail.</li></ol><div><b>No automatic blast.</b><span>Staff still reviews and publishes communication separately.</span></div></aside></div>
 <?php endif; ?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
