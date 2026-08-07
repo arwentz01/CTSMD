@@ -73,7 +73,7 @@ INSERT IGNORE INTO auth_roles (code,name,description,system_role) VALUES
 ('member','Member','Standard adult/member access.',1),
 ('student','Student','Student account with safeguarding restrictions.',1),
 ('volunteer','Volunteer','Volunteer opportunities, readiness, training and service history.',1),
-('production_staff','Production Staff','Production schedule, roster, attendance and production operations.',1),
+('production_staff','Production Staff','Broad day-to-day theatre operations excluding restricted safeguarding/account administration.',1),
 ('moderator','Moderator','Community moderation operations.',1),
 ('safeguarding','Safeguarding','Restricted safeguarding review permissions.',1),
 ('administrator','Administrator','Organization-wide administration and access management.',1);
@@ -93,10 +93,10 @@ INSERT IGNORE INTO auth_permissions (code,name,description) VALUES
 
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
-WHERE r.code='production_staff' AND p.code IN ('production.manage','resources.manage','playbill.manage','forms.manage');
+WHERE r.code='production_staff' AND p.code IN ('people.manage','production.manage','community.manage','community.moderate','volunteer.manage','forms.manage','resources.manage','playbill.manage');
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
-WHERE r.code='moderator' AND p.code IN ('community.manage','community.moderate');
+WHERE r.code='moderator' AND p.code IN ('community.moderate');
 INSERT IGNORE INTO auth_role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM auth_roles r JOIN auth_permissions p
 WHERE r.code='safeguarding' AND p.code='safeguarding.manage';
