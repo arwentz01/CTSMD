@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/ScheduleAudience.php';
+require_once __DIR__.'/TheatreHistoryService.php';
 
 final class CastingService
 {
@@ -52,6 +53,7 @@ final class CastingService
         $db->beginTransaction();try{
             $s=$db->prepare('SELECT * FROM production_casting_records WHERE id=:id AND production_id=:production FOR UPDATE');$s->execute(['id'=>$recordId,'production'=>$productionId]);$before=$s->fetch();if(!$before)throw new RuntimeException('That casting record no longer exists in this production.');
             $decision=in_array($status,['offered','cast','not_cast','withdrawn'],true);$u=$db->prepare('UPDATE production_casting_records SET casting_status=:status,role_title=:role,participation_track=:track,staff_notes=:notes,decided_by_user_id=:actor,decided_at='.($decision?'CURRENT_TIMESTAMP':'decided_at').' WHERE id=:id');$u->execute(['status'=>$status,'role'=>$role!==''?$role:null,'track'=>$track!==''?$track:null,'notes'=>$notes!==''?$notes:null,'actor'=>$actorId,'id'=>$recordId]);
+            if(!empty($before['production_membership_id']))TheatreHistoryService::syncStudentCredit($db,$productionId,(int)$before['user_id'],$actorId);
             self::audit($db,$actorId,'casting.decision_updated',$recordId,'Updated casting decision.',['production_id'=>$productionId,'before_status'=>$before['casting_status'],'after_status'=>$status,'role_title'=>$role?:null,'participation_track'=>$track?:null]);$db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The casting decision could not be saved.');}
     }
@@ -68,6 +70,7 @@ final class CastingService
             $db->prepare("UPDATE production_group_members SET status='inactive',updated_at=CURRENT_TIMESTAMP WHERE production_membership_id=:membership")->execute(['membership'=>$membershipId]);
             if($groupIds){$link=$db->prepare("INSERT INTO production_group_members (group_id,production_membership_id,status,added_by_user_id) VALUES (:group_id,:membership,'active',:actor) ON DUPLICATE KEY UPDATE status='active',added_by_user_id=VALUES(added_by_user_id),updated_at=CURRENT_TIMESTAMP");foreach($groupIds as $groupId)$link->execute(['group_id'=>$groupId,'membership'=>$membershipId,'actor'=>$actorId]);}
             $db->prepare('UPDATE production_casting_records SET production_membership_id=:membership,rostered_by_user_id=:actor,rostered_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['membership'=>$membershipId,'actor'=>$actorId,'id'=>$recordId]);
+            TheatreHistoryService::syncStudentCredit($db,$productionId,(int)$record['user_id'],$actorId);
             self::audit($db,$actorId,'casting.finalized_to_roster',$recordId,'Finalized cast member to production roster.',['production_id'=>$productionId,'user_id'=>(int)$record['user_id'],'membership_id'=>$membershipId,'role_title'=>$role,'group_ids'=>$groupIds,'auto_guardian_user_ids'=>$guardianIds]);$db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('Casting could not be finalized to the production roster.');}
     }
