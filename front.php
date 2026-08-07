@@ -147,6 +147,9 @@ if (ProductionLifecycleExperience::handles($route)) ProductionLifecycleExperienc
 require_once __DIR__ . '/src/ProductionReadinessExperience.php';
 if (ProductionReadinessExperience::handles($route)) ProductionReadinessExperience::render($detectedBasePath);
 
+require_once __DIR__ . '/src/ProductionDayExperience.php';
+if (ProductionDayExperience::handles($route)) ProductionDayExperience::render($route, $detectedBasePath);
+
 require_once __DIR__ . '/src/ProductionWorkspaceExperience.php';
 if (ProductionWorkspaceExperience::handles($route)) ProductionWorkspaceExperience::render($detectedBasePath);
 
