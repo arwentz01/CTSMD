@@ -14,6 +14,24 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Calendar + schedule lifecycle
+
+- First-class Calendar route at `/calendar` in the Theatre navigation.
+- Month, week and 90-day agenda views.
+- Consolidated personal schedule across all active productions the current account can access.
+- Production filter for narrowing one active show.
+- Production Group filter; whole-production calls remain visible when they apply to the selected group.
+- Guardian child-focus filter resolves the selected child’s real production/group permissions rather than cosmetically filtering the guardian view.
+- Cross-production overlap/conflict warnings run against the actual visible personal event set.
+- Cancelled events remain in calendar history and ICS feeds with cancelled state instead of being hard-deleted.
+- Staff can duplicate a schedule item seven days forward while preserving production/group targeting.
+- Staff can cancel an event from Calendar; cancellation creates a schedule communication draft for the affected audience.
+- Per-user revocable private calendar-subscription token.
+- ICS feed at `/calendar/feed?token=...` for Apple/Google/Outlook subscription; the UI renders an absolute subscription URL and allows token rotation.
+- Calendar feed permissions are resolved from the subscription owner’s current active production/group access each time the feed is requested.
+- Calendar lifecycle and subscription schema live in migration 016.
+- **Runtime verification:** pending local MAMP test after migration 016, including subscribing to the private ICS URL from an external calendar client.
+
 ### Implemented — Volunteer hours, training + credential automation
 
 - Member volunteer-hours history at `/volunteer/history` with verified totals and entry detail.
@@ -26,10 +44,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Verified training automatically approves/refreshes the linked volunteer credential and expiration date when configured.
 - Approved Forms can be mapped to volunteer requirements so form approval updates readiness automatically.
 - Manual verified hours can be entered by staff with date, production context and notes.
-- Training, hours, mappings and credential automation preserve existing volunteer requirement/credential eligibility checks rather than creating a parallel readiness model.
-- Core automated transitions have database-level safety-net triggers in migration 015 so alternate existing write paths cannot silently bypass hours/readiness updates.
-- Volunteer Development is available in staff Operations navigation; Volunteer remains active for member Training/Hours routes.
-- Audit events record staff-created training, verified training, manual hours and form-to-requirement mappings.
+- Core automated transitions have database-level safety-net triggers in migration 015.
 - **Runtime verification:** pending local MAMP test after migration 015, including MySQL/MariaDB trigger creation.
 
 ### Implemented — Dynamic forms
@@ -41,26 +56,17 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Choice options are stored with the field definition and validated server-side.
 - Definition version increments whenever structured fields are changed.
 - Existing forms without structured fields continue through the legacy Forms experience.
-- Structured assignments automatically render through the dynamic member form experience.
-- Submitted answers are stored as field-level records rather than one response-text blob.
-- Each structured submission stores the form-definition version and immutable definition snapshot used for that response.
-- Later edits to field labels/options do not rewrite historical submitted answers/snapshots.
-- Structured forms continue using the existing assignment, due-date, review-required, approval/return and notification workflows.
-- Staff review shows each submitted structured answer by its submitted label/type.
-- Dynamic form definition/submission/review writes are audited.
-- File-upload fields remain deferred until the shared storage layer exists.
+- Submitted answers are stored as field-level records with immutable definition snapshots.
 - **Runtime verification:** pending local MAMP test after migration 014.
 
 ### Implemented — Attendance
 
-- Attendance workspace at `/attendance` within the selected production context.
-- Expected attendees are derived from schedule audience and Production Groups rather than maintained in a duplicate roster.
+- Attendance workspace at `/attendance` within selected production context.
+- Expected attendees derive from schedule audience and Production Groups.
 - Guardian schedule visibility does not make guardians expected attendees.
 - Staff roll-call workspace at `/attendance/take?id=...`.
 - Attendance states: unmarked, present, absent, late, excused and left early.
-- Optional staff notes and marker/timestamp history.
-- Students may report their own absence when expected for a call; guardians can report only for actively related expected students.
-- Family absence reports do not silently alter attendance; staff acknowledges the report before it marks the student excused.
+- Students/guardians can submit eligible absence reports for staff acknowledgment.
 - **Runtime verification:** pending local MAMP test after migration 013.
 
 ### Implemented — Community moderation
@@ -76,20 +82,10 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production-native groups such as Full Cast, Ensemble, Principals and Tech Crew.
 - Schedule items may target whole production or one/more Production Groups.
 - Guardians inherit appropriate family-facing visibility without becoming group members.
-- Schedule notices and Attendance use the same resolved audience rules.
+- Schedule notices, Attendance and Calendar use the same resolved audience rules.
 - **Runtime verification:** pending local MAMP test after migration 011.
 
 ## Near-term build order
-
-### Next — Calendar
-
-- Month/week/agenda views.
-- Consolidated personal calendar across concurrent productions.
-- Production/group/child filters.
-- Conflict detection across concurrent productions.
-- ICS export/subscription for Apple/Google/Outlook calendars.
-- Schedule cancellation/archive lifecycle.
-- Repeat/duplicate schedule items.
 
 ### Next — Production authentication + RBAC
 
@@ -149,8 +145,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production group reuse/templates between shows where appropriate.
 - Production archive/history browser.
 - Season setup and season-level reporting.
-- Cross-production conflict detection.
 - Attendance aggregate reports, trends and exports beyond the per-call dashboard.
+- Rich recurring-schedule rules beyond duplicate +7 days.
 
 ## Community backlog
 
@@ -257,7 +253,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
 - Bluehost deployment process/tooling and backup/restore procedures.
-- Timezone-aware date handling.
+- Timezone-aware date handling, including validating ICS conversion against the configured CTSMD timezone.
 - Search repository for remaining MySQL 8 DISTINCT/ORDER BY incompatibilities.
 - Fix remaining legacy FormExperience CSRF exception edge.
 - Remove remaining hardcoded prototype/domain data from legacy index.php.
@@ -275,5 +271,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Attendance expected rosters derive from schedule targeting and active production membership; guardian visibility does not imply guardian attendance.
 - Structured form submissions retain their own definition snapshot/version so historical responses are not rewritten by later form edits.
 - Volunteer readiness continues to use the canonical volunteer requirement/credential model; hours, training and approved-form automation feed that model rather than replacing it.
+- Calendar is a read/operations layer over canonical schedule items; it does not create a parallel calendar-event domain.
+- Private ICS tokens are revocable and must not weaken normal schedule audience rules.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
