@@ -144,6 +144,9 @@ if (CommunityExperience::handles($route)) CommunityExperience::render($route, $d
 require_once __DIR__ . '/src/ProductionLifecycleExperience.php';
 if (ProductionLifecycleExperience::handles($route)) ProductionLifecycleExperience::render($route, $detectedBasePath);
 
+require_once __DIR__ . '/src/ProductionReadinessExperience.php';
+if (ProductionReadinessExperience::handles($route)) ProductionReadinessExperience::render($detectedBasePath);
+
 require_once __DIR__ . '/src/ProductionWorkspaceExperience.php';
 if (ProductionWorkspaceExperience::handles($route)) ProductionWorkspaceExperience::render($detectedBasePath);
 
