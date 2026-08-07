@@ -33,7 +33,7 @@ final class AppNavigation
                 return in_array($route, ['/app', '/family-hub', '/family/action', '/notifications', '/forms', '/forms/view'], true) ? ' active' : '';
             }
             if ($path === '/production') {
-                return in_array($route, ['/production', '/production/people', '/production/groups', '/production/groups/view', '/production/schedule/new', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/resources/view', '/admin/resources', '/admin/resources/edit', '/playbills', '/admin/playbill'], true) ? ' active' : '';
+                return in_array($route, ['/production', '/production/people', '/production/groups', '/production/groups/view', '/production/schedule/new', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/attendance', '/attendance/take', '/attendance/report', '/resources', '/resources/view', '/admin/resources', '/admin/resources/edit', '/playbills', '/admin/playbill'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
                 return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals'], true) ? ' active' : '';
@@ -72,6 +72,7 @@ final class AppNavigation
                 <a class="unified-nav-item<?= $isActive('/people') ?>" href="<?= $url('/people') ?>"><i>♟</i><span><b>People</b><small>Families, roles & access</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/people' ? ' active' : '' ?>" href="<?= $url('/production/people') ?>"><i>★</i><span><b>Production roster</b><small>Cast, guardians & staff</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/production/groups') ? ' active' : '' ?>" href="<?= $url('/production/groups') ?>"><i>◎</i><span><b>Production groups</b><small>Cast, crew & targeted calls</small></span></a>
+                <a class="unified-nav-item<?= str_starts_with($route, '/attendance') ? ' active' : '' ?>" href="<?= $url('/attendance') ?>"><i>✓</i><span><b>Attendance</b><small>Roll call & absence reports</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/schedule/new' ? ' active' : '' ?>" href="<?= $url('/production/schedule/new') ?>"><i>＋</i><span><b>Add schedule item</b><small>Rehearsal, performance or call</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/productions') ? ' active' : '' ?>" href="<?= $url('/admin/productions') ?>"><i>◷</i><span><b>Productions & seasons</b><small>Create, activate & archive</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/channels') ? ' active' : '' ?>" href="<?= $url('/admin/channels') ?>"><i>#</i><span><b>Community Operations</b><small>Channels & posting rules</small></span></a>
