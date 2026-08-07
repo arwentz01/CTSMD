@@ -11,14 +11,9 @@ final class AccessPolicy
     {
         if(is_array($userOrRole)){
             $roles=self::rolesFor($userOrRole);
-            $permissions=self::permissionsFor($userOrRole);
-            if($roles!==null||$permissions!==null){
-                $roles=$roles??[];$permissions=$permissions??[];
+            if($roles!==null){
                 return in_array('administrator',$roles,true)
-                    || in_array('production_staff',$roles,true)
-                    || in_array('moderator',$roles,true)
-                    || in_array('safeguarding',$roles,true)
-                    || (bool)$permissions;
+                    || in_array('production_staff',$roles,true);
             }
         }
         $role = strtolower(is_array($userOrRole) ? (string)($userOrRole['role'] ?? '') : $userOrRole);
