@@ -108,6 +108,11 @@ if (ProductionWorkspaceExperience::handles($route)) {
     ProductionWorkspaceExperience::render($detectedBasePath);
 }
 
+require_once __DIR__ . '/src/ProductionGroupExperience.php';
+if (ProductionGroupExperience::handles($route)) {
+    ProductionGroupExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/ProductionPeopleExperience.php';
 if (ProductionPeopleExperience::handles($route)) {
     ProductionPeopleExperience::render($route, $detectedBasePath);
