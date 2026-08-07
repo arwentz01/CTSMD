@@ -29,6 +29,12 @@ if ($route === '/navigation') {
     NavigationReview::render($detectedBasePath, $data);
 }
 
+require_once __DIR__ . '/src/HomeExperience.php';
+if (HomeExperience::handles($route)) {
+    $data = require __DIR__ . '/src/mock-data.php';
+    HomeExperience::render($route, $detectedBasePath, $data);
+}
+
 require_once __DIR__ . '/src/VisualPass3.php';
 if (VisualPass3::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
