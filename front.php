@@ -84,6 +84,9 @@ if (FamilyDashboardExperience::handles($route)) FamilyDashboardExperience::rende
 require_once __DIR__ . '/src/HomeExperience.php';
 if (HomeExperience::handles($route)) HomeExperience::render($route, $detectedBasePath);
 
+require_once __DIR__ . '/src/StaffDashboardExperience.php';
+if (StaffDashboardExperience::handles($route)) StaffDashboardExperience::render($route, $detectedBasePath);
+
 require_once __DIR__ . '/src/CalendarExperience.php';
 if (CalendarExperience::handles($route)) CalendarExperience::render($route, $detectedBasePath);
 
