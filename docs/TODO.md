@@ -14,12 +14,14 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
-### Implemented — Lean public landing + registration
+### Implemented — Lean public landing + restrained registration
 
 - `/` is now a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
-- Public landing focuses on the pieces Connect currently needs outside authentication: published registration opportunities, current digital Playbills and member sign-in.
-- `/register` lists only registration opportunities explicitly published by authorized CTSMD staff and currently within their open/close window.
-- Public registration opportunities support audition, workshop, camp, class, event and interest types; optional production relationship; dates/location; registration window; capacity; waitlist behavior; confirmation text; and draft/published/closed/archived lifecycle.
+- Public landing focuses on the pieces Connect currently needs outside authentication: selected public signups, current digital Playbills and member sign-in.
+- `/register` is intentionally limited to **auditions, selected special/event signups, and interest/RSVP signups** explicitly published by authorized CTSMD staff and currently within their open/close window.
+- **Classes, camps, workshops and the broader CTSMD program catalog are not registered through Connect at this stage.** They remain in the organization’s existing external registration system until CTSMD intentionally chooses to replace that system.
+- The database enum retains broader opportunity values for future compatibility, but current public/service/admin logic fails closed and will not publish or accept Connect registrations for class, camp or workshop records.
+- Connect signups may optionally relate to a production and support dates/location, registration windows, capacity, waitlist behavior, confirmation text and draft/published/closed/archived lifecycle.
 - Public registration intentionally collects a narrow data set: participant name, broad age group, contact information, guardian contact for minors and an optional operational note.
 - Public registration does **not** collect date of birth, medical history, school or other sensitive data merely because it might be useful later.
 - A parent/guardian name and valid guardian email are required when the participant is under 18.
@@ -27,11 +29,11 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Each registration receives a private random manage token; only its SHA-256 hash is stored. Confirmation email provides a private manage/cancel link.
 - Registration confirmation uses the existing outbound email queue and therefore follows the same local-log/SMTP deployment model as other CTSMD email.
 - Public cancellation preserves the registration record and changes lifecycle state instead of deleting history.
-- Staff Registration Operations workspace at `/admin/registrations` supports creating/editing opportunities, publishing/closing them, reviewing registrants, and changing submission status among submitted, waitlisted, accepted, declined and cancelled.
+- Staff Registration Operations workspace at `/admin/registrations` supports creating/editing supported Connect signups, publishing/closing them, reviewing registrants, and changing submission status among submitted, waitlisted, accepted, declined and cancelled.
 - Registration Operations currently uses `forms.manage` authorization rather than adding a new one-off RBAC permission before CTSMD demonstrates a need for separate registration administrators.
 - Registration schema lives in migration 020.
-- This build is intentionally **not** a CMS/news/donations/payments/public-site takeover. Those remain future options only if CTSMD chooses to expand Connect into the primary public website.
-- **Runtime verification:** pending local MAMP test after migration 020, including public root routing, opportunity publication windows, minor guardian validation, capacity/waitlist behavior, email confirmation/manage URL and public cancellation.
+- This build is intentionally **not** a CMS/news/donations/payments/public-site takeover and is **not** a class/program-registration replacement. Those remain future options only if CTSMD chooses to expand Connect deliberately.
+- **Runtime verification:** pending local MAMP test after migration 020, including public root routing, supported-type restrictions, publication windows, minor guardian validation, capacity/waitlist behavior, email confirmation/manage URL and public cancellation.
 
 ### Implemented — Parent multi-child / multi-production dashboard
 
@@ -168,14 +170,16 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Registration-specific questionnaires can later reuse Dynamic Forms where appropriate.
 - Status-change email for accepted/waitlisted/declined registrations.
 - CSV/export/reporting once real registration operations demonstrate what fields staff actually need.
+- Do not expand this follow-through into class/camp/workshop registration unless CTSMD explicitly decides to replace the current external registration system.
 
 ## Future public-site options — only if CTSMD chooses to expand Connect
 
 - Full public CTSMD website/CMS bridge.
 - Public production/audition/event detail pages beyond the lean registration page.
-- Workshops/camps/classes catalog, broad public calendar, news, donations, sponsorship and RSVP experiences.
+- Class/camp/workshop catalog and registration only as an intentional replacement project for the current external system, not as an automatic extension of migration 020.
+- Broad public calendar, news, donations, sponsorship and RSVP experiences.
 - Payments only after actual program/payment requirements are defined.
-- Do not build these merely because Connect technically can; the existing CTSMD website may remain the public website indefinitely.
+- Do not build these merely because Connect technically can; the existing CTSMD website and registration platform may remain in place indefinitely.
 
 ## Future product slices
 
@@ -235,7 +239,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production Group targeting.
 - Bulk reminders and completion dashboards beyond automated due-soon email.
 - File-upload fields using the shared storage layer.
-- Registration-oriented form extensions when a registration genuinely needs more than the lean intake fields.
+- Registration-oriented form extensions when a Connect-managed audition or special signup genuinely needs more than the lean intake fields.
 - External/e-sign provider evaluation only if required later.
 
 ## Volunteer backlog
@@ -346,6 +350,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
 - Public registration intake and authenticated membership are separate lifecycles; a public registration must never silently create a CTSMD account or production membership without staff review.
 - Public child/minor registration should collect only the minimum information necessary for the immediate registration workflow; richer sensitive data requires an explicit later policy decision.
+- **Connect registration is not the current class/program registration system.** Auditions and selected signups may use Connect now; class/camp/workshop registration remains external unless CTSMD deliberately chooses a replacement project later.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
