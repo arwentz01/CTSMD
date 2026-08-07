@@ -63,7 +63,12 @@ final class CastingCommunicationService
     {
         $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.status='published' AND EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:user AND pm.status='active') ORDER BY pcp.published_at DESC,p.title");
         $s->execute(['user'=>$userId]);$out=[];
-        foreach($s->fetchAll() as $production){$decoded=json_decode((string)($production['cast_snapshot_json']??'[]'),true);$production['cast']=is_array($decoded)?$decoded:[];unset($production['cast_snapshot_json']);$out[]=$production;}
+        foreach($s->fetchAll() as $production){
+            $raw=$production['cast_snapshot_json']??null;
+            $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
+            $production['cast']=is_array($decoded)?$decoded:self::currentPublishableCast($db,(int)$production['production_id']);
+            unset($production['cast_snapshot_json']);$out[]=$production;
+        }
         return $out;
     }
 
