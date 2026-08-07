@@ -36,7 +36,7 @@ final class AppNavigation
                 return in_array($route, ['/production', '/production/people', '/production/groups', '/production/groups/view', '/production/schedule/new', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/attendance', '/attendance/take', '/attendance/report', '/resources', '/resources/view', '/admin/resources', '/admin/resources/edit', '/playbills', '/admin/playbill'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
-                return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals'], true) ? ' active' : '';
+                return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals', '/volunteer/training', '/volunteer/history'], true) ? ' active' : '';
             }
             return ($route === $path || str_starts_with($route, rtrim($path, '/') . '/')) ? ' active' : '';
         };
@@ -65,7 +65,7 @@ final class AppNavigation
                 <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction ? $esc((string)$selectedProduction['title']) : 'Schedule, calls & resources' ?></small></span></a>
                 <a class="unified-nav-item<?= $isActive('/channels') ?>" href="<?= $url('/channels') ?>"><i>#</i><span><b>Community</b><small>Channels & announcements</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/messages') ?>" href="<?= $url('/messages') ?>"><i>✉</i><span><b>Messages</b><small>Protected conversations</small></span></a>
-                <a class="unified-nav-item<?= $isActive('/volunteer-readiness') ?>" href="<?= $url('/volunteer-readiness') ?>"><i>♡</i><span><b>Volunteer</b><small>Readiness & shifts</small></span></a>
+                <a class="unified-nav-item<?= $isActive('/volunteer-readiness') ?>" href="<?= $url('/volunteer-readiness') ?>"><i>♡</i><span><b>Volunteer</b><small>Readiness, training & shifts</small></span></a>
 
                 <?php if ($staff): ?>
                 <span class="unified-nav-label">Operations</span>
@@ -80,6 +80,7 @@ final class AppNavigation
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/teams') || $route === '/admin/private-channel' ? ' active' : '' ?>" href="<?= $url('/admin/teams') ?>"><i>◎</i><span><b>Teams & private rooms</b><small>Reusable groups & selected members</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/resources') ? ' active' : '' ?>" href="<?= $url('/admin/resources') ?>"><i>▤</i><span><b>Resource Operations</b><small>Links, notes & audience access</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/volunteer-shifts') || str_starts_with($route, '/admin/volunteer-approvals') ? ' active' : '' ?>" href="<?= $url('/admin/volunteer-shifts') ?>"><i>♡</i><span><b>Volunteer Operations</b><small>Shifts, approvals & staffing</small></span></a>
+                <a class="unified-nav-item<?= $route === '/admin/volunteer-development' ? ' active' : '' ?>" href="<?= $url('/admin/volunteer-development') ?>"><i>◈</i><span><b>Volunteer Development</b><small>Hours, training & credentials</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/forms') && !in_array($route,['/admin/forms/build','/admin/forms/builder'],true) ? ' active' : '' ?>" href="<?= $url('/admin/forms/manage') ?>"><i>✓</i><span><b>Forms Operations</b><small>Create, assign & review</small></span></a>
                 <a class="unified-nav-item<?= in_array($route,['/admin/forms/build','/admin/forms/builder'],true) ? ' active' : '' ?>" href="<?= $url('/admin/forms/build') ?>"><i>▦</i><span><b>Form builder</b><small>Questions, choices & signatures</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/notices' || $route === '/production/notice' ? ' active' : '' ?>" href="<?= $url('/production/notices') ?>"><i>↗</i><span><b>Production updates</b><small>Review & publish changes</small></span></a>
