@@ -73,22 +73,15 @@ final class PrototypeDataRepository
 
     private function channelPosts(): array
     {
-        $stmt = $this->db->query("SELECT CONCAT(u.first_name, ' · ', u.display_role) AS author, cp.created_at, cp.body, cp.pinned, cp.reactions_json FROM channel_posts cp JOIN users u ON u.id = cp.author_user_id JOIN channels c ON c.id = cp.channel_id WHERE c.name = 'Current Production' ORDER BY cp.created_at DESC LIMIT 12");
-        $rows = $stmt->fetchAll();
+        $rows = $this->db->query("SELECT CONCAT(u.first_name, ' · ', u.display_role) AS author, cp.created_at, cp.body, cp.pinned, cp.reactions_json FROM channel_posts cp JOIN users u ON u.id = cp.author_user_id JOIN channels c ON c.id = cp.channel_id WHERE c.name = 'Current Production' ORDER BY cp.created_at DESC LIMIT 12")->fetchAll();
 
         return array_map(static function (array $row): array {
             $reactions = json_decode($row['reactions_json'] ?: '{}', true) ?: [];
-            $labels = [
-                'thumbs_up' => '👍',
-                'heart' => '❤️',
-                'theatre' => '🎭',
-                'clap' => '👏',
-            ];
+            $labels = ['thumbs_up' => '👍', 'heart' => '❤️', 'theatre' => '🎭', 'clap' => '👏'];
             $rendered = [];
             foreach ($reactions as $key => $count) {
                 $rendered[] = ($labels[$key] ?? '•') . ' ' . $count;
             }
-
             return [
                 'author' => $row['author'],
                 'time' => date('g:i A', strtotime($row['created_at'])),
@@ -116,10 +109,7 @@ final class PrototypeDataRepository
 
     private function shifts(int $userId): array
     {
-        $stmt = $this->db->prepare("SELECT vs.id, vs.title, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, COALESCE(s.signups,0) AS signups FROM volunteer_shifts vs LEFT JOIN (SELECT shift_id, COUNT(*) signups FROM volunteer_shift_signups WHERE status IN ('signed_up','checked_in','completed') GROUP BY shift_id) s ON s.shift_id = vs.id ORDER BY vs.starts_at ASC");
-        $stmt->execute();
-        $rows = $stmt->fetchAll();
-
+        $rows = $this->db->query("SELECT vs.id, vs.title, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, COALESCE(s.signups,0) AS signups FROM volunteer_shifts vs LEFT JOIN (SELECT shift_id, COUNT(*) signups FROM volunteer_shift_signups WHERE status IN ('signed_up','checked_in','completed') GROUP BY shift_id) s ON s.shift_id = vs.id ORDER BY vs.starts_at ASC")->fetchAll();
         $requirementStmt = $this->db->prepare("SELECT vr.name, COALESCE(vc.status, 'missing') AS credential_status FROM volunteer_shift_requirements vsr JOIN volunteer_requirements vr ON vr.id = vsr.requirement_id LEFT JOIN volunteer_credentials vc ON vc.requirement_id = vr.id AND vc.user_id = :user_id WHERE vsr.shift_id = :shift_id ORDER BY vr.id");
 
         return array_map(function (array $row) use ($requirementStmt, $userId): array {
@@ -131,11 +121,9 @@ final class PrototypeDataRepository
                     $eligible = false;
                 }
             }
-
             $start = new DateTimeImmutable($row['starts_at']);
             $end = new DateTimeImmutable($row['ends_at']);
             $open = max((int)$row['required_slots'] - (int)$row['signups'], 0);
-
             return [
                 'title' => $row['title'],
                 'when' => $start->format('D · g:i A') . '–' . $end->format('g:i A'),
@@ -151,13 +139,7 @@ final class PrototypeDataRepository
     {
         $stmt = $this->db->prepare("SELECT f.title, fa.status, fa.due_at FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.user_id = :user_id ORDER BY fa.due_at ASC");
         $stmt->execute(['user_id' => $userId]);
-        $labels = [
-            'completed' => 'Completed',
-            'due_soon' => 'Due soon',
-            'missing' => 'Missing',
-            'requires_review' => 'Requires review',
-        ];
-
+        $labels = ['completed' => 'Completed', 'due_soon' => 'Due soon', 'missing' => 'Missing', 'requires_review' => 'Requires review'];
         return array_map(static fn(array $row): array => [
             'title' => $row['title'],
             'status' => $labels[$row['status']] ?? $row['status'],
@@ -178,7 +160,6 @@ final class PrototypeDataRepository
     private function people(): array
     {
         $rows = $this->db->query("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role, EXISTS(SELECT 1 FROM volunteer_profiles vp WHERE vp.user_id = u.id AND vp.active = 1) AS is_volunteer, EXISTS(SELECT 1 FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vc.user_id = u.id AND vr.code = 'background_check' AND vc.status = 'approved') AS background_ready, EXISTS(SELECT 1 FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vc.user_id = u.id AND vr.code = 'child_safety_training' AND vc.status = 'approved') AS training_ready FROM users u WHERE u.active = 1 ORDER BY u.last_name, u.first_name LIMIT 12")->fetchAll();
-
         return array_map(static function (array $row): array {
             $volunteerReady = (bool)$row['is_volunteer'] && (bool)$row['background_ready'] && (bool)$row['training_ready'];
             return [
@@ -198,9 +179,7 @@ final class PrototypeDataRepository
         $guardianRequired = (int)$this->db->query("SELECT COUNT(*) FROM conversation_participants WHERE guardian_required = 1")->fetchColumn();
         $pendingBackground = (int)$this->db->query("SELECT COUNT(*) FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vr.code = 'background_check' AND vc.status IN ('pending','review')")->fetchColumn();
         $credentialExceptions = (int)$this->db->query("SELECT COUNT(*) FROM volunteer_credentials WHERE status IN ('pending','review','missing','expired')")->fetchColumn();
-
         $queue = $this->db->query("SELECT CONCAT('Credential review · ', u.first_name, ' ', u.last_name) AS title, CONCAT(vr.name, ' is ', vc.status) AS detail, CASE WHEN vr.code = 'background_check' THEN 'High' ELSE 'Review' END AS severity FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id JOIN users u ON u.id = vc.user_id WHERE vc.status IN ('pending','review','missing','expired') ORDER BY FIELD(vc.status,'pending','review','missing','expired'), u.last_name LIMIT 6")->fetchAll();
-
         return [
             'metrics' => [
                 ['value' => (string)$credentialExceptions, 'label' => 'Items awaiting review'],
@@ -214,10 +193,9 @@ final class PrototypeDataRepository
 
     private function familyContext(int $userId): array
     {
-        $stmt = $this->db->prepare("SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role FROM conversation_participants guardian JOIN conversation_participants student ON student.conversation_id = guardian.conversation_id AND student.participant_role = 'student' JOIN users u ON u.id = student.user_id WHERE guardian.user_id = :user_id AND guardian.participant_role = 'guardian' ORDER BY u.last_name, u.first_name");
+        $stmt = $this->db->prepare("SELECT DISTINCT u.id, u.first_name, u.last_name, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role FROM conversation_participants guardian JOIN conversation_participants student ON student.conversation_id = guardian.conversation_id AND student.participant_role = 'student' JOIN users u ON u.id = student.user_id WHERE guardian.user_id = :user_id AND guardian.participant_role = 'guardian' ORDER BY u.last_name, u.first_name");
         $stmt->execute(['user_id' => $userId]);
         $linked = $stmt->fetchAll();
-
         return [
             'linked_people' => array_map(static fn(array $row): array => [
                 'id' => (int)$row['id'],
@@ -234,7 +212,6 @@ final class PrototypeDataRepository
     {
         $stmt = $this->db->prepare("SELECT c.id, c.subject, c.conversation_type, COUNT(DISTINCT cp.user_id) AS participant_count, MAX(m.created_at) AS latest_at, COUNT(m.id) AS message_count FROM conversations c JOIN conversation_participants mine ON mine.conversation_id = c.id AND mine.user_id = :user_id JOIN conversation_participants cp ON cp.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id GROUP BY c.id, c.subject, c.conversation_type ORDER BY latest_at DESC");
         $stmt->execute(['user_id' => $userId]);
-
         return array_map(static fn(array $row): array => [
             'id' => (int)$row['id'],
             'subject' => $row['subject'],
@@ -249,7 +226,6 @@ final class PrototypeDataRepository
     {
         $stmt = $this->db->prepare("SELECT vr.name, vr.category, COALESCE(vc.status, 'missing') AS status, vc.expires_at FROM volunteer_requirements vr LEFT JOIN volunteer_credentials vc ON vc.requirement_id = vr.id AND vc.user_id = :user_id ORDER BY vr.id");
         $stmt->execute(['user_id' => $userId]);
-
         return array_map(static fn(array $row): array => [
             'name' => $row['name'],
             'category' => $row['category'],
