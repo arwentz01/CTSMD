@@ -206,4 +206,18 @@ CREATE TABLE IF NOT EXISTS messages (
     CONSTRAINT fk_message_sender FOREIGN KEY (sender_user_id) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS audit_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    actor_user_id BIGINT UNSIGNED NULL,
+    event_type VARCHAR(100) NOT NULL,
+    subject_type VARCHAR(80) NOT NULL,
+    subject_id BIGINT UNSIGNED NULL,
+    summary VARCHAR(255) NOT NULL,
+    metadata_json JSON NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_audit_subject (subject_type, subject_id),
+    KEY idx_audit_created_at (created_at),
+    CONSTRAINT fk_audit_actor FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
