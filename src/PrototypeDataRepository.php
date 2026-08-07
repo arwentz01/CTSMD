@@ -15,6 +15,8 @@ final class PrototypeDataRepository
             throw new RuntimeException('Demo seed data is missing. Import database/schema.sql and database/seeds/001_demo.sql.');
         }
 
+        $userId = (int)$user['id'];
+
         return [
             'user' => $user,
             'announcements' => $this->announcements(),
@@ -22,11 +24,14 @@ final class PrototypeDataRepository
             'channels' => $this->channels(),
             'channel_posts' => $this->channelPosts(),
             'volunteer_stats' => $this->volunteerStats(),
-            'shifts' => $this->shifts((int)$user['id']),
-            'forms' => $this->forms((int)$user['id']),
+            'shifts' => $this->shifts($userId),
+            'forms' => $this->forms($userId),
             'playbills' => $this->playbills(),
             'people' => $this->people(),
             'safeguarding' => $this->safeguarding(),
+            'family_context' => $this->familyContext($userId),
+            'conversation_overview' => $this->conversationOverview($userId),
+            'credential_summary' => $this->credentialSummary($userId),
         ];
     }
 
@@ -177,6 +182,7 @@ final class PrototypeDataRepository
         return array_map(static function (array $row): array {
             $volunteerReady = (bool)$row['is_volunteer'] && (bool)$row['background_ready'] && (bool)$row['training_ready'];
             return [
+                'id' => (int)$row['id'],
                 'name' => $row['name'],
                 'initials' => $row['initials'],
                 'role' => $row['role'],
@@ -204,5 +210,51 @@ final class PrototypeDataRepository
             ],
             'queue' => $queue,
         ];
+    }
+
+    private function familyContext(int $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role FROM conversation_participants guardian JOIN conversation_participants student ON student.conversation_id = guardian.conversation_id AND student.participant_role = 'student' JOIN users u ON u.id = student.user_id WHERE guardian.user_id = :user_id AND guardian.participant_role = 'guardian' ORDER BY u.last_name, u.first_name");
+        $stmt->execute(['user_id' => $userId]);
+        $linked = $stmt->fetchAll();
+
+        return [
+            'linked_people' => array_map(static fn(array $row): array => [
+                'id' => (int)$row['id'],
+                'name' => $row['name'],
+                'initials' => $row['initials'],
+                'role' => $row['role'],
+            ], $linked),
+            'open_forms' => count(array_filter($this->forms($userId), static fn(array $form): bool => $form['status'] !== 'Completed')),
+            'eligible_shifts' => count(array_filter($this->shifts($userId), static fn(array $shift): bool => $shift['status'] === 'eligible')),
+        ];
+    }
+
+    private function conversationOverview(int $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT c.id, c.subject, c.conversation_type, COUNT(DISTINCT cp.user_id) AS participant_count, MAX(m.created_at) AS latest_at, COUNT(m.id) AS message_count FROM conversations c JOIN conversation_participants mine ON mine.conversation_id = c.id AND mine.user_id = :user_id JOIN conversation_participants cp ON cp.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id GROUP BY c.id, c.subject, c.conversation_type ORDER BY latest_at DESC");
+        $stmt->execute(['user_id' => $userId]);
+
+        return array_map(static fn(array $row): array => [
+            'id' => (int)$row['id'],
+            'subject' => $row['subject'],
+            'type' => $row['conversation_type'],
+            'participants' => (int)$row['participant_count'],
+            'messages' => (int)$row['message_count'],
+            'latest' => $row['latest_at'] ? date('M j · g:i A', strtotime($row['latest_at'])) : 'No messages',
+        ], $stmt->fetchAll());
+    }
+
+    private function credentialSummary(int $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT vr.name, vr.category, COALESCE(vc.status, 'missing') AS status, vc.expires_at FROM volunteer_requirements vr LEFT JOIN volunteer_credentials vc ON vc.requirement_id = vr.id AND vc.user_id = :user_id ORDER BY vr.id");
+        $stmt->execute(['user_id' => $userId]);
+
+        return array_map(static fn(array $row): array => [
+            'name' => $row['name'],
+            'category' => $row['category'],
+            'status' => ucfirst(str_replace('_', ' ', $row['status'])),
+            'expires' => $row['expires_at'] ? date('M j, Y', strtotime($row['expires_at'])) : 'No expiration',
+        ], $stmt->fetchAll());
     }
 }
