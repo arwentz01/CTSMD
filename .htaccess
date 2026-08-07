@@ -1,9 +1,5 @@
 Options -Indexes
-DirectoryIndex index.php
-
-# Local Build 001 default when the repository lives at MAMP htdocs/ctsmd.
-# Remove or change this when deploying at a different base path.
-SetEnv APP_BASE_PATH /ctsmd
+DirectoryIndex front.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -11,17 +7,13 @@ SetEnv APP_BASE_PATH /ctsmd
     # Keep internal project directories out of direct web access.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
 
-    # Browser-facing static assets are served from the public directory.
-    # /ctsmd/assets/css/app.css -> /ctsmd/public/assets/css/app.css internally.
-    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
-
     # Let real files and directories bypass the front controller.
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Send application routes through the front controller.
-    RewriteRule ^ index.php [QSA,L]
+    # Send application routes through the base-path-aware front controller.
+    RewriteRule ^ front.php [QSA,L]
 </IfModule>
 
 <IfModule mod_headers.c>
