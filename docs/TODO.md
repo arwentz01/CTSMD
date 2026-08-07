@@ -14,6 +14,26 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Dynamic forms
+
+- Staff Form Builder landing page at `/admin/forms/build`.
+- Structured field editor at `/admin/forms/builder?id=...`.
+- Field types: short text, long text, single choice, multiple choice, date, acknowledgment and typed signature.
+- Required/optional fields, help text, stable field keys, ordering and deactivate/reactivate lifecycle.
+- Choice options are stored with the field definition and validated server-side.
+- Definition version increments whenever structured fields are changed.
+- Existing forms without structured fields continue through the legacy Forms experience.
+- Structured assignments automatically render through the dynamic member form experience.
+- Submitted answers are stored as field-level records rather than one response-text blob.
+- Each structured submission stores the form-definition version and immutable definition snapshot used for that response.
+- Later edits to field labels/options do not rewrite historical submitted answers/snapshots.
+- Structured forms continue using the existing assignment, due-date, review-required, approval/return and notification workflows.
+- Staff review shows each submitted structured answer by its submitted label/type.
+- Dynamic form definition/submission/review writes are audited.
+- File-upload fields remain deferred until the shared storage layer exists.
+- Conditional fields, guardian-on-behalf-of-student completion, Production Group targeting, bulk reminders/completion dashboards and credential automation remain future extensions.
+- **Runtime verification:** pending local MAMP test after migration 014.
+
 ### Implemented — Attendance
 
 - Attendance workspace at `/attendance` within the selected production context.
@@ -69,16 +89,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - **Runtime verification:** pending local MAMP test after migration 011.
 
 ## Near-term build order
-
-### Next — Dynamic forms
-
-- Field builder: short/long text, multiple choice, checkboxes, date/time, acknowledgment, signature, file upload when storage exists.
-- Conditional fields.
-- Guardian completion on behalf of a student.
-- Form/version snapshots so historical submissions retain the exact questions answered.
-- Bulk reminders and completion dashboards.
-- Production/group audience assignment.
-- Automatic credential/readiness updates where appropriate.
 
 ### Next — Volunteer hours, training + credential automation
 
@@ -188,14 +198,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Forms backlog
 
-- Dynamic form builder.
-- Guardian-on-behalf-of-student completion.
 - Conditional fields.
-- Form versioning/snapshots.
+- Guardian-on-behalf-of-student completion.
 - Production Group targeting.
 - Bulk reminders.
 - Completion dashboards.
 - Credential/readiness automation.
+- File-upload fields after storage exists.
 - Registration-oriented forms.
 - External/e-sign provider evaluation only if required later.
 
@@ -305,7 +314,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Backup/restore procedures.
 - Timezone-aware date handling.
 - Search repository for remaining MySQL 8 DISTINCT/ORDER BY incompatibilities.
-- Fix remaining FormExperience CSRF exception edge.
+- Fix remaining legacy FormExperience CSRF exception edge.
 - Remove remaining hardcoded prototype/domain data from legacy index.php.
 - Immutable recipient snapshots for published communications where required.
 
@@ -318,5 +327,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Private Community membership must not bypass safeguarded direct-message rules.
 - Community moderation is exception-based; clean posts publish immediately, while matched rules may block or hold a post before it becomes visible.
 - Attendance expected rosters derive from schedule targeting and active production membership; guardian visibility does not imply guardian attendance.
+- Structured form submissions retain their own definition snapshot/version so historical responses are not rewritten by later form edits.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
