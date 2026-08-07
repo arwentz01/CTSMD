@@ -8,7 +8,7 @@ final class FamilyFormService
 {
     public static function assignmentsForViewer(PDO $db,int $viewerId):array
     {
-        $s=$db->prepare("SELECT fa.id,fa.form_id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.production_id,fa.source_group_id,fa.status,fa.due_at,fa.completed_at,f.title,f.form_type,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
+        $s=$db->prepare("SELECT fa.id,fa.form_id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.production_id,fa.source_group_id,fa.status,fa.due_at,fa.completed_at,f.title,f.form_type,f.completion_mode,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
             FROM form_assignments fa
             JOIN forms f ON f.id=fa.form_id AND f.active=1
             JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id)
@@ -24,7 +24,7 @@ final class FamilyFormService
     public static function assignmentForViewer(PDO $db,int $viewerId,int $assignmentId):?array
     {
         if($assignmentId<1)return null;
-        $s=$db->prepare("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.status,fa.due_at,fa.completed_at,fa.production_id,fa.source_group_id,f.id form_id,f.title,f.form_type,f.instructions,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.submitted_by_user_id,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
+        $s=$db->prepare("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.status,fa.due_at,fa.completed_at,fa.production_id,fa.source_group_id,f.id form_id,f.title,f.form_type,f.instructions,f.completion_mode,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,fs.typed_signature,fs.response_text,fs.reviewer_note,fs.submitted_at,fs.reviewed_at,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
             FROM form_assignments fa
             JOIN forms f ON f.id=fa.form_id AND f.active=1
             JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id)
