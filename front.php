@@ -71,180 +71,112 @@ if (!Auth::currentUser($dbForAuth)) {
 unset($dbForAuth);
 
 require_once __DIR__ . '/src/AccountManagementExperience.php';
-if (AccountManagementExperience::handles($route)) {
-    AccountManagementExperience::render($route, $detectedBasePath);
-}
+if (AccountManagementExperience::handles($route)) AccountManagementExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/RegistrationOperationsExperience.php';
-if (RegistrationOperationsExperience::handles($route)) {
-    RegistrationOperationsExperience::render($route, $detectedBasePath);
-}
+if (RegistrationOperationsExperience::handles($route)) RegistrationOperationsExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/EmailOperationsExperience.php';
-if (EmailOperationsExperience::handles($route)) {
-    EmailOperationsExperience::render($detectedBasePath);
-}
+if (EmailOperationsExperience::handles($route)) EmailOperationsExperience::render($detectedBasePath);
 
 require_once __DIR__ . '/src/NotificationPreferenceExperience.php';
-if (NotificationPreferenceExperience::handles($route)) {
-    NotificationPreferenceExperience::render($detectedBasePath);
-}
+if (NotificationPreferenceExperience::handles($route)) NotificationPreferenceExperience::render($detectedBasePath);
 
 require_once __DIR__ . '/src/FamilyDashboardExperience.php';
-if (FamilyDashboardExperience::handles($route)) {
-    FamilyDashboardExperience::render($route, $detectedBasePath);
-}
-
-require_once __DIR__ . '/src/CalendarExperience.php';
-if (CalendarExperience::handles($route)) {
-    CalendarExperience::render($route, $detectedBasePath);
-}
-
-require_once __DIR__ . '/src/ProductionContextExperience.php';
-if (ProductionContextExperience::handles($route)) {
-    ProductionContextExperience::render($detectedBasePath);
-}
-
-require_once __DIR__ . '/src/PeopleExperience.php';
-if (PeopleExperience::handles($route)) {
-    PeopleExperience::render($route, $detectedBasePath);
-}
-
-require_once __DIR__ . '/src/NotificationExperience.php';
-if (NotificationExperience::handles($route)) {
-    NotificationExperience::render($detectedBasePath);
-}
-
-require_once __DIR__ . '/src/FormManagementExperience.php';
-if (FormManagementExperience::handles($route)) {
-    FormManagementExperience::render($route, $detectedBasePath);
-}
-
-require_once __DIR__ . '/src/FormBuilderIndexExperience.php';
-if (FormBuilderIndexExperience::handles($route)) {
-    FormBuilderIndexExperience::render($detectedBasePath);
-}
-
-require_once __DIR__ . '/src/DynamicFormExperience.php';
-if (DynamicFormExperience::handles($route)) {
-    DynamicFormExperience::render($route, $detectedBasePath);
-}
-
-require_once __DIR__ . '/src/FormExperience.php';
-if (FormExperience::handles($route)) {
-    FormExperience::render($route, $detectedBasePath);
-}
+if (FamilyDashboardExperience::handles($route)) FamilyDashboardExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/HomeExperience.php';
-if (HomeExperience::handles($route)) {
-    $data = require __DIR__ . '/src/mock-data.php';
-    HomeExperience::render($route, $detectedBasePath, $data);
-}
+if (HomeExperience::handles($route)) HomeExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/CalendarExperience.php';
+if (CalendarExperience::handles($route)) CalendarExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/AccountLibraryExperience.php';
+if (AccountLibraryExperience::handles($route)) AccountLibraryExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/ProductionContextExperience.php';
+if (ProductionContextExperience::handles($route)) ProductionContextExperience::render($detectedBasePath);
+
+require_once __DIR__ . '/src/PeopleExperience.php';
+if (PeopleExperience::handles($route)) PeopleExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/NotificationExperience.php';
+if (NotificationExperience::handles($route)) NotificationExperience::render($detectedBasePath);
+
+require_once __DIR__ . '/src/FormManagementExperience.php';
+if (FormManagementExperience::handles($route)) FormManagementExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/FormBuilderIndexExperience.php';
+if (FormBuilderIndexExperience::handles($route)) FormBuilderIndexExperience::render($detectedBasePath);
+
+require_once __DIR__ . '/src/DynamicFormExperience.php';
+if (DynamicFormExperience::handles($route)) DynamicFormExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/FormExperience.php';
+if (FormExperience::handles($route)) FormExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/VolunteerDevelopmentExperience.php';
-if (VolunteerDevelopmentExperience::handles($route)) {
-    VolunteerDevelopmentExperience::render($route, $detectedBasePath);
-}
+if (VolunteerDevelopmentExperience::handles($route)) VolunteerDevelopmentExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/VolunteerShiftManagementExperience.php';
-if (VolunteerShiftManagementExperience::handles($route)) {
-    VolunteerShiftManagementExperience::render($route, $detectedBasePath);
-}
+if (VolunteerShiftManagementExperience::handles($route)) VolunteerShiftManagementExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/VolunteerApprovalExperience.php';
-if (VolunteerApprovalExperience::handles($route)) {
-    VolunteerApprovalExperience::render($route, $detectedBasePath);
-}
+if (VolunteerApprovalExperience::handles($route)) VolunteerApprovalExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/VolunteerExperience.php';
-if (VolunteerExperience::handles($route)) {
-    VolunteerExperience::render($route, $detectedBasePath);
-}
+if (VolunteerExperience::handles($route)) VolunteerExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/TeamExperience.php';
-if (TeamExperience::handles($route)) {
-    TeamExperience::render($route, $detectedBasePath);
-}
+if (TeamExperience::handles($route)) TeamExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ModerationExperience.php';
-if (ModerationExperience::handles($route)) {
-    ModerationExperience::render($route, $detectedBasePath);
-}
+if (ModerationExperience::handles($route)) ModerationExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/CommunityManagementExperience.php';
-if (CommunityManagementExperience::handles($route)) {
-    CommunityManagementExperience::render($route, $detectedBasePath);
-}
+if (CommunityManagementExperience::handles($route)) CommunityManagementExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/CommunityExperience.php';
-if (CommunityExperience::handles($route)) {
-    CommunityExperience::render($route, $detectedBasePath);
-}
+if (CommunityExperience::handles($route)) CommunityExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionLifecycleExperience.php';
-if (ProductionLifecycleExperience::handles($route)) {
-    ProductionLifecycleExperience::render($route, $detectedBasePath);
-}
+if (ProductionLifecycleExperience::handles($route)) ProductionLifecycleExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionWorkspaceExperience.php';
-if (ProductionWorkspaceExperience::handles($route)) {
-    ProductionWorkspaceExperience::render($detectedBasePath);
-}
+if (ProductionWorkspaceExperience::handles($route)) ProductionWorkspaceExperience::render($detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionGroupExperience.php';
-if (ProductionGroupExperience::handles($route)) {
-    ProductionGroupExperience::render($route, $detectedBasePath);
-}
+if (ProductionGroupExperience::handles($route)) ProductionGroupExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionPeopleExperience.php';
-if (ProductionPeopleExperience::handles($route)) {
-    ProductionPeopleExperience::render($route, $detectedBasePath);
-}
+if (ProductionPeopleExperience::handles($route)) ProductionPeopleExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/AttendanceExperience.php';
-if (AttendanceExperience::handles($route)) {
-    AttendanceExperience::render($route, $detectedBasePath);
-}
+if (AttendanceExperience::handles($route)) AttendanceExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ScheduleCreateExperience.php';
-if (ScheduleCreateExperience::handles($route)) {
-    ScheduleCreateExperience::render($route, $detectedBasePath);
-}
+if (ScheduleCreateExperience::handles($route)) ScheduleCreateExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ScheduleNoticeExperience.php';
-if (ScheduleNoticeExperience::handles($route)) {
-    ScheduleNoticeExperience::render($route, $detectedBasePath);
-}
+if (ScheduleNoticeExperience::handles($route)) ScheduleNoticeExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionFileExperience.php';
-if (ProductionFileExperience::handles($route)) {
-    ProductionFileExperience::render($route, $detectedBasePath);
-}
+if (ProductionFileExperience::handles($route)) ProductionFileExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ResourceExperience.php';
-if (ResourceExperience::handles($route)) {
-    ResourceExperience::render($route, $detectedBasePath);
-}
+if (ResourceExperience::handles($route)) ResourceExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/PlaybillExperience.php';
-if (PlaybillExperience::handles($route)) {
-    PlaybillExperience::render($route, $detectedBasePath);
-}
+if (PlaybillExperience::handles($route)) PlaybillExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionExperience.php';
-if (ProductionExperience::handles($route)) {
-    ProductionExperience::render($route, $detectedBasePath);
-}
+if (ProductionExperience::handles($route)) ProductionExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/CommunicationExperience.php';
-if (CommunicationExperience::handles($route)) {
-    CommunicationExperience::render($route, $detectedBasePath);
-}
+if (CommunicationExperience::handles($route)) CommunicationExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/SafeguardingExperience.php';
-if (SafeguardingExperience::handles($route)) {
-    SafeguardingExperience::render($route, $detectedBasePath);
-}
+if (SafeguardingExperience::handles($route)) SafeguardingExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/VisualPass3.php';
 if (VisualPass3::handles($route)) {
