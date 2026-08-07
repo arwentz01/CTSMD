@@ -123,6 +123,11 @@ if (ProductionPeopleExperience::handles($route)) {
     ProductionPeopleExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/AttendanceExperience.php';
+if (AttendanceExperience::handles($route)) {
+    AttendanceExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/ScheduleCreateExperience.php';
 if (ScheduleCreateExperience::handles($route)) {
     ScheduleCreateExperience::render($route, $detectedBasePath);
