@@ -17,7 +17,7 @@ final class AppNavigation
                 return in_array($route, ['/app', '/family-hub', '/family/action', '/notifications', '/forms', '/forms/view'], true) ? ' active' : '';
             }
             if ($path === '/production') {
-                return in_array($route, ['/production', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/playbills'], true) ? ' active' : '';
+                return in_array($route, ['/production', '/production/people', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/playbills'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
                 return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals'], true) ? ' active' : '';
@@ -42,6 +42,7 @@ final class AppNavigation
                 <?php if ($staff): ?>
                 <span class="unified-nav-label">Operations</span>
                 <a class="unified-nav-item<?= $isActive('/people') ?>" href="<?= $url('/people') ?>"><i>♟</i><span><b>People</b><small>Families, roles & access</small></span></a>
+                <a class="unified-nav-item<?= $route === '/production/people' ? ' active' : '' ?>" href="<?= $url('/production/people') ?>"><i>★</i><span><b>Production roster</b><small>Cast, guardians & staff</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/volunteer-approvals') ? ' active' : '' ?>" href="<?= $url('/admin/volunteer-approvals') ?>"><i>♡</i><span><b>Volunteer Operations</b><small>Approval queue & staffing</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/forms') ? ' active' : '' ?>" href="<?= $url('/admin/forms') ?>"><i>✓</i><span><b>Forms Review</b><small>Submissions & approvals</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/notices' || $route === '/production/notice' ? ' active' : '' ?>" href="<?= $url('/production/notices') ?>"><i>↗</i><span><b>Production updates</b><small>Review & publish changes</small></span></a>
