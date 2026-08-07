@@ -20,7 +20,7 @@ final class AppNavigation
                 return in_array($route, ['/production', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/playbills'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
-                return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift'], true) ? ' active' : '';
+                return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals'], true) ? ' active' : '';
             }
             return ($route === $path || str_starts_with($route, rtrim($path, '/') . '/')) ? ' active' : '';
         };
@@ -42,6 +42,7 @@ final class AppNavigation
                 <?php if ($staff): ?>
                 <span class="unified-nav-label">Operations</span>
                 <a class="unified-nav-item<?= $isActive('/people') ?>" href="<?= $url('/people') ?>"><i>♟</i><span><b>People</b><small>Families, roles & access</small></span></a>
+                <a class="unified-nav-item<?= str_starts_with($route, '/admin/volunteer-approvals') ? ' active' : '' ?>" href="<?= $url('/admin/volunteer-approvals') ?>"><i>♡</i><span><b>Volunteer Operations</b><small>Approval queue & staffing</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/notices' || $route === '/production/notice' ? ' active' : '' ?>" href="<?= $url('/production/notices') ?>"><i>↗</i><span><b>Production updates</b><small>Review & publish changes</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/safeguarding') ?>" href="<?= $url('/safeguarding') ?>"><i>●</i><span><b>Safeguarding</b><small>Restricted review</small></span></a>
                 <?php endif; ?>
