@@ -1,6 +1,6 @@
 SET NAMES utf8mb4;
 
--- Build 001 demo reset.
+-- Demo reset. Apply all migrations before running this seed.
 -- Use DELETE rather than TRUNCATE so foreign-key relationships remain enforced.
 -- Child/dependent records are removed before their parents.
 DELETE FROM schedule_notice_deliveries;
@@ -10,6 +10,7 @@ DELETE FROM messages;
 DELETE FROM conversation_participants;
 DELETE FROM conversations;
 DELETE FROM playbills;
+DELETE FROM form_submissions;
 DELETE FROM form_assignments;
 DELETE FROM forms;
 DELETE FROM volunteer_shift_approval_requests;
@@ -29,13 +30,14 @@ DELETE FROM productions;
 DELETE FROM family_relationships;
 DELETE FROM users;
 
--- Reset demo IDs so the explicit IDs and relational references below remain deterministic.
+-- Reset demo IDs so explicit IDs and relational references remain deterministic.
 ALTER TABLE schedule_notice_deliveries AUTO_INCREMENT = 1;
 ALTER TABLE app_notifications AUTO_INCREMENT = 1;
 ALTER TABLE audit_events AUTO_INCREMENT = 1;
 ALTER TABLE messages AUTO_INCREMENT = 1;
 ALTER TABLE conversations AUTO_INCREMENT = 1;
 ALTER TABLE playbills AUTO_INCREMENT = 1;
+ALTER TABLE form_submissions AUTO_INCREMENT = 1;
 ALTER TABLE form_assignments AUTO_INCREMENT = 1;
 ALTER TABLE forms AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_shift_approval_requests AUTO_INCREMENT = 1;
@@ -147,11 +149,11 @@ INSERT INTO volunteer_shift_signups (shift_id, user_id, status) VALUES
 (3,5,'signed_up'),(3,6,'signed_up'),(3,7,'signed_up'),(3,8,'signed_up'),
 (4,5,'signed_up'),(4,6,'signed_up');
 
-INSERT INTO forms (id, title, form_type) VALUES
-(1,'Parent Handbook Acknowledgment','acknowledgment'),
-(2,'Media / Photo Release','release'),
-(3,'Emergency Information','medical'),
-(4,'Volunteer Facility Education','training_acknowledgment');
+INSERT INTO forms (id, title, form_type, instructions, completion_mode, review_required) VALUES
+(1,'Parent Handbook Acknowledgment','acknowledgment','Review the Parent Handbook and confirm that you understand and agree to follow CTSMD participation expectations.','acknowledgment',0),
+(2,'Media / Photo Release','release','Review the media and photo release terms and provide your typed signature to record your consent.','signature',0),
+(3,'Emergency Information','medical','Provide the current emergency information requested for your CTSMD household. Staff will review it before marking the assignment complete.','submission',1),
+(4,'Volunteer Facility Education','training_acknowledgment','Confirm that you completed the assigned facility education. Staff will review the acknowledgment before completion.','acknowledgment',1);
 
 INSERT INTO form_assignments (form_id, user_id, status, due_at, completed_at) VALUES
 (1,1,'completed','2026-08-01 23:59:59','2026-07-29 18:00:00'),
