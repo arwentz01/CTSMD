@@ -18,11 +18,19 @@ final class AppNavigation
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
         $_SESSION['auth_csrf'] ??= bin2hex(random_bytes(24));
 
-        $productionOptions=[];$selectedProduction=null;
-        try{$db=Database::connect(dirname(__DIR__));$productionOptions=ProductionContext::activeProductions($db,$user);$selectedProduction=ProductionContext::selected($db,$user);}catch(Throwable){}
+        $productionOptions=[];$selectedProduction=null;$hasFamily=false;
+        try{
+            $db=Database::connect(dirname(__DIR__));
+            $productionOptions=ProductionContext::activeProductions($db,$user);
+            $selectedProduction=ProductionContext::selected($db,$user);
+            $familyStmt=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");
+            $familyStmt->execute(['user'=>(int)$user['id']]);
+            $hasFamily=(bool)$familyStmt->fetchColumn();
+        }catch(Throwable){}
 
         $isActive=static function(string $path)use($route):string{
-            if($path==='/app')return in_array($route,['/app','/family-hub','/family/action','/notifications','/notification-preferences','/forms','/forms/view'],true)?' active':'';
+            if($path==='/app')return in_array($route,['/app','/family/action','/notifications','/notification-preferences','/forms','/forms/view'],true)?' active':'';
+            if($path==='/family-hub')return in_array($route,['/family-hub','/parent'],true)?' active':'';
             if($path==='/production')return in_array($route,['/production','/production/people','/production/groups','/production/groups/view','/production/schedule/new','/schedule','/production/day','/production/edit','/production/notices','/production/notice','/attendance','/attendance/take','/attendance/report','/resources','/resources/view','/admin/resources','/admin/resources/edit','/files','/files/view','/admin/files','/admin/files/edit','/playbills','/admin/playbill'],true)?' active':'';
             if($path==='/volunteer-readiness')return in_array($route,['/volunteer-readiness','/volunteer-shifts','/volunteer/shift','/volunteer/approvals','/volunteer/training','/volunteer/history'],true)?' active':'';
             return ($route===$path||str_starts_with($route,rtrim($path,'/').'/'))?' active':'';
@@ -30,7 +38,8 @@ final class AppNavigation
         <aside class="unified-sidebar" data-unified-sidebar>
             <div class="unified-sidebar-head"><a class="unified-brand" href="<?= $url('/app') ?>"><span>C</span><b>CTSMD <small>CONNECT</small></b></a><button class="unified-close" type="button" data-nav-close aria-label="Close navigation">×</button></div>
             <nav class="unified-nav" aria-label="Primary navigation">
-                <a class="unified-nav-item<?= $isActive('/app') ?>" href="<?= $url('/app') ?>"><i>⌂</i><span><b>Home</b><small>Today & family</small></span></a>
+                <a class="unified-nav-item<?= $isActive('/app') ?>" href="<?= $url('/app') ?>"><i>⌂</i><span><b>Home</b><small>Today & attention</small></span></a>
+                <?php if($hasFamily):?><a class="unified-nav-item<?= $isActive('/family-hub') ?>" href="<?= $url('/family-hub') ?>"><i>♟</i><span><b>Family</b><small>Children, calls & forms</small></span></a><?php endif;?>
                 <span class="unified-nav-label">Theatre</span>
                 <?php if($productionOptions):?><form class="unified-production-switcher" method="post" action="<?= $url('/production/select') ?>"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>"><input type="hidden" name="return_to" value="<?= $esc($route) ?>"><label for="unified-production-select">Working production</label><select id="unified-production-select" name="production_id" onchange="this.form.submit()"><?php foreach($productionOptions as $production):?><option value="<?= (int)$production['id'] ?>"<?= $selectedProduction&&(int)$selectedProduction['id']===(int)$production['id']?' selected':'' ?>><?= $esc((string)$production['title']) ?><?= !empty($production['season'])?' · '.$esc((string)$production['season']):'' ?></option><?php endforeach;?></select></form><?php endif;?>
                 <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction?$esc((string)$selectedProduction['title']):'Schedule, calls & resources' ?></small></span></a>
