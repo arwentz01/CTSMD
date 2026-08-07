@@ -6,25 +6,29 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Status key
 
+- **Implemented** — source build completed; local runtime verification may still be pending
 - **In progress** — current build slice
 - **Next** — high-priority near-term build
 - **Backlog** — approved direction, not yet scheduled
 - **Platform** — foundational technical work that supports multiple features
 
-## Current build
+## Recently implemented
 
-### In progress — Production groups + targeted schedule audiences
+### Implemented — Production groups + targeted schedule audiences
 
-- Create production-native groups such as Full Cast, Ensemble, Principals, Tech Crew, Dance Ensemble, Production Staff, etc.
-- Keep Production Groups distinct from general-purpose Teams. Groups are show-operational objects; Teams are reusable collaboration groups.
+- Production-native groups such as Full Cast, Ensemble, Principals, Tech Crew, Dance Ensemble, Production Staff, etc.
+- Production Groups remain distinct from general-purpose Teams. Groups are show-operational objects; Teams are reusable collaboration groups.
 - Add/remove active production members from groups without duplicating production membership.
-- Allow a person to belong to multiple groups.
-- Allow schedule items to target the full production or one/more Production Groups.
-- Automatically include the appropriate guardian visibility for targeted student groups.
-- Filter member schedules so users only see production-wide items or group-targeted items relevant to them/their student relationship.
-- Use the same resolved audience for schedule communication drafts.
-- Preserve group membership and schedule targeting in audit history.
+- A person may belong to multiple groups.
+- Schedule items can target the full production or one/more Production Groups.
+- Appropriate guardians automatically inherit family-facing calls for targeted student groups.
+- Member schedules only show production-wide items or group-targeted items relevant to them/their student relationship.
+- Schedule communication drafts resolve through the same production/group audience rules.
+- Group membership and schedule targeting are retained in audit history.
+- Inactive groups fail closed for schedule visibility/audience resolution.
+- Group-targeted notice publishing is restricted to targeted in-app delivery in the schedule workflow; a broad Community channel cannot accidentally expose a narrow call.
 - Future consumers: attendance, forms, resources, Community, call sheets, reports.
+- **Runtime verification:** pending local MAMP test after migration 011.
 
 ## Near-term build order
 
