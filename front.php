@@ -118,6 +118,11 @@ if (ScheduleNoticeExperience::handles($route)) {
     ScheduleNoticeExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/ResourceExperience.php';
+if (ResourceExperience::handles($route)) {
+    ResourceExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/PlaybillExperience.php';
 if (PlaybillExperience::handles($route)) {
     PlaybillExperience::render($route, $detectedBasePath);
