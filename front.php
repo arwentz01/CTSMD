@@ -70,6 +70,16 @@ if (AccountManagementExperience::handles($route)) {
     AccountManagementExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/EmailOperationsExperience.php';
+if (EmailOperationsExperience::handles($route)) {
+    EmailOperationsExperience::render($detectedBasePath);
+}
+
+require_once __DIR__ . '/src/NotificationPreferenceExperience.php';
+if (NotificationPreferenceExperience::handles($route)) {
+    NotificationPreferenceExperience::render($detectedBasePath);
+}
+
 require_once __DIR__ . '/src/CalendarExperience.php';
 if (CalendarExperience::handles($route)) {
     CalendarExperience::render($route, $detectedBasePath);
