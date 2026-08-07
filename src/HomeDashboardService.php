@@ -30,8 +30,11 @@ final class HomeDashboardService
         $productions = ProductionContext::activeProductions($db, $user);
         $selectedProduction = $staff ? ProductionContext::selected($db, $user) : null;
 
-        $familyEventKeys = [];
-        foreach ($family['events'] as $event) $familyEventKeys[(int)$event['id'].':'.(int)$event['child_id']] = true;
+        // Guardians may see the same call through their own guardian audience and a linked child.
+        // Prefer the child-labeled family event so the account-wide timeline does not duplicate it.
+        $familyEventIds = [];
+        foreach ($family['events'] as $event) $familyEventIds[(int)$event['id']] = true;
+        if ($familyEventIds) $ownEvents = array_values(array_filter($ownEvents, static fn(array $event): bool => !isset($familyEventIds[(int)$event['id']])));
 
         $timeline = [];
         foreach ($ownEvents as $event) {
