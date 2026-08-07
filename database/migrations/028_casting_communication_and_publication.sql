@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS production_cast_publications (
     status ENUM('draft','published') NOT NULL DEFAULT 'draft',
     headline VARCHAR(190) NULL,
     member_note VARCHAR(2000) NULL,
+    cast_snapshot_json JSON NULL,
     published_by_user_id BIGINT UNSIGNED NULL,
     published_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
