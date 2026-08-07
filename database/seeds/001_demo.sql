@@ -3,6 +3,7 @@ SET NAMES utf8mb4;
 -- Build 001 demo reset.
 -- Use DELETE rather than TRUNCATE so foreign-key relationships remain enforced.
 -- Child/dependent records are removed before their parents.
+DELETE FROM audit_events;
 DELETE FROM messages;
 DELETE FROM conversation_participants;
 DELETE FROM conversations;
@@ -24,6 +25,7 @@ DELETE FROM family_relationships;
 DELETE FROM users;
 
 -- Reset demo IDs so the explicit IDs and relational references below remain deterministic.
+ALTER TABLE audit_events AUTO_INCREMENT = 1;
 ALTER TABLE messages AUTO_INCREMENT = 1;
 ALTER TABLE conversations AUTO_INCREMENT = 1;
 ALTER TABLE playbills AUTO_INCREMENT = 1;
