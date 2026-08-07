@@ -27,8 +27,7 @@ final class AuthExperience
                 self::redirect(self::safeReturn($basePath,(string)($_POST['return_to']??'')));
             }
             if($route==='/activate'){
-                $token=(string)($_POST['token']??'');$password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');$userId=Auth::acceptInvitation($db,$token,$password);Auth::loginAsLocalUser($db,$userId);
-                unset($_SESSION['auth_local_identity']);self::redirect($basePath.'/app');
+                $token=(string)($_POST['token']??'');$password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');$userId=Auth::acceptInvitation($db,$token,$password);Auth::establishSession($db,$userId);self::redirect($basePath.'/app');
             }
             if($route==='/forgot-password'){
                 $token=Auth::createPasswordReset($db,(string)($_POST['email']??''));
