@@ -106,15 +106,9 @@ CREATE TABLE IF NOT EXISTS channels (
     name VARCHAR(120) NOT NULL,
     channel_type VARCHAR(80) NOT NULL,
     description VARCHAR(255) NULL,
-    read_scope ENUM('all_members','production_members','staff') NOT NULL DEFAULT 'all_members',
-    post_scope ENUM('all_members','production_members','staff') NOT NULL DEFAULT 'staff',
     sort_order INT NOT NULL DEFAULT 0,
-    created_by_user_id BIGINT UNSIGNED NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     archived_at DATETIME NULL,
-    CONSTRAINT fk_channels_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE SET NULL,
-    CONSTRAINT fk_channels_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_channels_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS channel_posts (
