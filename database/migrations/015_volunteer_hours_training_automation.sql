@@ -68,3 +68,71 @@ CREATE TABLE IF NOT EXISTS form_requirement_mappings (
     CONSTRAINT fk_form_requirement_requirement FOREIGN KEY (requirement_id) REFERENCES volunteer_requirements(id) ON DELETE CASCADE,
     CONSTRAINT fk_form_requirement_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TRIGGER IF EXISTS trg_volunteer_signup_hours_update;
+DROP TRIGGER IF EXISTS trg_training_completion_credential_insert;
+DROP TRIGGER IF EXISTS trg_training_completion_credential_update;
+DROP TRIGGER IF EXISTS trg_form_approval_credential_update;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_volunteer_signup_hours_update
+AFTER UPDATE ON volunteer_shift_signups
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'completed' THEN
+        INSERT INTO volunteer_hour_entries (user_id,production_id,shift_id,minutes,source_type,status,note,verified_by_user_id,served_at)
+        SELECT NEW.user_id,vs.production_id,vs.id,GREATEST(TIMESTAMPDIFF(MINUTE,vs.starts_at,vs.ends_at),1),'shift','verified',CONCAT('Verified from completed shift: ',vs.title),NULL,vs.ends_at
+        FROM volunteer_shifts vs WHERE vs.id=NEW.shift_id
+        ON DUPLICATE KEY UPDATE minutes=VALUES(minutes),production_id=VALUES(production_id),status='verified',note=VALUES(note),served_at=VALUES(served_at),updated_at=CURRENT_TIMESTAMP;
+    ELSEIF OLD.status = 'completed' AND NEW.status <> 'completed' THEN
+        UPDATE volunteer_hour_entries SET status='void',updated_at=CURRENT_TIMESTAMP WHERE shift_id=NEW.shift_id AND user_id=NEW.user_id;
+    END IF;
+END$$
+
+CREATE TRIGGER trg_training_completion_credential_insert
+AFTER INSERT ON volunteer_training_completions
+FOR EACH ROW
+BEGIN
+    IF NEW.status='completed' THEN
+        INSERT INTO volunteer_credentials (user_id,requirement_id,status,completed_at,expires_at,verified_by_user_id)
+        SELECT NEW.user_id,m.requirement_id,'approved',NEW.completed_at,
+               CASE WHEN m.validity_days IS NULL THEN NULL ELSE DATE_ADD(NEW.completed_at,INTERVAL m.validity_days DAY) END,
+               NEW.verified_by_user_id
+        FROM volunteer_training_modules m
+        WHERE m.id=NEW.module_id AND m.requirement_id IS NOT NULL
+        ON DUPLICATE KEY UPDATE status='approved',completed_at=VALUES(completed_at),expires_at=VALUES(expires_at),verified_by_user_id=VALUES(verified_by_user_id);
+    END IF;
+END$$
+
+CREATE TRIGGER trg_training_completion_credential_update
+AFTER UPDATE ON volunteer_training_completions
+FOR EACH ROW
+BEGIN
+    IF NEW.status='completed' THEN
+        INSERT INTO volunteer_credentials (user_id,requirement_id,status,completed_at,expires_at,verified_by_user_id)
+        SELECT NEW.user_id,m.requirement_id,'approved',NEW.completed_at,
+               CASE WHEN m.validity_days IS NULL THEN NULL ELSE DATE_ADD(NEW.completed_at,INTERVAL m.validity_days DAY) END,
+               NEW.verified_by_user_id
+        FROM volunteer_training_modules m
+        WHERE m.id=NEW.module_id AND m.requirement_id IS NOT NULL
+        ON DUPLICATE KEY UPDATE status='approved',completed_at=VALUES(completed_at),expires_at=VALUES(expires_at),verified_by_user_id=VALUES(verified_by_user_id);
+    END IF;
+END$$
+
+CREATE TRIGGER trg_form_approval_credential_update
+AFTER UPDATE ON form_submissions
+FOR EACH ROW
+BEGIN
+    IF NEW.status='approved' AND OLD.status <> 'approved' THEN
+        INSERT INTO volunteer_credentials (user_id,requirement_id,status,completed_at,expires_at,verified_by_user_id)
+        SELECT NEW.submitted_by_user_id,m.requirement_id,'approved',COALESCE(NEW.reviewed_at,CURRENT_TIMESTAMP),
+               CASE WHEN m.validity_days IS NULL THEN NULL ELSE DATE_ADD(COALESCE(NEW.reviewed_at,CURRENT_TIMESTAMP),INTERVAL m.validity_days DAY) END,
+               NEW.reviewer_user_id
+        FROM form_requirement_mappings m
+        WHERE m.form_id=NEW.form_id AND m.active=1
+        ON DUPLICATE KEY UPDATE status='approved',completed_at=VALUES(completed_at),expires_at=VALUES(expires_at),verified_by_user_id=VALUES(verified_by_user_id);
+    END IF;
+END$$
+
+DELIMITER ;
