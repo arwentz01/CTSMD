@@ -18,13 +18,12 @@ final class AttendanceService
     public static function expectedMembers(PDO $db,int $scheduleItemId):array
     {
         $audience=ScheduleAudience::audienceMembersForItem($db,$scheduleItemId);
-        $expected=[];
+        $expected=[];$seen=[];
         foreach($audience as $member){
             if(($member['audience_type']??'')==='guardian')continue;
-            $expected[(int)$member['id']]=$member;
+            $id=(int)$member['id'];if(isset($seen[$id]))continue;$seen[$id]=true;$expected[]=$member;
         }
-        ksort($expected);
-        return array_values($expected);
+        return $expected;
     }
 
     public static function roster(PDO $db,int $scheduleItemId):array
@@ -67,6 +66,7 @@ final class AttendanceService
     public static function acknowledgeReport(PDO $db,int $reportId,int $actorUserId):void
     {
         $stmt=$db->prepare("SELECT id,schedule_item_id,student_user_id,status FROM attendance_absence_reports WHERE id=:id FOR UPDATE");$stmt->execute(['id'=>$reportId]);$report=$stmt->fetch();if(!$report||$report['status']!=='submitted')throw new RuntimeException('That absence report is no longer awaiting review.');
+        $expected=self::expectedMembers($db,(int)$report['schedule_item_id']);$expectedIds=array_map(static fn(array $m):int=>(int)$m['id'],$expected);if(!in_array((int)$report['student_user_id'],$expectedIds,true))throw new RuntimeException('That student is no longer expected for this schedule item. Review the schedule audience before acknowledging the report.');
         $db->prepare("UPDATE attendance_absence_reports SET status='acknowledged',reviewed_by_user_id=:actor,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['actor'=>$actorUserId,'id'=>$reportId]);
         $db->prepare("INSERT INTO attendance_records (schedule_item_id,user_id,status,marked_by_user_id,marked_at) VALUES (:item,:user,'excused',:actor,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE status='excused',marked_by_user_id=VALUES(marked_by_user_id),marked_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP")->execute(['item'=>(int)$report['schedule_item_id'],'user'=>(int)$report['student_user_id'],'actor'=>$actorUserId]);
     }
