@@ -50,6 +50,11 @@ if (HomeExperience::handles($route)) {
     HomeExperience::render($route, $detectedBasePath, $data);
 }
 
+require_once __DIR__ . '/src/VolunteerApprovalExperience.php';
+if (VolunteerApprovalExperience::handles($route)) {
+    VolunteerApprovalExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/VolunteerExperience.php';
 if (VolunteerExperience::handles($route)) {
     VolunteerExperience::render($route, $detectedBasePath);
