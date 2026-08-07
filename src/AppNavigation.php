@@ -63,6 +63,7 @@ final class AppNavigation
                 </form>
                 <?php endif; ?>
                 <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction ? $esc((string)$selectedProduction['title']) : 'Schedule, calls & resources' ?></small></span></a>
+                <a class="unified-nav-item<?= $isActive('/calendar') ?>" href="<?= $url('/calendar') ?>"><i>◫</i><span><b>Calendar</b><small>All active shows & conflicts</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/channels') ?>" href="<?= $url('/channels') ?>"><i>#</i><span><b>Community</b><small>Channels & announcements</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/messages') ?>" href="<?= $url('/messages') ?>"><i>✉</i><span><b>Messages</b><small>Protected conversations</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/volunteer-readiness') ?>" href="<?= $url('/volunteer-readiness') ?>"><i>♡</i><span><b>Volunteer</b><small>Readiness, training & shifts</small></span></a>
