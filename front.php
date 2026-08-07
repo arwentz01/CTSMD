@@ -60,11 +60,26 @@ if (!Auth::check()) {
 }
 
 $dbForAuth = Database::connect(__DIR__);
-if (!Auth::currentUser($dbForAuth)) {
+$currentAuthUser = Auth::currentUser($dbForAuth);
+if (!$currentAuthUser) {
     header('Location: ' . ($detectedBasePath ?: '') . '/login', true, 303);
     exit;
 }
-unset($dbForAuth);
+
+require_once __DIR__ . '/src/CommunicationReadStateService.php';
+if ($route === '/messages/thread') {
+    $conversationId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
+    if ($conversationId > 0) {
+        CommunicationReadStateService::markConversationRead($dbForAuth, (int)$currentAuthUser['id'], (int)$conversationId);
+    }
+}
+if ($route === '/channels/view') {
+    $channelId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
+    if ($channelId > 0 && CommunicationReadStateService::canAccessChannel($dbForAuth, $currentAuthUser, (int)$channelId)) {
+        CommunicationReadStateService::markChannelRead($dbForAuth, (int)$currentAuthUser['id'], (int)$channelId);
+    }
+}
+unset($currentAuthUser, $dbForAuth);
 
 require_once __DIR__ . '/src/AccountManagementExperience.php';
 if (AccountManagementExperience::handles($route)) AccountManagementExperience::render($route, $detectedBasePath);
