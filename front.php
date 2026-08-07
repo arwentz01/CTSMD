@@ -165,6 +165,8 @@ require_once __DIR__ . '/src/ProductionExperience.php';
 if (ProductionExperience::handles($route)) ProductionExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/CommunicationExperience.php';
 if (CommunicationExperience::handles($route)) CommunicationExperience::render($route, $detectedBasePath);
+require_once __DIR__ . '/src/SafeguardingCaseExperience.php';
+if (SafeguardingCaseExperience::handles($route)) SafeguardingCaseExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/SafeguardingExperience.php';
 if (SafeguardingExperience::handles($route)) SafeguardingExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/VisualPass3.php';
