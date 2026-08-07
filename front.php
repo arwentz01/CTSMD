@@ -88,6 +88,11 @@ if (TeamExperience::handles($route)) {
     TeamExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/ModerationExperience.php';
+if (ModerationExperience::handles($route)) {
+    ModerationExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/CommunityManagementExperience.php';
 if (CommunityManagementExperience::handles($route)) {
     CommunityManagementExperience::render($route, $detectedBasePath);
