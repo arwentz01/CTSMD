@@ -42,8 +42,14 @@ final class SchemaGuard
             $missing009 = [];
             if (!isset($tables['production_resources'])) $missing009[] = 'table production_resources';
 
-            if (!$missing006 && !$missing007 && !$missing008 && !$missing009) return;
-            self::render($missing006, $missing007, $missing008, $missing009);
+            $missing010 = [];
+            if (!isset($channelColumns['access_mode'])) $missing010[] = 'channels.access_mode';
+            foreach (['teams','team_members','channel_members','channel_teams'] as $table) {
+                if (!isset($tables[$table])) $missing010[] = 'table ' . $table;
+            }
+
+            if (!$missing006 && !$missing007 && !$missing008 && !$missing009 && !$missing010) return;
+            self::render($missing006, $missing007, $missing008, $missing009, $missing010);
         } catch (PDOException $e) {
             if (str_contains($e->getMessage(), "doesn't exist")) return;
             throw $e;
@@ -70,7 +76,7 @@ final class SchemaGuard
         return $tables;
     }
 
-    private static function render(array $missing006, array $missing007, array $missing008, array $missing009): never
+    private static function render(array $missing006, array $missing007, array $missing008, array $missing009, array $missing010): never
     {
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $steps = [];
@@ -78,6 +84,7 @@ final class SchemaGuard
         if ($missing007) $steps[] = ['file' => 'database/migrations/007_form_management_and_context.sql', 'missing' => $missing007];
         if ($missing008) $steps[] = ['file' => 'database/migrations/008_playbill_management.sql', 'missing' => $missing008];
         if ($missing009) $steps[] = ['file' => 'database/migrations/009_production_resources.sql', 'missing' => $missing009];
+        if ($missing010) $steps[] = ['file' => 'database/migrations/010_teams_and_private_channels.sql', 'missing' => $missing010];
         http_response_code(503);
         header('Content-Type: text/html; charset=utf-8');
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Database update required · CTSMD Connect</title><style>body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f1ef;color:#241b1e;margin:0;padding:32px}.card{max-width:780px;margin:8vh auto;background:#fff;border:1px solid #ded5d8;border-radius:18px;padding:32px;box-shadow:0 18px 50px rgba(38,18,25,.08)}small{font-weight:800;letter-spacing:.12em;color:#a6192e}h1{font-family:Georgia,serif;font-size:34px;margin:8px 0 12px}p{line-height:1.6;color:#65575c}code{display:block;background:#191519;color:#fff;padding:14px 16px;border-radius:10px;margin:10px 0;font-size:14px}.missing{font-size:12px;color:#786a6f;margin-bottom:20px}</style></head><body><main class="card"><small>LOCAL DATABASE UPDATE REQUIRED</small><h1>CTSMD Connect needs a database migration.</h1><p>The application code is newer than this database. Run the following migration<?= count($steps)===1?'':'s' ?> against the <b>ctsmd</b> database in this order, then refresh.</p><?php foreach($steps as $step):?><code><?= $esc($step['file']) ?></code><p class="missing">Missing: <?= $esc(implode(', ',$step['missing'])) ?></p><?php endforeach;?><p>No demo seed reset is required.</p></main></body></html><?php exit;
