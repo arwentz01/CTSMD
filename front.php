@@ -32,6 +32,11 @@ if ($route === '/navigation' && Auth::localIdentitySwitchEnabled()) {
 require_once __DIR__ . '/src/SchemaGuard.php';
 SchemaGuard::requireCurrentSchema(__DIR__, $detectedBasePath);
 
+require_once __DIR__ . '/src/PublicExperience.php';
+if (PublicExperience::handles($route)) {
+    PublicExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/AuthExperience.php';
 if (AuthExperience::handles($route)) {
     AuthExperience::render($route, $detectedBasePath);
@@ -53,7 +58,7 @@ if ($route === '/health') {
 }
 
 if (!Auth::check()) {
-    $returnTo = $route !== '/' ? '?return_to=' . rawurlencode($route . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '')) : '';
+    $returnTo = '?return_to=' . rawurlencode($route . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''));
     header('Location: ' . ($detectedBasePath ?: '') . '/login' . $returnTo, true, 303);
     exit;
 }
@@ -68,6 +73,11 @@ unset($dbForAuth);
 require_once __DIR__ . '/src/AccountManagementExperience.php';
 if (AccountManagementExperience::handles($route)) {
     AccountManagementExperience::render($route, $detectedBasePath);
+}
+
+require_once __DIR__ . '/src/RegistrationOperationsExperience.php';
+if (RegistrationOperationsExperience::handles($route)) {
+    RegistrationOperationsExperience::render($route, $detectedBasePath);
 }
 
 require_once __DIR__ . '/src/EmailOperationsExperience.php';
