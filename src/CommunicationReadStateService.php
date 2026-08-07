@@ -31,11 +31,13 @@ final class CommunicationReadStateService
 
     public static function markConversationRead(PDO $db, int $userId, int $conversationId): void
     {
-        $stmt = $db->prepare("UPDATE conversation_participants cp
-            SET cp.last_read_message_id = COALESCE((SELECT MAX(m.id) FROM messages m WHERE m.conversation_id = cp.conversation_id AND m.hidden_at IS NULL), cp.last_read_message_id),
-                cp.last_read_at = CURRENT_TIMESTAMP
-            WHERE cp.conversation_id = :conversation AND cp.user_id = :user");
-        $stmt->execute(['conversation' => $conversationId, 'user' => $userId]);
+        $latest = $db->prepare("SELECT COALESCE(MAX(id),0) FROM messages WHERE conversation_id = :conversation AND hidden_at IS NULL");
+        $latest->execute(['conversation' => $conversationId]);
+        $messageId = (int)$latest->fetchColumn();
+        $stmt = $db->prepare("UPDATE conversation_participants
+            SET last_read_message_id = GREATEST(last_read_message_id, :message), last_read_at = CURRENT_TIMESTAMP
+            WHERE conversation_id = :conversation AND user_id = :user");
+        $stmt->execute(['message' => $messageId, 'conversation' => $conversationId, 'user' => $userId]);
     }
 
     public static function markConversationThroughMessage(PDO $db, int $userId, int $conversationId, int $messageId): void
