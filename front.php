@@ -16,4 +16,17 @@ $_ENV['APP_BASE_PATH'] = $detectedBasePath;
 $_SERVER['APP_BASE_PATH'] = $detectedBasePath;
 putenv('APP_BASE_PATH=' . $detectedBasePath);
 
+$requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+$route = $requestPath;
+if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) {
+    $route = substr($route, strlen($detectedBasePath)) ?: '/';
+}
+$route = rtrim($route, '/') ?: '/';
+
+require_once __DIR__ . '/src/VisualPass.php';
+if (VisualPass::handles($route)) {
+    $data = require __DIR__ . '/src/mock-data.php';
+    VisualPass::render($route, $detectedBasePath, $data);
+}
+
 require __DIR__ . '/index.php';
