@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__ . '/PlatformRegistrationService.php';
+
+final class PlatformOnboardingExperience
+{
+    private const ROUTES=['/join','/verify-email','/onboarding','/family/manage'];
+    public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
+    public static function isPublic(string $route):bool{return in_array($route,['/join','/verify-email'],true);}
+
+    public static function render(string $route,string $basePath):never
+    {
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['platform_onboarding_csrf']??=bin2hex(random_bytes(24));
+        $user=self::isPublic($route)?null:Auth::currentUser($db);
+        if(!self::isPublic($route)&&!$user)self::redirect($basePath.'/login?return_to='.rawurlencode($route));
+        if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);
+        if($route==='/join')self::joinPage($basePath);
+        if($route==='/verify-email')self::verifyPage($db,$basePath);
+        self::householdPage($db,$basePath,$user,$route);
+    }
+
+    private static function handlePost(PDO $db,string $route,string $basePath,?array $user):never
+    {
+        self::csrf();
+        try{
+            if($route==='/join'){
+                PlatformRegistrationService::registerAdult($db,$_POST,$basePath);
+                $_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Check your email for a verification link.'];
+                self::redirect($basePath.'/join?sent=1');
+            }
+            if($route==='/verify-email'){
+                $userId=PlatformRegistrationService::verify($db,(string)($_POST['token']??''));Auth::establishSession($db,$userId);self::redirect($basePath.'/onboarding');
+            }
+            if($route==='/onboarding'||$route==='/family/manage'){
+                if(!$user)throw new RuntimeException('Sign in to manage your household.');
+                $action=(string)($_POST['action']??'');
+                if($action==='add_child'){
+                    PlatformRegistrationService::addManagedChild($db,$user,$_POST);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Child profile added. CTSMD staff can now connect that student to the appropriate production when ready.'];self::redirect($basePath.'/family/manage');
+                }
+                if($action==='complete_onboarding'){
+                    PlatformRegistrationService::completeOnboarding($db,(int)$user['id']);self::redirect($basePath.'/app');
+                }
+            }
+            throw new RuntimeException('Choose a valid account action.');
+        }catch(RuntimeException $e){$_SESSION['platform_onboarding_flash']=['type'=>'error','message'=>$e->getMessage()];self::redirect($basePath.$route);}
+    }
+
+    private static function joinPage(string $basePath):never
+    {
+        $flash=$_SESSION['platform_onboarding_flash']??null;$local=$_SESSION['platform_local_verification_link']??null;unset($_SESSION['platform_onboarding_flash'],$_SESSION['platform_local_verification_link']);$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$u=static fn(string $p):string=>($basePath?:'').$p;
+        self::publicHead('Create your CTSMD Connect account',$basePath);?>
+        <main class="onboard-public"><header class="onboard-public-nav"><a href="<?=$u('/')?>" class="onboard-brand"><span>C</span><b>CTSMD <small>CONNECT</small></b></a><a href="<?=$u('/login')?>">Already have an account? <b>Sign in</b></a></header><div class="onboard-public-grid"><section class="onboard-intro"><small>JOIN CTSMD CONNECT</small><h1>Start with the parent or guardian account.</h1><p>Create your adult CTSMD Connect account first. After email verification, you can add your child or children inside your household.</p><ul><li>Your account does not automatically enroll anyone in a production.</li><li>Children are created as guardian-managed profiles first.</li><li>CTSMD staff connects verified students and guardians to production access.</li></ul></section><section class="onboard-card"><?php if($flash):?><div class="onboard-flash <?=$e($flash['type'])?>"><?=$e($flash['message'])?></div><?php endif;?><header><small>PARENT / GUARDIAN ACCOUNT</small><h2>Create your account</h2><p>This creates your CTSMD Connect identity, not a class or production registration.</p></header><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['platform_onboarding_csrf'])?>"><input type="hidden" name="relationship_type" value="parent"><div class="pair"><label>First name<input name="first_name" maxlength="100" autocomplete="given-name" required></label><label>Last name<input name="last_name" maxlength="100" autocomplete="family-name" required></label></div><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" minlength="12" autocomplete="new-password" required><small>At least 12 characters.</small></label><label>Confirm password<input type="password" name="password_confirm" minlength="12" autocomplete="new-password" required></label><button type="submit">Create CTSMD Connect account</button></form><?php if($local):?><div class="onboard-dev"><b>Local verification link</b><code><?=$e($local)?></code></div><?php endif;?></section></div></main><?php self::publicFoot();
+    }
+
+    private static function verifyPage(PDO $db,string $basePath):never
+    {
+        $token=(string)($_GET['token']??'');$verification=PlatformRegistrationService::verification($db,$token);$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$u=static fn(string $p):string=>($basePath?:'').$p;self::publicHead('Verify your email',$basePath);?><main class="onboard-public single"><header class="onboard-public-nav"><a href="<?=$u('/')?>" class="onboard-brand"><span>C</span><b>CTSMD <small>CONNECT</small></b></a></header><section class="onboard-card verify"><?php if(!$verification):?><small>EMAIL VERIFICATION</small><h1>This verification link is invalid or expired.</h1><p>Return to account registration and enter the same email address to request a new verification email.</p><a class="onboard-link" href="<?=$u('/join')?>">Return to account registration</a><?php else:?><small>EMAIL VERIFICATION</small><h1>Hi <?=$e($verification['first_name'])?>.</h1><p>Verify <b><?=$e($verification['email'])?></b> to activate your CTSMD Connect account and set up your household.</p><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['platform_onboarding_csrf'])?>"><input type="hidden" name="token" value="<?=$e($token)?>"><button type="submit">Verify email & continue</button></form><?php endif;?></section></main><?php self::publicFoot();
+    }
+
+    private static function householdPage(PDO $db,string $basePath,array $user,string $route):never
+    {
+        $flash=$_SESSION['platform_onboarding_flash']??null;unset($_SESSION['platform_onboarding_flash']);$children=self::children($db,(int)$user['id']);$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$u=static fn(string $p):string=>($basePath?:'').$p;$title=$route==='/onboarding'?'Set up your household':'Manage household';$subnav=[['label'=>'My family','href'=>'/family-hub','active'=>false],['label'=>'Manage household','href'=>'/family/manage','active'=>true]];
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=$e($title)?> · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/platform-onboarding.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Family',$title,$basePath,$subnav);?><div class="household-page"><?php if($flash):?><div class="onboard-flash <?=$e($flash['type'])?>"><?=$e($flash['message'])?></div><?php endif;?><section class="household-hero"><div><small>YOUR CTSMD HOUSEHOLD</small><h2><?=$route==='/onboarding'?'Now add your child profiles.':'The people you manage in CTSMD Connect.'?></h2><p>A child profile is linked to you immediately, but production access is assigned separately by CTSMD staff after participation is verified.</p></div><?php if($route!=='/onboarding'):?><a href="<?=$u('/family-hub')?>">Open Family Hub →</a><?php endif;?></section><div class="household-grid"><section class="household-panel"><header><small>LINKED CHILDREN</small><h3><?=count($children)?> child profile<?=count($children)===1?'':'s'?></h3></header><?php if(!$children):?><div class="household-empty"><b>No child profiles yet.</b><p>Add your child using the form beside this panel.</p></div><?php endif;?><?php foreach($children as $child):?><article class="household-child"><span><?=$e($child['initials'])?></span><div><b><?=$e($child['first_name'].' '.$child['last_name'])?></b><small><?=$e(ucfirst($child['relationship_type']))?><?=$child['is_primary']?' · Primary guardian':''?></small><p><?=$child['active_productions']?(int)$child['active_productions'].' active production'.((int)$child['active_productions']===1?'':'s'):'Not yet assigned to an active production'?></p></div></article><?php endforeach;?></section><section class="household-panel add"><header><small>ADD A CHILD</small><h3>Create a guardian-managed student profile</h3><p>No student login or production access is created by this form.</p></header><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['platform_onboarding_csrf'])?>"><input type="hidden" name="action" value="add_child"><div class="pair"><label>Child first name<input name="first_name" maxlength="100" required></label><label>Child last name<input name="last_name" maxlength="100" required></label></div><label>Your relationship<select name="relationship_type" required><option value="parent">Parent</option><option value="guardian">Guardian</option><option value="caregiver">Caregiver</option></select></label><button type="submit">Add child profile</button></form></section></div><?php if($route==='/onboarding'):?><form method="post" class="household-continue"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['platform_onboarding_csrf'])?>"><input type="hidden" name="action" value="complete_onboarding"><button type="submit"><?=$children?'Continue to CTSMD Connect':'Continue without adding a child yet'?> →</button><small>You can return to Manage Household at any time.</small></form><?php endif;?></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+
+    private static function children(PDO $db,int $guardianId):array
+    {
+        $stmt=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.initials,fr.relationship_type,fr.is_primary,(SELECT COUNT(DISTINCT pm.production_id) FROM production_memberships pm JOIN productions p ON p.id=pm.production_id AND p.is_active=1 WHERE pm.user_id=u.id AND pm.status='active') active_productions FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY u.first_name,u.last_name");$stmt->execute(['guardian'=>$guardianId]);return $stmt->fetchAll();
+    }
+
+    private static function publicHead(string $title,string $basePath):void{$u=static fn(string $p):string=>($basePath?:'').$p;header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#181416"><title><?=htmlspecialchars($title,ENT_QUOTES,'UTF-8')?> · CTSMD</title><link rel="stylesheet" href="<?=$u('/assets/css/platform-onboarding.css')?>"></head><body><?php }
+    private static function publicFoot():never{?></body></html><?php exit;}
+    private static function csrf():void{if(!hash_equals((string)($_SESSION['platform_onboarding_csrf']??''),(string)($_POST['csrf_token']??'')))throw new RuntimeException('Your session expired. Please try again.');}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+}
