@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/Database.php';
 
 final class AccessPolicy
 {
     public static function isStaff(array|string $userOrRole): bool
     {
         if(is_array($userOrRole)){
-            $roles=(array)($userOrRole['roles']??[]);
-            $permissions=(array)($userOrRole['permissions']??[]);
-            if($roles||$permissions){
+            $roles=self::rolesFor($userOrRole);
+            $permissions=self::permissionsFor($userOrRole);
+            if($roles!==null||$permissions!==null){
+                $roles=$roles??[];$permissions=$permissions??[];
                 return in_array('administrator',$roles,true)
                     || in_array('production_staff',$roles,true)
                     || in_array('moderator',$roles,true)
@@ -25,7 +27,10 @@ final class AccessPolicy
 
     public static function isStudent(array|string $userOrRole): bool
     {
-        if(is_array($userOrRole)&&isset($userOrRole['roles']))return in_array('student',(array)$userOrRole['roles'],true);
+        if(is_array($userOrRole)){
+            $roles=self::rolesFor($userOrRole);
+            if($roles!==null)return in_array('student',$roles,true);
+        }
         $role = strtolower(is_array($userOrRole) ? (string)($userOrRole['role'] ?? '') : $userOrRole);
         return str_contains($role, 'student');
     }
@@ -46,7 +51,24 @@ final class AccessPolicy
 
     private static function permissionOrLegacy(array $user,string $permission):bool
     {
-        if(isset($user['permissions']))return Auth::hasPermission($user,$permission);
+        $permissions=self::permissionsFor($user);
+        if($permissions!==null)return in_array($permission,$permissions,true);
         return self::isStaff($user);
+    }
+
+    private static function rolesFor(array $user):?array
+    {
+        if(isset($user['roles']))return (array)$user['roles'];
+        $id=(int)($user['id']??0);
+        if($id<1||Auth::userId()!==$id)return null;
+        try{$db=Database::connect(dirname(__DIR__));return Auth::roles($db,$id);}catch(Throwable){return [];}
+    }
+
+    private static function permissionsFor(array $user):?array
+    {
+        if(isset($user['permissions']))return (array)$user['permissions'];
+        $id=(int)($user['id']??0);
+        if($id<1||Auth::userId()!==$id)return null;
+        try{$db=Database::connect(dirname(__DIR__));return Auth::permissions($db,$id);}catch(Throwable){return [];}
     }
 }
