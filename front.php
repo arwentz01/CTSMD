@@ -45,6 +45,11 @@ if (ProductionExperience::handles($route)) {
     ProductionExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/CommunicationExperience.php';
+if (CommunicationExperience::handles($route)) {
+    CommunicationExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/VisualPass3.php';
 if (VisualPass3::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
