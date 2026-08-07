@@ -14,6 +14,22 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Parent multi-child / multi-production dashboard
+
+- Real database-backed family control tower at `/family-hub`, with `/parent` as an equivalent entry route.
+- Replaces the old mock-data Family Hub while leaving the existing `/app` Today experience intact for a later DB-backed home rebuild.
+- Guardian-to-student relationships come from active `family_relationships`; no child/domain records are hardcoded in PHP.
+- Each linked student independently resolves active production memberships, Production Group-aware schedule visibility and upcoming calls through the same Calendar/ScheduleAudience rules used by that student account.
+- Family schedule consolidates linked children across concurrent active productions while preserving child and production labels.
+- Per-child cards show active productions/participation roles, next call, open-form count and overlapping-call count.
+- Open forms aggregate the guardian's own assignments plus linked-student assignments and retain person/production context.
+- Guardian volunteer commitments are shown separately from child obligations so volunteer work is not misrepresented as a student call.
+- Household logistics conflict detection highlights simultaneous calls for different children at different locations while avoiding false alarms for the same event or same-location calls.
+- Recent guardian-targeted in-app notifications and unread count appear in the family control tower.
+- Sidebar adds a Family destination only when the signed-in account has at least one active guardian-to-student relationship.
+- No new migration is required; the build composes existing family, production, schedule, form, volunteer and notification data.
+- **Runtime verification:** pending local MAMP test with a guardian linked to multiple students across concurrent productions, including Production Group targeting and overlapping calls.
+
 ### Implemented — Email notifications + delivery queue
 
 - Durable outbound `email_queue` plus delivery-attempt history in migration 019.
@@ -117,12 +133,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Parent multi-child / multi-production dashboard
-
-- One family dashboard spanning children and active productions.
-- Upcoming calls and schedule changes by child.
-- Missing/overdue forms, volunteer commitments, unread communications and conflicts.
-
 ### Next — Public website / registration layer
 
 - Public CTSMD website/CMS bridge.
@@ -207,10 +217,10 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Home/dashboard backlog
 
-- Stronger role-specific dashboards.
+- Replace remaining mock-driven `/app` Today view with DB-backed role-specific home data.
 - Staff dashboard across concurrent productions.
 - Attention-needed cards: missing forms, uncovered shifts, conflicts, safeguarding review and unread critical updates.
-- Parent multi-child/multi-production summary and personal calendar overview.
+- Extend family logistics to include guardian volunteer-shift vs child-call collision warnings if useful in testing.
 
 ## People/family backlog
 
@@ -219,6 +229,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Multiple household/guardian relationship UX.
 - Contact preferences and avatar/photo management using shared storage.
 - Guardian-managed student-account UX and credential recovery rules.
+- Guardian-on-behalf-of-student form completion policy/UX.
 - Deliberate policy decision before storing sensitive medical/allergy information.
 
 ## Safeguarding backlog
@@ -265,6 +276,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
+- A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
