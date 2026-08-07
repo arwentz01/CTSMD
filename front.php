@@ -39,6 +39,11 @@ if (PeopleExperience::handles($route)) {
     PeopleExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/NotificationExperience.php';
+if (NotificationExperience::handles($route)) {
+    NotificationExperience::render($detectedBasePath);
+}
+
 require_once __DIR__ . '/src/HomeExperience.php';
 if (HomeExperience::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
@@ -48,6 +53,11 @@ if (HomeExperience::handles($route)) {
 require_once __DIR__ . '/src/VolunteerExperience.php';
 if (VolunteerExperience::handles($route)) {
     VolunteerExperience::render($route, $detectedBasePath);
+}
+
+require_once __DIR__ . '/src/ScheduleNoticeExperience.php';
+if (ScheduleNoticeExperience::handles($route)) {
+    ScheduleNoticeExperience::render($route, $detectedBasePath);
 }
 
 require_once __DIR__ . '/src/ProductionExperience.php';
