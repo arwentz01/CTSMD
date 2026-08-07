@@ -69,6 +69,17 @@ final class CommunicationReadStateService
         return ['total' => $total, 'channels' => $counts];
     }
 
+    public static function canAccessChannel(PDO $db, array $user, int $channelId): bool
+    {
+        if ($channelId < 1) return false;
+        $stmt = $db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.is_active production_active
+            FROM channels c LEFT JOIN productions p ON p.id=c.production_id
+            WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");
+        $stmt->execute(['id' => $channelId]);
+        $channel = $stmt->fetch();
+        return $channel ? self::canRead($db, $user, $channel) : false;
+    }
+
     public static function markChannelRead(PDO $db, int $userId, int $channelId): void
     {
         $stmt = $db->prepare("SELECT COALESCE(MAX(id),0) FROM channel_posts WHERE channel_id = :channel AND moderation_status = 'published'");
