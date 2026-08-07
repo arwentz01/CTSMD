@@ -20,6 +20,7 @@ DELETE FROM channels;
 DELETE FROM schedule_items;
 DELETE FROM announcements;
 DELETE FROM productions;
+DELETE FROM family_relationships;
 DELETE FROM users;
 
 -- Reset demo IDs so the explicit IDs and relational references below remain deterministic.
@@ -38,6 +39,7 @@ ALTER TABLE channels AUTO_INCREMENT = 1;
 ALTER TABLE schedule_items AUTO_INCREMENT = 1;
 ALTER TABLE announcements AUTO_INCREMENT = 1;
 ALTER TABLE productions AUTO_INCREMENT = 1;
+ALTER TABLE family_relationships AUTO_INCREMENT = 1;
 ALTER TABLE users AUTO_INCREMENT = 1;
 
 INSERT INTO users (id, first_name, last_name, email, initials, display_role, is_demo_current_user) VALUES
@@ -49,6 +51,9 @@ INSERT INTO users (id, first_name, last_name, email, initials, display_role, is_
 (6, 'Alex', 'Morgan', 'alex@example.test', 'AM', 'Parent + Volunteer', 0),
 (7, 'Casey', 'Nguyen', 'casey@example.test', 'CN', 'Volunteer', 0),
 (8, 'Robin', 'Patel', 'robin@example.test', 'RP', 'Volunteer', 0);
+
+INSERT INTO family_relationships (id, guardian_user_id, student_user_id, relationship_type, is_primary, status, created_by_user_id) VALUES
+(1, 1, 2, 'parent', 1, 'active', 3);
 
 INSERT INTO productions (id, title, season, status) VALUES
 (1, 'Matilda Jr.', 'Summer 2026', 'current'),
