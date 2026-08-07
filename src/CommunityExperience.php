@@ -92,13 +92,15 @@ final class CommunityExperience
 
     private static function canRead(PDO $db,array $user,array $channel): bool
     {
-        if(AccessPolicy::isStaff($user)) return true;
+        $mode=(string)($channel['access_mode']??'audience');
+        if($mode==='audience' && AccessPolicy::isStaff($user)) return true;
         return self::access($db,$user,$channel,'read');
     }
 
     private static function canPost(PDO $db,array $user,array $channel): bool
     {
-        if(AccessPolicy::isStaff($user)) return true;
+        $mode=(string)($channel['access_mode']??'audience');
+        if($mode==='audience' && AccessPolicy::isStaff($user)) return true;
         return self::access($db,$user,$channel,'post');
     }
 
