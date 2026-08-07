@@ -2,6 +2,31 @@
 
 declare(strict_types=1);
 
+final class CTSMDPDO extends PDO
+{
+    private static function rewriteLegacyIdentity(string $sql): string
+    {
+        if(session_status()!==PHP_SESSION_ACTIVE)return $sql;
+        $userId=(int)($_SESSION['auth_user_id']??0);
+        if($userId<1)return $sql;
+        return preg_replace_callback('/(?:(\b[a-zA-Z_][a-zA-Z0-9_]*)\.)?is_demo_current_user\s*=\s*1/i',static function(array $m)use($userId):string{
+            $prefix=!empty($m[1])?$m[1].'.':'';
+            return $prefix.'id = '.$userId;
+        },$sql)??$sql;
+    }
+
+    public function query(string $query,?int $fetchMode=null,mixed ...$fetchModeArgs):PDOStatement|false
+    {
+        $query=self::rewriteLegacyIdentity($query);
+        return $fetchMode===null?parent::query($query):parent::query($query,$fetchMode,...$fetchModeArgs);
+    }
+
+    public function prepare(string $query,array $options=[]):PDOStatement|false
+    {
+        return parent::prepare(self::rewriteLegacyIdentity($query),$options);
+    }
+}
+
 final class Database
 {
     public static function connect(string $projectRoot): PDO
@@ -17,7 +42,7 @@ final class Database
 
         $dsn = "mysql:host={$host};port={$port};dbname={$database};charset={$charset}";
 
-        return new PDO($dsn, $username, $password, [
+        return new CTSMDPDO($dsn, $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
