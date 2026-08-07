@@ -14,6 +14,27 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Community moderation
+
+- Admin-managed moderation term library at `/admin/moderation/terms`.
+- Rules can be activated/deactivated without deployment or hardcoded PHP changes.
+- Rule action may be **Block immediately** or **Hold for review**.
+- Exact or controlled normalized/fuzzy matching.
+- Normalization handles case, common character substitutions such as `@ -> a`, `$ -> s`, `0 -> o`, and punctuation/spacing between letters.
+- Optional aliases per canonical term.
+- Starter profanity/slur vocabulary lives in `database/seeds/002_moderation_terms.sql`, not application code, and does not overwrite later administrator changes.
+- Clean Community posts publish immediately; there is no universal pre-approval workflow.
+- Review matches remain private until a moderator approves them.
+- Block matches remain private and are retained for audit/moderation history.
+- Community feed/count queries only include `published` posts.
+- Moderator queue at `/admin/moderation/queue` shows matched rule/category/severity and the original submitted text.
+- Moderators approve the original text unchanged or reject it; CTSMD does not silently rewrite author content.
+- Ordinary users are not told the exact term/rule that triggered moderation.
+- If moderation evaluation fails, posting fails closed rather than bypassing the filter.
+- Applies to audience, selected-member, Team, and hybrid Community channels through the shared post pipeline.
+- Changes and moderation decisions are written to the audit trail.
+- **Runtime verification:** pending local MAMP test after migration 012 and optional starter seed 002.
+
 ### Implemented — Production groups + targeted schedule audiences
 
 - Production-native groups such as Full Cast, Ensemble, Principals, Tech Crew, Dance Ensemble, Production Staff, etc.
@@ -140,7 +161,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Team owners/roles, ordering and archive management.
 - Channel pinning/featured posts.
 - Post reactions.
-- Moderation tools.
+- Moderation rule refinements: more organization-specific categories/aliases and false-positive tuning as real usage teaches us where needed.
 - Search across Community posts.
 - Attachments/photos after storage is available.
 - First-class announcement composer separate from schedule-generated notices.
@@ -286,5 +307,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - General Teams and Production Groups are separate concepts even if they eventually share lower-level membership utilities.
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
+- Community moderation is exception-based; clean posts publish immediately, while matched rules may block or hold a post before it becomes visible.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
