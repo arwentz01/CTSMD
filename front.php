@@ -29,6 +29,11 @@ if ($route === '/navigation') {
     NavigationReview::render($detectedBasePath, $data);
 }
 
+require_once __DIR__ . '/src/PeopleExperience.php';
+if (PeopleExperience::handles($route)) {
+    PeopleExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/HomeExperience.php';
 if (HomeExperience::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
