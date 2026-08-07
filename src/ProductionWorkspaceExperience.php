@@ -108,6 +108,7 @@ final class ProductionWorkspaceExperience
 <body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production', 'Production workspace', $basePath, [
     ['label'=>'Workspace','href'=>'/production','active'=>true],
     ['label'=>'Schedule','href'=>'/schedule','active'=>false],
+    ['label'=>'Attendance','href'=>'/attendance','active'=>false],
     ['label'=>'Resources','href'=>'/resources','active'=>false],
     ['label'=>'Playbill','href'=>'/playbills','active'=>false],
 ]); ?><div class="pw-page">
@@ -137,6 +138,7 @@ final class ProductionWorkspaceExperience
 <section class="pw-current"><div><small>CURRENT WORKSPACE</small><h2><?= $esc((string)$selected['title']) ?></h2><p><?= $esc((string)($selected['season'] ?: 'Season not set')) ?> · Everything below opens in this production context.</p></div><span>Active</span></section>
 <div class="pw-modules">
 <a href="<?= $url('/schedule') ?>"><i>◷</i><b>Schedule</b><span>Rehearsals, performances, calls and locations.</span></a>
+<a href="<?= $url('/attendance') ?>"><i>✓</i><b>Attendance</b><span><?= $staff ? 'Take roll, review absences and track participation.' : 'View relevant calls and report an absence.' ?></span></a>
 <?php if ($staff): ?><a href="<?= $url('/production/people') ?>"><i>★</i><b>Cast & people</b><span>Students, guardians and production staff.</span></a><?php endif; ?>
 <a href="<?= $url('/channels') ?>"><i>#</i><b>Community</b><span>Production channels and announcements.</span></a>
 <a href="<?= $url('/volunteer-shifts') ?>"><i>♡</i><b>Volunteer</b><span>Coverage and opportunities for this show.</span></a>
