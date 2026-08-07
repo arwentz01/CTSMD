@@ -57,6 +57,16 @@ if (FormManagementExperience::handles($route)) {
     FormManagementExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/FormBuilderIndexExperience.php';
+if (FormBuilderIndexExperience::handles($route)) {
+    FormBuilderIndexExperience::render($detectedBasePath);
+}
+
+require_once __DIR__ . '/src/DynamicFormExperience.php';
+if (DynamicFormExperience::handles($route)) {
+    DynamicFormExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/FormExperience.php';
 if (FormExperience::handles($route)) {
     FormExperience::render($route, $detectedBasePath);
