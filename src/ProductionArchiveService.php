@@ -54,12 +54,12 @@ final class ProductionArchiveService
             'audiences'=>$audiences,
             'roster'=>self::roster($db,$productionId),
             'cast'=>self::publishedCast($db,$productionId),
-            'schedule'=>self::schedule($db,$productionId),
-            'playbill'=>self::playbill($db,$productionId),
+            'schedule'=>self::schedule($db,$productionId,$manager,$audiences),
+            'playbill'=>self::playbill($db,$productionId,$manager),
             'resources'=>self::resources($db,$productionId,$viewer,$audiences,$manager),
             'files'=>self::files($db,$productionId,$viewer,$audiences,$manager),
             'channels'=>self::channels($db,$productionId,$viewer,$audiences,$manager),
-            'notices'=>self::notices($db,$productionId),
+            'notices'=>self::notices($db,$productionId,$manager,$audiences),
         ];
     }
 
@@ -139,16 +139,17 @@ final class ProductionArchiveService
         $row['cast']=$decoded;unset($row['cast_snapshot_json']);return$row;
     }
 
-    private static function schedule(PDO $db, int $productionId): array
+    private static function schedule(PDO $db,int $productionId,bool $manager,array $audiences):array
     {
-        $s=$db->prepare("SELECT id,title,starts_at,ends_at,family_call_at,location,item_type,status FROM schedule_items WHERE production_id=:production ORDER BY starts_at,id");
-        $s->execute(['production'=>$productionId]);return$s->fetchAll();
+        $canSeeStaff=$manager||in_array('staff',$audiences,true);
+        $sql="SELECT id,title,starts_at,ends_at,family_call_at,location,item_type,status,visibility FROM schedule_items WHERE production_id=:production".($canSeeStaff?'':" AND visibility IN ('family','all')")." ORDER BY starts_at,id";
+        $s=$db->prepare($sql);$s->execute(['production'=>$productionId]);return$s->fetchAll();
     }
 
-    private static function playbill(PDO $db, int $productionId): ?array
+    private static function playbill(PDO $db,int $productionId,bool $manager):?array
     {
-        $s=$db->prepare("SELECT * FROM playbills WHERE production_id=:production ORDER BY FIELD(status,'current','archived','draft'),published_at DESC,id DESC LIMIT 1");
-        $s->execute(['production'=>$productionId]);$playbill=$s->fetch();if(!$playbill)return null;
+        $sql="SELECT * FROM playbills WHERE production_id=:production".($manager?'':" AND status IN ('current','archived')")." ORDER BY FIELD(status,'current','archived','draft'),published_at DESC,id DESC LIMIT 1";
+        $s=$db->prepare($sql);$s->execute(['production'=>$productionId]);$playbill=$s->fetch();if(!$playbill)return null;
         $sections=$db->prepare("SELECT heading,body,section_type,sort_order FROM playbill_sections WHERE playbill_id=:playbill AND active=1 ORDER BY sort_order,id");
         $sections->execute(['playbill'=>(int)$playbill['id']]);$playbill['sections']=$sections->fetchAll();return$playbill;
     }
@@ -181,9 +182,11 @@ final class ProductionArchiveService
         return match($mode){'selected'=>$selected,'team'=>$teamOkay,'hybrid'=>$audienceOkay||$selected||$teamOkay,default=>$audienceOkay};
     }
 
-    private static function notices(PDO $db,int $productionId):array
+    private static function notices(PDO $db,int $productionId,bool $manager,array $audiences):array
     {
-        $s=$db->prepare("SELECT n.subject,n.body,n.audience_scope,n.published_at,si.title schedule_title FROM schedule_change_notices n LEFT JOIN schedule_items si ON si.id=n.schedule_item_id WHERE n.production_id=:production AND n.status='published' ORDER BY n.published_at DESC,n.id DESC");$s->execute(['production'=>$productionId]);return$s->fetchAll();
+        $canSeeStaff=$manager||in_array('staff',$audiences,true);
+        $sql="SELECT n.subject,n.body,n.audience_scope,n.published_at,si.title schedule_title FROM schedule_change_notices n LEFT JOIN schedule_items si ON si.id=n.schedule_item_id WHERE n.production_id=:production AND n.status='published'".($canSeeStaff?'':" AND n.audience_scope IN ('family','all')")." ORDER BY n.published_at DESC,n.id DESC";
+        $s=$db->prepare($sql);$s->execute(['production'=>$productionId]);return$s->fetchAll();
     }
 
     private static function audienceAllows(string $json,array $viewer,array $audiences):bool
