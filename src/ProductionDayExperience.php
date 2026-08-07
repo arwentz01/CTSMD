@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/AccessPolicy.php';
+require_once __DIR__.'/AppNavigation.php';
+require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/ProductionDayService.php';
+
+final class ProductionDayExperience
+{
+    private const ROUTE='/production/day';
+    public static function handles(string $route):bool{return $route===self::ROUTE;}
+
+    public static function render(string $route,string $basePath):never
+    {
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);
+        if(!$user||!AccessPolicy::canManageProduction($user))self::forbidden();
+        $production=ProductionContext::selected($db,$user);
+        if(!$production)self::page($basePath,$user,null,date('Y-m-d'),null,null);
+        $_SESSION['production_day_csrf']??=bin2hex(random_bytes(24));
+        $date=(string)($_GET['date']??date('Y-m-d'));
+        try{$date=self::validDate($date);}catch(RuntimeException){$date=date('Y-m-d');}
+        if($_SERVER['REQUEST_METHOD']==='POST'){
+            if(!hash_equals((string)($_SESSION['production_day_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session expired.');self::redirect($basePath.'/production/day?date='.rawurlencode($date));}
+            try{ProductionDayService::saveBrief($db,(int)$production['id'],(int)$user['id'],$date,$_POST);self::flash('success','Production-day briefing saved.');}catch(RuntimeException $e){self::flash('error',$e->getMessage());}
+            self::redirect($basePath.'/production/day?date='.rawurlencode($date));
+        }
+        $data=ProductionDayService::build($db,(int)$production['id'],$date);self::page($basePath,$user,$production,$date,$data,$_SESSION['production_day_flash']??null);
+    }
+
+    private static function page(string $basePath,array $user,?array $production,string $date,?array $data,?array $flash):never
+    {
+        unset($_SESSION['production_day_flash']);$u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');
+        $day=new DateTimeImmutable($date);$prev=$day->modify('-1 day')->format('Y-m-d');$next=$day->modify('+1 day')->format('Y-m-d');$today=date('Y-m-d');
+        $sub=[['label'=>'Workspace','href'=>'/production','active'=>false],['label'=>'Readiness','href'=>'/production/readiness','active'=>false],['label'=>'Production day','href'=>'/production/day','active'=>true],['label'=>'Schedule','href'=>'/schedule','active'=>false],['label'=>'Attendance','href'=>'/attendance','active'=>false]];
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Production day · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/production-day.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production/day',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Working production','Production day',$basePath,$sub);?><div class="pd-page">
+        <?php if(!$production||!$data):?><section class="pd-empty"><h2>Select an active production first.</h2><p>Production Day is a Working-Production operations surface.</p><a class="button" href="<?=$u('/production')?>">Choose production</a></section>
+        <?php else:$brief=$data['brief']??null;$sum=$data['summary'];?><section class="pd-hero"><div><small>RUN OF DAY · <?=$e(strtoupper($day->format('D M j')))?></small><h2><?=$e((string)$production['title'])?></h2><p><?= $e($brief['headline']??'Schedule, people, attendance, volunteers and live operational attention in one place.') ?></p></div><div class="pd-hero-actions"><button type="button" onclick="window.print()">Print call sheet</button><a href="<?=$u('/production/readiness')?>">Readiness →</a></div></section>
+        <?php if($flash):?><div class="pd-flash <?=$e((string)$flash['type'])?>"><?=$e((string)$flash['message'])?></div><?php endif;?>
+        <nav class="pd-datebar"><a href="<?=$u('/production/day?date='.$prev)?>">← Previous</a><div><strong><?=$e($day->format('l, F j, Y'))?></strong><?php if($date!==$today):?><a href="<?=$u('/production/day?date='.$today)?>">Today</a><?php endif;?></div><a href="<?=$u('/production/day?date='.$next)?>">Next →</a></nav>
+        <section class="pd-summary"><article><b><?=(int)$sum['schedule_items']?></b><span>calls / events</span></article><article><b><?=(int)$sum['attendance_marked']?> / <?=(int)$sum['expected_marks']?></b><span>attendance marks</span></article><article class="<?=((int)$sum['open_volunteer_slots']>0)?'warn':''?>"><b><?=(int)$sum['open_volunteer_slots']?></b><span>open volunteer slots</span></article><article class="<?=((int)$sum['draft_notices']>0)?'warn':''?>"><b><?=(int)$sum['draft_notices']?></b><span>draft notices</span></article><article><b><?=(int)$sum['checklist_open']?></b><span>readiness tasks open</span></article></section>
+        <div class="pd-layout"><div class="pd-main"><section class="pd-section"><header><div><small>CALL SHEET</small><h2>Run of day</h2></div><a href="<?=$u('/schedule')?>">Full schedule →</a></header>
+        <?php if(!$data['schedule']):?><div class="pd-empty compact">No active schedule items start on this date.</div><?php endif;?>
+        <?php foreach($data['schedule'] as $item):?><article class="pd-call"><div class="pd-call-time"><b><?=date('g:i A',strtotime((string)$item['starts_at']))?></b><span><?=$item['ends_at']?date('g:i A',strtotime((string)$item['ends_at'])):'Open end'?></span></div><div class="pd-call-body"><div class="pd-call-title"><div><small><?=$e(strtoupper((string)$item['item_type']))?><?php if($item['groups']):?> · <?=$e(implode(', ',$item['groups']))?><?php endif;?></small><h3><?=$e((string)$item['title'])?></h3><p><?=$e((string)$item['location'])?><?php if($item['family_call_at']):?> · Family call <?=date('g:i A',strtotime((string)$item['family_call_at']))?><?php endif;?></p></div><a href="<?=$u('/attendance/take?id='.(int)$item['id'])?>">Take attendance →</a></div><div class="pd-attendance"><span><b><?=(int)$item['expected_count']?></b> expected</span><span><b><?=(int)$item['marked_count']?></b> marked</span><?php foreach($item['attendance_counts'] as $status=>$count):if(!$count||$status==='unmarked')continue;?><span><?=ucwords(str_replace('_',' ',$status))?> <?=$count?></span><?php endforeach;?></div>
+        <?php if($item['attendance_roster']):?><details><summary>Expected roster</summary><div class="pd-roster"><?php foreach($item['attendance_roster'] as $person):?><div><span><b><?=$e((string)$person['name'])?></b><small><?=ucwords(str_replace('_',' ',(string)$person['attendance_status']))?><?php if(!empty($person['absence_report'])):?> · absence reported<?php endif;?></small></span><?php if(!empty($person['absence_report'])):?><em><?=$e((string)$person['absence_report']['reason'])?></em><?php endif;?></div><?php endforeach;?></div></details><?php endif;?></div></article><?php endforeach;?></section></div>
+        <aside class="pd-side"><section class="pd-brief"><header><small>STAFF BRIEFING</small><h2>Day notes</h2></header><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['production_day_csrf'])?>"><label>Status<select name="day_status"><option value="planning"<?=($brief['day_status']??'planning')==='planning'?' selected':''?>>Planning</option><option value="live"<?=($brief['day_status']??'')==='live'?' selected':''?>>Live</option><option value="closed"<?=($brief['day_status']??'')==='closed'?' selected':''?>>Closed</option></select></label><label>Headline<input name="headline" maxlength="190" value="<?=$e((string)($brief['headline']??''))?>" placeholder="Tech rehearsal · full company"></label><label>Arrival / access note<textarea name="arrival_note" rows="3" maxlength="3000" placeholder="Parking, entrance, check-in or arrival details…"><?=$e((string)($brief['arrival_note']??''))?></textarea></label><label>Operations note<textarea name="operations_note" rows="6" maxlength="5000" placeholder="Staff-only run-of-day notes…"><?=$e((string)($brief['operations_note']??''))?></textarea></label><button type="submit">Save day briefing</button></form></section>
+        <section class="pd-panel"><header><div><small>VOLUNTEERS</small><h2>Coverage</h2></div><a href="<?=$u('/admin/volunteer-shifts')?>">Manage →</a></header><?php if(!$data['volunteer_shifts']):?><p>No volunteer shifts start today.</p><?php endif;?><?php foreach($data['volunteer_shifts'] as $v):$open=max(0,(int)$v['required_slots']-(int)$v['filled_slots']);?><a class="pd-mini <?=$open?'warn':''?>" href="<?=$u('/admin/volunteer-shifts/view?id='.(int)$v['id'])?>"><span><b><?=$e((string)$v['title'])?></b><small><?=date('g:i A',strtotime((string)$v['starts_at']))?> · <?=$e((string)$v['location'])?></small></span><em><?=$open?$open.' open':(int)$v['checked_in'].' checked in'?></em></a><?php endforeach;?></section>
+        <section class="pd-panel"><header><div><small>COMMUNICATION</small><h2>Schedule notices</h2></div><a href="<?=$u('/production/notices')?>">Open →</a></header><?php if(!$data['notices']):?><p>No schedule-change notices for today's items.</p><?php endif;?><?php foreach($data['notices'] as $n):?><a class="pd-mini <?=$n['status']==='draft'?'warn':''?>" href="<?=$u('/production/notice?id='.(int)$n['id'])?>"><span><b><?=$e((string)$n['subject'])?></b><small><?=$e((string)$n['schedule_title'])?></small></span><em><?=ucfirst((string)$n['status'])?></em></a><?php endforeach;?></section>
+        <section class="pd-panel"><header><div><small>READINESS</small><h2>Due / completed today</h2></div><a href="<?=$u('/production/readiness')?>">Checklist →</a></header><?php if(!$data['checklist']):?><p>No readiness checklist items are due or completed today.</p><?php endif;?><?php foreach($data['checklist'] as $c):?><div class="pd-mini <?=$c['status']==='blocked'?'warn':''?>"><span><b><?=$e((string)$c['title'])?></b><small><?=$e((string)$c['category'])?><?=$c['owner_name']?' · '.$e((string)$c['owner_name']):''?></small></span><em><?=ucwords(str_replace('_',' ',(string)$c['status']))?></em></div><?php endforeach;?></section></aside></div>
+        <?php endif;?></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+
+    private static function validDate(string $date):string{$d=DateTimeImmutable::createFromFormat('!Y-m-d',$date);if(!$d||$d->format('Y-m-d')!==$date)throw new RuntimeException('Invalid date.');return $date;}
+    private static function flash(string $type,string $message):void{$_SESSION['production_day_flash']=['type'=>$type,'message'=>$message];}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+    private static function forbidden():never{http_response_code(403);exit('Restricted');}
+}
