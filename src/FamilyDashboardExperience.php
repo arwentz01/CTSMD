@@ -6,10 +6,11 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/FamilyDashboardService.php';
+require_once __DIR__ . '/PlatformOnboardingExperience.php';
 
 final class FamilyDashboardExperience
 {
-    private const ROUTES = ['/family-hub','/parent'];
+    private const ROUTES = ['/family-hub','/parent','/onboarding','/family/manage'];
 
     public static function handles(string $route): bool
     {
@@ -18,6 +19,7 @@ final class FamilyDashboardExperience
 
     public static function render(string $route, string $basePath): never
     {
+        if(in_array($route,['/onboarding','/family/manage'],true))PlatformOnboardingExperience::render($route,$basePath);
         Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
@@ -42,6 +44,7 @@ final class FamilyDashboardExperience
         $subnav = [
             ['label'=>'Today','href'=>'/app','active'=>false],
             ['label'=>'My family','href'=>'/family-hub','active'=>true],
+            ['label'=>'Manage household','href'=>'/family/manage','active'=>false],
             ['label'=>'Forms','href'=>'/forms','active'=>false],
             ['label'=>'Notifications','href'=>'/notifications','active'=>false],
         ];
@@ -68,9 +71,9 @@ final class FamilyDashboardExperience
         <div>
             <small>YOUR CTSMD HOUSEHOLD</small>
             <h2><?= $children ? 'Everything your family needs, in one place.' : 'Your family dashboard is ready.' ?></h2>
-            <p><?= $children ? 'Calls, forms, volunteer commitments and updates across every active production.' : 'Once a student relationship is linked to your account, their active productions and family-facing work will appear here automatically.' ?></p>
+            <p><?= $children ? 'Calls, forms, volunteer commitments and updates across every active production.' : 'Add your child profiles to your household, then CTSMD staff can connect verified students to the appropriate production when ready.' ?></p>
         </div>
-        <a class="fd-calendar-link" href="<?= $url('/calendar') ?>">Open full calendar →</a>
+        <div><a class="fd-calendar-link" href="<?= $url('/family/manage') ?>">Manage household →</a> <a class="fd-calendar-link" href="<?= $url('/calendar') ?>">Open full calendar →</a></div>
     </section>
 
     <section class="fd-stats" aria-label="Family summary">
