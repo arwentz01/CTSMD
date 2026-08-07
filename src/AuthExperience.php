@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/Database.php';
 require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/MailService.php';
 
 final class AuthExperience
 {
@@ -30,9 +31,9 @@ final class AuthExperience
                 $token=(string)($_POST['token']??'');$password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');$userId=Auth::acceptInvitation($db,$token,$password);Auth::establishSession($db,$userId);self::redirect($basePath.'/app');
             }
             if($route==='/forgot-password'){
-                $token=Auth::createPasswordReset($db,(string)($_POST['email']??''));
-                self::flash('success','If an active account matches that email, a reset link has been created.');
-                if($token&&Auth::localIdentitySwitchEnabled())$_SESSION['auth_local_reset']=$basePath.'/reset-password?token='.$token;
+                $email=mb_strtolower(trim((string)($_POST['email']??'')));$token=Auth::createPasswordReset($db,$email);
+                if($token){$s=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email FROM users WHERE LOWER(email)=:email AND active=1 LIMIT 1");$s->execute(['email'=>$email]);$user=$s->fetch();if($user){$link=self::absoluteUrl($basePath.'/reset-password?token='.$token);$body="Hi {$user['name']},\n\nA password reset was requested for your CTSMD Connect account. Use this private link within 2 hours:\n{$link}\n\nIf you did not request this, you can ignore this email.\n\n— Children’s Theatre of Southern Maryland";MailService::queue($db,(int)$user['id'],(string)$user['email'],(string)$user['name'],'account_security','Reset your CTSMD Connect password',$body,null,'password-reset-'.hash('sha256',$token));if(Auth::localIdentitySwitchEnabled())$_SESSION['auth_local_reset']=$link;}}
+                self::flash('success','If an active account matches that email, reset instructions have been queued for delivery.');
                 self::redirect($basePath.'/forgot-password');
             }
             if($route==='/reset-password'){
@@ -52,13 +53,14 @@ final class AuthExperience
         <?php elseif($route==='/activate'):?>
         <?php if(!$invitation):?><div class="auth-empty"><b>This invitation is invalid or expired.</b><p>Ask a CTSMD administrator to issue a new invitation.</p></div><?php else:?><p class="auth-intro">Hi <?= $e($invitation['first_name']) ?>. Create a password to activate <b><?= $e($invitation['email']) ?></b>.</p><form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><input type="hidden" name="token" value="<?= $e($token) ?>"><label>New password<input type="password" name="password" minlength="12" autocomplete="new-password" required><small>At least 12 characters.</small></label><label>Confirm password<input type="password" name="password_confirm" minlength="12" autocomplete="new-password" required></label><button type="submit">Activate account</button></form><?php endif;?>
         <?php elseif($route==='/forgot-password'):?>
-        <p class="auth-intro">Enter your account email. CTSMD will create a time-limited reset request.</p><form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><label>Email<input type="email" name="email" autocomplete="email" required></label><button type="submit">Request password reset</button></form><?php if($localReset):?><div class="auth-dev"><b>Local development reset link</b><code><?= $e($localReset) ?></code></div><?php endif;?><footer><a href="<?= $url('/login') ?>">Back to sign in</a></footer>
+        <p class="auth-intro">Enter your account email. If it matches an active account, CTSMD will email a time-limited reset link.</p><form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><label>Email<input type="email" name="email" autocomplete="email" required></label><button type="submit">Request password reset</button></form><?php if($localReset):?><div class="auth-dev"><b>Local development reset link</b><code><?= $e($localReset) ?></code></div><?php endif;?><footer><a href="<?= $url('/login') ?>">Back to sign in</a></footer>
         <?php else:?>
         <form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['auth_csrf']) ?>"><input type="hidden" name="token" value="<?= $e($token) ?>"><label>New password<input type="password" name="password" minlength="12" autocomplete="new-password" required></label><label>Confirm password<input type="password" name="password_confirm" minlength="12" autocomplete="new-password" required></label><button type="submit">Update password</button></form>
         <?php endif;?></section></main></body></html><?php exit;
     }
 
     private static function csrf():void{if(!hash_equals((string)($_SESSION['auth_csrf']??''),(string)($_POST['csrf_token']??'')))throw new RuntimeException('Your session expired. Please try again.');}
+    private static function absoluteUrl(string $path):string{$configured=rtrim((string)(getenv('APP_URL')?:''),'/');$base=(string)(getenv('APP_BASE_PATH')?:'');if($configured!==''){if($base!==''&&str_ends_with(strtolower($configured),strtolower($base)))return $configured.substr($path,strlen($base));return $configured.$path;}$scheme=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')?'https':'http';return $scheme.'://'.($_SERVER['HTTP_HOST']??'localhost').$path;}
     private static function flash(string $type,string $message):void{$_SESSION['auth_flash']=['type'=>$type,'message'=>$message];}
     private static function safeReturn(string $basePath,string $return):string{$return=trim($return);if($return!==''&&str_starts_with($return,'/')&&!str_starts_with($return,'//'))return ($basePath?:'').$return;return ($basePath?:'').'/app';}
     private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
