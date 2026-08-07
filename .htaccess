@@ -4,11 +4,13 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Keep internal project directories out of direct web access.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
 
-    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
-    RewriteRule ^(.+)$ public/$1 [L]
+    # Serve Build 001 public assets while keeping application code outside /public.
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
+    # Send application routes through the front controller.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
