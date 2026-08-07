@@ -11,12 +11,13 @@ SetEnv APP_BASE_PATH /CTSMD
     # Keep internal project directories out of direct web access.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
 
-    # Serve Build 001 public assets while keeping application code outside /public.
-    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    # Static assets live at /assets so they can be served directly by Apache.
+    # Do not route them through the front controller or depend on rewrites.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
 
     # Send application routes through the front controller.
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
