@@ -36,6 +36,18 @@ final class AccessPolicy
 
     public static function localIdentitySwitchEnabled(): bool
     {
-        return strtolower((string)(getenv('APP_ENV') ?: ($_ENV['APP_ENV'] ?? 'production'))) === 'local';
+        $environment = strtolower((string)(getenv('APP_ENV') ?: ($_ENV['APP_ENV'] ?? 'production')));
+        if ($environment === 'local') {
+            return true;
+        }
+
+        $remoteAddress = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+        $host = preg_replace('/:\\d+$/', '', $host) ?: $host;
+
+        $loopbackRequest = in_array($remoteAddress, ['127.0.0.1', '::1'], true);
+        $localHost = in_array($host, ['localhost', '127.0.0.1', '[::1]'], true);
+
+        return $loopbackRequest && $localHost;
     }
 }
