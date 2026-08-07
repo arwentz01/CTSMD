@@ -1,5 +1,12 @@
 SET NAMES utf8mb4;
 
+CREATE TABLE IF NOT EXISTS communication_read_state_meta (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO communication_read_state_meta (id) VALUES (1);
+
 ALTER TABLE conversation_participants
     ADD COLUMN last_read_message_id BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER guardian_required,
     ADD COLUMN last_read_at DATETIME NULL AFTER last_read_message_id;
