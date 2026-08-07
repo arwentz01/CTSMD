@@ -68,7 +68,7 @@ final class StaffDashboardService
 
     private static function registrationIntake(PDO $db):int
     {
-        return (int)$db->query("SELECT COUNT(*) FROM registration_submissions rs LEFT JOIN registration_submission_links l ON l.submission_id=rs.id WHERE rs.status IN ('submitted','accepted') AND l.id IS NULL")->fetchColumn();
+        return (int)$db->query("SELECT COUNT(*) FROM registration_submissions rs LEFT JOIN registration_submission_links l ON l.submission_id=rs.id WHERE rs.status IN ('submitted','accepted') AND l.submission_id IS NULL")->fetchColumn();
     }
 
     private static function uncoveredShiftCount(PDO $db,array $ids,DateTimeImmutable $from,DateTimeImmutable $to):int{return count(self::uncoveredShifts($db,$ids,$from,$to));}
@@ -83,7 +83,7 @@ final class StaffDashboardService
 
     private static function registrationRows(PDO $db):array
     {
-        return $db->query("SELECT rs.id,rs.participant_first_name,rs.participant_last_name,rs.participant_age_group,rs.status,rs.submitted_at,ro.id opportunity_id,ro.title opportunity_title,p.title production_title FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN productions p ON p.id=ro.production_id LEFT JOIN registration_submission_links l ON l.submission_id=rs.id WHERE rs.status IN ('submitted','accepted') AND l.id IS NULL ORDER BY rs.submitted_at LIMIT 8")->fetchAll();
+        return $db->query("SELECT rs.id,rs.participant_first_name,rs.participant_last_name,rs.participant_age_group,rs.status,rs.submitted_at,ro.id opportunity_id,ro.title opportunity_title,p.title production_title FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN productions p ON p.id=ro.production_id LEFT JOIN registration_submission_links l ON l.submission_id=rs.id WHERE rs.status IN ('submitted','accepted') AND l.submission_id IS NULL ORDER BY rs.submitted_at LIMIT 8")->fetchAll();
     }
 
     private static function membershipRows(PDO $db):array
