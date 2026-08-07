@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/ProductionContext.php';
 
 final class AppNavigation
 {
@@ -11,6 +13,22 @@ final class AppNavigation
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $staff = AccessPolicy::isStaff($user);
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+        $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
+
+        $productionOptions = [];
+        $selectedProduction = null;
+        try {
+            $db = Database::connect(dirname(__DIR__));
+            $productionOptions = ProductionContext::activeProductions($db, $user);
+            $selectedProduction = ProductionContext::selected($db, $user);
+        } catch (Throwable) {
+            $productionOptions = [];
+            $selectedProduction = null;
+        }
 
         $isActive = static function (string $path) use ($route): string {
             if ($path === '/app') {
@@ -34,7 +52,20 @@ final class AppNavigation
                 <a class="unified-nav-item<?= $isActive('/app') ?>" href="<?= $url('/app') ?>"><i>⌂</i><span><b>Home</b><small>Today & family</small></span></a>
 
                 <span class="unified-nav-label">Theatre</span>
-                <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small>Schedule, calls & resources</small></span></a>
+                <?php if ($productionOptions): ?>
+                <form class="unified-production-switcher" method="post" action="<?= $url('/production/select') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>">
+                    <input type="hidden" name="return_to" value="<?= $esc($route) ?>">
+                    <label for="unified-production-select">Working production</label>
+                    <select id="unified-production-select" name="production_id" onchange="this.form.submit()">
+                        <?php foreach ($productionOptions as $production): ?>
+                            <option value="<?= (int)$production['id'] ?>"<?= $selectedProduction && (int)$selectedProduction['id'] === (int)$production['id'] ? ' selected' : '' ?>><?= $esc((string)$production['title']) ?><?= !empty($production['season']) ? ' · ' . $esc((string)$production['season']) : '' ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small><?= count($productionOptions) ?> active production<?= count($productionOptions) === 1 ? '' : 's' ?> available</small>
+                </form>
+                <?php endif; ?>
+                <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction ? $esc((string)$selectedProduction['title']) : 'Schedule, calls & resources' ?></small></span></a>
                 <a class="unified-nav-item<?= $isActive('/channels') ?>" href="<?= $url('/channels') ?>"><i>#</i><span><b>Community</b><small>Channels & announcements</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/messages') ?>" href="<?= $url('/messages') ?>"><i>✉</i><span><b>Messages</b><small>Protected conversations</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/volunteer-readiness') ?>" href="<?= $url('/volunteer-readiness') ?>"><i>♡</i><span><b>Volunteer</b><small>Readiness & shifts</small></span></a>
