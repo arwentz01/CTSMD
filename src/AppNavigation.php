@@ -14,9 +14,7 @@ final class AppNavigation
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $staff = AccessPolicy::isStaff($user);
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
 
         $productionOptions = [];
@@ -35,7 +33,7 @@ final class AppNavigation
                 return in_array($route, ['/app', '/family-hub', '/family/action', '/notifications', '/forms', '/forms/view'], true) ? ' active' : '';
             }
             if ($path === '/production') {
-                return in_array($route, ['/production', '/production/people', '/production/schedule/new', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/playbills'], true) ? ' active' : '';
+                return in_array($route, ['/production', '/production/people', '/production/schedule/new', '/schedule', '/production/day', '/production/edit', '/production/notices', '/production/notice', '/resources', '/resources/view', '/admin/resources', '/admin/resources/edit', '/playbills', '/admin/playbill'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
                 return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift', '/volunteer/approvals'], true) ? ' active' : '';
@@ -62,7 +60,6 @@ final class AppNavigation
                             <option value="<?= (int)$production['id'] ?>"<?= $selectedProduction && (int)$selectedProduction['id'] === (int)$production['id'] ? ' selected' : '' ?>><?= $esc((string)$production['title']) ?><?= !empty($production['season']) ? ' · ' . $esc((string)$production['season']) : '' ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <small><?= count($productionOptions) ?> active production<?= count($productionOptions) === 1 ? '' : 's' ?> available</small>
                 </form>
                 <?php endif; ?>
                 <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction ? $esc((string)$selectedProduction['title']) : 'Schedule, calls & resources' ?></small></span></a>
@@ -77,6 +74,7 @@ final class AppNavigation
                 <a class="unified-nav-item<?= $route === '/production/schedule/new' ? ' active' : '' ?>" href="<?= $url('/production/schedule/new') ?>"><i>＋</i><span><b>Add schedule item</b><small>Rehearsal, performance or call</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/productions') ? ' active' : '' ?>" href="<?= $url('/admin/productions') ?>"><i>◷</i><span><b>Productions & seasons</b><small>Create, activate & archive</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/channels') ? ' active' : '' ?>" href="<?= $url('/admin/channels') ?>"><i>#</i><span><b>Community Operations</b><small>Channels & posting rules</small></span></a>
+                <a class="unified-nav-item<?= str_starts_with($route, '/admin/resources') ? ' active' : '' ?>" href="<?= $url('/admin/resources') ?>"><i>▤</i><span><b>Resource Operations</b><small>Links, notes & audience access</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/volunteer-shifts') || str_starts_with($route, '/admin/volunteer-approvals') ? ' active' : '' ?>" href="<?= $url('/admin/volunteer-shifts') ?>"><i>♡</i><span><b>Volunteer Operations</b><small>Shifts, approvals & staffing</small></span></a>
                 <a class="unified-nav-item<?= str_starts_with($route, '/admin/forms') ? ' active' : '' ?>" href="<?= $url('/admin/forms/manage') ?>"><i>✓</i><span><b>Forms Operations</b><small>Create, assign & review</small></span></a>
                 <a class="unified-nav-item<?= $route === '/production/notices' || $route === '/production/notice' ? ' active' : '' ?>" href="<?= $url('/production/notices') ?>"><i>↗</i><span><b>Production updates</b><small>Review & publish changes</small></span></a>
