@@ -14,88 +14,69 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Authentication + normalized RBAC
+
+- Real session authentication with `/login` and POST `/logout`.
+- Passwords use PHP `password_hash()` / `password_verify()` and require at least 12 characters on activation/reset.
+- Invitation-only activation at `/activate?token=...`; invitation tokens are random and stored only as SHA-256 hashes.
+- Time-limited password reset workflow at `/forgot-password` and `/reset-password?token=...`; reset tokens are stored hashed and single-use.
+- Account lifecycle states: invited, active and disabled.
+- Normalized roles and permissions replace runtime authorization from `display_role` strings.
+- System roles: Member, Student, Volunteer, Production Staff, Moderator, Safeguarding and Administrator.
+- Permission-specific navigation and `AccessPolicy` checks for people, productions, Community, moderation, volunteers, forms, resources, Playbills, safeguarding, accounts and audit access.
+- Account & Access workspace at `/admin/accounts` for invitation issuance, role assignment and account disable/enable operations.
+- Administrators cannot disable themselves or remove their own Administrator role from the account workspace.
+- Front-controller authentication boundary protects private CTSMD routes while leaving published Playbills, health, activation/reset, and token-authenticated ICS feeds public as intended.
+- Legacy `is_demo_current_user` lookups are resolved per authenticated browser session by the database adapter instead of changing a global database flag, preserving concurrent-user safety while older screens are migrated incrementally.
+- `/dev/identity` now creates a local-only session identity rather than mutating the shared database current-user marker.
+- Existing prototype display-role labels are used only once by migration 017 to bootstrap initial normalized roles; authenticated runtime authorization does not trust those strings.
+- **Runtime verification:** pending local MAMP test after migration 017, including invitation activation, simultaneous browser identities, role denial, logout and password reset.
+
 ### Implemented — Calendar + schedule lifecycle
 
 - First-class Calendar route at `/calendar` in the Theatre navigation.
 - Month, week and 90-day agenda views.
 - Consolidated personal schedule across all active productions the current account can access.
-- Production filter for narrowing one active show.
-- Production Group filter; whole-production calls remain visible when they apply to the selected group.
-- Guardian child-focus filter resolves the selected child’s real production/group permissions rather than cosmetically filtering the guardian view.
+- Production and Production Group filters plus guardian child-focus filtering.
 - Cross-production overlap/conflict warnings run against the actual visible personal event set.
-- Cancelled events remain in calendar history and ICS feeds with cancelled state instead of being hard-deleted.
-- Staff can duplicate a schedule item seven days forward while preserving production/group targeting.
-- Staff can cancel an event from Calendar; cancellation creates a schedule communication draft for the affected audience.
-- Per-user revocable private calendar-subscription token.
-- ICS feed at `/calendar/feed?token=...` for Apple/Google/Outlook subscription; the UI renders an absolute subscription URL and allows token rotation.
-- Calendar feed permissions are resolved from the subscription owner’s current active production/group access each time the feed is requested.
-- Calendar lifecycle and subscription schema live in migration 016.
-- **Runtime verification:** pending local MAMP test after migration 016, including subscribing to the private ICS URL from an external calendar client.
+- Cancelled events remain in calendar history and ICS feeds instead of being hard-deleted.
+- Staff can duplicate a schedule item seven days forward and cancel events with a communication draft.
+- Per-user revocable private ICS subscription feed.
+- **Runtime verification:** pending local MAMP test after migration 016.
 
 ### Implemented — Volunteer hours, training + credential automation
 
-- Member volunteer-hours history at `/volunteer/history` with verified totals and entry detail.
-- Member training/readiness view at `/volunteer/training`.
+- Member volunteer-hours history at `/volunteer/history` and training/readiness at `/volunteer/training`.
 - Staff Volunteer Development workspace at `/admin/volunteer-development`.
-- Durable volunteer hour ledger supports shift-derived and staff-entered verified service.
-- Completed volunteer shifts automatically create/update verified service-hour entries; moving a completed signup out of completed status voids the shift-derived hour entry.
-- Training modules can be linked to an existing volunteer requirement and optional validity period.
-- Staff verifies training completion; members cannot self-award credentials.
-- Verified training automatically approves/refreshes the linked volunteer credential and expiration date when configured.
-- Approved Forms can be mapped to volunteer requirements so form approval updates readiness automatically.
-- Manual verified hours can be entered by staff with date, production context and notes.
+- Completed shifts feed verified service hours; verified training and approved mapped forms feed canonical volunteer credentials.
 - Core automated transitions have database-level safety-net triggers in migration 015.
-- **Runtime verification:** pending local MAMP test after migration 015, including MySQL/MariaDB trigger creation.
+- **Runtime verification:** pending local MAMP test after migration 015.
 
 ### Implemented — Dynamic forms
 
-- Staff Form Builder landing page at `/admin/forms/build`.
-- Structured field editor at `/admin/forms/builder?id=...`.
-- Field types: short text, long text, single choice, multiple choice, date, acknowledgment and typed signature.
-- Required/optional fields, help text, stable field keys, ordering and deactivate/reactivate lifecycle.
-- Choice options are stored with the field definition and validated server-side.
-- Definition version increments whenever structured fields are changed.
-- Existing forms without structured fields continue through the legacy Forms experience.
-- Submitted answers are stored as field-level records with immutable definition snapshots.
+- Staff Form Builder at `/admin/forms/build` and `/admin/forms/builder?id=...`.
+- Structured text, choice, date, acknowledgment and signature fields.
+- Field-level answers with immutable submission definition snapshots.
 - **Runtime verification:** pending local MAMP test after migration 014.
 
 ### Implemented — Attendance
 
-- Attendance workspace at `/attendance` within selected production context.
-- Expected attendees derive from schedule audience and Production Groups.
-- Guardian schedule visibility does not make guardians expected attendees.
-- Staff roll-call workspace at `/attendance/take?id=...`.
-- Attendance states: unmarked, present, absent, late, excused and left early.
-- Students/guardians can submit eligible absence reports for staff acknowledgment.
+- Attendance workspace at `/attendance` using schedule/Production Group targeting.
+- Staff roll call, absence reporting and excused-absence acknowledgment.
 - **Runtime verification:** pending local MAMP test after migration 013.
 
 ### Implemented — Community moderation
 
-- Admin-managed moderation term library at `/admin/moderation/terms` and queue at `/admin/moderation/queue`.
-- Block or hold-for-review actions with exact and controlled normalized/fuzzy matching.
-- Clean posts publish immediately; matched content is intercepted before visibility.
-- Starter vocabulary lives in `database/seeds/002_moderation_terms.sql` rather than PHP.
+- Admin-managed moderation term library and review queue.
+- Block/hold actions with controlled normalized/fuzzy matching; clean posts publish immediately.
 - **Runtime verification:** pending local MAMP test after migration 012 and optional seed 002.
 
 ### Implemented — Production groups + targeted schedule audiences
 
-- Production-native groups such as Full Cast, Ensemble, Principals and Tech Crew.
-- Schedule items may target whole production or one/more Production Groups.
-- Guardians inherit appropriate family-facing visibility without becoming group members.
-- Schedule notices, Attendance and Calendar use the same resolved audience rules.
+- Production-native groups drive targeted schedule, notice, Attendance and Calendar audiences.
 - **Runtime verification:** pending local MAMP test after migration 011.
 
 ## Near-term build order
-
-### Next — Production authentication + RBAC
-
-- Real login/logout.
-- Invitations and account activation.
-- Password reset/recovery.
-- Normalized roles/permissions instead of parsing display-role strings.
-- Staff permission tiers and safeguarding permissions.
-- Account deactivation.
-- Guardian-managed student-account considerations.
 
 ### Next — File uploads/storage
 
@@ -108,7 +89,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ### Next — Email notifications
 
-- Email delivery service.
+- Email delivery service, including automatic invitation/password-reset delivery.
 - User notification preferences.
 - Per-channel notification settings.
 - Form/credential/shift reminders.
@@ -119,33 +100,24 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 - One family dashboard spanning children and active productions.
 - Upcoming calls and schedule changes by child.
-- Missing/overdue forms.
-- Volunteer commitments.
-- Unread communications.
-- Conflict and attention-needed cards.
+- Missing/overdue forms, volunteer commitments, unread communications and conflicts.
 
 ### Next — Public website / registration layer
 
 - Public CTSMD website/CMS bridge.
-- Production/audition/event pages.
-- Audition and production registration.
-- Workshops/camps/classes.
-- Public calendar and Playbills.
-- News, donations and sponsorship.
-- RSVP/waitlist flows.
-- Payments later if approved.
+- Production/audition/event pages and registration.
+- Workshops/camps/classes, public calendar/Playbills, news, donations, sponsorship, RSVP/waitlists and later payments.
 
 ## Production operations backlog
 
 - Audition registration and audition-session management.
-- Casting workflow.
-- Role/character assignment improvements.
+- Casting workflow and role/character assignment improvements.
 - Production checklist/readiness dashboard.
 - Call sheets and production-day operational checklist.
 - Production group reuse/templates between shows where appropriate.
 - Production archive/history browser.
 - Season setup and season-level reporting.
-- Attendance aggregate reports, trends and exports beyond the per-call dashboard.
+- Attendance aggregate reports, trends and exports.
 - Rich recurring-schedule rules beyond duplicate +7 days.
 
 ## Community backlog
@@ -224,6 +196,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Preferred names/pronouns where appropriate.
 - Multiple household/guardian relationship UX.
 - Contact preferences and avatar/photo management.
+- Guardian-managed student-account UX and credential recovery rules.
 - Deliberate policy decision before storing sensitive medical/allergy information.
 
 ## Safeguarding backlog
@@ -238,40 +211,40 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 - Organization-wide audit explorer.
 - Volunteer, form, production-participation and attendance reports.
-- Data exports, user/role administration and system settings.
+- Data exports and system settings.
+- Custom role/permission administration only if CTSMD later needs roles beyond the system role set.
 - Season setup and archive/history browser.
 
 ## Platform/technical backlog
 
 - Consolidate canonical schema + migration strategy so fresh installs are predictable.
 - Break remaining large PHP experience files into smaller services/layouts/partials.
-- Replace display-role string parsing with normalized RBAC.
-- Production authentication.
+- Incrementally replace legacy per-experience current-user queries with direct `Auth::currentUser()` calls; the session-safe DB compatibility adapter is transitional.
 - Storage abstraction and mail delivery service.
+- Add authentication rate limiting / lockout policy before public production launch.
+- Consider persistent server-side session storage if Bluehost/PHP session behavior requires it.
 - Background jobs/cron where appropriate.
-- Automated tests.
+- Automated tests, especially auth/RBAC/access regression tests.
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
 - Bluehost deployment process/tooling and backup/restore procedures.
-- Timezone-aware date handling, including validating ICS conversion against the configured CTSMD timezone.
+- Timezone-aware date handling, including ICS conversion validation.
 - Search repository for remaining MySQL 8 DISTINCT/ORDER BY incompatibilities.
 - Fix remaining legacy FormExperience CSRF exception edge.
 - Remove remaining hardcoded prototype/domain data from legacy index.php.
 - Immutable recipient snapshots for published communications where required.
-- Validate database trigger privileges/behavior on the eventual Bluehost environment; retain PHP service equivalents where shared-hosting constraints require them.
+- Validate database trigger privileges/behavior on Bluehost; retain PHP service equivalents where required.
 
 ## Architectural notes
 
 - Multiple productions may be active concurrently.
 - Production activity is independent from the per-session working-production selector.
-- General Teams and Production Groups are separate concepts even if they eventually share lower-level membership utilities.
+- Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
+- Runtime administrator authorization is role/permission based, not display-label based.
+- Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
+- General Teams and Production Groups are separate concepts.
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
-- Community moderation is exception-based; clean posts publish immediately, while matched rules may block or hold a post before visibility.
-- Attendance expected rosters derive from schedule targeting and active production membership; guardian visibility does not imply guardian attendance.
-- Structured form submissions retain their own definition snapshot/version so historical responses are not rewritten by later form edits.
-- Volunteer readiness continues to use the canonical volunteer requirement/credential model; hours, training and approved-form automation feed that model rather than replacing it.
-- Calendar is a read/operations layer over canonical schedule items; it does not create a parallel calendar-event domain.
-- Private ICS tokens are revocable and must not weaken normal schedule audience rules.
+- Community moderation is exception-based; clean posts publish immediately, matched content is intercepted before visibility.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
