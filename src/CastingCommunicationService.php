@@ -49,6 +49,7 @@ final class CastingCommunicationService
     {
         $headline=trim($headline);$note=trim($note);
         if(mb_strlen($headline)>190||mb_strlen($note)>2000)throw new RuntimeException('The cast publication text is too long.');
+        if(!$publish){$existing=self::publication($db,$productionId);if(($existing['status']??'draft')==='published')throw new RuntimeException('The cast is already published. Private casting edits remain private; use Publish cast again when you are ready to release an updated snapshot.');}
         $snapshot=null;$count=self::publishableCount($db,$productionId);
         if($publish){if($count<1)throw new RuntimeException('Finalize at least one cast member to the roster before publishing the cast.');$snapshot=json_encode(self::currentPublishableCast($db,$productionId),JSON_THROW_ON_ERROR);}
         $status=$publish?'published':'draft';
