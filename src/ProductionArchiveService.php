@@ -132,8 +132,11 @@ final class ProductionArchiveService
         $s->execute(['production'=>$productionId]);$row=$s->fetch();
         if (!$row) return [];
         $decoded=json_decode((string)($row['cast_snapshot_json']??'[]'),true);
-        $row['cast']=is_array($decoded)?$decoded:[];unset($row['cast_snapshot_json']);
-        return $row;
+        if(!is_array($decoded)||!$decoded){
+            $fallback=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,pm.participation_role role,cr.participation_track FROM production_casting_records cr JOIN users u ON u.id=cr.user_id JOIN production_memberships pm ON pm.id=cr.production_membership_id WHERE cr.production_id=:production AND cr.casting_status='cast' AND cr.rostered_at IS NOT NULL ORDER BY COALESCE(cr.participation_track,''),COALESCE(pm.participation_role,''),u.last_name,u.first_name");
+            $fallback->execute(['production'=>$productionId]);$decoded=$fallback->fetchAll();
+        }
+        $row['cast']=$decoded;unset($row['cast_snapshot_json']);return$row;
     }
 
     private static function schedule(PDO $db, int $productionId): array
@@ -193,6 +196,7 @@ final class ProductionArchiveService
             if($audience==='production_students'&&in_array('student',$audiences,true))return true;
             if($audience==='production_guardians'&&in_array('guardian',$audiences,true))return true;
             if($audience==='production_staff'&&in_array('staff',$audiences,true))return true;
+            if($audience==='production_adults'&&$hasProduction&&!in_array('student',$audiences,true))return true;
             if($audience==='students'&&$isStudent)return true;
             if($audience==='staff'&&$isStaff)return true;
             if($audience==='adults'&&!$isStudent)return true;
