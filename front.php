@@ -23,6 +23,12 @@ if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) {
 }
 $route = rtrim($route, '/') ?: '/';
 
+require_once __DIR__ . '/src/VisualPass3.php';
+if (VisualPass3::handles($route)) {
+    $data = require __DIR__ . '/src/mock-data.php';
+    VisualPass3::render($route, $detectedBasePath, $data);
+}
+
 require_once __DIR__ . '/src/VisualPass.php';
 if (VisualPass::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
