@@ -70,6 +70,16 @@ if (VolunteerExperience::handles($route)) {
     VolunteerExperience::render($route, $detectedBasePath);
 }
 
+require_once __DIR__ . '/src/CommunityManagementExperience.php';
+if (CommunityManagementExperience::handles($route)) {
+    CommunityManagementExperience::render($route, $detectedBasePath);
+}
+
+require_once __DIR__ . '/src/CommunityExperience.php';
+if (CommunityExperience::handles($route)) {
+    CommunityExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/ProductionLifecycleExperience.php';
 if (ProductionLifecycleExperience::handles($route)) {
     ProductionLifecycleExperience::render($route, $detectedBasePath);
