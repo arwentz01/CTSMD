@@ -37,13 +37,11 @@ if (AuthExperience::handles($route)) {
     AuthExperience::render($route, $detectedBasePath);
 }
 
-// Token-authenticated calendar subscriptions do not require a browser login.
 if ($route === '/calendar/feed') {
     require_once __DIR__ . '/src/CalendarExperience.php';
     CalendarExperience::render($route, $detectedBasePath);
 }
 
-// The published Playbill is intentionally public.
 if ($route === '/playbill') {
     require_once __DIR__ . '/src/PlaybillExperience.php';
     PlaybillExperience::render($route, $detectedBasePath);
@@ -191,6 +189,11 @@ if (ScheduleCreateExperience::handles($route)) {
 require_once __DIR__ . '/src/ScheduleNoticeExperience.php';
 if (ScheduleNoticeExperience::handles($route)) {
     ScheduleNoticeExperience::render($route, $detectedBasePath);
+}
+
+require_once __DIR__ . '/src/ProductionFileExperience.php';
+if (ProductionFileExperience::handles($route)) {
+    ProductionFileExperience::render($route, $detectedBasePath);
 }
 
 require_once __DIR__ . '/src/ResourceExperience.php';
