@@ -23,6 +23,7 @@ final class CalendarService
         $stmt=$db->prepare($sql);$stmt->execute($params);$events=[];
         foreach($stmt->fetchAll() as $row){
             if(!ScheduleAudience::userCanViewItem($db,$user,$row))continue;
+            $row['group_ids']=$row['audience_mode']==='groups'?ScheduleAudience::groupIdsForItem($db,(int)$row['id']):[];
             $row['group_names']=$row['audience_mode']==='groups'?ScheduleAudience::groupNamesForItem($db,(int)$row['id']):[];
             $events[]=$row;
         }
