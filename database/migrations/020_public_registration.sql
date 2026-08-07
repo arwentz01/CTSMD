@@ -1,0 +1,52 @@
+SET NAMES utf8mb4;
+
+CREATE TABLE IF NOT EXISTS registration_opportunities (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    production_id BIGINT UNSIGNED NULL,
+    title VARCHAR(190) NOT NULL,
+    slug VARCHAR(190) NOT NULL,
+    opportunity_type ENUM('audition','workshop','camp','class','event','interest') NOT NULL DEFAULT 'event',
+    summary VARCHAR(500) NULL,
+    details TEXT NULL,
+    location VARCHAR(190) NULL,
+    starts_at DATETIME NULL,
+    ends_at DATETIME NULL,
+    registration_opens_at DATETIME NULL,
+    registration_closes_at DATETIME NULL,
+    capacity INT UNSIGNED NULL,
+    status ENUM('draft','published','closed','archived') NOT NULL DEFAULT 'draft',
+    confirmation_message VARCHAR(1000) NULL,
+    created_by_user_id BIGINT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_registration_opportunity_slug (slug),
+    KEY idx_registration_opportunity_public (status,registration_opens_at,registration_closes_at),
+    KEY idx_registration_opportunity_production (production_id,status),
+    CONSTRAINT fk_registration_opportunity_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE SET NULL,
+    CONSTRAINT fk_registration_opportunity_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS registration_submissions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    opportunity_id BIGINT UNSIGNED NOT NULL,
+    participant_first_name VARCHAR(100) NOT NULL,
+    participant_last_name VARCHAR(100) NOT NULL,
+    participant_age_group ENUM('under_13','13_17','adult') NOT NULL,
+    registrant_email VARCHAR(190) NOT NULL,
+    registrant_phone VARCHAR(40) NULL,
+    guardian_name VARCHAR(190) NULL,
+    guardian_email VARCHAR(190) NULL,
+    guardian_phone VARCHAR(40) NULL,
+    notes VARCHAR(2000) NULL,
+    status ENUM('submitted','waitlisted','accepted','declined','cancelled') NOT NULL DEFAULT 'submitted',
+    manage_token_hash CHAR(64) NOT NULL,
+    reviewed_by_user_id BIGINT UNSIGNED NULL,
+    reviewed_at DATETIME NULL,
+    submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_registration_submission_opportunity (opportunity_id,status,submitted_at),
+    KEY idx_registration_submission_email (registrant_email,submitted_at),
+    UNIQUE KEY uq_registration_manage_token (manage_token_hash),
+    CONSTRAINT fk_registration_submission_opportunity FOREIGN KEY (opportunity_id) REFERENCES registration_opportunities(id) ON DELETE CASCADE,
+    CONSTRAINT fk_registration_submission_reviewer FOREIGN KEY (reviewed_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
