@@ -1,9 +1,9 @@
 Options -Indexes
 DirectoryIndex index.php
 
-# Local Build 001 default when the repository lives at MAMP htdocs/CTSMD.
+# Local Build 001 default when the repository is served at http://localhost/ctsmd/.
 # Remove or change this when deploying at a different base path.
-SetEnv APP_BASE_PATH /CTSMD
+SetEnv APP_BASE_PATH /ctsmd
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -11,8 +11,7 @@ SetEnv APP_BASE_PATH /CTSMD
     # Keep internal project directories out of direct web access.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
 
-    # Static assets live at /assets so they can be served directly by Apache.
-    # Do not route them through the front controller or depend on rewrites.
+    # Existing files and directories, including /assets, are served directly.
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
