@@ -78,6 +78,11 @@ if (HomeExperience::handles($route)) {
     HomeExperience::render($route, $detectedBasePath, $data);
 }
 
+require_once __DIR__ . '/src/VolunteerDevelopmentExperience.php';
+if (VolunteerDevelopmentExperience::handles($route)) {
+    VolunteerDevelopmentExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/VolunteerShiftManagementExperience.php';
 if (VolunteerShiftManagementExperience::handles($route)) {
     VolunteerShiftManagementExperience::render($route, $detectedBasePath);
