@@ -14,49 +14,46 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Platform registration + household onboarding
+
+- Public `/join` is the primary CTSMD Connect account-creation path for adults/guardians.
+- Self-registration creates an organization-wide identity; it does not create a class registration, audition registration, production membership, Community entitlement, student access, volunteer clearance or staff authority.
+- Passwords use the existing 12-character minimum and PHP password hashing.
+- Self-registered accounts begin as `pending_verification`; email verification links are random, SHA-256-hashed in storage, expire after 24 hours, and use the existing outbound email queue.
+- Email verification activates sign-in but leaves **CTSMD organization membership pending staff approval**.
+- Organization membership approval is independent from authentication status and production membership: `pending`, `approved` or `denied`.
+- Approved organization members gain the general member layer; Community now enforces approval server-side for organization-wide channels even when a channel ID is guessed directly.
+- Production-scoped Community access remains independently granted by active production membership, so show access does not depend on a required production switch.
+- Staff Account & Access now supports CTSMD membership approval/denial, audit history and approval email delivery.
+- Existing people that predate self-registration are migrated as approved members so migration 021 does not unexpectedly remove their current general access.
+- Parents/guardians create child profiles from authenticated Household Setup / Manage Household rather than children anonymously self-registering.
+- Child creation and the active guardian relationship are written in the same transaction; guardian-created children use the `managed` account lifecycle state and receive the normalized Student role without independent login credentials.
+- Creating a child profile does not add the child to any production. Production roster operations remain the authority for production membership.
+- Household Setup clearly displays the current CTSMD membership approval state and remains usable while approval is pending.
+- Main navigation distinguishes pending accounts, approved organization members and active production participants; working-production context remains staff/admin-only.
+- Public `/` now makes **Create your Connect account** the primary CTA, with returning-member sign in beside it; auditions/selected signups and Playbills are secondary.
+- Migration 021 adds email-verification lifecycle fields, managed/self-registration states and organization membership review fields.
+- Existing production Resources are still production-scoped. A future organization-wide member resource library should use `organization_membership_status='approved'` as its access gate rather than inventing another membership concept.
+- **Runtime verification:** pending local MAMP test after migration 021, including self-registration, log-delivered verification email, pending-state sign-in, child creation, staff approval, organization-channel denial before approval, organization-channel access after approval, and production-specific access after roster assignment.
+
 ### Implemented — Lean public landing + restrained registration
 
-- `/` is now a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
-- Public landing currently exposes selected public signups, current digital Playbills and member sign-in, but the intended primary public action is **platform registration/onboarding** once the next build is complete.
+- `/` is a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
+- Public landing focuses first on platform account creation/sign-in, then selected public signups and current digital Playbills.
 - `/register` is intentionally limited to **auditions, selected special/event signups, and interest/RSVP signups** explicitly published by authorized CTSMD staff and currently within their open/close window.
 - **Classes, camps, workshops and the broader CTSMD program catalog are not registered through Connect at this stage.** They remain in the organization’s existing external registration system until CTSMD intentionally chooses to replace that system.
 - The database enum retains broader opportunity values for future compatibility, but current public/service/admin logic fails closed and will not publish or accept Connect registrations for class, camp or workshop records.
 - Connect signups may optionally relate to a production and support dates/location, registration windows, capacity, waitlist behavior, confirmation text and draft/published/closed/archived lifecycle.
-- Public registration intentionally collects a narrow data set: participant name, broad age group, contact information, guardian contact for minors and an optional operational note.
-- Public registration does **not** collect date of birth, medical history, school or other sensitive data merely because it might be useful later.
-- A parent/guardian name and valid guardian email are required when the participant is under 18.
-- Capacity is enforced transactionally; registrations submitted after active capacity is reached enter the waitlist rather than overbooking.
-- Each registration receives a private random manage token; only its SHA-256 hash is stored. Confirmation email provides a private manage/cancel link.
-- Registration confirmation uses the existing outbound email queue and therefore follows the same local-log/SMTP deployment model as other CTSMD email.
-- Public cancellation preserves the registration record and changes lifecycle state instead of deleting history.
-- Staff Registration Operations workspace at `/admin/registrations` supports creating/editing supported Connect signups, publishing/closing them, reviewing registrants, and changing submission status among submitted, waitlisted, accepted, declined and cancelled.
-- Registration Operations currently uses `forms.manage` authorization rather than adding a new one-off RBAC permission before CTSMD demonstrates a need for separate registration administrators.
+- Public signup intake intentionally collects a narrow data set and remains separate from CTSMD Connect platform account creation.
 - Registration schema lives in migration 020.
-- This build is intentionally **not** a CMS/news/donations/payments/public-site takeover and is **not** a class/program-registration replacement. Those remain future options only if CTSMD chooses to expand Connect deliberately.
-- **Runtime verification:** pending local MAMP test after migration 020, including public root routing, supported-type restrictions, publication windows, minor guardian validation, capacity/waitlist behavior, email confirmation/manage URL and public cancellation.
+- **Runtime verification:** pending local MAMP test after migration 020.
 
 ## Near-term build order
-
-### Next — CTSMD Connect platform registration + onboarding
-
-- Make the primary public landing action **Create / register for CTSMD Connect**, with Member Sign In as the adjacent returning-user action.
-- Adult/guardian users may start their own CTSMD Connect account from the public site and verify ownership of their email address.
-- Self-registration creates only a basic authenticated account; it must **not** grant production membership, Community-channel access, staff permissions, student access, or any other privileged relationship merely because the public form was completed.
-- Production memberships and production-scoped access are granted only from verified CTSMD participation/roster operations or an explicit staff-reviewed onboarding workflow.
-- Students/minors do not anonymously self-register from the public site. Student identities/accounts are created or linked through an authenticated guardian workflow and existing family-relationship safeguards.
-- Adult volunteers may create their own basic account, but volunteer readiness, credentials and production/shift eligibility remain controlled by canonical volunteer records and staff-managed requirements.
-- Use email verification through the existing outbound email queue before a public self-registered account becomes active.
-- Prevent duplicate accounts for an email address; where an invited or existing account already exists, route the person into activation/sign-in/recovery rather than creating another identity.
-- Preserve staff-issued invitations for controlled staff/admin onboarding and cases where CTSMD wants to pre-link a person before they register.
-- Add a clear post-registration state for accounts that are valid but not yet attached to any production, explaining that access appears when CTSMD links the account to current participation.
-- Keep public audition/special-event registration as a separate secondary workflow; submitting an audition/special signup must not silently create a platform account.
-- Update the public landing hierarchy so audition/special signups and Playbills sit beneath the primary platform-registration/sign-in actions.
-- Add audit events and rate-limiting/abuse protections appropriate for a public account-creation endpoint.
-- **No production context is involved in platform registration.** Account identity is organization-wide.
 
 ### Next — DB-backed Home + account-wide member aggregation
 
 - Replace the remaining mock-driven `/app` Today screen with real account data.
+- Give pending self-registered accounts an intentional Home state showing membership review and household setup rather than mock production content.
 - Parent/student/volunteer Home aggregates all current obligations across active productions rather than relying on a working-production context.
 - Convert remaining member-facing selected-production assumptions—especially Files/Resources and any Production/Schedule shortcuts—into account-wide views with optional production filters.
 - Keep staff/admin working-production context for actual production operations only.
@@ -76,10 +73,9 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 - Full public CTSMD website/CMS bridge.
 - Public production/audition/event detail pages beyond the lean registration page.
-- Class/camp/workshop catalog and registration only as an intentional replacement project for the current external system, not as an automatic extension of migration 020.
+- Class/camp/workshop catalog and registration only as an intentional replacement project for the current external system.
 - Broad public calendar, news, donations, sponsorship and RSVP experiences.
 - Payments only after actual program/payment requirements are defined.
-- Do not build these merely because Connect technically can; the existing CTSMD website and registration platform may remain in place indefinitely.
 
 ## Future product slices
 
@@ -120,6 +116,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - First-class announcement composer separate from schedule-generated notices.
 - Per-channel email/notification preferences and announcement-specific delivery controls.
 - Account-wide Community remains the default; production filters organize channels but must not hide unread activity behind a required production switch.
+- Organization-wide Community channels require approved CTSMD organization membership; production channels require their own production/access rules.
 - Archived production channels should leave the active Community list and remain available in a designated read-only archive.
 
 ## Messaging backlog
@@ -155,7 +152,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 ## Resources backlog
 
 - Merge or visually unify link/note Resources and Production Files where the product experience benefits from one library.
-- Organization-wide files/resources in addition to production-scoped content.
+- Add **organization-wide member files/resources** gated by approved CTSMD organization membership, in addition to production-scoped content.
 - Image/PDF inline preview after browser/content-security behavior is fully tested.
 - Group-targeted files/resources.
 - More detailed view/download reporting where needed.
@@ -192,7 +189,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Preferred names/pronouns where appropriate.
 - Multiple household/guardian relationship UX.
 - Contact preferences and avatar/photo management using shared storage.
-- Guardian-managed student-account UX and credential recovery rules.
+- Guardian-managed student-account UX and credential recovery rules for when CTSMD chooses to give a managed child independent login credentials.
 - Guardian-on-behalf-of-student form completion policy/UX.
 - Guardian access to linked-student Theatre History.
 - Deliberate policy decision before storing sensitive medical/allergy information.
@@ -219,12 +216,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Consolidate canonical schema + migration strategy so fresh installs are predictable.
 - Break remaining large PHP experience files into smaller services/layouts/partials.
 - Incrementally replace legacy per-experience current-user queries with direct `Auth::currentUser()` calls; the session-safe DB compatibility adapter is transitional.
-- Add authentication rate limiting / lockout policy before public production launch.
+- Add authentication/self-registration rate limiting and abuse protection before public production launch.
+- Improve duplicate-account recovery so an existing invited/active email gets a helpful activation/sign-in/recovery path without leaking account existence.
 - Consider persistent server-side session storage if Bluehost/PHP session behavior requires it.
 - Validate Bluehost/PHP upload limits (`upload_max_filesize`, `post_max_size`) and write permissions for the configured `STORAGE_PATH`.
 - Add remote/object-storage driver only if shared-hosting filesystem constraints require one later.
 - Validate Bluehost cron availability, PHP CLI path and authenticated SMTP settings; configure queue/reminder workers in deployment.
-- Automated tests, especially auth/RBAC/storage/email/registration/access regression tests.
+- Automated tests, especially auth/RBAC/storage/email/registration/membership/access regression tests.
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
 - Bluehost deployment process/tooling and backup/restore procedures, including private-file backups.
@@ -246,12 +244,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production filters in account-wide views are organizational filters only; they must never function as a required context gate that can hide unread or actionable information.
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
-- Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
-- **Public platform registration creates identity, not entitlement.** A verified self-registered account receives no production, Community, student or staff access until canonical CTSMD relationships/memberships grant it.
-- **Students/minors do not anonymously self-register.** Student account creation/linking is guardian-mediated and must preserve family/safeguarding rules.
+- **Authentication, organization membership and production membership are three separate concepts.** Authentication answers whether an identity can sign in; organization membership answers whether CTSMD has approved the person into the general member community; production membership answers which active shows the person can access.
+- A verified self-registered account starts with organization membership `pending`; email verification alone does not grant general Community access.
+- Organization approval unlocks general member Community and future organization-wide member resources without enrolling the person in any production.
+- Active production membership grants show-specific access according to production/audience/group rules and does not require a member-facing production context switch.
+- **Students/minors do not anonymously self-register.** Student profile creation is guardian-mediated and must preserve family/safeguarding rules.
 - A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
 - Public audition/special-signup intake and authenticated platform membership are separate lifecycles; one must not silently create the other.
-- Public child/minor registration should collect only the minimum information necessary for the immediate registration workflow; richer sensitive data requires an explicit later policy decision.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
