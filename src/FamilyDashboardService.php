@@ -14,6 +14,7 @@ final class FamilyDashboardService
         $children = self::children($db, (int)$guardian['id']);
         $householdEvents = [];
         $openForms = [];
+        $activeProductionIds = [];
 
         foreach ($children as &$child) {
             $childUser = self::childUser($db, (int)$child['id']);
@@ -22,6 +23,7 @@ final class FamilyDashboardService
             $conflicts = CalendarService::conflicts($events);
             $forms = self::formsForUser($db, (int)$child['id']);
             $productions = self::productionsForUser($db, (int)$child['id']);
+            foreach ($productions as $production) $activeProductionIds[(int)$production['id']] = true;
 
             foreach ($events as &$event) {
                 $event['child_id'] = (int)$child['id'];
@@ -82,7 +84,7 @@ final class FamilyDashboardService
             'household_conflicts' => $householdConflicts,
             'summary' => [
                 'children' => count($children),
-                'active_productions' => count(array_unique(array_map(static fn(array $event): int => (int)$event['production_id'], $householdEvents))),
+                'active_productions' => count($activeProductionIds),
                 'open_forms' => count($openForms),
                 'urgent_forms' => count($urgentForms),
                 'unread_notifications' => (int)$notifications['unread_count'],
