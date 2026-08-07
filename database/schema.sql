@@ -14,6 +14,24 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS family_relationships (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    guardian_user_id BIGINT UNSIGNED NOT NULL,
+    student_user_id BIGINT UNSIGNED NOT NULL,
+    relationship_type ENUM('parent','guardian','caregiver') NOT NULL DEFAULT 'guardian',
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_by_user_id BIGINT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_family_guardian_student (guardian_user_id, student_user_id),
+    KEY idx_family_student_status (student_user_id, status),
+    KEY idx_family_guardian_status (guardian_user_id, status),
+    CONSTRAINT fk_family_guardian FOREIGN KEY (guardian_user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_family_student FOREIGN KEY (student_user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_family_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS productions (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(190) NOT NULL,
