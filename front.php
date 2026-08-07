@@ -34,11 +34,8 @@ if ($route === '/navigation') {
     NavigationReview::render($detectedBasePath, $data);
 }
 
-// Production concurrency and Community audience targeting are foundational to
-// the current application shell. Stop with a useful setup message instead of
-// allowing downstream SQL to fail with an unknown-column PDO exception.
 require_once __DIR__ . '/src/SchemaGuard.php';
-SchemaGuard::requireConcurrentProductionSchema(__DIR__, $detectedBasePath);
+SchemaGuard::requireCurrentSchema(__DIR__, $detectedBasePath);
 
 require_once __DIR__ . '/src/ProductionContextExperience.php';
 if (ProductionContextExperience::handles($route)) {
@@ -53,6 +50,11 @@ if (PeopleExperience::handles($route)) {
 require_once __DIR__ . '/src/NotificationExperience.php';
 if (NotificationExperience::handles($route)) {
     NotificationExperience::render($detectedBasePath);
+}
+
+require_once __DIR__ . '/src/FormManagementExperience.php';
+if (FormManagementExperience::handles($route)) {
+    FormManagementExperience::render($route, $detectedBasePath);
 }
 
 require_once __DIR__ . '/src/FormExperience.php';
