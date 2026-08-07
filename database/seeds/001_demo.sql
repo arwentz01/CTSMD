@@ -89,16 +89,16 @@ INSERT INTO schedule_items (production_id, title, starts_at, ends_at, family_cal
 (1, 'Parent Volunteer Orientation', '2026-08-06 18:45:00', '2026-08-06 19:15:00', NULL, 'Studio B', 'family', 'orientation'),
 (1, 'Set Build Day', '2026-08-08 10:00:00', '2026-08-08 14:00:00', NULL, 'Scene Shop', 'all', 'volunteer');
 
-INSERT INTO channels (id, production_id, name, channel_type, description, sort_order) VALUES
-(1, NULL, 'Announcements', 'announcement', 'Organization-wide updates', 10),
-(2, NULL, 'General', 'discussion', 'General community conversation', 20),
-(3, NULL, 'Parent Questions', 'parent', 'Questions and answers for parents and guardians', 30),
-(4, 1, 'Current Production', 'production', 'Cast, family, and production updates for Matilda Jr.', 40),
-(5, 1, 'Cast Updates', 'production', 'Cast-specific updates', 50),
-(6, 1, 'Tech and Crew', 'production', 'Technical and crew coordination', 60),
-(7, 1, 'Costumes', 'production', 'Costume information and reminders', 70),
-(8, NULL, 'Volunteer Opportunities', 'volunteer', 'Open volunteer opportunities and coordination', 80),
-(9, NULL, 'Resources', 'resource', 'Read-only community resources', 90);
+INSERT INTO channels (id, production_id, name, channel_type, description, read_scope, post_scope, sort_order, created_by_user_id) VALUES
+(1, NULL, 'Announcements', 'announcement', 'Organization-wide updates', 'all_members', 'staff', 10, 3),
+(2, NULL, 'General', 'discussion', 'General community conversation', 'all_members', 'all_members', 20, 3),
+(3, NULL, 'Parent Questions', 'parent', 'Questions and answers for parents and guardians', 'all_members', 'all_members', 30, 3),
+(4, 1, 'Current Production', 'production', 'Cast, family, and production updates for Matilda Jr.', 'production_members', 'production_members', 40, 3),
+(5, 1, 'Cast Updates', 'production', 'Cast-specific updates', 'production_members', 'production_members', 50, 3),
+(6, 1, 'Tech and Crew', 'production', 'Technical and crew coordination', 'production_members', 'production_members', 60, 3),
+(7, 1, 'Costumes', 'production', 'Costume information and reminders', 'production_members', 'production_members', 70, 3),
+(8, NULL, 'Volunteer Opportunities', 'volunteer', 'Open volunteer opportunities and coordination', 'all_members', 'staff', 80, 3),
+(9, NULL, 'Resources', 'resource', 'Read-only community resources', 'all_members', 'staff', 90, 3);
 
 INSERT INTO channel_posts (channel_id, author_user_id, body, pinned, reactions_json, created_at) VALUES
 (4, 3, 'Reminder: Thursday rehearsal begins 30 minutes earlier. Updated call times are now in the schedule.', 1, '{"thumbs_up":18,"heart":7}', '2026-08-06 16:12:00'),
