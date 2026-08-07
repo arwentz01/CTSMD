@@ -14,6 +14,22 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Call sheets + production-day operations
+
+- `/production/day` is now the staff-only Working-Production run-of-day workspace and replaces the old prototype route.
+- Staff can move between dates without changing Working Production and see active schedule items in chronological order with locations, family-call time, Production Group targeting, expected roster and current attendance state.
+- Expected rosters are resolved from the canonical `ScheduleAudience` / Attendance services, including group targeting and reported absences; Production Day does not create a duplicate attendance roster.
+- Attendance actions deep-link to the authoritative `/attendance/take` workflow for each schedule item.
+- Volunteer shifts for the selected date show required/filled/check-in/open counts and link to the existing Volunteer Operations roster.
+- Schedule-change notices for that day's calls show draft/published state and link to the authoritative notice workflow.
+- Readiness checklist items due/open through the selected date, plus items completed that day, are surfaced without duplicating checklist mutation.
+- Migration 025 adds `production_day_briefs`, one record per production/date, for day status (`planning`, `live`, `closed`), headline, arrival/access notes, staff operations notes and audit metadata.
+- Day briefing writes are restricted to the selected Working Production and audit logged.
+- `Print call sheet` prints the same resolved source data rather than creating a second call-sheet record; print mode expands expected rosters and includes the staff briefing.
+- Production Workspace now links directly to Production Day alongside Readiness, Schedule and Attendance.
+- Member Calendar/Schedule remains the member discovery source; Production Day is an execution surface for staff.
+- **Runtime verification:** pending local MAMP test after migration 025, including day/date isolation, Production Group rosters, attendance counts/absence reports, volunteer coverage, notice state, readiness items, briefing save/status transitions, print expansion and Working Production switching.
+
 ### Implemented — Production readiness + checklist dashboard
 
 - `/production/readiness` is a staff-only Working-Production readiness workspace.
@@ -26,7 +42,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Overdue incomplete checklist items are surfaced separately.
 - The Production workspace and Operations navigation now link directly to Production Readiness.
 - No checklist/demo items are hardcoded in PHP; the production team defines the checklist records it actually needs.
-- **Runtime verification:** pending local MAMP test after migration 024, including Working Production isolation, guardian-coverage signal, forms/volunteer/schedule/notices/Playbill signals, checklist creation/completion/reopen, overdue display, staff assignee validation, and audit events.
+- **Runtime verification:** pending local MAMP test after migration 024.
 
 ### Implemented — Staff cross-production dashboard
 
@@ -93,13 +109,13 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Call sheets + production-day operations
+### Next — Casting + role assignment workflow
 
-- Build a Working-Production day-of-operations workspace from existing schedule, Production Groups, attendance, volunteer coverage, notices and readiness data.
-- Allow staff to open a rehearsal/performance date and see the run of day in chronological order with locations, targeted groups, expected attendees and operational notes.
-- Add a first-class call-sheet experience that can be reviewed before publication rather than requiring staff to assemble the same information manually from several screens.
-- Keep member schedule/calendar as the authoritative personal discovery surface; production-day operations is a staff execution tool.
-- Avoid creating a second attendance or volunteer system: deep-link to existing authoritative workflows where action is required.
+- Add a Working-Production casting/roster workflow that bridges reviewed audition intake and the existing Production Roster without silently casting or enrolling anyone from public registration.
+- Let authorized production staff search canonical People and reviewed registration links, add a participant to the selected production, set character/participation role, and optionally place them into Production Groups in one deliberate reviewed workflow.
+- Preserve guardian safeguards: a Student cannot become an active production participant without an active guardian relationship, and active guardians should continue to receive the appropriate production audience membership.
+- Keep casting decisions separate from public registration status; `Accepted` registration does not mean cast, and casting does not rewrite the public registration record.
+- Audit casting/role/group changes and preserve participation-role history needed for future My Theatre History / acting résumé features.
 
 ### Next — Registration operations later follow-through
 
@@ -134,8 +150,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 ## Production operations backlog
 
 - Audition-session management when needed.
-- Casting workflow and role/character assignment improvements.
-- Call sheets and production-day operational checklist beyond the first day-of workspace.
+- Casting workflow refinements after the first casting/role-assignment slice demonstrates real needs.
+- Production-day enhancements such as staff assignments, reusable day templates or member-facing published call sheets only if actual operations require them.
 - Production group reuse/templates between shows where appropriate.
 - Production archive/history browser.
 - Season setup and season-level reporting.
@@ -275,7 +291,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - **Working Production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
 - **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and member files/resources aggregate everything the account is permitted to see across active productions and the approved organization layer.
 - **Staff operational overview is also organization scoped:** `/staff` aggregates active productions and permitted operational queues, while Working Production remains the editing context for one show.
-- **Production readiness is Working-Production scoped:** it evaluates one show's operational state and checklist without affecting account-wide communication or staff overview behavior.
+- **Production readiness and Production Day are Working-Production scoped:** they evaluate/execute one show's operational state without affecting account-wide communication or staff overview behavior.
+- Production Day derives schedule, expected rosters, attendance, volunteer coverage, notices and readiness from their canonical domains; the day brief stores only day-specific operational notes/status so duplicate state is minimized.
 - Staff/admin accounts participate in both scopes: production operations may be scoped to the selected Working Production, while Messages, Community, Notifications, personal Calendar, unread state and `/staff` remain account-wide/cross-production.
 - Production/library filters are organizational filters only; they must never function as required context gates that can hide unread or actionable information.
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
