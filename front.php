@@ -109,6 +109,8 @@ require_once __DIR__ . '/src/PeopleExperience.php';
 if (PeopleExperience::handles($route)) PeopleExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/NotificationExperience.php';
 if (NotificationExperience::handles($route)) NotificationExperience::render($detectedBasePath);
+require_once __DIR__ . '/src/FamilyFormsExperience.php';
+if (FamilyFormsExperience::handles($route)) FamilyFormsExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/FormManagementExperience.php';
 if (FormManagementExperience::handles($route)) FormManagementExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/FormBuilderIndexExperience.php';
