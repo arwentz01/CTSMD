@@ -14,6 +14,21 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Organization-wide member resources
+
+- Migration 023 adds `organization_resources` as the canonical home for CTSMD-wide member material that does not belong to a production.
+- Organization resources may be links, text/notes, or downloadable files backed by the existing private `stored_files` / immutable-version storage layer.
+- Approved CTSMD organization membership is the member access gate; production membership is not required for CTSMD-wide resources.
+- Member `/resources` and `/files` now combine approved organization material with all currently authorized active-production material in one account-wide library.
+- Member library filters are organizational only: **All**, **CTSMD**, and active productions. No production switch is required to discover content.
+- Organization file downloads are routed through PHP and re-check approved membership/resource-management authorization before streaming private bytes.
+- Staff `Member Resource Operations` at `/admin/member-resources` is separate from Working-Production `Resource Operations` and `File Operations`.
+- Staff can create, edit, pin, archive/restore, and version organization-wide resources.
+- Organization resources are intentionally all-approved-member in this first slice; narrower organization audiences are deferred until real content demonstrates the need.
+- Archiving removes organization resources from member libraries without deleting domain/file history.
+- Fixed the account library's stale `StorageService::humanBytes()` calls to the canonical `humanSize()` helper while integrating organization files.
+- **Runtime verification:** pending local MAMP test after migration 023, including approved-vs-pending access, CTSMD/production filters, organization link/note rendering, private file upload/download/versioning, archive/restore, and staff separation from Working Production.
+
 ### Implemented — DB-backed Home + account-wide member libraries
 
 - `/app` is now DB-backed rather than mock-driven.
@@ -43,7 +58,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Registration linking/creation and status changes remain audit logged.
 - Audition-session/time-slot scheduling is intentionally deferred until CTSMD's real audition workflow demonstrates the needed slot model.
 - Classes, camps and workshops remain in the existing external registration system.
-- **Runtime verification:** pending local MAMP test after migration 022, including candidate matching, existing-person linking, minor household creation/reuse, duplicate prevention, status-change email queueing and preservation of separate Production Roster authority.
+- **Runtime verification:** pending local MAMP test after migration 022.
 
 ### Implemented — Platform registration + household onboarding
 
@@ -71,20 +86,12 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Organization-wide member resources
-
-- Add organization-wide files/resources for approved CTSMD members that are distinct from production-scoped libraries.
-- Use existing `organization_membership_status='approved'` as the access gate rather than inventing another membership concept.
-- Allow staff to publish general handbooks, volunteer policies, facility information, codes of conduct and similar organization material.
-- Keep member Resources/Files account-wide: organization material plus all currently authorized active-production material in one discoverable experience, with filters rather than required context switching.
-- Keep organization resource management separate from Working Production resource operations.
-- Do not weaken the existing private-file storage/download authorization model.
-
 ### Next — Staff cross-production dashboard
 
 - Add an organization/staff dashboard spanning concurrent active productions without replacing Working Production operations context.
 - Surface attention-needed operational items such as uncovered volunteer shifts, missing forms, schedule conflicts, pending membership approvals, registration intake needing review, moderation/safeguarding queues and upcoming production calls.
 - Working Production remains useful for editing/managing one show; staff dashboard is a cross-show overview and triage surface.
+- Staff Messages, Community, Notifications and personal Calendar remain account-wide and independent of Working Production.
 
 ### Next — Registration operations later follow-through
 
@@ -175,11 +182,10 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Resources backlog
 
-- Merge or visually unify link/note Resources and Production Files where the product experience benefits from one library.
-- Add organization-wide member files/resources gated by approved CTSMD organization membership, in addition to production-scoped content.
+- Narrower organization-resource audiences only if real CTSMD content needs them; current organization resources intentionally target all approved members.
 - Image/PDF inline preview after browser/content-security behavior is fully tested.
-- Group-targeted files/resources.
-- More detailed view/download reporting where needed.
+- Group-targeted production files/resources.
+- More detailed organization/production resource view/download reporting where needed.
 - Future remote/object-storage driver only if CTSMD outgrows shared-hosting filesystem storage.
 
 ## Playbill backlog
@@ -261,19 +267,19 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Multiple productions may be active concurrently.
 - Production activity is independent from the per-session working-production selector.
 - **Working-production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
-- **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and member files/resources aggregate everything the account is permitted to see across active productions.
+- **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and member files/resources aggregate everything the account is permitted to see across active productions and the approved organization layer.
 - Staff/admin accounts participate in both scopes: production operations may be scoped to the selected working production, while Messages, Community, Notifications, personal Calendar and unread state remain account-wide.
-- Production filters in account-wide views are organizational filters only; they must never function as a required context gate that can hide unread or actionable information.
+- Production/library filters are organizational filters only; they must never function as required context gates that can hide unread or actionable information.
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
 - **Authentication, organization membership and production membership are three separate concepts.** Authentication answers whether an identity can sign in; organization membership answers whether CTSMD has approved the person into the general member community; production membership answers which active shows the person can access.
-- A verified self-registered account starts with organization membership `pending`; email verification alone does not grant general Community access.
-- Organization approval unlocks general member Community and future organization-wide member resources without enrolling the person in any production.
+- A verified self-registered account starts with organization membership `pending`; email verification alone does not grant general Community or organization-resource access.
+- Organization approval unlocks general member Community and organization-wide member resources without enrolling the person in any production.
 - Active production membership grants show-specific access according to production/audience/group rules and does not require a member-facing production context switch.
 - **Students/minors do not anonymously self-register.** Student profile creation is guardian-mediated and must preserve family/safeguarding rules.
 - A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
 - Public audition/special-signup intake and authenticated platform membership are separate lifecycles. Registration may be explicitly linked/converted into canonical people/household records only through staff review; it never silently grants membership or production access.
-- Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
+- Stored files and their immutable versions are infrastructure objects; production files and organization resources are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
 - Account-security mail is transactional and cannot be disabled by ordinary notification preferences.
