@@ -14,6 +14,25 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Lean public landing + registration
+
+- `/` is now a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
+- Public landing focuses on the pieces Connect currently needs outside authentication: published registration opportunities, current digital Playbills and member sign-in.
+- `/register` lists only registration opportunities explicitly published by authorized CTSMD staff and currently within their open/close window.
+- Public registration opportunities support audition, workshop, camp, class, event and interest types; optional production relationship; dates/location; registration window; capacity; waitlist behavior; confirmation text; and draft/published/closed/archived lifecycle.
+- Public registration intentionally collects a narrow data set: participant name, broad age group, contact information, guardian contact for minors and an optional operational note.
+- Public registration does **not** collect date of birth, medical history, school or other sensitive data merely because it might be useful later.
+- A parent/guardian name and valid guardian email are required when the participant is under 18.
+- Capacity is enforced transactionally; registrations submitted after active capacity is reached enter the waitlist rather than overbooking.
+- Each registration receives a private random manage token; only its SHA-256 hash is stored. Confirmation email provides a private manage/cancel link.
+- Registration confirmation uses the existing outbound email queue and therefore follows the same local-log/SMTP deployment model as other CTSMD email.
+- Public cancellation preserves the registration record and changes lifecycle state instead of deleting history.
+- Staff Registration Operations workspace at `/admin/registrations` supports creating/editing opportunities, publishing/closing them, reviewing registrants, and changing submission status among submitted, waitlisted, accepted, declined and cancelled.
+- Registration Operations currently uses `forms.manage` authorization rather than adding a new one-off RBAC permission before CTSMD demonstrates a need for separate registration administrators.
+- Registration schema lives in migration 020.
+- This build is intentionally **not** a CMS/news/donations/payments/public-site takeover. Those remain future options only if CTSMD chooses to expand Connect into the primary public website.
+- **Runtime verification:** pending local MAMP test after migration 020, including public root routing, opportunity publication windows, minor guardian validation, capacity/waitlist behavior, email confirmation/manage URL and public cancellation.
+
 ### Implemented — Parent multi-child / multi-production dashboard
 
 - Real database-backed family control tower at `/family-hub`, with `/parent` as an equivalent entry route.
@@ -133,11 +152,30 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Public website / registration layer
+### Next — DB-backed Home + account-wide member aggregation
 
-- Public CTSMD website/CMS bridge.
-- Production/audition/event pages and registration.
-- Workshops/camps/classes, public calendar/Playbills, news, donations, sponsorship, RSVP/waitlists and later payments.
+- Replace the remaining mock-driven `/app` Today screen with real account data.
+- Parent/student/volunteer Home aggregates all current obligations across active productions rather than relying on a working-production context.
+- Convert remaining member-facing selected-production assumptions—especially Files/Resources and any Production/Schedule shortcuts—into account-wide views with optional production filters.
+- Keep staff/admin working-production context for actual production operations only.
+- Preserve Messages, Community, Notifications, unread state and personal Calendar as account-wide for staff as well.
+- Add clear production labels to aggregated member content so people can tell which show an item belongs to without switching contexts.
+
+### Next — Registration operations follow-through
+
+- Audition-session/time-slot management when CTSMD needs it.
+- Convert accepted public registrations into existing people/family/account records through an explicit reviewed workflow rather than silently creating accounts.
+- Registration-specific questionnaires can later reuse Dynamic Forms where appropriate.
+- Status-change email for accepted/waitlisted/declined registrations.
+- CSV/export/reporting once real registration operations demonstrate what fields staff actually need.
+
+## Future public-site options — only if CTSMD chooses to expand Connect
+
+- Full public CTSMD website/CMS bridge.
+- Public production/audition/event detail pages beyond the lean registration page.
+- Workshops/camps/classes catalog, broad public calendar, news, donations, sponsorship and RSVP experiences.
+- Payments only after actual program/payment requirements are defined.
+- Do not build these merely because Connect technically can; the existing CTSMD website may remain the public website indefinitely.
 
 ## Future product slices
 
@@ -157,7 +195,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Production operations backlog
 
-- Audition registration and audition-session management.
+- Audition registration and audition-session management beyond the public registration intake now implemented.
 - Casting workflow and role/character assignment improvements.
 - Production checklist/readiness dashboard.
 - Call sheets and production-day operational checklist.
@@ -197,7 +235,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production Group targeting.
 - Bulk reminders and completion dashboards beyond automated due-soon email.
 - File-upload fields using the shared storage layer.
-- Registration-oriented forms.
+- Registration-oriented form extensions when a registration genuinely needs more than the lean intake fields.
 - External/e-sign provider evaluation only if required later.
 
 ## Volunteer backlog
@@ -240,11 +278,9 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Home/dashboard backlog
 
-- Replace remaining mock-driven `/app` Today view with DB-backed role-specific home data.
-- Staff dashboard across concurrent productions.
+- Staff dashboard across concurrent productions after member Home is fully DB-backed.
 - Attention-needed cards: missing forms, uncovered shifts, conflicts, safeguarding review and unread critical updates.
 - Extend family logistics to include guardian volunteer-shift vs child-call collision warnings if useful in testing.
-- Student/volunteer Home should aggregate current obligations across all active productions rather than require a production selector.
 
 ## People/family backlog
 
@@ -284,7 +320,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Validate Bluehost/PHP upload limits (`upload_max_filesize`, `post_max_size`) and write permissions for the configured `STORAGE_PATH`.
 - Add remote/object-storage driver only if shared-hosting filesystem constraints require one later.
 - Validate Bluehost cron availability, PHP CLI path and authenticated SMTP settings; configure queue/reminder workers in deployment.
-- Automated tests, especially auth/RBAC/storage/email/access regression tests.
+- Automated tests, especially auth/RBAC/storage/email/registration/access regression tests.
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
 - Bluehost deployment process/tooling and backup/restore procedures, including private-file backups.
@@ -308,6 +344,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Runtime administrator authorization is role/permission based, not display-label based.
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
 - A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
+- Public registration intake and authenticated membership are separate lifecycles; a public registration must never silently create a CTSMD account or production membership without staff review.
+- Public child/minor registration should collect only the minimum information necessary for the immediate registration workflow; richer sensitive data requires an explicit later policy decision.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
