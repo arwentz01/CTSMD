@@ -37,6 +37,11 @@ if ($route === '/navigation') {
 require_once __DIR__ . '/src/SchemaGuard.php';
 SchemaGuard::requireCurrentSchema(__DIR__, $detectedBasePath);
 
+require_once __DIR__ . '/src/CalendarExperience.php';
+if (CalendarExperience::handles($route)) {
+    CalendarExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/ProductionContextExperience.php';
 if (ProductionContextExperience::handles($route)) {
     ProductionContextExperience::render($detectedBasePath);
