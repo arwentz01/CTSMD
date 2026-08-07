@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/TheatreHistoryService.php';
 
 final class ProductionPeopleExperience
 {
@@ -129,6 +130,7 @@ final class ProductionPeopleExperience
                     self::upsertMembership($db, $productionId, (int)$guardian['guardian_user_id'], 'guardian', $role);
                     $addedGuardians[] = (int)$guardian['guardian_user_id'];
                 }
+                TheatreHistoryService::syncStudentCredit($db, $productionId, $userId, (int)$actor['id']);
             }
 
             self::audit($db, (int)$actor['id'], 'production.membership_added', 'production', $productionId, 'Added or reactivated a production membership.', [
@@ -194,6 +196,9 @@ final class ProductionPeopleExperience
 
             $update = $db->prepare("UPDATE production_memberships SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = :id");
             $update->execute(['id' => $membershipId]);
+            if ($membership['audience_type'] === 'student') {
+                TheatreHistoryService::closeStudentCredit($db, $productionId, (int)$membership['user_id']);
+            }
 
             self::audit($db, (int)$actor['id'], 'production.membership_removed', 'production', $productionId, 'Deactivated a production membership.', [
                 'membership_id' => $membershipId,
