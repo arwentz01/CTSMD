@@ -62,15 +62,20 @@ final class ProductionDayService
         try{
             $select=$db->prepare('SELECT * FROM production_day_briefs WHERE production_id=:production AND service_date=:day FOR UPDATE');
             $select->execute(['production'=>$productionId,'day'=>$day]);$before=$select->fetch();
+            $now=(new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+            $openedAt=$before['opened_at']??null;
+            $closedAt=$before['closed_at']??null;
+            if($status==='live'&&!$openedAt)$openedAt=$now;
+            if($status==='closed'&&!$closedAt)$closedAt=$now;
+            if($status!=='closed')$closedAt=null;
+
             if($before){
-                $opened=$status==='live'&&$before['day_status']!=='live'?'CURRENT_TIMESTAMP':'opened_at';
-                $closed=$status==='closed'&&$before['day_status']!=='closed'?'CURRENT_TIMESTAMP':($status!=='closed'?'NULL':'closed_at');
-                $sql="UPDATE production_day_briefs SET day_status=:status,headline=:headline,operations_note=:operations,arrival_note=:arrival,updated_by_user_id=:actor,opened_at=$opened,closed_at=$closed WHERE id=:id";
-                $db->prepare($sql)->execute(['status'=>$status,'headline'=>$headline?:null,'operations'=>$operations?:null,'arrival'=>$arrival?:null,'actor'=>$actorId,'id'=>(int)$before['id']]);
+                $update=$db->prepare('UPDATE production_day_briefs SET day_status=:status,headline=:headline,operations_note=:operations,arrival_note=:arrival,updated_by_user_id=:actor,opened_at=:opened,closed_at=:closed WHERE id=:id');
+                $update->execute(['status'=>$status,'headline'=>$headline?:null,'operations'=>$operations?:null,'arrival'=>$arrival?:null,'actor'=>$actorId,'opened'=>$openedAt,'closed'=>$closedAt,'id'=>(int)$before['id']]);
                 $id=(int)$before['id'];
             }else{
-                $insert=$db->prepare("INSERT INTO production_day_briefs (production_id,service_date,day_status,headline,operations_note,arrival_note,created_by_user_id,updated_by_user_id,opened_at,closed_at) VALUES (:production,:day,:status,:headline,:operations,:arrival,:actor,:actor2,".($status==='live'?'CURRENT_TIMESTAMP':'NULL').','.($status==='closed'?'CURRENT_TIMESTAMP':'NULL').')');
-                $insert->execute(['production'=>$productionId,'day'=>$day,'status'=>$status,'headline'=>$headline?:null,'operations'=>$operations?:null,'arrival'=>$arrival?:null,'actor'=>$actorId,'actor2'=>$actorId]);
+                $insert=$db->prepare('INSERT INTO production_day_briefs (production_id,service_date,day_status,headline,operations_note,arrival_note,created_by_user_id,updated_by_user_id,opened_at,closed_at) VALUES (:production,:day,:status,:headline,:operations,:arrival,:actor,:actor2,:opened,:closed)');
+                $insert->execute(['production'=>$productionId,'day'=>$day,'status'=>$status,'headline'=>$headline?:null,'operations'=>$operations?:null,'arrival'=>$arrival?:null,'actor'=>$actorId,'actor2'=>$actorId,'opened'=>$openedAt,'closed'=>$closedAt]);
                 $id=(int)$db->lastInsertId();
             }
             self::audit($db,$actorId,'production_day.updated','production_day_brief',$id,'Updated production-day briefing.',['production_id'=>$productionId,'service_date'=>$day,'before_status'=>$before['day_status']??null,'after_status'=>$status]);
