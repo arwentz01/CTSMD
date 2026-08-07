@@ -63,6 +63,17 @@ final class ProductionArchiveService
         ];
     }
 
+    public static function channelDetail(PDO $db,array $viewer,int $productionId,int $channelId):?array
+    {
+        if(!self::canViewProduction($db,$viewer,$productionId))return null;
+        $s=$db->prepare("SELECT c.id,c.production_id,c.name,c.description,c.access_mode,c.read_audiences_json,p.title production_title,p.season FROM channels c JOIN productions p ON p.id=c.production_id WHERE c.id=:channel AND c.production_id=:production AND c.archived_at IS NULL AND p.is_active=0 AND p.status='archived' LIMIT 1");
+        $s->execute(['channel'=>$channelId,'production'=>$productionId]);$channel=$s->fetch();if(!$channel)return null;
+        $audiences=self::historicalAudiences($db,(int)$viewer['id'],$productionId);
+        if(!AccessPolicy::canManageProduction($viewer)&&!self::historicalChannelAccess($db,$channel,$viewer,$audiences))return null;
+        $posts=$db->prepare("SELECT cp.id,cp.body,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author_name FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:channel AND cp.moderation_status='published' ORDER BY cp.created_at,cp.id");
+        $posts->execute(['channel'=>$channelId]);$channel['posts']=$posts->fetchAll();return$channel;
+    }
+
     public static function canViewProduction(PDO $db, array $viewer, int $productionId): bool
     {
         if ($productionId < 1) return false;
@@ -153,20 +164,16 @@ final class ProductionArchiveService
 
     private static function channels(PDO $db,int $productionId,array $viewer,array $audiences,bool $manager):array
     {
-        $s=$db->prepare("SELECT id,name,description,access_mode,read_audiences_json,archived_at FROM channels WHERE production_id=:production AND archived_at IS NULL ORDER BY sort_order,name");
+        $s=$db->prepare("SELECT c.id,c.name,c.description,c.access_mode,c.read_audiences_json,c.archived_at,(SELECT COUNT(*) FROM channel_posts cp WHERE cp.channel_id=c.id AND cp.moderation_status='published') post_count,(SELECT MAX(cp2.created_at) FROM channel_posts cp2 WHERE cp2.channel_id=c.id AND cp2.moderation_status='published') last_post_at FROM channels c WHERE c.production_id=:production AND c.archived_at IS NULL ORDER BY c.sort_order,c.name");
         $s->execute(['production'=>$productionId]);$out=[];
-        foreach($s->fetchAll() as $channel){
-            if(!$manager&&!self::historicalChannelAccess($db,$channel,$viewer,$audiences))continue;
-            $posts=$db->prepare("SELECT cp.id,cp.body,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author_name FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:channel AND cp.moderation_status='published' ORDER BY cp.created_at,cp.id");
-            $posts->execute(['channel'=>(int)$channel['id']]);$channel['posts']=$posts->fetchAll();$out[]=$channel;
-        }
+        foreach($s->fetchAll() as $channel){if($manager||self::historicalChannelAccess($db,$channel,$viewer,$audiences))$out[]=$channel;}
         return$out;
     }
 
     private static function historicalChannelAccess(PDO $db,array $channel,array $viewer,array $audiences):bool
     {
         $mode=(string)($channel['access_mode']??'audience');$audienceOkay=self::audienceAllows((string)($channel['read_audiences_json']??'[]'),$viewer,$audiences);
-        $selected=false;$member=$db->prepare("SELECT 1 FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' AND can_read=1 LIMIT 1");$member->execute(['channel'=>(int)$channel['id'],'user'=>(int)$viewer['id']]);$selected=(bool)$member->fetchColumn();
+        $member=$db->prepare("SELECT 1 FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' AND can_read=1 LIMIT 1");$member->execute(['channel'=>(int)$channel['id'],'user'=>(int)$viewer['id']]);$selected=(bool)$member->fetchColumn();
         $team=$db->prepare("SELECT 1 FROM channel_teams ct JOIN team_members tm ON tm.team_id=ct.team_id AND tm.user_id=:user AND tm.status='active' WHERE ct.channel_id=:channel AND ct.can_read=1 LIMIT 1");$team->execute(['user'=>(int)$viewer['id'],'channel'=>(int)$channel['id']]);$teamOkay=(bool)$team->fetchColumn();
         return match($mode){'selected'=>$selected,'team'=>$teamOkay,'hybrid'=>$audienceOkay||$selected||$teamOkay,default=>$audienceOkay};
     }
