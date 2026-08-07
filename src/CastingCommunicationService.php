@@ -39,6 +39,7 @@ final class CastingCommunicationService
                     :"CTSMD has finalized a casting result for {$student} in {$production}.\n\nRole: {$role}\n\nPlease sign in to CTSMD Connect for production information.\n\nCTSMD Connect");
             $queued=0;$nonce=date('YmdHis');
             foreach($recipients as $email=>$recipient){$id=MailService::queue($db,$recipient['user_id'],$email,$recipient['name'],'system',$subject,$body,null,'casting-result-'.$recordId.'-'.$status.'-'.$email.'-'.$nonce);if($id>0)$queued++;}
+            if($queued<1)throw new RuntimeException('The family has valid email addresses, but current email preferences prevented this casting result from being queued. No result was marked as communicated.');
             $db->prepare('UPDATE production_casting_records SET result_communicated_at=CURRENT_TIMESTAMP,result_communicated_by_user_id=:actor WHERE id=:id')->execute(['actor'=>$actorId,'id'=>$recordId]);
             self::audit($db,$actorId,'casting.result_communicated',$recordId,'Queued casting result communication.',['production_id'=>$productionId,'casting_status'=>$status,'recipient_count'=>count($recipients),'queue_count'=>$queued]);
             $db->commit();return $queued;
