@@ -82,6 +82,24 @@ CREATE TABLE IF NOT EXISTS schedule_items (
     CONSTRAINT fk_schedule_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS schedule_change_notices (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    schedule_item_id BIGINT UNSIGNED NOT NULL,
+    production_id BIGINT UNSIGNED NOT NULL,
+    created_by_user_id BIGINT UNSIGNED NULL,
+    audience_scope ENUM('family','staff','all') NOT NULL,
+    audience_count INT UNSIGNED NOT NULL DEFAULT 0,
+    subject VARCHAR(190) NOT NULL,
+    body TEXT NOT NULL,
+    status ENUM('draft','published','cancelled') NOT NULL DEFAULT 'draft',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    published_at DATETIME NULL,
+    KEY idx_schedule_notice_status (production_id, status, created_at),
+    CONSTRAINT fk_schedule_notice_item FOREIGN KEY (schedule_item_id) REFERENCES schedule_items(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_notice_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_notice_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS channels (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     production_id BIGINT UNSIGNED NULL,
