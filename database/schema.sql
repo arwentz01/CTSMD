@@ -40,6 +40,21 @@ CREATE TABLE IF NOT EXISTS productions (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS production_memberships (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    production_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    audience_type ENUM('student','guardian','staff') NOT NULL,
+    participation_role VARCHAR(120) NULL,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_production_user_audience (production_id, user_id, audience_type),
+    KEY idx_production_membership_audience (production_id, audience_type, status),
+    CONSTRAINT fk_production_membership_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_production_membership_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS announcements (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     production_id BIGINT UNSIGNED NULL,
