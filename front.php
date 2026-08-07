@@ -115,6 +115,8 @@ require_once __DIR__ . '/src/DynamicFormExperience.php';
 if (DynamicFormExperience::handles($route)) DynamicFormExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/FormExperience.php';
 if (FormExperience::handles($route)) FormExperience::render($route, $detectedBasePath);
+require_once __DIR__ . '/src/VolunteerServiceRecordExperience.php';
+if (VolunteerServiceRecordExperience::handles($route)) VolunteerServiceRecordExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/VolunteerDevelopmentExperience.php';
 if (VolunteerDevelopmentExperience::handles($route)) VolunteerDevelopmentExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/VolunteerShiftManagementExperience.php';
