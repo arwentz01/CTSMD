@@ -18,11 +18,15 @@ final class AppNavigation
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
         $_SESSION['auth_csrf'] ??= bin2hex(random_bytes(24));
 
+        // Production context is an operations concept. Member/family experiences must aggregate
+        // across every active production the account can access rather than requiring a show switch.
         $productionOptions=[];$selectedProduction=null;$hasFamily=false;
         try{
             $db=Database::connect(dirname(__DIR__));
-            $productionOptions=ProductionContext::activeProductions($db,$user);
-            $selectedProduction=ProductionContext::selected($db,$user);
+            if($staff){
+                $productionOptions=ProductionContext::activeProductions($db,$user);
+                $selectedProduction=ProductionContext::selected($db,$user);
+            }
             $familyStmt=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");
             $familyStmt->execute(['user'=>(int)$user['id']]);
             $hasFamily=(bool)$familyStmt->fetchColumn();
@@ -41,12 +45,12 @@ final class AppNavigation
                 <a class="unified-nav-item<?= $isActive('/app') ?>" href="<?= $url('/app') ?>"><i>⌂</i><span><b>Home</b><small>Today & attention</small></span></a>
                 <?php if($hasFamily):?><a class="unified-nav-item<?= $isActive('/family-hub') ?>" href="<?= $url('/family-hub') ?>"><i>♟</i><span><b>Family</b><small>Children, calls & forms</small></span></a><?php endif;?>
                 <span class="unified-nav-label">Theatre</span>
-                <?php if($productionOptions):?><form class="unified-production-switcher" method="post" action="<?= $url('/production/select') ?>"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>"><input type="hidden" name="return_to" value="<?= $esc($route) ?>"><label for="unified-production-select">Working production</label><select id="unified-production-select" name="production_id" onchange="this.form.submit()"><?php foreach($productionOptions as $production):?><option value="<?= (int)$production['id'] ?>"<?= $selectedProduction&&(int)$selectedProduction['id']===(int)$production['id']?' selected':'' ?>><?= $esc((string)$production['title']) ?><?= !empty($production['season'])?' · '.$esc((string)$production['season']):'' ?></option><?php endforeach;?></select></form><?php endif;?>
-                <a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction?$esc((string)$selectedProduction['title']):'Schedule, calls & resources' ?></small></span></a>
+                <?php if($staff && $productionOptions):?><form class="unified-production-switcher" method="post" action="<?= $url('/production/select') ?>"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>"><input type="hidden" name="return_to" value="<?= $esc($route) ?>"><label for="unified-production-select">Working production</label><select id="unified-production-select" name="production_id" onchange="this.form.submit()"><?php foreach($productionOptions as $production):?><option value="<?= (int)$production['id'] ?>"<?= $selectedProduction&&(int)$selectedProduction['id']===(int)$production['id']?' selected':'' ?>><?= $esc((string)$production['title']) ?><?= !empty($production['season'])?' · '.$esc((string)$production['season']):'' ?></option><?php endforeach;?></select></form><?php endif;?>
+                <?php if($staff):?><a class="unified-nav-item<?= $isActive('/production') ?>" href="<?= $url('/production') ?>"><i>★</i><span><b>Production</b><small><?= $selectedProduction?$esc((string)$selectedProduction['title']):'Schedule, calls & resources' ?></small></span></a><?php endif;?>
                 <a class="unified-nav-item<?= $isActive('/calendar') ?>" href="<?= $url('/calendar') ?>"><i>◫</i><span><b>Calendar</b><small>All active shows & conflicts</small></span></a>
-                <a class="unified-nav-item<?= $isActive('/files') ?>" href="<?= $url('/files') ?>"><i>▣</i><span><b>Files</b><small>Production documents & downloads</small></span></a>
-                <a class="unified-nav-item<?= $isActive('/channels') ?>" href="<?= $url('/channels') ?>"><i>#</i><span><b>Community</b><small>Channels & announcements</small></span></a>
-                <a class="unified-nav-item<?= $isActive('/messages') ?>" href="<?= $url('/messages') ?>"><i>✉</i><span><b>Messages</b><small>Protected conversations</small></span></a>
+                <?php if($staff):?><a class="unified-nav-item<?= $isActive('/files') ?>" href="<?= $url('/files') ?>"><i>▣</i><span><b>Files</b><small>Production documents & downloads</small></span></a><?php endif;?>
+                <a class="unified-nav-item<?= $isActive('/channels') ?>" href="<?= $url('/channels') ?>"><i>#</i><span><b>Community</b><small>All accessible channels & announcements</small></span></a>
+                <a class="unified-nav-item<?= $isActive('/messages') ?>" href="<?= $url('/messages') ?>"><i>✉</i><span><b>Messages</b><small>All conversations for your account</small></span></a>
                 <a class="unified-nav-item<?= $isActive('/volunteer-readiness') ?>" href="<?= $url('/volunteer-readiness') ?>"><i>♡</i><span><b>Volunteer</b><small>Readiness, training & shifts</small></span></a>
 
                 <?php if($staff):?><span class="unified-nav-label">Operations</span>
