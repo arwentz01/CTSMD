@@ -7,7 +7,25 @@ require_once __DIR__ . '/PrototypeDataRepository.php';
 
 try {
     $db = Database::connect(dirname(__DIR__));
-    return (new PrototypeDataRepository($db))->all();
+    $data = (new PrototypeDataRepository($db))->all();
+
+    $userId = (int)($data['user']['id'] ?? 0);
+    if ($userId > 0) {
+        $stmt = $db->prepare("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role
+                              FROM family_relationships fr
+                              JOIN users u ON u.id = fr.student_user_id
+                              WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active' AND u.active = 1
+                              ORDER BY fr.is_primary DESC, u.last_name, u.first_name");
+        $stmt->execute(['guardian_id' => $userId]);
+        $data['family_context']['linked_people'] = array_map(static fn(array $row): array => [
+            'id' => (int)$row['id'],
+            'name' => $row['name'],
+            'initials' => $row['initials'],
+            'role' => $row['role'],
+        ], $stmt->fetchAll());
+    }
+
+    return $data;
 } catch (Throwable $e) {
     http_response_code(500);
     header('Content-Type: text/html; charset=utf-8');
