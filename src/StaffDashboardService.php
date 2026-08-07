@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/SafeguardingCaseService.php';
 
 final class StaffDashboardService
 {
@@ -16,6 +17,9 @@ final class StaffDashboardService
         $upcoming=self::upcomingCalls($db,$productionIds,$now,$to);
         $cards=[];
 
+        if(AccessPolicy::canManageSafeguarding($user)){
+            $cards[]=['key'=>'safeguarding','label'=>'Safeguarding reviews','count'=>SafeguardingCaseService::openCount($db),'detail'=>'Restricted cases requiring safeguarding follow-through','href'=>'/safeguarding/cases','tone'=>'attention'];
+        }
         if(AccessPolicy::canManageAccounts($user)){
             $cards[]=['key'=>'membership','label'=>'Pending memberships','count'=>self::pendingMemberships($db),'detail'=>'Verified accounts waiting for CTSMD approval','href'=>'/admin/accounts','tone'=>'attention'];
         }
