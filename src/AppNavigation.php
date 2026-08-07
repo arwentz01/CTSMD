@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/AccessPolicy.php';
+
 final class AppNavigation
 {
     public static function renderSidebar(string $route, string $basePath, array $user): void
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $role = strtolower((string)($user['role'] ?? ''));
-        $staff = str_contains($role, 'staff') || str_contains($role, 'manager') || str_contains($role, 'admin') || str_contains($role, 'director');
+        $staff = AccessPolicy::isStaff($user);
 
         $isActive = static function (string $path) use ($route): string {
             if ($path === '/app') {
@@ -47,6 +48,7 @@ final class AppNavigation
 
             <div class="unified-sidebar-foot">
                 <a href="<?= $url('/notifications') ?>">Notifications</a>
+                <?php if (AccessPolicy::localIdentitySwitchEnabled()): ?><a href="<?= $url('/dev/identity') ?>">Switch test identity</a><?php endif; ?>
                 <a href="<?= $url('/prototype') ?>">Design review</a>
                 <div class="unified-user"><i><?= $esc((string)$user['initials']) ?></i><span><b><?= $esc((string)$user['name']) ?></b><small><?= $esc((string)$user['role']) ?></small></span></div>
             </div>
@@ -63,7 +65,7 @@ final class AppNavigation
         <header class="unified-header">
             <button class="unified-menu" type="button" data-nav-open aria-label="Open navigation">☰</button>
             <div class="unified-title"><small><?= $esc($eyebrow) ?></small><h1><?= $esc($title) ?></h1></div>
-            <div class="unified-utilities"><a href="<?= $url('/notifications') ?>">Notifications</a><span class="unified-avatar">C</span></div>
+            <div class="unified-utilities"><a href="<?= $url('/notifications') ?>">Notifications</a><span class="unified-avatar"><?= $esc(substr((string)$title, 0, 1)) ?></span></div>
         </header>
         <?php if ($subnav): ?>
         <nav class="unified-subnav" aria-label="Section navigation">
