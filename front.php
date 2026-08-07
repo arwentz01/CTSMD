@@ -33,14 +33,10 @@ require_once __DIR__ . '/src/SchemaGuard.php';
 SchemaGuard::requireCurrentSchema(__DIR__, $detectedBasePath);
 
 require_once __DIR__ . '/src/PublicExperience.php';
-if (PublicExperience::handles($route)) {
-    PublicExperience::render($route, $detectedBasePath);
-}
+if (PublicExperience::handles($route)) PublicExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/AuthExperience.php';
-if (AuthExperience::handles($route)) {
-    AuthExperience::render($route, $detectedBasePath);
-}
+if (AuthExperience::handles($route)) AuthExperience::render($route, $detectedBasePath);
 
 if ($route === '/calendar/feed') {
     require_once __DIR__ . '/src/CalendarExperience.php';
@@ -90,6 +86,9 @@ if (HomeExperience::handles($route)) HomeExperience::render($route, $detectedBas
 
 require_once __DIR__ . '/src/CalendarExperience.php';
 if (CalendarExperience::handles($route)) CalendarExperience::render($route, $detectedBasePath);
+
+require_once __DIR__ . '/src/OrganizationResourceExperience.php';
+if (OrganizationResourceExperience::handles($route)) OrganizationResourceExperience::render($route, $detectedBasePath);
 
 require_once __DIR__ . '/src/AccountLibraryExperience.php';
 if (AccountLibraryExperience::handles($route)) AccountLibraryExperience::render($route, $detectedBasePath);
