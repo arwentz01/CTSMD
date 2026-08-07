@@ -80,14 +80,14 @@ final class RegistrationService
     private static function queueConfirmation(PDO $db,array $opportunity,string $first,string $last,string $email,string $status,string $token,string $basePath): void
     {
         try{
-            $manage=self::absoluteUrl($basePath.'/register/manage?token='.$token);$label=$status==='waitlisted'?'waitlist request':'registration';$subject='CTSMD '.$label.' received · '.$opportunity['title'];$text="Hi {$first},\n\nWe received the {$label} for {$first} {$last} for {$opportunity['title']}.";
+            $manage=self::absoluteUrl('/register/manage?token='.$token,$basePath);$label=$status==='waitlisted'?'waitlist request':'registration';$subject='CTSMD '.$label.' received · '.$opportunity['title'];$text="Hi {$first},\n\nWe received the {$label} for {$first} {$last} for {$opportunity['title']}.";
             if(!empty($opportunity['confirmation_message']))$text.="\n\n".$opportunity['confirmation_message'];$text.="\n\nManage or cancel this registration:\n{$manage}\n\nCTSMD Connect";
             MailService::queue($db,null,$email,$first.' '.$last,'system',$subject,$text,null,'registration:'.(int)$opportunity['id'].':'.$email.':'.hash('sha256',$token));
         }catch(Throwable){}
     }
 
-    private static function absoluteUrl(string $path): string
+    private static function absoluteUrl(string $path,string $basePath): string
     {
-        $configured=rtrim((string)(getenv('APP_URL')?:''),'/');if($configured!=='')return $configured.(str_starts_with($path,'/')?$path:'/'.$path);$scheme=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')?'https':'http';$host=(string)($_SERVER['HTTP_HOST']??'localhost');return $scheme.'://'.$host.$path;
+        $configured=rtrim((string)(getenv('APP_URL')?:''),'/');if($configured!=='')return $configured.(str_starts_with($path,'/')?$path:'/'.$path);$scheme=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')?'https':'http';$host=(string)($_SERVER['HTTP_HOST']??'localhost');return $scheme.'://'.$host.($basePath?:'').(str_starts_with($path,'/')?$path:'/'.$path);
     }
 }
