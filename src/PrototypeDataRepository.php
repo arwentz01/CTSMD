@@ -25,6 +25,8 @@ final class PrototypeDataRepository
             'shifts' => $this->shifts((int)$user['id']),
             'forms' => $this->forms((int)$user['id']),
             'playbills' => $this->playbills(),
+            'people' => $this->people(),
+            'safeguarding' => $this->safeguarding(),
         ];
     }
 
@@ -166,5 +168,41 @@ final class PrototypeDataRepository
             'season' => $row['season'],
             'status' => ucfirst($row['status']),
         ], $rows);
+    }
+
+    private function people(): array
+    {
+        $rows = $this->db->query("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role, EXISTS(SELECT 1 FROM volunteer_profiles vp WHERE vp.user_id = u.id AND vp.active = 1) AS is_volunteer, EXISTS(SELECT 1 FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vc.user_id = u.id AND vr.code = 'background_check' AND vc.status = 'approved') AS background_ready, EXISTS(SELECT 1 FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vc.user_id = u.id AND vr.code = 'child_safety_training' AND vc.status = 'approved') AS training_ready FROM users u WHERE u.active = 1 ORDER BY u.last_name, u.first_name LIMIT 12")->fetchAll();
+
+        return array_map(static function (array $row): array {
+            $volunteerReady = (bool)$row['is_volunteer'] && (bool)$row['background_ready'] && (bool)$row['training_ready'];
+            return [
+                'name' => $row['name'],
+                'initials' => $row['initials'],
+                'role' => $row['role'],
+                'status' => $volunteerReady ? 'Ready' : ((bool)$row['is_volunteer'] ? 'Review' : 'Active'),
+                'context' => (bool)$row['is_volunteer'] ? ($volunteerReady ? 'Volunteer requirements current' : 'Volunteer requirements need attention') : 'Organization member',
+            ];
+        }, $rows);
+    }
+
+    private function safeguarding(): array
+    {
+        $safeguarded = (int)$this->db->query("SELECT COUNT(*) FROM conversations WHERE conversation_type = 'safeguarded'")->fetchColumn();
+        $guardianRequired = (int)$this->db->query("SELECT COUNT(*) FROM conversation_participants WHERE guardian_required = 1")->fetchColumn();
+        $pendingBackground = (int)$this->db->query("SELECT COUNT(*) FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id WHERE vr.code = 'background_check' AND vc.status IN ('pending','review')")->fetchColumn();
+        $credentialExceptions = (int)$this->db->query("SELECT COUNT(*) FROM volunteer_credentials WHERE status IN ('pending','review','missing','expired')")->fetchColumn();
+
+        $queue = $this->db->query("SELECT CONCAT('Credential review · ', u.first_name, ' ', u.last_name) AS title, CONCAT(vr.name, ' is ', vc.status) AS detail, CASE WHEN vr.code = 'background_check' THEN 'High' ELSE 'Review' END AS severity FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id = vc.requirement_id JOIN users u ON u.id = vc.user_id WHERE vc.status IN ('pending','review','missing','expired') ORDER BY FIELD(vc.status,'pending','review','missing','expired'), u.last_name LIMIT 6")->fetchAll();
+
+        return [
+            'metrics' => [
+                ['value' => (string)$credentialExceptions, 'label' => 'Items awaiting review'],
+                ['value' => (string)$safeguarded, 'label' => 'Safeguarded conversations'],
+                ['value' => (string)$guardianRequired, 'label' => 'Required guardian links'],
+                ['value' => (string)$pendingBackground, 'label' => 'Background check reviews'],
+            ],
+            'queue' => $queue,
+        ];
     }
 }
