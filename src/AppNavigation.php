@@ -17,7 +17,7 @@ final class AppNavigation
                 return in_array($route, ['/app', '/family-hub', '/family/action', '/notifications', '/forms'], true) ? ' active' : '';
             }
             if ($path === '/production') {
-                return in_array($route, ['/production', '/schedule', '/production/day', '/resources', '/playbills'], true) ? ' active' : '';
+                return in_array($route, ['/production', '/schedule', '/production/day', '/production/edit', '/resources', '/playbills'], true) ? ' active' : '';
             }
             if ($path === '/volunteer-readiness') {
                 return in_array($route, ['/volunteer-readiness', '/volunteer-shifts', '/volunteer/shift'], true) ? ' active' : '';
