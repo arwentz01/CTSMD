@@ -105,7 +105,7 @@ final class ProductionDayService
     private static function checklist(PDO $db,int $productionId,string $day):array
     {
         $end=$day.' 23:59:59';
-        $s=$db->prepare("SELECT pci.id,pci.title,pci.category,pci.status,pci.due_at,pci.notes,pci.completed_at,CONCAT(u.first_name,' ',u.last_name) owner_name FROM production_checklist_items pci LEFT JOIN users u ON u.id=pci.owner_user_id WHERE pci.production_id=:production AND (pci.status<>'done' AND (pci.due_at IS NULL OR pci.due_at<=:end) OR pci.status='done' AND DATE(pci.completed_at)=:day) ORDER BY pci.status='done',pci.due_at IS NULL,pci.due_at,pci.sort_order,pci.id LIMIT 20");
+        $s=$db->prepare("SELECT pci.id,pci.title,pci.category,pci.status,pci.due_at,pci.notes,pci.completed_at,CONCAT(u.first_name,' ',u.last_name) owner_name FROM production_checklist_items pci LEFT JOIN users u ON u.id=pci.assigned_to_user_id WHERE pci.production_id=:production AND (pci.status<>'done' AND (pci.due_at IS NULL OR pci.due_at<=:end) OR pci.status='done' AND DATE(pci.completed_at)=:day) ORDER BY pci.status='done',pci.due_at IS NULL,pci.due_at,pci.sort_order,pci.id LIMIT 20");
         $s->execute(['production'=>$productionId,'end'=>$end,'day'=>$day]);return $s->fetchAll();
     }
 
