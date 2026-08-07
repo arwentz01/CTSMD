@@ -12,48 +12,30 @@ final class Auth
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-            session_set_cookie_params([
-                'lifetime' => 0,
-                'path' => '/',
-                'secure' => $secure,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
+            session_set_cookie_params(['lifetime'=>0,'path'=>'/','secure'=>$secure,'httponly'=>true,'samesite'=>'Lax']);
             session_start();
         }
     }
 
-    public static function userId(): ?int
-    {
-        self::startSession();
-        $id = (int)($_SESSION[self::SESSION_USER_ID] ?? 0);
-        return $id > 0 ? $id : null;
-    }
-
-    public static function check(): bool{return self::userId() !== null;}
+    public static function userId(): ?int{self::startSession();$id=(int)($_SESSION[self::SESSION_USER_ID]??0);return $id>0?$id:null;}
+    public static function check(): bool{return self::userId()!==null;}
 
     public static function currentUser(PDO $db): ?array
     {
-        $userId=self::userId();if(!$userId)return null;
-        $local=!empty($_SESSION['auth_local_identity'])&&self::localIdentitySwitchEnabled();
-        $sql="SELECT id,first_name,last_name,email,initials,display_role AS role,active,account_status,last_login_at FROM users WHERE id=:id AND active=1".($local?'':" AND account_status='active'")." LIMIT 1";
-        $stmt=$db->prepare($sql);$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();
-        if(!$user){self::logout();return null;}
+        $userId=self::userId();if(!$userId)return null;$local=!empty($_SESSION['auth_local_identity'])&&self::localIdentitySwitchEnabled();
+        $sql="SELECT id,first_name,last_name,email,initials,display_role AS role,active,account_status,organization_membership_status,organization_membership_reviewed_at,last_login_at FROM users WHERE id=:id AND active=1".($local?'':" AND account_status='active'")." LIMIT 1";
+        $stmt=$db->prepare($sql);$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();if(!$user){self::logout();return null;}
         $user['name']=trim((string)$user['first_name'].' '.(string)$user['last_name']);$user['roles']=self::roles($db,$userId);$user['permissions']=self::permissions($db,$userId);return $user;
     }
 
     public static function login(PDO $db,string $email,string $password): array
     {
-        $email=mb_strtolower(trim($email));if($email===''||$password==='')throw new RuntimeException('Enter your email and password.');
-        $stmt=$db->prepare("SELECT id,password_hash,active,account_status FROM users WHERE LOWER(email)=:email LIMIT 1");$stmt->execute(['email'=>$email]);$row=$stmt->fetch();
-        if(!$row||!(bool)$row['active']||$row['account_status']!=='active'||empty($row['password_hash'])||!password_verify($password,(string)$row['password_hash']))throw new RuntimeException('Email or password was not recognized.');
-        self::establishSession($db,(int)$row['id']);$user=self::currentUser($db);if(!$user)throw new RuntimeException('This account is unavailable.');return $user;
+        $email=mb_strtolower(trim($email));if($email===''||$password==='')throw new RuntimeException('Enter your email and password.');$stmt=$db->prepare("SELECT id,password_hash,active,account_status FROM users WHERE LOWER(email)=:email LIMIT 1");$stmt->execute(['email'=>$email]);$row=$stmt->fetch();if(!$row||!(bool)$row['active']||$row['account_status']!=='active'||empty($row['password_hash'])||!password_verify($password,(string)$row['password_hash']))throw new RuntimeException('Email or password was not recognized.');self::establishSession($db,(int)$row['id']);$user=self::currentUser($db);if(!$user)throw new RuntimeException('This account is unavailable.');return $user;
     }
 
     public static function establishSession(PDO $db,int $userId): void
     {
-        $stmt=$db->prepare("SELECT id FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('This account is unavailable.');
-        self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_authenticated_at']=time();unset($_SESSION['auth_local_identity']);$db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
+        $stmt=$db->prepare("SELECT id FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('This account is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_authenticated_at']=time();unset($_SESSION['auth_local_identity']);$db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
     }
 
     public static function loginAsLocalUser(PDO $db,int $userId): void
@@ -61,28 +43,17 @@ final class Auth
         if(!self::localIdentitySwitchEnabled())throw new RuntimeException('Local identity switching is disabled.');$stmt=$db->prepare('SELECT id FROM users WHERE id=:id AND active=1 LIMIT 1');$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('That local test identity is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_local_identity']=true;
     }
 
-    public static function logout(): void
-    {
-        self::startSession();unset($_SESSION[self::SESSION_USER_ID],$_SESSION['auth_authenticated_at'],$_SESSION['auth_local_identity']);session_regenerate_id(true);
-    }
-
+    public static function logout(): void{self::startSession();unset($_SESSION[self::SESSION_USER_ID],$_SESSION['auth_authenticated_at'],$_SESSION['auth_local_identity']);session_regenerate_id(true);}
     public static function hasPermission(array $user,string $permission): bool{return in_array($permission,(array)($user['permissions']??[]),true);}
     public static function hasRole(array $user,string $role): bool{return in_array($role,(array)($user['roles']??[]),true);}
+    public static function isApprovedMember(array $user): bool{return ($user['organization_membership_status']??null)==='approved'||self::hasRole($user,'production_staff')||self::hasRole($user,'administrator');}
 
-    public static function roles(PDO $db,int $userId): array
-    {
-        $s=$db->prepare("SELECT r.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.active=1 ORDER BY r.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));
-    }
-
-    public static function permissions(PDO $db,int $userId): array
-    {
-        $s=$db->prepare("SELECT DISTINCT p.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN auth_role_permissions rp ON rp.role_id=r.id JOIN auth_permissions p ON p.id=rp.permission_id WHERE ur.user_id=:user ORDER BY p.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));
-    }
+    public static function roles(PDO $db,int $userId): array{$s=$db->prepare("SELECT r.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.active=1 ORDER BY r.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));}
+    public static function permissions(PDO $db,int $userId): array{$s=$db->prepare("SELECT DISTINCT p.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN auth_role_permissions rp ON rp.role_id=r.id JOIN auth_permissions p ON p.id=rp.permission_id WHERE ur.user_id=:user ORDER BY p.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));}
 
     public static function createInvitation(PDO $db,int $userId,?int $creatorId=null,int $hours=168): string
     {
-        $stmt=$db->prepare('SELECT id,email,active FROM users WHERE id=:id LIMIT 1');$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();if(!$user||!(bool)$user['active']||empty($user['email']))throw new RuntimeException('That person needs an active account with an email address before invitation.');
-        $token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);$expires=(new DateTimeImmutable('+'.max(1,$hours).' hours'))->format('Y-m-d H:i:s');$db->prepare('UPDATE auth_invitations SET accepted_at=COALESCE(accepted_at,CURRENT_TIMESTAMP) WHERE user_id=:user AND accepted_at IS NULL')->execute(['user'=>$userId]);$db->prepare('INSERT INTO auth_invitations (user_id,token_hash,expires_at,created_by_user_id) VALUES (:user,:hash,:expires,:creator)')->execute(['user'=>$userId,'hash'=>$hash,'expires'=>$expires,'creator'=>$creatorId]);$db->prepare("UPDATE users SET account_status='invited' WHERE id=:id AND password_hash IS NULL")->execute(['id'=>$userId]);return $token;
+        $stmt=$db->prepare('SELECT id,email,active FROM users WHERE id=:id LIMIT 1');$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();if(!$user||!(bool)$user['active']||empty($user['email']))throw new RuntimeException('That person needs an active account with an email address before invitation.');$token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);$expires=(new DateTimeImmutable('+'.max(1,$hours).' hours'))->format('Y-m-d H:i:s');$db->prepare('UPDATE auth_invitations SET accepted_at=COALESCE(accepted_at,CURRENT_TIMESTAMP) WHERE user_id=:user AND accepted_at IS NULL')->execute(['user'=>$userId]);$db->prepare('INSERT INTO auth_invitations (user_id,token_hash,expires_at,created_by_user_id) VALUES (:user,:hash,:expires,:creator)')->execute(['user'=>$userId,'hash'=>$hash,'expires'=>$expires,'creator'=>$creatorId]);$db->prepare("UPDATE users SET account_status='invited' WHERE id=:id AND password_hash IS NULL")->execute(['id'=>$userId]);return $token;
     }
 
     public static function invitation(PDO $db,string $token): ?array
