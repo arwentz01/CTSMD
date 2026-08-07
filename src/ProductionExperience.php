@@ -225,7 +225,7 @@ final class ProductionExperience
             default => ['student', 'guardian', 'staff'],
         };
         $placeholders = implode(',', array_fill(0, count($types), '?'));
-        $sql = "SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, pm.audience_type FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = ? AND pm.status = 'active' AND u.active = 1 AND pm.audience_type IN ($placeholders) ORDER BY u.last_name, u.first_name";
+        $sql = "SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, pm.audience_type, u.last_name AS sort_last_name, u.first_name AS sort_first_name FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = ? AND pm.status = 'active' AND u.active = 1 AND pm.audience_type IN ($placeholders) ORDER BY sort_last_name, sort_first_name";
         $stmt = $db->prepare($sql);
         $stmt->execute(array_merge([$productionId], $types));
         return $stmt->fetchAll();
