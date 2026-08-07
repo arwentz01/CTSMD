@@ -14,6 +14,27 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — File uploads + portable storage
+
+- Generic storage layer in `StorageService` with local private-filesystem driver as the first implementation.
+- Default storage path is `<project>/storage/private`; `STORAGE_PATH` can point to an absolute location outside the public web root on shared hosting without changing application code.
+- Direct Apache access to the default private storage directory is denied; files are served through authenticated CTSMD routes only.
+- Upload validation uses server-detected MIME type rather than trusting the browser filename/content-type.
+- Initial allowlist: PDF, Word, Excel, PowerPoint, TXT, CSV, JPG, PNG and WebP. SVG, PHP/executable and arbitrary web-file uploads are not permitted.
+- Default maximum upload size is 20 MB and can be changed with `STORAGE_MAX_UPLOAD_MB`.
+- Files receive random storage keys rather than user-controlled filesystem names.
+- Every stored version records original filename, MIME type, extension, size, SHA-256 checksum, uploader and timestamp.
+- Stable `stored_files` objects can have multiple immutable `stored_file_versions`.
+- Production file library at `/files`; authorized staff management at `/admin/files`.
+- Production files support title, category, description, pinning, archive/restore and the same production audience concepts used by Resources.
+- Replacing a production file creates a new version instead of overwriting history.
+- Current or historical versions can only be downloaded after current production/audience access is checked server-side.
+- Downloads are audited by production file and version.
+- Archived production files remain in history and are hidden from normal members.
+- Storage schema lives in migration 018.
+- Foundation is now available for future Community/Message attachments, Form upload fields and Playbill imagery without duplicating upload/security code.
+- **Runtime verification:** pending local MAMP test after migration 018, including PHP upload limits, writable storage path, MIME detection, version replacement and permission-denied downloads.
+
 ### Implemented — Authentication + normalized RBAC
 
 - Real session authentication with `/login` and POST `/logout`.
@@ -78,15 +99,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — File uploads/storage
-
-- Storage abstraction that behaves consistently on MAMP and Bluehost/shared hosting.
-- Production and organization resource uploads.
-- File versioning and archive history.
-- Download permission enforcement.
-- Image/PDF preview support.
-- Attachment foundation for Community, Messages, Forms and Playbills.
-
 ### Next — Email notifications
 
 - Email delivery service, including automatic invitation/password-reset delivery.
@@ -127,7 +139,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Channel pinning/featured posts and reactions.
 - Moderation rule refinements and false-positive tuning.
 - Search across Community posts.
-- Attachments/photos after storage is available.
+- Community photo/file attachments using the shared storage layer.
 - First-class announcement composer separate from schedule-generated notices.
 - Better channel notification preferences.
 
@@ -136,7 +148,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Participant management where safeguarding rules permit it.
 - Better guardian selection when a student has multiple guardians.
 - Conversation search and unread state.
-- Attachments after storage is available.
+- Message attachments using the shared storage layer, with safeguarding-aware download access.
 - Staff escalation/reporting workflow.
 - Safeguarded group conversations where product rules allow them.
 
@@ -146,7 +158,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Guardian-on-behalf-of-student completion.
 - Production Group targeting.
 - Bulk reminders and completion dashboards.
-- File-upload fields after storage exists.
+- File-upload fields using the shared storage layer.
 - Registration-oriented forms.
 - External/e-sign provider evaluation only if required later.
 
@@ -162,16 +174,16 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Resources backlog
 
-- Actual file uploads/storage.
-- Organization-wide resources in addition to production-scoped resources.
-- Resource version history.
-- Preview/render support for common document formats.
-- Group-targeted resources.
-- Download/view audit where needed.
+- Merge or visually unify link/note Resources and Production Files where the product experience benefits from one library.
+- Organization-wide files/resources in addition to production-scoped content.
+- Image/PDF inline preview after browser/content-security behavior is fully tested.
+- Group-targeted files/resources.
+- More detailed view/download reporting where needed.
+- Future remote/object-storage driver only if CTSMD outgrows shared-hosting filesystem storage.
 
 ## Playbill backlog
 
-- Headshots/photos and actor/staff bios.
+- Headshots/photos and actor/staff bios using the shared storage layer.
 - Sponsor logos/ads and reusable sponsor management.
 - Production artwork and drag/reorder sections.
 - Credits beyond active production membership.
@@ -195,7 +207,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Richer profiles and emergency contacts.
 - Preferred names/pronouns where appropriate.
 - Multiple household/guardian relationship UX.
-- Contact preferences and avatar/photo management.
+- Contact preferences and avatar/photo management using shared storage.
 - Guardian-managed student-account UX and credential recovery rules.
 - Deliberate policy decision before storing sensitive medical/allergy information.
 
@@ -220,14 +232,16 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Consolidate canonical schema + migration strategy so fresh installs are predictable.
 - Break remaining large PHP experience files into smaller services/layouts/partials.
 - Incrementally replace legacy per-experience current-user queries with direct `Auth::currentUser()` calls; the session-safe DB compatibility adapter is transitional.
-- Storage abstraction and mail delivery service.
+- Mail delivery service.
 - Add authentication rate limiting / lockout policy before public production launch.
 - Consider persistent server-side session storage if Bluehost/PHP session behavior requires it.
+- Validate Bluehost/PHP upload limits (`upload_max_filesize`, `post_max_size`) and write permissions for the configured `STORAGE_PATH`.
+- Add remote/object-storage driver only if shared-hosting filesystem constraints require one later.
 - Background jobs/cron where appropriate.
-- Automated tests, especially auth/RBAC/access regression tests.
+- Automated tests, especially auth/RBAC/storage/access regression tests.
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
-- Bluehost deployment process/tooling and backup/restore procedures.
+- Bluehost deployment process/tooling and backup/restore procedures, including private-file backups.
 - Timezone-aware date handling, including ICS conversion validation.
 - Search repository for remaining MySQL 8 DISTINCT/ORDER BY incompatibilities.
 - Fix remaining legacy FormExperience CSRF exception edge.
@@ -242,6 +256,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
+- Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
+- Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - General Teams and Production Groups are separate concepts.
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
