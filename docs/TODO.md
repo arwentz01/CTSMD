@@ -14,6 +14,23 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Attendance
+
+- Attendance workspace at `/attendance` within the selected production context.
+- Expected attendees are derived from the schedule audience and Production Groups rather than maintained in a duplicate roster.
+- Guardian schedule visibility does not make guardians expected attendees; expected attendance excludes guardian-only membership records.
+- Staff roll-call workspace at `/attendance/take?id=...`.
+- Attendance states: unmarked, present, absent, late, excused and left early.
+- Optional staff notes and marker/timestamp history.
+- Per-schedule summary counts for expected, present, absent/excused and unmarked participants.
+- Students may report their own absence when they are expected for a call.
+- Guardians may report an absence only for an actively related student who is expected for that call.
+- Family absence reports do not silently alter attendance; production staff acknowledges the report, which marks the student excused and records the decision.
+- Acknowledgment fails closed if the student is no longer part of the schedule item's current expected audience.
+- All write actions are production-context checked and audited.
+- Attendance is surfaced from the Production workspace and staff Operations navigation.
+- **Runtime verification:** pending local MAMP test after migration 013.
+
 ### Implemented — Community moderation
 
 - Admin-managed moderation term library at `/admin/moderation/terms`.
@@ -52,15 +69,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - **Runtime verification:** pending local MAMP test after migration 011.
 
 ## Near-term build order
-
-### Next — Attendance
-
-- Rehearsal/performance attendance tracking.
-- Expected attendees derived from schedule audience/group targeting.
-- Present, absent, late, excused, left early states.
-- Staff notes and audit trail.
-- Guardian/student absence-reporting workflow.
-- Attendance history and production reports.
 
 ### Next — Dynamic forms
 
@@ -154,6 +162,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production archive/history browser.
 - Season setup and season-level reporting.
 - Cross-production conflict detection.
+- Attendance aggregate reports, trends and exports beyond the per-call operational dashboard.
 
 ## Community backlog
 
@@ -273,7 +282,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Volunteer reports.
 - Form completion reports.
 - Production participation reports.
-- Attendance reports.
+- Attendance aggregate/export reports.
 - Data exports.
 - User/role administration.
 - System settings.
@@ -308,5 +317,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
 - Community moderation is exception-based; clean posts publish immediately, while matched rules may block or hold a post before it becomes visible.
+- Attendance expected rosters derive from schedule targeting and active production membership; guardian visibility does not imply guardian attendance.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
