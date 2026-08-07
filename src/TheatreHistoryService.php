@@ -17,10 +17,16 @@ final class TheatreHistoryService
         $g->execute(['membership'=>(int)$row['membership_id']]);$groups=array_map(static fn(array $r):string=>(string)$r['name'],$g->fetchAll());
         $role=trim((string)($row['casting_role']??''));if($role==='')$role=trim((string)($row['participation_role']??''));
         $track=trim((string)($row['participation_track']??''));
-        $stmt=$db->prepare("INSERT INTO theatre_history_credits (user_id,production_id,source_membership_id,credit_kind,production_title,season_label,role_title,participation_track,groups_snapshot,verification_status,verified_by_user_id,verified_at,participation_started_at)
-            VALUES (:user,:production,:membership,'performance',:title,:season,:role,:track,:groups,'verified',:verifier,CURRENT_TIMESTAMP,:started)
-            ON DUPLICATE KEY UPDATE source_membership_id=VALUES(source_membership_id),production_title=VALUES(production_title),season_label=VALUES(season_label),role_title=VALUES(role_title),participation_track=VALUES(participation_track),groups_snapshot=VALUES(groups_snapshot),verification_status='verified',verified_by_user_id=COALESCE(VALUES(verified_by_user_id),verified_by_user_id),verified_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP");
+        $stmt=$db->prepare("INSERT INTO theatre_history_credits (user_id,production_id,source_membership_id,credit_kind,production_title,season_label,role_title,participation_track,groups_snapshot,verification_status,verified_by_user_id,verified_at,participation_started_at,participation_ended_at)
+            VALUES (:user,:production,:membership,'performance',:title,:season,:role,:track,:groups,'verified',:verifier,CURRENT_TIMESTAMP,:started,NULL)
+            ON DUPLICATE KEY UPDATE source_membership_id=VALUES(source_membership_id),production_title=VALUES(production_title),season_label=VALUES(season_label),role_title=VALUES(role_title),participation_track=VALUES(participation_track),groups_snapshot=VALUES(groups_snapshot),verification_status='verified',verified_by_user_id=COALESCE(VALUES(verified_by_user_id),verified_by_user_id),verified_at=CURRENT_TIMESTAMP,participation_ended_at=NULL,updated_at=CURRENT_TIMESTAMP");
         $stmt->execute(['user'=>$userId,'production'=>$productionId,'membership'=>(int)$row['membership_id'],'title'=>$row['title'],'season'=>$row['season']?:null,'role'=>$role!==''?$role:null,'track'=>$track!==''?$track:null,'groups'=>$groups?implode('||',$groups):null,'verifier'=>$verifiedByUserId,'started'=>$row['created_at']]);
+    }
+
+    public static function closeStudentCredit(PDO $db,int $productionId,int $userId):void
+    {
+        $s=$db->prepare("UPDATE theatre_history_credits SET participation_ended_at=COALESCE(participation_ended_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE production_id=:production AND user_id=:user AND credit_kind='performance' AND verification_status='verified'");
+        $s->execute(['production'=>$productionId,'user'=>$userId]);
     }
 
     public static function subjectsForViewer(PDO $db,array $viewer):array
@@ -34,7 +40,7 @@ final class TheatreHistoryService
 
     public static function creditsForSubject(PDO $db,int $subjectId):array
     {
-        $s=$db->prepare("SELECT thc.*,p.is_active,p.status production_status FROM theatre_history_credits thc LEFT JOIN productions p ON p.id=thc.production_id WHERE thc.user_id=:user AND thc.verification_status='verified' ORDER BY COALESCE(thc.season_label,'' ) DESC,thc.verified_at DESC,thc.production_title");
+        $s=$db->prepare("SELECT thc.*,p.is_active,p.status production_status FROM theatre_history_credits thc LEFT JOIN productions p ON p.id=thc.production_id WHERE thc.user_id=:user AND thc.verification_status='verified' ORDER BY COALESCE(thc.season_label,'') DESC,thc.verified_at DESC,thc.production_title");
         $s->execute(['user'=>$subjectId]);$rows=$s->fetchAll();
         foreach($rows as &$row){$snapshot=trim((string)($row['groups_snapshot']??''));$row['groups']=$snapshot===''?[]:array_values(array_filter(explode('||',$snapshot)));}$row=null;
         return $rows;
