@@ -139,6 +139,22 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production/audition/event pages and registration.
 - Workshops/camps/classes, public calendar/Playbills, news, donations, sponsorship, RSVP/waitlists and later payments.
 
+## Future product slices
+
+### Backlog — Production archive + My Theatre History
+
+- Deactivating or archiving a production removes its production-owned channels and operational content from normal active member views without deleting history.
+- Archived production channels move to a clearly designated read-only archive rather than remaining mixed into current Community.
+- Production-owned schedules, files/resources, notices, roster credits, Playbill data and relevant communication history remain preserved and viewable according to historical access/safeguarding rules.
+- Account-wide direct messages are not automatically hidden just because a production closes; any future production-specific conversation archival must be explicit and must preserve safeguarding/audit history.
+- Student accounts receive a **My Theatre History** area showing verified CTSMD production credits, including production, season/year, character/role, cast/crew participation and Production Group involvement where appropriate.
+- Guardian accounts can view theatre history for linked students.
+- Volunteer accounts receive a service-history version showing productions served, volunteer roles/categories, verified hours, training/credentials and leadership/coordinator service where recorded.
+- Theatre history should distinguish CTSMD-verified records from any future user-entered external credits.
+- Future **Generate Acting Résumé** workflow can build PDF/DOCX résumé output from verified CTSMD credits plus optional external credits, training and special skills.
+- Future volunteer-history exports may support school/community-service verification and recognition.
+- Historical production records are archival records, not hard-deleted domain data.
+
 ## Production operations backlog
 
 - Audition registration and audition-session management.
@@ -161,6 +177,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Community photo/file attachments using the shared storage layer.
 - First-class announcement composer separate from schedule-generated notices.
 - Per-channel email/notification preferences and announcement-specific delivery controls.
+- Account-wide Community remains the default; production filters organize channels but must not hide unread activity behind a required production switch.
+- Archived production channels should leave the active Community list and remain available in a designated read-only archive.
 
 ## Messaging backlog
 
@@ -170,6 +188,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Message attachments using the shared storage layer, with safeguarding-aware download access.
 - Staff escalation/reporting workflow.
 - Safeguarded group conversations where product rules allow them.
+- Messages and unread state remain account-wide for all users, including staff; working-production context must never filter the inbox.
 
 ## Forms backlog
 
@@ -189,6 +208,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Training content delivery beyond staff verification.
 - Coordinator aggregate dashboards and roster/service-hour exports.
 - Volunteer service goals/recognition if desired later.
+- My Theatre History/service record for verified production participation, volunteer roles and hours.
 
 ## Resources backlog
 
@@ -198,6 +218,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Group-targeted files/resources.
 - More detailed view/download reporting where needed.
 - Future remote/object-storage driver only if CTSMD outgrows shared-hosting filesystem storage.
+- Convert member-facing file/resource views to account-wide aggregation across active productions with optional filters instead of requiring a production context switch.
 
 ## Playbill backlog
 
@@ -206,6 +227,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production artwork and drag/reorder sections.
 - Credits beyond active production membership.
 - Public QR sharing and print-friendly/PDF output.
+- Reuse verified Playbill/production credits as a source for My Theatre History where appropriate.
 
 ## Notifications backlog
 
@@ -214,6 +236,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Full daily digest composer/worker for digest-enabled users; preference storage already exists.
 - Additional reminder types as real operations identify them.
 - Push notifications later.
+- Notifications remain account-wide and must not be hidden by staff working-production context.
 
 ## Home/dashboard backlog
 
@@ -221,6 +244,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Staff dashboard across concurrent productions.
 - Attention-needed cards: missing forms, uncovered shifts, conflicts, safeguarding review and unread critical updates.
 - Extend family logistics to include guardian volunteer-shift vs child-call collision warnings if useful in testing.
+- Student/volunteer Home should aggregate current obligations across all active productions rather than require a production selector.
 
 ## People/family backlog
 
@@ -230,6 +254,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Contact preferences and avatar/photo management using shared storage.
 - Guardian-managed student-account UX and credential recovery rules.
 - Guardian-on-behalf-of-student form completion policy/UX.
+- Guardian access to linked-student Theatre History.
 - Deliberate policy decision before storing sensitive medical/allergy information.
 
 ## Safeguarding backlog
@@ -239,6 +264,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Permission-review dashboard and policy acknowledgment tracking.
 - Safeguarding alerts and retention/export tooling.
 - Preserve guardian visibility as a structural server-side rule for safeguarded adult/student messaging.
+- Production archival must preserve safeguarding and audit records even when content leaves active member navigation.
 
 ## Reporting/admin backlog
 
@@ -268,11 +294,16 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Remove remaining hardcoded prototype/domain data from legacy index.php.
 - Immutable recipient snapshots for published communications where required.
 - Validate database trigger privileges/behavior on Bluehost; retain PHP service equivalents where required.
+- Convert remaining member-facing selected-production screens to account-wide aggregation; the working-production session is an operations context, not a member navigation requirement.
 
 ## Architectural notes
 
 - Multiple productions may be active concurrently.
 - Production activity is independent from the per-session working-production selector.
+- **Working-production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
+- **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and future member file/resource views aggregate everything the account is permitted to see across active productions.
+- Staff/admin accounts participate in both scopes: production operations may be scoped to the selected working production, while Messages, Community, Notifications, personal Calendar and unread state remain account-wide.
+- Production filters in account-wide views are organizational filters only; they must never function as a required context gate that can hide unread or actionable information.
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
@@ -285,5 +316,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
 - Community moderation is exception-based; clean posts publish immediately, matched content is intercepted before visibility.
+- When a production becomes inactive/archived, production-owned active experiences should leave current member navigation while their historical records remain preserved in read-only/archive experiences as appropriate.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
