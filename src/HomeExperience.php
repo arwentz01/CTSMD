@@ -2,118 +2,49 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__ . '/HomeDashboardService.php';
 
 final class HomeExperience
 {
-    private const ROUTES = ['/app', '/family-hub', '/notifications'];
+    private const ROUTES=['/app'];
+    public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
-    public static function handles(string $route): bool
+    public static function render(string $route,string $basePath,array $legacyData=[]):never
     {
-        return in_array($route, self::ROUTES, true);
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect($basePath.'/login');$data=HomeDashboardService::build($db,$user);self::page($basePath,$user,$data);
     }
 
-    public static function render(string $route, string $basePath, array $data): never
+    private static function page(string $basePath,array $user,array $data):never
     {
-        $url = static fn(string $path): string => ($basePath ?: '') . $path;
-        $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $user = $data['user'];
-        $openForms = array_values(array_filter($data['forms'], static fn(array $form): bool => $form['status'] !== 'Completed'));
-        $eligibleShifts = array_values(array_filter($data['shifts'], static fn(array $shift): bool => $shift['status'] === 'eligible'));
-        $linkedPeople = $data['family_context']['linked_people'] ?? [];
-        $announcements = $data['announcements'];
-        $schedule = $data['schedule'];
+        $u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$summary=$data['summary'];$membership=$data['membership'];$timeline=$data['timeline'];$next=$data['next_event'];$attention=$data['attention'];$notes=$data['notifications']['items'];$children=$data['children'];$productions=$data['productions'];$volunteer=$data['volunteer'];$first=trim((string)$user['first_name']);$subnav=[['label'=>'Today','href'=>'/app','active'=>true],['label'=>'My family','href'=>'/family-hub','active'=>false],['label'=>'Forms','href'=>'/forms','active'=>false],['label'=>'Notifications','href'=>'/notifications','active'=>false]];
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171419"><title>Today · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/home-experience.css')?>"></head><body class="app-body implementation-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/app',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Home','Today',$basePath,$subnav);?><div class="home-page db-home">
 
-        $titles = [
-            '/app' => ['Home', 'Today'],
-            '/family-hub' => ['Home', 'My family'],
-            '/notifications' => ['Home', 'Notifications'],
-        ];
-        [$eyebrow, $title] = $titles[$route];
+        <section class="home-hero"><div><span><?=strtoupper(date('l · F j'))?></span><h2>Good <?=self::daypart()?>, <?=$e($first?:$user['name'])?>.</h2><p><?= $membership['approved']?'Everything tied to your CTSMD account, across every active production.':'Your account is active. Finish your household while CTSMD reviews general membership access.' ?></p></div><?php if($children):?><a class="button" href="<?=$u('/family-hub')?>">View my family</a><?php else:?><a class="button" href="<?=$u('/family/manage')?>">Set up household</a><?php endif;?></section>
 
-        $subnav = [
-            ['label' => 'Today', 'href' => '/app', 'active' => $route === '/app'],
-            ['label' => 'My family', 'href' => '/family-hub', 'active' => $route === '/family-hub'],
-            ['label' => 'Forms', 'href' => '/forms', 'active' => false],
-            ['label' => 'Notifications', 'href' => '/notifications', 'active' => $route === '/notifications'],
-        ];
+        <?php if(!$membership['approved']&&!$membership['staff']):?><section class="home-membership pending"><div><small>CTSMD MEMBERSHIP · PENDING APPROVAL</small><h3>Your login is ready. General member access is still being reviewed.</h3><p>You can manage your household now. Once CTSMD approves your membership, organization-wide Community areas will unlock automatically. Production access is granted separately when you or your child are added to a show.</p></div><a href="<?=$u('/family/manage')?>">Manage household →</a></section><?php elseif(($user['organization_membership_status']??'')==='denied'):?><section class="home-membership denied"><div><small>CTSMD MEMBERSHIP</small><h3>General membership access is not active.</h3><p>Your account can still sign in, but organization-wide member spaces remain unavailable. Contact CTSMD if you believe this needs review.</p></div></section><?php endif;?>
 
-        header('Content-Type: text/html; charset=utf-8');
-        ?>
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#171419">
-    <title><?= $esc($title) ?> · CTSMD Connect</title>
-    <link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>">
-    <link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>">
-    <link rel="stylesheet" href="<?= $url('/assets/css/home-experience.css') ?>">
-</head>
-<body class="app-body implementation-body">
-<div class="unified-shell">
-    <?php AppNavigation::renderSidebar($route, $basePath, $user); ?>
-    <main class="unified-main">
-        <?php AppNavigation::renderHeader($eyebrow, $title, $basePath, $subnav); ?>
-        <div class="home-page">
+        <section class="home-stats" aria-label="Account summary"><article><strong><?=(int)$summary['active_productions']?></strong><span>active production<?= (int)$summary['active_productions']===1?'':'s' ?></span></article><article><strong><?=(int)$summary['linked_children']?></strong><span>linked child<?= (int)$summary['linked_children']===1?'':'ren' ?></span></article><article class="<?= $summary['open_forms']?'attention':'' ?>"><strong><?=(int)$summary['open_forms']?></strong><span>open form<?= (int)$summary['open_forms']===1?'':'s' ?></span></article><article class="<?= $summary['unread_notifications']?'attention':'' ?>"><strong><?=(int)$summary['unread_notifications']?></strong><span>unread update<?= (int)$summary['unread_notifications']===1?'':'s' ?></span></article></section>
 
-        <?php if ($route === '/app'): ?>
-            <section class="home-hero">
-                <div><span>FRIDAY · AUGUST 7</span><h2>Good morning, <?= $esc(explode(' ', $user['name'])[0]) ?>.</h2><p>Here is what matters for your theatre day.</p></div>
-                <a class="button" href="<?= $url('/family-hub') ?>">View my family</a>
-            </section>
+        <div class="home-priority-grid"><section class="home-priority-stack"><header class="home-section-head"><div><span>NEEDS YOU</span><h3>Action center</h3></div><b><?=count($attention)?></b></header><?php if($attention):foreach(array_slice($attention,0,5) as $item):?><article class="home-action <?=$item['urgent']?'urgent':''?>"><i><?=match($item['kind']){'form'=>'!','conflict'=>'↔','volunteer'=>'♡',default=>'•'}?></i><div><small><?=$e(strtoupper($item['kind']))?></small><b><?=$e((string)$item['title'])?></b><span><?=$e((string)$item['context'])?> · <?=$e((string)$item['detail'])?></span></div><a href="<?=$u((string)$item['href'])?>">Open →</a></article><?php endforeach;else:?><div class="home-empty"><b>You are caught up.</b><span>No current forms, family conflicts or near-term commitments need attention.</span></div><?php endif;?></section>
 
-            <div class="home-priority-grid">
-                <section class="home-priority-stack">
-                    <header class="home-section-head"><div><span>NEEDS YOU</span><h3>Action center</h3></div><b><?= count($openForms) + (count($eligibleShifts) ? 1 : 0) ?></b></header>
-                    <?php if ($openForms): ?>
-                        <?php foreach (array_slice($openForms, 0, 2) as $form): ?>
-                        <article class="home-action <?= $form['status'] === 'Missing' ? 'urgent' : '' ?>"><i>!</i><div><small>FORM · <?= $esc(strtoupper($form['status'])) ?></small><b><?= $esc($form['title']) ?></b><span>Due <?= $esc($form['due']) ?></span></div><a href="<?= $url('/forms') ?>">Review →</a></article>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    <?php if ($eligibleShifts): $shift = $eligibleShifts[0]; ?>
-                        <article class="home-action"><i>♡</i><div><small>VOLUNTEER</small><b><?= $esc($shift['title']) ?></b><span><?= $esc($shift['when']) ?> · <?= $esc($shift['slots']) ?></span></div><a href="<?= $url('/volunteer-readiness') ?>">View →</a></article>
-                    <?php endif; ?>
-                    <?php if (!$openForms && !$eligibleShifts): ?><div class="home-empty"><b>You are caught up.</b><span>No family actions need attention right now.</span></div><?php endif; ?>
-                </section>
+        <aside class="home-today-card"><span>NEXT UP</span><?php if($next):?><strong><?=$e(date('g:i A',strtotime((string)$next['starts_at'])))?></strong><h3><?=$e((string)$next['title'])?></h3><p><?=$e((string)$next['subject_name'])?> · <?=$e((string)$next['production_title'])?><br><?=$e((string)$next['location'])?></p><a href="<?=$u('/calendar')?>">Full calendar →</a><?php else:?><h3>No upcoming calls</h3><p><?= $productions?'Nothing is scheduled for your account in the next 45 days.':'Production calls will appear here automatically when CTSMD adds you or your household to a show.' ?></p><a href="<?=$u('/calendar')?>">Open calendar →</a><?php endif;?></aside></div>
 
-                <aside class="home-today-card">
-                    <span>NEXT UP</span>
-                    <?php if ($schedule): $next = $schedule[0]; ?>
-                    <strong><?= $esc($next['time']) ?></strong><h3><?= $esc($next['title']) ?></h3><p><?= $esc($next['detail']) ?></p><a href="<?= $url('/schedule') ?>">Full schedule →</a>
-                    <?php else: ?><h3>No upcoming activity</h3><p>The schedule is clear.</p><?php endif; ?>
-                </aside>
-            </div>
+        <?php if($membership['staff']):$selected=$data['selected_production'];?><section class="home-staff-context"><div><small>OPERATIONS CONTEXT</small><h3><?=$selected?'Working on '.$e((string)$selected['title']):'No working production selected'?></h3><p>This context affects staff production-management tools only. Your Home, Community, Messages, Notifications and personal Calendar remain account-wide.</p></div><a href="<?=$u('/production')?>">Open production workspace →</a></section><?php endif;?>
 
-            <div class="home-content-grid">
-                <section class="home-card"><header class="home-section-head"><div><span>WHAT CHANGED</span><h3>Latest updates</h3></div><a href="<?= $url('/notifications') ?>">All notifications</a></header><?php foreach (array_slice($announcements, 0, 3) as $announcement): ?><article class="home-update"><div class="home-update-marker <?= $esc($announcement['tone']) ?>"></div><div><b><?= $esc($announcement['title']) ?></b><p><?= $esc($announcement['body']) ?></p><small><?= $esc($announcement['meta']) ?></small></div></article><?php endforeach; ?></section>
-                <section class="home-card"><header class="home-section-head"><div><span>MY PEOPLE</span><h3>Family at CTSMD</h3></div><a href="<?= $url('/family-hub') ?>">Open family</a></header><?php if ($linkedPeople): ?><?php foreach ($linkedPeople as $person): ?><article class="home-person"><i><?= $esc($person['initials']) ?></i><div><b><?= $esc($person['name']) ?></b><span><?= $esc($person['role']) ?></span></div><small>Linked</small></article><?php endforeach; ?><?php else: ?><div class="home-empty"><b>No linked family members yet.</b><span>Assigned relationships will appear here automatically.</span></div><?php endif; ?></section>
-            </div>
+        <div class="home-content-grid"><section class="home-card"><header class="home-section-head"><div><span>UPCOMING</span><h3>Your theatre timeline</h3></div><a href="<?=$u('/calendar')?>">Full calendar</a></header><?php if($timeline):foreach(array_slice($timeline,0,7) as $item):?><article class="home-timeline-row<?=!empty($item['has_conflict'])?' conflict':''?>"><time><b><?=$e(date('M j',strtotime((string)$item['starts_at'])))?></b><span><?=$e(date('g:i A',strtotime((string)$item['starts_at'])))?></span></time><i><?=$e((string)$item['subject_initials'])?></i><div><b><?=$e((string)$item['title'])?></b><span><?=$e((string)$item['subject_name'])?> · <?=$e((string)$item['production_title'])?></span><small><?=$e((string)$item['location'])?><?=!empty($item['group_names'])?' · '.$e(implode(' + ',$item['group_names'])):''?></small></div><?=!empty($item['has_conflict'])?'<em>Conflict</em>':''?></article><?php endforeach;else:?><div class="home-empty"><b>No upcoming production activity.</b><span>Your account-wide schedule will build itself as memberships are assigned.</span></div><?php endif;?></section>
 
-        <?php elseif ($route === '/family-hub'): ?>
-            <section class="home-hero compact"><div><span>MY FAMILY</span><h2>Your theatre household.</h2><p>People, requirements and upcoming activity without admin clutter.</p></div></section>
-            <div class="family-summary-grid"><article><strong><?= count($linkedPeople) ?></strong><span>linked students</span></article><article><strong><?= count($openForms) ?></strong><span>open forms</span></article><article><strong><?= count($eligibleShifts) ?></strong><span>eligible volunteer shifts</span></article></div>
-            <div class="home-content-grid">
-                <section class="home-card"><header class="home-section-head"><div><span>PEOPLE</span><h3>Linked family</h3></div></header><?php if ($linkedPeople): ?><?php foreach ($linkedPeople as $person): ?><article class="family-person-card"><i><?= $esc($person['initials']) ?></i><div><b><?= $esc($person['name']) ?></b><span><?= $esc($person['role']) ?></span><small>Guardian visibility is applied automatically where required.</small></div><button type="button">View profile</button></article><?php endforeach; ?><?php else: ?><div class="home-empty"><b>No family relationship is assigned.</b><span>This is an intentional empty state, not placeholder data.</span></div><?php endif; ?></section>
-                <section class="home-card"><header class="home-section-head"><div><span>UPCOMING</span><h3>Family schedule</h3></div><a href="<?= $url('/schedule') ?>">Full schedule</a></header><?php foreach (array_slice($schedule, 0, 4) as $item): ?><article class="family-schedule-row"><strong><?= $esc($item['time']) ?></strong><div><b><?= $esc($item['title']) ?></b><span><?= $esc($item['detail']) ?></span></div><small><?= $esc($item['tag']) ?></small></article><?php endforeach; ?></section>
-            </div>
+        <aside class="home-side-stack"><section class="home-card"><header class="home-section-head"><div><span>WHAT CHANGED</span><h3>Recent updates</h3></div><a href="<?=$u('/notifications')?>">All</a></header><?php if($notes):foreach(array_slice($notes,0,5) as $note):?><a class="home-notice<?=$note['read_at']===null?' unread':''?>" href="<?=$u((string)($note['action_path']?:'/notifications'))?>"><small><?=$note['read_at']===null?'NEW · ':''?><?=$e(strtoupper(str_replace('_',' ',(string)$note['source_type'])))?></small><b><?=$e((string)$note['title'])?></b><p><?=$e((string)$note['body'])?></p><span><?=$e(date('M j · g:i A',strtotime((string)$note['created_at'])))?></span></a><?php endforeach;else:?><div class="home-empty"><b>No recent updates.</b><span>Account notifications will appear here.</span></div><?php endif;?></section>
 
-        <?php elseif ($route === '/notifications'): ?>
-            <section class="home-hero compact"><div><span>NOTIFICATION CENTER</span><h2>What needs action, and what simply changed.</h2><p>CTSMD should not train families to ignore alerts by treating every post as urgent.</p></div></section>
-            <div class="notification-columns">
-                <section class="home-card"><header class="home-section-head"><div><span>ACTION REQUIRED</span><h3>Needs you</h3></div><b><?= count($openForms) ?></b></header><?php if ($openForms): ?><?php foreach ($openForms as $form): ?><article class="notification-row <?= $form['status'] === 'Missing' ? 'urgent' : '' ?>"><i>!</i><div><b><?= $esc($form['title']) ?></b><span><?= $esc($form['status']) ?> · Due <?= $esc($form['due']) ?></span></div><a href="<?= $url('/forms') ?>">Review</a></article><?php endforeach; ?><?php else: ?><div class="home-empty"><b>Nothing needs action.</b><span>You are caught up on assigned forms.</span></div><?php endif; ?></section>
-                <section class="home-card"><header class="home-section-head"><div><span>UPDATES</span><h3>What changed</h3></div></header><?php foreach ($announcements as $announcement): ?><article class="notification-row"><i>#</i><div><b><?= $esc($announcement['title']) ?></b><span><?= $esc($announcement['meta']) ?></span><p><?= $esc($announcement['body']) ?></p></div><a href="<?= $url('/channels') ?>">Open</a></article><?php endforeach; ?></section>
-            </div>
-        <?php endif; ?>
+        <section class="home-card"><header class="home-section-head"><div><span>YOUR THEATRE</span><h3>People & productions</h3></div><?php if($children):?><a href="<?=$u('/family-hub')?>">Family</a><?php endif;?></header><?php if($productions):foreach($productions as $production):?><article class="home-production"><span>★</span><div><b><?=$e((string)$production['title'])?></b><small><?=$e((string)($production['season']?:'Active production'))?></small></div></article><?php endforeach;endif;?><?php if($children):foreach(array_slice($children,0,4) as $child):?><article class="home-person"><i><?=$e((string)$child['initials'])?></i><div><b><?=$e((string)$child['name'])?></b><span><?=count($child['productions'])?> active production<?=count($child['productions'])===1?'':'s'?></span></div><a href="<?=$u('/family-hub')?>">View</a></article><?php endforeach;endif;?><?php if(!$productions&&!$children):?><div class="home-empty"><b>Your theatre connections will appear here.</b><span>No production or child relationship is attached to this account yet.</span></div><?php endif;?></section></aside></div>
 
-        </div>
-    </main>
-</div>
-<script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script>
-</body>
-</html>
-<?php
-        exit;
+        <?php if($volunteer):?><section class="home-card home-volunteer"><header class="home-section-head"><div><span>VOLUNTEER</span><h3>Your upcoming commitments</h3></div><a href="<?=$u('/volunteer-shifts')?>">Volunteer hub</a></header><div class="home-volunteer-grid"><?php foreach(array_slice($volunteer,0,4) as $shift):?><article><small><?=$e(strtoupper(str_replace('_',' ',(string)$shift['status'])))?></small><b><?=$e((string)$shift['title'])?></b><span><?=$e(date('M j · g:i A',strtotime((string)$shift['starts_at'])))?> · <?=$e((string)$shift['location'])?></span><?php if($shift['production_title']):?><em><?=$e((string)$shift['production_title'])?></em><?php endif;?></article><?php endforeach;?></div></section><?php endif;?>
+
+        </div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
+
+    private static function daypart():string{$hour=(int)date('G');return $hour<12?'morning':($hour<17?'afternoon':'evening');}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
 }
