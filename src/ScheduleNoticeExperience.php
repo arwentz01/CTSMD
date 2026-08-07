@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionContext.php';
 
 final class ScheduleNoticeExperience
 {
@@ -33,8 +34,9 @@ final class ScheduleNoticeExperience
             self::handlePost($db, $user, $basePath);
         }
 
-        $production = self::currentProduction($db);
-        $notices = $production ? self::notices($db, (int)$production['id']) : [];
+        $production = ProductionContext::selected($db, $user);
+        $productionId = $production ? (int)$production['id'] : 0;
+        $notices = $production ? self::notices($db, $productionId) : [];
         $selected = null;
         $channels = [];
         $audience = [];
@@ -42,7 +44,7 @@ final class ScheduleNoticeExperience
 
         if ($route === '/production/notice') {
             $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
-            $selected = self::notice($db, (int)$id);
+            $selected = self::notice($db, (int)$id, $productionId);
             if ($selected) {
                 $channels = self::channels($db, (int)$selected['production_id']);
                 $audience = self::audienceMembers($db, (int)$selected['production_id'], (string)$selected['audience_scope']);
@@ -87,6 +89,11 @@ final class ScheduleNoticeExperience
             throw new RuntimeException('That communication draft could not be found.');
         }
 
+        $selectedProduction = ProductionContext::selected($db, $user);
+        if (!$selectedProduction) {
+            throw new RuntimeException('Select an active production before publishing its updates.');
+        }
+
         $subject = trim((string)($input['subject'] ?? ''));
         $body = trim((string)($input['body'] ?? ''));
         $sendInApp = isset($input['send_in_app']);
@@ -113,6 +120,9 @@ final class ScheduleNoticeExperience
             $notice = $noticeStmt->fetch();
             if (!$notice) {
                 throw new RuntimeException('That communication draft no longer exists.');
+            }
+            if ((int)$notice['production_id'] !== (int)$selectedProduction['id']) {
+                throw new RuntimeException('That update belongs to a different production workspace.');
             }
             if ($notice['status'] !== 'draft') {
                 throw new RuntimeException('Only draft updates can be published.');
@@ -165,6 +175,7 @@ final class ScheduleNoticeExperience
                 'subject_id' => $noticeId,
                 'summary' => 'Published schedule change communication.',
                 'metadata' => json_encode([
+                    'production_id' => (int)$notice['production_id'],
                     'destinations' => ['in_app' => $sendInApp, 'channel' => $sendChannel],
                     'channel_id' => $sendChannel ? $channelId : null,
                     'channel_post_id' => $channelPostId,
@@ -187,20 +198,37 @@ final class ScheduleNoticeExperience
 
     private static function cancel(PDO $db, array $user, int $noticeId): void
     {
+        $selectedProduction = ProductionContext::selected($db, $user);
+        if (!$selectedProduction) {
+            throw new RuntimeException('Select an active production before cancelling its update.');
+        }
+
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("UPDATE schedule_change_notices SET status = 'cancelled' WHERE id = :id AND status = 'draft'");
-            $stmt->execute(['id' => $noticeId]);
-            if ($stmt->rowCount() < 1) {
+            $check = $db->prepare("SELECT production_id, status FROM schedule_change_notices WHERE id = :id FOR UPDATE");
+            $check->execute(['id' => $noticeId]);
+            $notice = $check->fetch();
+            if (!$notice || $notice['status'] !== 'draft') {
                 throw new RuntimeException('Only an active draft can be cancelled.');
             }
-            $audit = $db->prepare('INSERT INTO audit_events (actor_user_id, event_type, subject_type, subject_id, summary) VALUES (:actor, :event_type, :subject_type, :subject_id, :summary)');
-            $audit->execute(['actor' => (int)$user['id'], 'event_type' => 'schedule.notice_cancelled', 'subject_type' => 'schedule_change_notice', 'subject_id' => $noticeId, 'summary' => 'Cancelled schedule change communication draft.']);
+            if ((int)$notice['production_id'] !== (int)$selectedProduction['id']) {
+                throw new RuntimeException('That update belongs to a different production workspace.');
+            }
+
+            $stmt = $db->prepare("UPDATE schedule_change_notices SET status = 'cancelled' WHERE id = :id AND status = 'draft'");
+            $stmt->execute(['id' => $noticeId]);
+            $audit = $db->prepare('INSERT INTO audit_events (actor_user_id, event_type, subject_type, subject_id, summary, metadata_json) VALUES (:actor, :event_type, :subject_type, :subject_id, :summary, :metadata)');
+            $audit->execute([
+                'actor' => (int)$user['id'],
+                'event_type' => 'schedule.notice_cancelled',
+                'subject_type' => 'schedule_change_notice',
+                'subject_id' => $noticeId,
+                'summary' => 'Cancelled schedule change communication draft.',
+                'metadata' => json_encode(['production_id' => (int)$notice['production_id']], JSON_THROW_ON_ERROR),
+            ]);
             $db->commit();
         } catch (Throwable $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
-            }
+            if ($db->inTransaction()) $db->rollBack();
             if ($e instanceof RuntimeException) throw $e;
             throw new RuntimeException('The draft could not be cancelled.');
         }
@@ -214,7 +242,7 @@ final class ScheduleNoticeExperience
             default => ['student', 'guardian', 'staff'],
         };
         $placeholders = implode(',', array_fill(0, count($types), '?'));
-        $stmt = $db->prepare("SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, pm.audience_type FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = ? AND pm.status = 'active' AND u.active = 1 AND pm.audience_type IN ($placeholders) ORDER BY u.last_name, u.first_name");
+        $stmt = $db->prepare("SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, pm.audience_type, u.last_name AS sort_last_name, u.first_name AS sort_first_name FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = ? AND pm.status = 'active' AND u.active = 1 AND pm.audience_type IN ($placeholders) ORDER BY sort_last_name, sort_first_name");
         $stmt->execute(array_merge([$productionId], $types));
         return $stmt->fetchAll();
     }
@@ -226,11 +254,6 @@ final class ScheduleNoticeExperience
         return $row;
     }
 
-    private static function currentProduction(PDO $db): ?array
-    {
-        return $db->query("SELECT id, title, season, status FROM productions WHERE status = 'current' ORDER BY id DESC LIMIT 1")->fetch() ?: null;
-    }
-
     private static function notices(PDO $db, int $productionId): array
     {
         $stmt = $db->prepare("SELECT scn.id, scn.subject, scn.body, scn.audience_scope, scn.audience_count, scn.status, scn.created_at, scn.published_at, si.title AS schedule_title, CONCAT(u.first_name, ' ', u.last_name) AS creator FROM schedule_change_notices scn JOIN schedule_items si ON si.id = scn.schedule_item_id LEFT JOIN users u ON u.id = scn.created_by_user_id WHERE scn.production_id = :production_id ORDER BY FIELD(scn.status,'draft','published','cancelled'), scn.created_at DESC, scn.id DESC");
@@ -238,11 +261,11 @@ final class ScheduleNoticeExperience
         return $stmt->fetchAll();
     }
 
-    private static function notice(PDO $db, int $id): ?array
+    private static function notice(PDO $db, int $id, int $productionId): ?array
     {
-        if ($id < 1) return null;
-        $stmt = $db->prepare("SELECT scn.*, si.title AS schedule_title, si.starts_at, si.location, p.title AS production_title, CONCAT(u.first_name, ' ', u.last_name) AS creator FROM schedule_change_notices scn JOIN schedule_items si ON si.id = scn.schedule_item_id JOIN productions p ON p.id = scn.production_id LEFT JOIN users u ON u.id = scn.created_by_user_id WHERE scn.id = :id LIMIT 1");
-        $stmt->execute(['id' => $id]);
+        if ($id < 1 || $productionId < 1) return null;
+        $stmt = $db->prepare("SELECT scn.*, si.title AS schedule_title, si.starts_at, si.location, p.title AS production_title, CONCAT(u.first_name, ' ', u.last_name) AS creator FROM schedule_change_notices scn JOIN schedule_items si ON si.id = scn.schedule_item_id JOIN productions p ON p.id = scn.production_id LEFT JOIN users u ON u.id = scn.created_by_user_id WHERE scn.id = :id AND scn.production_id = :production_id LIMIT 1");
+        $stmt->execute(['id' => $id, 'production_id' => $productionId]);
         return $stmt->fetch() ?: null;
     }
 
@@ -264,8 +287,8 @@ final class ScheduleNoticeExperience
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $flash = $_SESSION['schedule_notice_flash'] ?? null;
-        unset($_SESSION['schedule_notice_flash']);
+        $flash = $_SESSION['schedule_notice_flash'] ?? $_SESSION['production_context_flash'] ?? null;
+        unset($_SESSION['schedule_notice_flash'], $_SESSION['production_context_flash']);
         $title = $route === '/production/notices' ? 'Production updates' : ($selected['subject'] ?? 'Schedule update');
         $subnav = [
             ['label'=>'Overview','href'=>'/production','active'=>false],
@@ -278,17 +301,17 @@ final class ScheduleNoticeExperience
         header('Content-Type: text/html; charset=utf-8');
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/schedule-notices.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav); ?><div class="notice-page">
         <?php if ($flash): ?><div class="notice-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
-        <?php if (!$production): ?><section class="notice-empty"><b>No current production</b></section>
+        <?php if (!$production): ?><section class="notice-empty"><b>No active production selected</b></section>
         <?php elseif ($route === '/production/notices'): ?>
-            <section class="notice-hero"><div><small>CHANGE COMMUNICATION</small><h2>Review before you broadcast.</h2><p>Schedule edits create drafts here. Staff chooses the audience-facing copy and delivery surfaces deliberately.</p></div><a class="button" href="<?= $url('/schedule') ?>">Open schedule</a></section>
-            <div class="notice-list"><?php if (!$notices): ?><div class="notice-empty"><b>No schedule updates yet</b><p>Edit a schedule item to create the first communication draft.</p></div><?php endif; ?><?php foreach ($notices as $notice): ?><a href="<?= $url('/production/notice?id='.(int)$notice['id']) ?>" class="notice-row"><span class="notice-status <?= $esc($notice['status']) ?>"><?= $esc(strtoupper($notice['status'])) ?></span><div><small><?= $esc(strtoupper($notice['audience_scope'])) ?> · <?= (int)$notice['audience_count'] ?> PEOPLE</small><h3><?= $esc($notice['subject']) ?></h3><p><?= $esc($notice['schedule_title']) ?> · <?= $esc(date('M j · g:i A',strtotime($notice['created_at']))) ?></p></div><b>Review →</b></a><?php endforeach; ?></div>
+            <section class="notice-hero"><div><small><?= $esc(strtoupper($production['title'])) ?> · CHANGE COMMUNICATION</small><h2>Review before you broadcast.</h2><p>Only drafts belonging to the selected production workspace appear here.</p></div><a class="button" href="<?= $url('/schedule') ?>">Open schedule</a></section>
+            <div class="notice-list"><?php if (!$notices): ?><div class="notice-empty"><b>No schedule updates yet</b><p>Edit a schedule item in this production to create the first communication draft.</p></div><?php endif; ?><?php foreach ($notices as $notice): ?><a href="<?= $url('/production/notice?id='.(int)$notice['id']) ?>" class="notice-row"><span class="notice-status <?= $esc($notice['status']) ?>"><?= $esc(strtoupper($notice['status'])) ?></span><div><small><?= $esc(strtoupper($notice['audience_scope'])) ?> · <?= (int)$notice['audience_count'] ?> PEOPLE</small><h3><?= $esc($notice['subject']) ?></h3><p><?= $esc($notice['schedule_title']) ?> · <?= $esc(date('M j · g:i A',strtotime($notice['created_at']))) ?></p></div><b>Review →</b></a><?php endforeach; ?></div>
         <?php else: ?>
-            <?php if (!$selected): ?><section class="notice-empty"><b>Update not found</b><a class="button" href="<?= $url('/production/notices') ?>">Back to updates</a></section><?php else: ?>
+            <?php if (!$selected): ?><section class="notice-empty"><b>Update not found in this production</b><p>It may belong to another active production. Switch the working production and try again.</p><a class="button" href="<?= $url('/production/notices') ?>">Back to updates</a></section><?php else: ?>
             <section class="notice-detail-head"><div><small><?= $esc(strtoupper($selected['status'])) ?> · <?= $esc(strtoupper($selected['audience_scope'])) ?></small><h2><?= $esc($selected['schedule_title']) ?></h2><p><?= $esc(date('l, M j · g:i A',strtotime($selected['starts_at']))) ?> · <?= $esc($selected['location']) ?></p></div><a href="<?= $url('/production/notices') ?>">← All updates</a></section>
             <div class="notice-layout"><section class="notice-card"><header><small>MESSAGE</small><h3><?= $selected['status']==='draft' ? 'Review & publish' : 'Published communication' ?></h3></header>
-            <?php if ($selected['status']==='draft'): ?><form method="post" class="notice-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['schedule_notice_csrf']) ?>"><input type="hidden" name="notice_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="publish"><label>Subject<input name="subject" maxlength="190" value="<?= $esc($selected['subject']) ?>" required></label><label>Message<textarea name="body" rows="7" maxlength="6000" required><?= $esc($selected['body']) ?></textarea></label><fieldset><legend>Publish to</legend><label class="notice-check"><input type="checkbox" name="send_in_app" value="1" checked><span><b>In-app notifications</b><small>Creates one notification for each current audience member.</small></span></label><label class="notice-check"><input type="checkbox" name="send_channel" value="1"><span><b>Community channel</b><small>Publishes the same update as a production channel post.</small></span></label><label>Channel<select name="channel_id"><option value="">Choose production channel</option><?php foreach($channels as $channel): ?><option value="<?= (int)$channel['id'] ?>"><?= $esc($channel['name']) ?></option><?php endforeach; ?></select></label></fieldset><footer><button class="button" type="submit">Publish update</button></footer></form><form method="post" class="notice-cancel"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['schedule_notice_csrf']) ?>"><input type="hidden" name="notice_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="cancel"><button type="submit">Cancel draft</button></form>
+            <?php if ($selected['status']==='draft'): ?><form method="post" class="notice-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['schedule_notice_csrf']) ?>"><input type="hidden" name="notice_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="publish"><label>Subject<input name="subject" maxlength="190" value="<?= $esc($selected['subject']) ?>" required></label><label>Message<textarea name="body" rows="7" maxlength="6000" required><?= $esc($selected['body']) ?></textarea></label><fieldset><legend>Publish to</legend><label class="notice-check"><input type="checkbox" name="send_in_app" value="1" checked><span><b>In-app notifications</b><small>Creates one notification for each current audience member.</small></span></label><label class="notice-check"><input type="checkbox" name="send_channel" value="1"><span><b>Community channel</b><small>Publishes the same update as a channel post for this production.</small></span></label><label>Channel<select name="channel_id"><option value="">Choose production channel</option><?php foreach($channels as $channel): ?><option value="<?= (int)$channel['id'] ?>"><?= $esc($channel['name']) ?></option><?php endforeach; ?></select></label></fieldset><footer><button class="button" type="submit">Publish update</button></footer></form><form method="post" class="notice-cancel"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['schedule_notice_csrf']) ?>"><input type="hidden" name="notice_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="cancel"><button type="submit">Cancel draft</button></form>
             <?php else: ?><article class="notice-published-copy"><h3><?= $esc($selected['subject']) ?></h3><p><?= nl2br($esc($selected['body'])) ?></p><small><?= $selected['published_at'] ? 'Published '. $esc(date('M j · g:i A',strtotime($selected['published_at']))) : $esc(ucfirst($selected['status'])) ?></small></article><?php endif; ?></section>
-            <aside class="notice-card"><header><small>AUDIENCE</small><h3><?= count($audience) ?> current recipients</h3></header><p class="notice-help">Audience is recalculated at publish time from active production memberships, not trusted from the older draft count.</p><div class="notice-people"><?php foreach($audience as $member): ?><span><i><?= $esc(strtoupper(substr($member['audience_type'],0,1))) ?></i><b><?= $esc($member['name']) ?></b><small><?= $esc(ucfirst($member['audience_type'])) ?></small></span><?php endforeach; ?></div><?php if($deliveries): ?><div class="notice-deliveries"><small>DELIVERED TO</small><?php foreach($deliveries as $delivery): ?><p><b><?= $delivery['destination_type']==='channel' ? '# '.$esc((string)$delivery['channel_name']) : 'In-app notifications' ?></b><span><?= (int)$delivery['recipient_count'] ?> recipients · <?= $esc(date('M j · g:i A',strtotime($delivery['created_at']))) ?></span></p><?php endforeach; ?></div><?php endif; ?></aside></div>
+            <aside class="notice-card"><header><small>AUDIENCE</small><h3><?= count($audience) ?> current recipients</h3></header><p class="notice-help">Audience is recalculated at publish time from this production's active memberships, not trusted from the older draft count.</p><div class="notice-people"><?php foreach($audience as $member): ?><span><i><?= $esc(strtoupper(substr($member['audience_type'],0,1))) ?></i><b><?= $esc($member['name']) ?></b><small><?= $esc(ucfirst($member['audience_type'])) ?></small></span><?php endforeach; ?></div><?php if($deliveries): ?><div class="notice-deliveries"><small>DELIVERED TO</small><?php foreach($deliveries as $delivery): ?><p><b><?= $delivery['destination_type']==='channel' ? '# '.$esc((string)$delivery['channel_name']) : 'In-app notifications' ?></b><span><?= (int)$delivery['recipient_count'] ?> recipients · <?= $esc(date('M j · g:i A',strtotime($delivery['created_at']))) ?></span></p><?php endforeach; ?></div><?php endif; ?></aside></div>
             <?php endif; ?>
         <?php endif; ?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
