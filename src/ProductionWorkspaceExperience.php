@@ -11,144 +11,35 @@ final class ProductionWorkspaceExperience
 {
     private const ROUTE = '/production';
 
-    public static function handles(string $route): bool
-    {
-        return $route === self::ROUTE;
-    }
+    public static function handles(string $route): bool{return $route === self::ROUTE;}
 
     public static function render(string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
-        $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
-
-        $productions = ProductionContext::activeProductions($db, $user);
-        $selected = ProductionContext::selected($db, $user);
-        $workspaces = self::workspaceMetrics($db, $productions);
-
-        self::page($basePath, $user, $workspaces, $selected);
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        $db = Database::connect(dirname(__DIR__));$user = self::currentUser($db);$_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
+        $productions = ProductionContext::activeProductions($db, $user);$selected = ProductionContext::selected($db, $user);$workspaces = self::workspaceMetrics($db, $productions);self::page($basePath, $user, $workspaces, $selected);
     }
 
     private static function workspaceMetrics(PDO $db, array $productions): array
     {
-        if (!$productions) {
-            return [];
-        }
-
-        $ids = array_map(static fn(array $row): int => (int)$row['id'], $productions);
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $metrics = [];
-
-        foreach ($productions as $production) {
-            $id = (int)$production['id'];
-            $metrics[$id] = $production + [
-                'member_count' => 0,
-                'schedule_count' => 0,
-                'channel_count' => 0,
-                'open_volunteer_slots' => 0,
-            ];
-        }
-
-        $members = $db->prepare("SELECT production_id, COUNT(DISTINCT user_id) AS total FROM production_memberships WHERE status='active' AND production_id IN ($placeholders) GROUP BY production_id");
-        $members->execute($ids);
-        foreach ($members->fetchAll() as $row) {
-            $metrics[(int)$row['production_id']]['member_count'] = (int)$row['total'];
-        }
-
-        $schedule = $db->prepare("SELECT production_id, COUNT(*) AS total FROM schedule_items WHERE production_id IN ($placeholders) GROUP BY production_id");
-        $schedule->execute($ids);
-        foreach ($schedule->fetchAll() as $row) {
-            $metrics[(int)$row['production_id']]['schedule_count'] = (int)$row['total'];
-        }
-
-        $channels = $db->prepare("SELECT production_id, COUNT(*) AS total FROM channels WHERE archived_at IS NULL AND production_id IN ($placeholders) GROUP BY production_id");
-        $channels->execute($ids);
-        foreach ($channels->fetchAll() as $row) {
-            $metrics[(int)$row['production_id']]['channel_count'] = (int)$row['total'];
-        }
-
-        $volunteer = $db->prepare("SELECT vs.production_id, COALESCE(SUM(GREATEST(vs.required_slots-COALESCE(s.confirmed,0),0)),0) AS open_slots FROM volunteer_shifts vs LEFT JOIN (SELECT shift_id,COUNT(*) AS confirmed FROM volunteer_shift_signups WHERE status IN ('signed_up','checked_in','completed') GROUP BY shift_id) s ON s.shift_id=vs.id WHERE vs.production_id IN ($placeholders) GROUP BY vs.production_id");
-        $volunteer->execute($ids);
-        foreach ($volunteer->fetchAll() as $row) {
-            $metrics[(int)$row['production_id']]['open_volunteer_slots'] = (int)$row['open_slots'];
-        }
-
+        if (!$productions) return [];$ids = array_map(static fn(array $row): int => (int)$row['id'], $productions);$placeholders = implode(',', array_fill(0, count($ids), '?'));$metrics = [];
+        foreach ($productions as $production) {$id = (int)$production['id'];$metrics[$id] = $production + ['member_count'=>0,'schedule_count'=>0,'channel_count'=>0,'open_volunteer_slots'=>0];}
+        $members = $db->prepare("SELECT production_id, COUNT(DISTINCT user_id) AS total FROM production_memberships WHERE status='active' AND production_id IN ($placeholders) GROUP BY production_id");$members->execute($ids);foreach ($members->fetchAll() as $row) $metrics[(int)$row['production_id']]['member_count'] = (int)$row['total'];
+        $schedule = $db->prepare("SELECT production_id, COUNT(*) AS total FROM schedule_items WHERE production_id IN ($placeholders) GROUP BY production_id");$schedule->execute($ids);foreach ($schedule->fetchAll() as $row) $metrics[(int)$row['production_id']]['schedule_count'] = (int)$row['total'];
+        $channels = $db->prepare("SELECT production_id, COUNT(*) AS total FROM channels WHERE archived_at IS NULL AND production_id IN ($placeholders) GROUP BY production_id");$channels->execute($ids);foreach ($channels->fetchAll() as $row) $metrics[(int)$row['production_id']]['channel_count'] = (int)$row['total'];
+        $volunteer = $db->prepare("SELECT vs.production_id, COALESCE(SUM(GREATEST(vs.required_slots-COALESCE(s.confirmed,0),0)),0) AS open_slots FROM volunteer_shifts vs LEFT JOIN (SELECT shift_id,COUNT(*) AS confirmed FROM volunteer_shift_signups WHERE status IN ('signed_up','checked_in','completed') GROUP BY shift_id) s ON s.shift_id=vs.id WHERE vs.production_id IN ($placeholders) GROUP BY vs.production_id");$volunteer->execute($ids);foreach ($volunteer->fetchAll() as $row) $metrics[(int)$row['production_id']]['open_volunteer_slots'] = (int)$row['open_slots'];
         return array_values($metrics);
     }
 
     private static function currentUser(PDO $db): array
     {
-        $row = $db->query("SELECT id, CONCAT(first_name,' ',last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if (!$row) {
-            throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        }
-        return $row;
+        $row=$db->query("SELECT id, CONCAT(first_name,' ',last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$row)throw new RuntimeException('Demo user is missing. Re-import the local seed data.');return $row;
     }
 
-    private static function page(string $basePath, array $user, array $workspaces, ?array $selected): never
+    private static function page(string $basePath,array $user,array $workspaces,?array $selected):never
     {
-        $url = static fn(string $path): string => ($basePath ?: '') . $path;
-        $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $staff = AccessPolicy::canManageProduction($user);
-        $flash = $_SESSION['production_context_flash'] ?? null;
-        unset($_SESSION['production_context_flash']);
-
-        header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e">
-<title>Production workspace · CTSMD Connect</title>
-<link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-workspace.css') ?>">
-</head>
-<body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production', 'Production workspace', $basePath, [
-    ['label'=>'Workspace','href'=>'/production','active'=>true],
-    ['label'=>'Schedule','href'=>'/schedule','active'=>false],
-    ['label'=>'Attendance','href'=>'/attendance','active'=>false],
-    ['label'=>'Resources','href'=>'/resources','active'=>false],
-    ['label'=>'Playbill','href'=>'/playbills','active'=>false],
-]); ?><div class="pw-page">
-<?php if ($flash): ?><div class="pw-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
-<section class="pw-hero"><div><small>SHOW WORKSPACE</small><h2>Which production are you working on?</h2><p>Active productions can run at the same time. Choosing one here changes only your current browser session—it does not activate, deactivate, archive, or otherwise change another show.</p></div><?php if ($staff): ?><a href="<?= $url('/admin/productions') ?>">Manage productions →</a><?php endif; ?></section>
-
-<?php if (!$workspaces): ?>
-<section class="pw-empty"><h3>No active productions available.</h3><p><?= $staff ? 'Activate a production in Productions & seasons to create a workspace.' : 'Your account is not currently assigned to an active production.' ?></p><?php if ($staff): ?><a class="button" href="<?= $url('/admin/productions') ?>">Productions & seasons</a><?php endif; ?></section>
-<?php else: ?>
-<section class="pw-selector" aria-label="Active production workspaces">
-<?php foreach ($workspaces as $workspace): $isSelected = $selected && (int)$selected['id'] === (int)$workspace['id']; ?>
-<article class="pw-show<?= $isSelected ? ' selected' : '' ?>">
-    <div class="pw-show-top"><span><?= $isSelected ? 'WORKING NOW' : 'ACTIVE SHOW' ?></span><?php if ($isSelected): ?><b>✓ Selected</b><?php endif; ?></div>
-    <h3><?= $esc((string)$workspace['title']) ?></h3>
-    <p><?= $esc((string)($workspace['season'] ?: 'Season not set')) ?></p>
-    <div class="pw-metrics"><span><b><?= (int)$workspace['member_count'] ?></b><small>people</small></span><span><b><?= (int)$workspace['schedule_count'] ?></b><small>schedule</small></span><span><b><?= (int)$workspace['channel_count'] ?></b><small>channels</small></span><span><b><?= (int)$workspace['open_volunteer_slots'] ?></b><small>open shifts</small></span></div>
-    <?php if ($isSelected): ?>
-    <div class="pw-actions"><a class="button" href="<?= $url('/schedule') ?>">Open schedule</a><?php if ($staff): ?><a href="<?= $url('/production/people') ?>">Manage roster</a><?php endif; ?></div>
-    <?php else: ?>
-    <form method="post" action="<?= $url('/production/select') ?>"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>"><input type="hidden" name="production_id" value="<?= (int)$workspace['id'] ?>"><input type="hidden" name="return_to" value="/production"><button class="button full" type="submit">Work in this show</button></form>
-    <?php endif; ?>
-</article>
-<?php endforeach; ?>
-</section>
-
-<?php if ($selected): ?>
-<section class="pw-current"><div><small>CURRENT WORKSPACE</small><h2><?= $esc((string)$selected['title']) ?></h2><p><?= $esc((string)($selected['season'] ?: 'Season not set')) ?> · Everything below opens in this production context.</p></div><span>Active</span></section>
-<div class="pw-modules">
-<a href="<?= $url('/schedule') ?>"><i>◷</i><b>Schedule</b><span>Rehearsals, performances, calls and locations.</span></a>
-<a href="<?= $url('/attendance') ?>"><i>✓</i><b>Attendance</b><span><?= $staff ? 'Take roll, review absences and track participation.' : 'View relevant calls and report an absence.' ?></span></a>
-<?php if ($staff): ?><a href="<?= $url('/production/people') ?>"><i>★</i><b>Cast & people</b><span>Students, guardians and production staff.</span></a><?php endif; ?>
-<a href="<?= $url('/channels') ?>"><i>#</i><b>Community</b><span>Production channels and announcements.</span></a>
-<a href="<?= $url('/volunteer-shifts') ?>"><i>♡</i><b>Volunteer</b><span>Coverage and opportunities for this show.</span></a>
-<a href="<?= $url('/forms') ?>"><i>✓</i><b>Forms</b><span>Requirements and assigned paperwork.</span></a>
-<a href="<?= $url('/playbills') ?>"><i>▤</i><b>Playbill</b><span>Digital Playbill workspace.</span></a>
-<?php if ($staff): ?><a href="<?= $url('/production/notices') ?>"><i>↗</i><b>Production updates</b><span>Review and publish schedule-change communications.</span></a><a href="<?= $url('/admin/volunteer-shifts') ?>"><i>♟</i><b>Volunteer Operations</b><span>Create shifts and manage staffing.</span></a><?php endif; ?>
-</div>
-<?php endif; ?>
-<?php endif; ?>
-</div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
-        exit;
+        $url=static fn(string $path):string=>($basePath?:'').$path;$esc=static fn(string $value):string=>htmlspecialchars($value,ENT_QUOTES,'UTF-8');$staff=AccessPolicy::canManageProduction($user);$flash=$_SESSION['production_context_flash']??null;unset($_SESSION['production_context_flash']);header('Content-Type: text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>Production workspace · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-workspace.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production','Production workspace',$basePath,[['label'=>'Workspace','href'=>'/production','active'=>true],['label'=>'Readiness','href'=>'/production/readiness','active'=>false],['label'=>'Schedule','href'=>'/schedule','active'=>false],['label'=>'Attendance','href'=>'/attendance','active'=>false],['label'=>'Resources','href'=>'/resources','active'=>false],['label'=>'Playbill','href'=>'/playbills','active'=>false]]);?><div class="pw-page"><?php if($flash):?><div class="pw-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?><section class="pw-hero"><div><small>SHOW WORKSPACE</small><h2>Which production are you working on?</h2><p>Active productions can run at the same time. Choosing one here changes only your current browser session—it does not activate, deactivate, archive, or otherwise change another show.</p></div><?php if($staff):?><a href="<?= $url('/admin/productions') ?>">Manage productions →</a><?php endif;?></section>
+        <?php if(!$workspaces):?><section class="pw-empty"><h3>No active productions available.</h3><p><?= $staff?'Activate a production in Productions & seasons to create a workspace.':'Your account is not currently assigned to an active production.' ?></p><?php if($staff):?><a class="button" href="<?= $url('/admin/productions') ?>">Productions & seasons</a><?php endif;?></section><?php else:?><section class="pw-selector" aria-label="Active production workspaces"><?php foreach($workspaces as $workspace):$isSelected=$selected&&(int)$selected['id']===(int)$workspace['id'];?><article class="pw-show<?= $isSelected?' selected':'' ?>"><div class="pw-show-top"><span><?= $isSelected?'WORKING NOW':'ACTIVE SHOW' ?></span><?php if($isSelected):?><b>✓ Selected</b><?php endif;?></div><h3><?= $esc((string)$workspace['title']) ?></h3><p><?= $esc((string)($workspace['season']?:'Season not set')) ?></p><div class="pw-metrics"><span><b><?= (int)$workspace['member_count'] ?></b><small>people</small></span><span><b><?= (int)$workspace['schedule_count'] ?></b><small>schedule</small></span><span><b><?= (int)$workspace['channel_count'] ?></b><small>channels</small></span><span><b><?= (int)$workspace['open_volunteer_slots'] ?></b><small>open shifts</small></span></div><?php if($isSelected):?><div class="pw-actions"><a class="button" href="<?= $url('/production/readiness') ?>">Open readiness</a><a href="<?= $url('/schedule') ?>">Schedule</a><?php if($staff):?><a href="<?= $url('/production/people') ?>">Manage roster</a><?php endif;?></div><?php else:?><form method="post" action="<?= $url('/production/select') ?>"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_context_csrf']) ?>"><input type="hidden" name="production_id" value="<?= (int)$workspace['id'] ?>"><input type="hidden" name="return_to" value="/production"><button class="button full" type="submit">Work in this show</button></form><?php endif;?></article><?php endforeach;?></section>
+        <?php if($selected):?><section class="pw-current"><div><small>CURRENT WORKSPACE</small><h2><?= $esc((string)$selected['title']) ?></h2><p><?= $esc((string)($selected['season']?:'Season not set')) ?> · Everything below opens in this production context.</p></div><span>Active</span></section><div class="pw-modules"><?php if($staff):?><a href="<?= $url('/production/readiness') ?>"><i>◈</i><b>Readiness</b><span>System signals and the production checklist.</span></a><?php endif;?><a href="<?= $url('/schedule') ?>"><i>◷</i><b>Schedule</b><span>Rehearsals, performances, calls and locations.</span></a><a href="<?= $url('/attendance') ?>"><i>✓</i><b>Attendance</b><span><?= $staff?'Take roll, review absences and track participation.':'View relevant calls and report an absence.' ?></span></a><?php if($staff):?><a href="<?= $url('/production/people') ?>"><i>★</i><b>Cast & people</b><span>Students, guardians and production staff.</span></a><?php endif;?><a href="<?= $url('/channels') ?>"><i>#</i><b>Community</b><span>Production channels and announcements.</span></a><a href="<?= $url('/volunteer-shifts') ?>"><i>♡</i><b>Volunteer</b><span>Coverage and opportunities for this show.</span></a><a href="<?= $url('/forms') ?>"><i>✓</i><b>Forms</b><span>Requirements and assigned paperwork.</span></a><a href="<?= $url('/playbills') ?>"><i>▤</i><b>Playbill</b><span>Digital Playbill workspace.</span></a><?php if($staff):?><a href="<?= $url('/production/notices') ?>"><i>↗</i><b>Production updates</b><span>Review and publish schedule-change communications.</span></a><a href="<?= $url('/admin/volunteer-shifts') ?>"><i>♟</i><b>Volunteer Operations</b><span>Create shifts and manage staffing.</span></a><?php endif;?></div><?php endif;?><?php endif;?></div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
     }
 }
