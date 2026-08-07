@@ -17,7 +17,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 ### Implemented — Lean public landing + restrained registration
 
 - `/` is now a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
-- Public landing focuses on the pieces Connect currently needs outside authentication: selected public signups, current digital Playbills and member sign-in.
+- Public landing currently exposes selected public signups, current digital Playbills and member sign-in, but the intended primary public action is **platform registration/onboarding** once the next build is complete.
 - `/register` is intentionally limited to **auditions, selected special/event signups, and interest/RSVP signups** explicitly published by authorized CTSMD staff and currently within their open/close window.
 - **Classes, camps, workshops and the broader CTSMD program catalog are not registered through Connect at this stage.** They remain in the organization’s existing external registration system until CTSMD intentionally chooses to replace that system.
 - The database enum retains broader opportunity values for future compatibility, but current public/service/admin logic fails closed and will not publish or accept Connect registrations for class, camp or workshop records.
@@ -35,124 +35,24 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - This build is intentionally **not** a CMS/news/donations/payments/public-site takeover and is **not** a class/program-registration replacement. Those remain future options only if CTSMD chooses to expand Connect deliberately.
 - **Runtime verification:** pending local MAMP test after migration 020, including public root routing, supported-type restrictions, publication windows, minor guardian validation, capacity/waitlist behavior, email confirmation/manage URL and public cancellation.
 
-### Implemented — Parent multi-child / multi-production dashboard
-
-- Real database-backed family control tower at `/family-hub`, with `/parent` as an equivalent entry route.
-- Replaces the old mock-data Family Hub while leaving the existing `/app` Today experience intact for a later DB-backed home rebuild.
-- Guardian-to-student relationships come from active `family_relationships`; no child/domain records are hardcoded in PHP.
-- Each linked student independently resolves active production memberships, Production Group-aware schedule visibility and upcoming calls through the same Calendar/ScheduleAudience rules used by that student account.
-- Family schedule consolidates linked children across concurrent active productions while preserving child and production labels.
-- Per-child cards show active productions/participation roles, next call, open-form count and overlapping-call count.
-- Open forms aggregate the guardian's own assignments plus linked-student assignments and retain person/production context.
-- Guardian volunteer commitments are shown separately from child obligations so volunteer work is not misrepresented as a student call.
-- Household logistics conflict detection highlights simultaneous calls for different children at different locations while avoiding false alarms for the same event or same-location calls.
-- Recent guardian-targeted in-app notifications and unread count appear in the family control tower.
-- Sidebar adds a Family destination only when the signed-in account has at least one active guardian-to-student relationship.
-- No new migration is required; the build composes existing family, production, schedule, form, volunteer and notification data.
-- **Runtime verification:** pending local MAMP test with a guardian linked to multiple students across concurrent productions, including Production Group targeting and overlapping calls.
-
-### Implemented — Email notifications + delivery queue
-
-- Durable outbound `email_queue` plus delivery-attempt history in migration 019.
-- Queue-first delivery separates web actions from transport reliability; browser requests do not need to complete an SMTP transaction before succeeding.
-- Transport abstraction supports `log`, PHP `mail()` and authenticated SMTP with TLS/SSL options.
-- Local development defaults to `MAIL_DRIVER=log`; rendered outbound mail is written to `storage/logs/mail.log` instead of contacting real recipients.
-- Account invitations now automatically queue the private activation link for email delivery while retaining the one-time admin copy link for recovery/testing.
-- Forgot Password now automatically queues the two-hour reset link while preserving a local-only visible reset link for MAMP testing.
-- Account-security email cannot be disabled by ordinary notification preferences.
-- Member notification settings at `/notification-preferences` cover the non-security master switch plus schedule, forms, volunteer and Community email categories.
-- Delivery preference data includes an immediate/daily digest setting so digest-capable workflows can adopt it without another preference migration.
-- Automated reminder generator queues form-due-soon reminders, next-day volunteer-shift reminders, and 30-/7-day credential-expiration reminders using deduplication keys.
-- CLI queue worker at `bin/process-email-queue.php`; reminder generator at `bin/queue-email-reminders.php`.
-- Queue delivery retries up to three attempts, delays retries, records the latest error and reclaims interrupted `sending` records after ten minutes.
-- Administrator Email Operations workspace at `/admin/email` shows queued/sent/failed state and recent delivery results, and provides controlled manual reminder/worker actions for testing.
-- Shared-hosting/cron and SMTP configuration guidance lives in `docs/EMAIL_DELIVERY.md`.
-- **Runtime verification:** pending local MAMP test after migration 019, including log delivery, invitation/reset mail, reminder deduplication, preference suppression, retry behavior, and eventual Bluehost SMTP/cron verification.
-
-### Implemented — File uploads + portable storage
-
-- Generic storage layer in `StorageService` with local private-filesystem driver as the first implementation.
-- Default storage path is `<project>/storage/private`; `STORAGE_PATH` can point to an absolute location outside the public web root on shared hosting without changing application code.
-- Direct Apache access to the default private storage directory is denied; files are served through authenticated CTSMD routes only.
-- Upload validation uses server-detected MIME type rather than trusting the browser filename/content-type.
-- Initial allowlist: PDF, Word, Excel, PowerPoint, TXT, CSV, JPG, PNG and WebP. SVG, PHP/executable and arbitrary web-file uploads are not permitted.
-- Default maximum upload size is 20 MB and can be changed with `STORAGE_MAX_UPLOAD_MB`.
-- Files receive random storage keys rather than user-controlled filesystem names.
-- Every stored version records original filename, MIME type, extension, size, SHA-256 checksum, uploader and timestamp.
-- Stable `stored_files` objects can have multiple immutable `stored_file_versions`.
-- Production file library at `/files`; authorized staff management at `/admin/files`.
-- Production files support title, category, description, pinning, archive/restore and the same production audience concepts used by Resources.
-- Replacing a production file creates a new version instead of overwriting history.
-- Current or historical versions can only be downloaded after current production/audience access is checked server-side.
-- Downloads are audited by production file and version.
-- Archived production files remain in history and are hidden from normal members.
-- Storage schema lives in migration 018.
-- Foundation is now available for future Community/Message attachments, Form upload fields and Playbill imagery without duplicating upload/security code.
-- **Runtime verification:** pending local MAMP test after migration 018, including PHP upload limits, writable storage path, MIME detection, version replacement and permission-denied downloads.
-
-### Implemented — Authentication + normalized RBAC
-
-- Real session authentication with `/login` and POST `/logout`.
-- Passwords use PHP `password_hash()` / `password_verify()` and require at least 12 characters on activation/reset.
-- Invitation-only activation at `/activate?token=...`; invitation tokens are random and stored only as SHA-256 hashes.
-- Time-limited password reset workflow at `/forgot-password` and `/reset-password?token=...`; reset tokens are stored hashed and single-use.
-- Account lifecycle states: invited, active and disabled.
-- Normalized roles and permissions replace runtime authorization from `display_role` strings.
-- System roles: Member, Student, Volunteer, Production Staff, Moderator, Safeguarding and Administrator.
-- Permission-specific navigation and `AccessPolicy` checks for people, productions, Community, moderation, volunteers, forms, resources, Playbills, safeguarding, accounts and audit access.
-- Account & Access workspace at `/admin/accounts` for invitation issuance, role assignment and account disable/enable operations.
-- Administrators cannot disable themselves or remove their own Administrator role from the account workspace.
-- Front-controller authentication boundary protects private CTSMD routes while leaving published Playbills, health, activation/reset, and token-authenticated ICS feeds public as intended.
-- Legacy `is_demo_current_user` lookups are resolved per authenticated browser session by the database adapter instead of changing a global database flag, preserving concurrent-user safety while older screens are migrated incrementally.
-- `/dev/identity` now creates a local-only session identity rather than mutating the shared database current-user marker.
-- Existing prototype display-role labels are used only once by migration 017 to bootstrap initial normalized roles; authenticated runtime authorization does not trust those strings.
-- **Runtime verification:** pending local MAMP test after migration 017, including invitation activation, simultaneous browser identities, role denial, logout and password reset.
-
-### Implemented — Calendar + schedule lifecycle
-
-- First-class Calendar route at `/calendar` in the Theatre navigation.
-- Month, week and 90-day agenda views.
-- Consolidated personal schedule across all active productions the current account can access.
-- Production and Production Group filters plus guardian child-focus filtering.
-- Cross-production overlap/conflict warnings run against the actual visible personal event set.
-- Cancelled events remain in calendar history and ICS feeds instead of being hard-deleted.
-- Staff can duplicate a schedule item seven days forward and cancel events with a communication draft.
-- Per-user revocable private ICS subscription feed.
-- **Runtime verification:** pending local MAMP test after migration 016.
-
-### Implemented — Volunteer hours, training + credential automation
-
-- Member volunteer-hours history at `/volunteer/history` and training/readiness at `/volunteer/training`.
-- Staff Volunteer Development workspace at `/admin/volunteer-development`.
-- Completed shifts feed verified service hours; verified training and approved mapped forms feed canonical volunteer credentials.
-- Core automated transitions have database-level safety-net triggers in migration 015.
-- **Runtime verification:** pending local MAMP test after migration 015.
-
-### Implemented — Dynamic forms
-
-- Staff Form Builder at `/admin/forms/build` and `/admin/forms/builder?id=...`.
-- Structured text, choice, date, acknowledgment and signature fields.
-- Field-level answers with immutable submission definition snapshots.
-- **Runtime verification:** pending local MAMP test after migration 014.
-
-### Implemented — Attendance
-
-- Attendance workspace at `/attendance` using schedule/Production Group targeting.
-- Staff roll call, absence reporting and excused-absence acknowledgment.
-- **Runtime verification:** pending local MAMP test after migration 013.
-
-### Implemented — Community moderation
-
-- Admin-managed moderation term library and review queue.
-- Block/hold actions with controlled normalized/fuzzy matching; clean posts publish immediately.
-- **Runtime verification:** pending local MAMP test after migration 012 and optional seed 002.
-
-### Implemented — Production groups + targeted schedule audiences
-
-- Production-native groups drive targeted schedule, notice, Attendance and Calendar audiences.
-- **Runtime verification:** pending local MAMP test after migration 011.
-
 ## Near-term build order
+
+### Next — CTSMD Connect platform registration + onboarding
+
+- Make the primary public landing action **Create / register for CTSMD Connect**, with Member Sign In as the adjacent returning-user action.
+- Adult/guardian users may start their own CTSMD Connect account from the public site and verify ownership of their email address.
+- Self-registration creates only a basic authenticated account; it must **not** grant production membership, Community-channel access, staff permissions, student access, or any other privileged relationship merely because the public form was completed.
+- Production memberships and production-scoped access are granted only from verified CTSMD participation/roster operations or an explicit staff-reviewed onboarding workflow.
+- Students/minors do not anonymously self-register from the public site. Student identities/accounts are created or linked through an authenticated guardian workflow and existing family-relationship safeguards.
+- Adult volunteers may create their own basic account, but volunteer readiness, credentials and production/shift eligibility remain controlled by canonical volunteer records and staff-managed requirements.
+- Use email verification through the existing outbound email queue before a public self-registered account becomes active.
+- Prevent duplicate accounts for an email address; where an invited or existing account already exists, route the person into activation/sign-in/recovery rather than creating another identity.
+- Preserve staff-issued invitations for controlled staff/admin onboarding and cases where CTSMD wants to pre-link a person before they register.
+- Add a clear post-registration state for accounts that are valid but not yet attached to any production, explaining that access appears when CTSMD links the account to current participation.
+- Keep public audition/special-event registration as a separate secondary workflow; submitting an audition/special signup must not silently create a platform account.
+- Update the public landing hierarchy so audition/special signups and Playbills sit beneath the primary platform-registration/sign-in actions.
+- Add audit events and rate-limiting/abuse protections appropriate for a public account-creation endpoint.
+- **No production context is involved in platform registration.** Account identity is organization-wide.
 
 ### Next — DB-backed Home + account-wide member aggregation
 
@@ -347,10 +247,11 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
 - Runtime administrator authorization is role/permission based, not display-label based.
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
+- **Public platform registration creates identity, not entitlement.** A verified self-registered account receives no production, Community, student or staff access until canonical CTSMD relationships/memberships grant it.
+- **Students/minors do not anonymously self-register.** Student account creation/linking is guardian-mediated and must preserve family/safeguarding rules.
 - A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
-- Public registration intake and authenticated membership are separate lifecycles; a public registration must never silently create a CTSMD account or production membership without staff review.
+- Public audition/special-signup intake and authenticated platform membership are separate lifecycles; one must not silently create the other.
 - Public child/minor registration should collect only the minimum information necessary for the immediate registration workflow; richer sensitive data requires an explicit later policy decision.
-- **Connect registration is not the current class/program registration system.** Auditions and selected signups may use Connect now; class/camp/workshop registration remains external unless CTSMD deliberately chooses a replacement project later.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
 - Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
