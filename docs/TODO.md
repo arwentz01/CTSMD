@@ -14,6 +14,24 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Recently implemented
 
+### Implemented — Email notifications + delivery queue
+
+- Durable outbound `email_queue` plus delivery-attempt history in migration 019.
+- Queue-first delivery separates web actions from transport reliability; browser requests do not need to complete an SMTP transaction before succeeding.
+- Transport abstraction supports `log`, PHP `mail()` and authenticated SMTP with TLS/SSL options.
+- Local development defaults to `MAIL_DRIVER=log`; rendered outbound mail is written to `storage/logs/mail.log` instead of contacting real recipients.
+- Account invitations now automatically queue the private activation link for email delivery while retaining the one-time admin copy link for recovery/testing.
+- Forgot Password now automatically queues the two-hour reset link while preserving a local-only visible reset link for MAMP testing.
+- Account-security email cannot be disabled by ordinary notification preferences.
+- Member notification settings at `/notification-preferences` cover the non-security master switch plus schedule, forms, volunteer and Community email categories.
+- Delivery preference data includes an immediate/daily digest setting so digest-capable workflows can adopt it without another preference migration.
+- Automated reminder generator queues form-due-soon reminders, next-day volunteer-shift reminders, and 30-/7-day credential-expiration reminders using deduplication keys.
+- CLI queue worker at `bin/process-email-queue.php`; reminder generator at `bin/queue-email-reminders.php`.
+- Queue delivery retries up to three attempts, delays retries, records the latest error and reclaims interrupted `sending` records after ten minutes.
+- Administrator Email Operations workspace at `/admin/email` shows queued/sent/failed state and recent delivery results, and provides controlled manual reminder/worker actions for testing.
+- Shared-hosting/cron and SMTP configuration guidance lives in `docs/EMAIL_DELIVERY.md`.
+- **Runtime verification:** pending local MAMP test after migration 019, including log delivery, invitation/reset mail, reminder deduplication, preference suppression, retry behavior, and eventual Bluehost SMTP/cron verification.
+
 ### Implemented — File uploads + portable storage
 
 - Generic storage layer in `StorageService` with local private-filesystem driver as the first implementation.
@@ -99,15 +117,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Near-term build order
 
-### Next — Email notifications
-
-- Email delivery service, including automatic invitation/password-reset delivery.
-- User notification preferences.
-- Per-channel notification settings.
-- Form/credential/shift reminders.
-- Digest delivery.
-- Later: push-notification architecture.
-
 ### Next — Parent multi-child / multi-production dashboard
 
 - One family dashboard spanning children and active productions.
@@ -141,7 +150,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Search across Community posts.
 - Community photo/file attachments using the shared storage layer.
 - First-class announcement composer separate from schedule-generated notices.
-- Better channel notification preferences.
+- Per-channel email/notification preferences and announcement-specific delivery controls.
 
 ## Messaging backlog
 
@@ -157,7 +166,7 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Conditional fields.
 - Guardian-on-behalf-of-student completion.
 - Production Group targeting.
-- Bulk reminders and completion dashboards.
+- Bulk reminders and completion dashboards beyond automated due-soon email.
 - File-upload fields using the shared storage layer.
 - Registration-oriented forms.
 - External/e-sign provider evaluation only if required later.
@@ -166,7 +175,6 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 - Shift duplication/recurring shifts.
 - Waitlists and staff manual assignment.
-- Credential expiration reminders/notifications.
 - Background-check administration workflow improvements.
 - Training content delivery beyond staff verification.
 - Coordinator aggregate dashboards and roster/service-hour exports.
@@ -191,9 +199,11 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Notifications backlog
 
-- Email delivery and push later.
-- Notification/per-channel preferences and digest mode.
-- Scheduled reminders, including credential expiration, forms and volunteer shifts.
+- Wire schedule-change publishing directly to optional targeted email delivery.
+- Per-channel notification/email preferences.
+- Full daily digest composer/worker for digest-enabled users; preference storage already exists.
+- Additional reminder types as real operations identify them.
+- Push notifications later.
 
 ## Home/dashboard backlog
 
@@ -232,17 +242,16 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Consolidate canonical schema + migration strategy so fresh installs are predictable.
 - Break remaining large PHP experience files into smaller services/layouts/partials.
 - Incrementally replace legacy per-experience current-user queries with direct `Auth::currentUser()` calls; the session-safe DB compatibility adapter is transitional.
-- Mail delivery service.
 - Add authentication rate limiting / lockout policy before public production launch.
 - Consider persistent server-side session storage if Bluehost/PHP session behavior requires it.
 - Validate Bluehost/PHP upload limits (`upload_max_filesize`, `post_max_size`) and write permissions for the configured `STORAGE_PATH`.
 - Add remote/object-storage driver only if shared-hosting filesystem constraints require one later.
-- Background jobs/cron where appropriate.
-- Automated tests, especially auth/RBAC/storage/access regression tests.
+- Validate Bluehost cron availability, PHP CLI path and authenticated SMTP settings; configure queue/reminder workers in deployment.
+- Automated tests, especially auth/RBAC/storage/email/access regression tests.
 - Accessibility review and keyboard/focus polish.
 - Mobile polish across staff fallbacks.
 - Bluehost deployment process/tooling and backup/restore procedures, including private-file backups.
-- Timezone-aware date handling, including ICS conversion validation.
+- Timezone-aware date handling, including ICS conversion and reminder-worker validation.
 - Search repository for remaining MySQL 8 DISTINCT/ORDER BY incompatibilities.
 - Fix remaining legacy FormExperience CSRF exception edge.
 - Remove remaining hardcoded prototype/domain data from legacy index.php.
@@ -258,6 +267,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Production membership and authentication roles are different concepts: a person can participate in a production without gaining administrative permissions.
 - Stored files and their immutable versions are infrastructure objects; production files are permissioned domain objects that reference them.
 - Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
+- Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
+- Account-security mail is transactional and cannot be disabled by ordinary notification preferences.
 - General Teams and Production Groups are separate concepts.
 - Community channels may be audience-driven, selected-member, Team-backed or hybrid.
 - Private Community membership must not bypass safeguarded direct-message rules.
