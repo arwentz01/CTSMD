@@ -80,6 +80,11 @@ if (NotificationPreferenceExperience::handles($route)) {
     NotificationPreferenceExperience::render($detectedBasePath);
 }
 
+require_once __DIR__ . '/src/FamilyDashboardExperience.php';
+if (FamilyDashboardExperience::handles($route)) {
+    FamilyDashboardExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/CalendarExperience.php';
 if (CalendarExperience::handles($route)) {
     CalendarExperience::render($route, $detectedBasePath);
