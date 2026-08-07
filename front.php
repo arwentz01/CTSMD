@@ -95,6 +95,8 @@ require_once __DIR__ . '/src/CalendarExperience.php';
 if (CalendarExperience::handles($route)) CalendarExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/MemberCastExperience.php';
 if (MemberCastExperience::handles($route)) MemberCastExperience::render($detectedBasePath);
+require_once __DIR__ . '/src/StudentProfileExperience.php';
+if (StudentProfileExperience::handles($route)) StudentProfileExperience::render($route, $detectedBasePath);
 require_once __DIR__ . '/src/TheatreHistoryExperience.php';
 if (TheatreHistoryExperience::handles($route)) TheatreHistoryExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/ProductionArchiveExperience.php';
