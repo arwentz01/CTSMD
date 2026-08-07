@@ -44,6 +44,11 @@ if (NotificationExperience::handles($route)) {
     NotificationExperience::render($detectedBasePath);
 }
 
+require_once __DIR__ . '/src/FormExperience.php';
+if (FormExperience::handles($route)) {
+    FormExperience::render($route, $detectedBasePath);
+}
+
 require_once __DIR__ . '/src/HomeExperience.php';
 if (HomeExperience::handles($route)) {
     $data = require __DIR__ . '/src/mock-data.php';
