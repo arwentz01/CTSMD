@@ -1,5 +1,9 @@
 /* CTSMD Connect — mobile Messages reset.
    The complete thread is docked between the app header and bottom tabs; only history scrolls. */
+@media (min-width:781px){
+  body[data-native-route="messages-thread"] .native-back{display:none!important}
+  body[data-native-route="messages-thread"] .unified-utilities{margin-left:auto!important}
+}
 @media (max-width:780px){
   body[data-native-route="messages-thread"]{overflow:hidden!important;background:#f7f5f5!important}
   body[data-native-route="messages-thread"]>.comm-thread-screen.mobile-thread-docked{
