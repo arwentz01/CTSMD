@@ -1,0 +1,106 @@
+/* CTSMD Connect — mobile Messages reset.
+   The complete thread is docked between the app header and bottom tabs; only history scrolls. */
+@media (max-width:780px){
+  body[data-native-route="messages-thread"]{overflow:hidden!important;background:#f7f5f5!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen.mobile-thread-docked{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    width:auto!important;
+    max-width:none!important;
+    margin:0!important;
+    z-index:30!important;
+    display:flex!important;
+    flex-direction:column!important;
+    gap:0!important;
+    overflow:hidden!important;
+    background:#f7f5f5!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  /* The native app header already owns the conversation title. */
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-head{
+    flex:0 0 auto!important;
+    margin:0!important;
+    padding:7px 14px 6px!important;
+    border:0!important;
+    border-bottom:1px solid rgba(54,39,44,.09)!important;
+    border-radius:0!important;
+    background:#f7f5f5!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-head>div>small,
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-head h2,
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-head>a{display:none!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-people{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    margin:0!important;
+    min-height:32px!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-avatar-stack{padding-left:5px!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-avatar-stack i{
+    width:27px!important;height:27px!important;margin-left:-5px!important;
+    border:2px solid #f7f5f5!important;font-size:7px!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-people-toggle{
+    min-height:30px!important;padding:3px 0!important;font-size:10px!important;
+  }
+
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-participants{
+    flex:0 0 auto!important;margin:0 10px 5px!important;border-radius:10px!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-participants.collapsed{display:none!important}
+
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread-layout{
+    flex:1 1 auto!important;min-height:0!important;overflow:hidden!important;margin:0!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-thread{
+    height:100%!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+    padding:8px 12px 10px!important;background:#f7f5f5!important;border:0!important;border-radius:0!important;
+    overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-day-separator{margin:8px 0 7px!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-message-row{margin:3px 0!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-bubble{max-width:82%!important}
+
+  /* True phone composer: one row until content actually wraps. */
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer{
+    position:relative!important;flex:0 0 auto!important;width:100%!important;max-width:none!important;
+    margin:0!important;padding:6px 10px calc(6px + env(safe-area-inset-bottom))!important;
+    border:0!important;border-top:1px solid rgba(54,39,44,.10)!important;border-radius:0!important;
+    background:#fff!important;box-shadow:none!important;box-sizing:border-box!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer form{
+    display:flex!important;align-items:flex-end!important;gap:6px!important;width:100%!important;margin:0!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer textarea{
+    order:2!important;flex:1 1 auto!important;width:1px!important;min-width:0!important;
+    height:38px!important;min-height:38px!important;max-height:88px!important;
+    box-sizing:border-box!important;resize:none!important;overflow-y:auto!important;
+    margin:0!important;padding:8px 12px!important;border:1px solid rgba(54,39,44,.16)!important;
+    border-radius:19px!important;background:#fff!important;color:#211a1d!important;
+    font-size:16px!important;line-height:20px!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .comm-compose-actions{display:contents!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .comm-attach-compact{
+    order:1!important;flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;
+    margin:1px 0!important;padding:0!important;border:0!important;border-radius:50%!important;
+    background:#f1ecee!important;color:#b71932!important;font-size:20px!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .comm-file-name{
+    position:absolute!important;left:50px!important;bottom:48px!important;max-width:60vw!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .comm-file-name:empty{display:none!important}
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .button{
+    order:3!important;flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;
+    margin:1px 0!important;padding:0!important;border-radius:50%!important;font-size:0!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;
+  }
+  body[data-native-route="messages-thread"]>.comm-thread-screen .comm-composer .button:after{
+    content:'➤'!important;display:block!important;font-size:13px!important;line-height:1!important;color:#fff!important;
+    transform:none!important;margin:0!important;padding:0 0 0 1px!important;
+  }
+}
