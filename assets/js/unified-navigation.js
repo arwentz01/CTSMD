@@ -11,6 +11,7 @@
       ['mobile-community-curtain.css', 'mobileCommunityCurtain'],
       ['mobile-calendar-disclosure.css', 'mobileCalendarDisclosure'],
       ['mobile-forms-notifications.css', 'mobileFormsNotifications'],
+      ['community-chat-viewport.css', 'communityChatViewport'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -260,6 +261,30 @@
     }
   };
 
+  let communityThreadScrolled=false;
+  const configureCommunityThreadViewport = () => {
+    if (relativePath() !== '/channels/view') return;
+    const page=document.querySelector('.community-page.channel-open');
+    const shell=page?.querySelector('.community-shell');
+    const feed=shell?.querySelector('.community-pane-feed');
+    if(!page||!shell||!feed) return;
+
+    const viewportHeight=window.visualViewport?.height||window.innerHeight;
+    const top=Math.max(0,shell.getBoundingClientRect().top);
+    const tabs=window.innerWidth<=780?document.querySelector('[data-mobile-app-tabs]'):null;
+    const bottomInset=tabs?.getBoundingClientRect().height||0;
+    const breathingRoom=window.innerWidth<=780?8:14;
+    const available=Math.max(260,Math.floor(viewportHeight-top-bottomInset-breathingRoom));
+    shell.style.setProperty('--community-chat-height',`${available}px`);
+
+    if(!communityThreadScrolled){
+      requestAnimationFrame(()=>{
+        feed.scrollTop=feed.scrollHeight;
+        communityThreadScrolled=true;
+      });
+    }
+  };
+
   const configureCommunityPostMenus = () => {
     if (relativePath() !== '/channels/view') return;
     const menus=[...document.querySelectorAll('.comm-post-actions')];
@@ -305,11 +330,12 @@
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
     configureMessageThreadViewport();
+    configureCommunityThreadViewport();
   };
 
   if (preferMobileAgenda()) return;
   if (configureVolunteerLanding()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageThreadViewport(); configureCommunityPostMenus(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageThreadViewport(); configureCommunityThreadViewport(); configureCommunityPostMenus(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
-  window.visualViewport?.addEventListener('resize', configureMessageThreadViewport, {passive:true});
+  window.visualViewport?.addEventListener('resize', ()=>{configureMessageThreadViewport();configureCommunityThreadViewport();}, {passive:true});
 })();
