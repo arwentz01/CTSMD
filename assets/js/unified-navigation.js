@@ -4,6 +4,11 @@
   const openButtons = document.querySelectorAll('[data-nav-open]');
   const close = document.querySelector('[data-nav-close]');
 
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (viewport && !viewport.content.includes('viewport-fit=cover')) {
+    viewport.content = `${viewport.content},viewport-fit=cover`;
+  }
+
   const setOpen = (value) => {
     if (!sidebar || !scrim) return;
     sidebar.classList.toggle('open', value);
@@ -27,10 +32,8 @@
     }
   };
 
-  const findNav = (suffix) => {
-    const links = [...document.querySelectorAll('.unified-nav-item[href]')];
-    return links.find((link) => hrefPath(link).endsWith(suffix)) || null;
-  };
+  const links = () => [...document.querySelectorAll('.unified-nav-item[href]')];
+  const findNav = (suffix) => links().find((link) => hrefPath(link).endsWith(suffix)) || null;
 
   const makeTab = (source, label, fallbackIcon) => {
     if (!source) return null;
@@ -64,19 +67,25 @@
     if (!sidebar || document.querySelector('[data-mobile-app-tabs]')) return;
 
     const home = findNav('/app');
+    const staff = findNav('/staff');
     const production = findNav('/production');
     const calendar = findNav('/calendar');
+    const family = findNav('/family-hub');
     const community = findNav('/channels');
     const messages = findNav('/messages');
 
     const bar = document.createElement('nav');
     bar.className = 'mobile-app-tabs';
     bar.dataset.mobileAppTabs = '';
-    bar.setAttribute('aria-label', 'App navigation');
+    bar.setAttribute('aria-label', 'Primary app navigation');
+
+    const operational = production || staff || calendar || family;
+    const operationalLabel = production ? 'Production' : staff ? 'Staff' : calendar ? 'Calendar' : family ? 'Family' : 'Today';
+    const operationalIcon = production ? '★' : staff ? '◎' : calendar ? '◫' : family ? '♟' : '◉';
 
     const tabs = [
       makeTab(home, 'Home', '⌂'),
-      makeTab(production || calendar, production ? 'Production' : 'Calendar', production ? '★' : '◫'),
+      makeTab(operational, operationalLabel, operationalIcon),
       makeTab(community, 'Community', '#'),
       makeTab(messages, 'Messages', '✉'),
     ].filter(Boolean);
@@ -86,7 +95,7 @@
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'mobile-app-tab mobile-app-more';
-    more.setAttribute('aria-label', 'More');
+    more.setAttribute('aria-label', 'More navigation');
     more.innerHTML = '<span class="mobile-app-tab-icon">•••</span><span class="mobile-app-tab-label">More</span>';
     more.addEventListener('click', () => setOpen(true));
     bar.appendChild(more);
@@ -94,5 +103,13 @@
     document.body.appendChild(bar);
   };
 
+  const applyDeviceMode = () => {
+    const width = window.innerWidth;
+    document.documentElement.dataset.appViewport = width <= 780 ? 'phone' : width <= 1180 ? 'tablet' : 'desktop';
+    if (width > 780) setOpen(false);
+  };
+
   buildMobileTabs();
+  applyDeviceMode();
+  window.addEventListener('resize', applyDeviceMode, { passive: true });
 })();
