@@ -12,6 +12,7 @@
       ['mobile-calendar-disclosure.css', 'mobileCalendarDisclosure'],
       ['mobile-forms-notifications.css', 'mobileFormsNotifications'],
       ['community-chat-viewport.css', 'communityChatViewport'],
+      ['mobile-messaging-reset.css', 'mobileMessagingReset'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -224,17 +225,19 @@
   };
 
   let messageThreadScrolled=false;
+  let messageThreadHome=null;
   const configureMessageThreadViewport = () => {
     if (relativePath() !== '/messages/thread') return;
     const page=document.querySelector('.comm-page');
-    const head=page?.querySelector('.comm-thread-head');
-    const participants=page?.querySelector('.comm-participants');
-    const layout=page?.querySelector('.comm-thread-layout');
+    const head=page?.querySelector('.comm-thread-head')||document.querySelector('.comm-thread-screen .comm-thread-head');
+    const participants=page?.querySelector('.comm-participants')||document.querySelector('.comm-thread-screen .comm-participants');
+    const layout=page?.querySelector('.comm-thread-layout')||document.querySelector('.comm-thread-screen .comm-thread-layout');
     const composer=document.querySelector('.comm-composer');
-    if(!page||!head||!layout||!composer) return;
+    if(!head||!layout||!composer) return;
 
-    let screen=page.querySelector(':scope > .comm-thread-screen');
+    let screen=document.querySelector('.comm-thread-screen');
     if(!screen){
+      if(!page) return;
       screen=document.createElement('section');
       screen.className='comm-thread-screen';
       head.before(screen);
@@ -242,18 +245,40 @@
       if(participants) screen.appendChild(participants);
       screen.appendChild(layout);
       screen.appendChild(composer);
+      messageThreadHome=document.createComment('message-thread-home');
+      screen.parentNode?.insertBefore(messageThreadHome,screen);
+    }else if(!messageThreadHome&&screen.parentNode!==document.body){
+      messageThreadHome=document.createComment('message-thread-home');
+      screen.parentNode?.insertBefore(messageThreadHome,screen);
     }
 
-    const viewportHeight=window.visualViewport?.height||window.innerHeight;
-    const top=Math.max(0,screen.getBoundingClientRect().top);
-    const tabs=window.innerWidth<=780?document.querySelector('[data-mobile-app-tabs]'):null;
-    const tabTop=tabs?.getBoundingClientRect().top;
-    const lowerEdge=window.innerWidth<=780&&Number.isFinite(tabTop)?Math.min(viewportHeight,tabTop):viewportHeight;
-    const breathingRoom=window.innerWidth<=780?0:14;
-    const available=Math.max(260,Math.floor(lowerEdge-top-breathingRoom));
-    screen.style.height=`${available}px`;
-
+    const mobile=window.innerWidth<=780;
     const thread=screen.querySelector('.comm-thread');
+    if(mobile){
+      if(screen.parentElement!==document.body) document.body.appendChild(screen);
+      screen.classList.add('mobile-thread-docked');
+      screen.style.height='';
+      const header=document.querySelector('.unified-header');
+      const tabs=document.querySelector('[data-mobile-app-tabs]');
+      const vv=window.visualViewport;
+      const visualTop=vv?.offsetTop||0;
+      const visualBottom=visualTop+(vv?.height||window.innerHeight);
+      const headerBottom=header?.getBoundingClientRect().bottom||visualTop;
+      const tabTop=tabs?.getBoundingClientRect().top;
+      const lowerEdge=Number.isFinite(tabTop)?Math.min(visualBottom,tabTop):visualBottom;
+      screen.style.top=`${Math.max(0,Math.round(Math.max(visualTop,headerBottom)))}px`;
+      screen.style.bottom=`${Math.max(0,Math.round(window.innerHeight-lowerEdge))}px`;
+    }else{
+      if(screen.parentElement===document.body&&messageThreadHome?.parentNode){
+        messageThreadHome.parentNode.insertBefore(screen,messageThreadHome.nextSibling);
+      }
+      screen.classList.remove('mobile-thread-docked');
+      screen.style.top='';screen.style.bottom='';
+      const viewportHeight=window.innerHeight;
+      const top=Math.max(0,screen.getBoundingClientRect().top);
+      screen.style.height=`${Math.max(320,Math.floor(viewportHeight-top-14))}px`;
+    }
+
     if(thread&&!messageThreadScrolled){
       requestAnimationFrame(()=>{
         thread.scrollTop=thread.scrollHeight;
@@ -266,23 +291,27 @@
     if (relativePath() !== '/messages/thread') return;
     const area=document.querySelector('.comm-composer textarea[name="body"]');
     const form=area?.closest('form');
-    if(!area||!form||area.dataset.enterSend==='1') return;
-    area.dataset.enterSend='1';
+    if(!area||!form) return;
     const resize=()=>{
       const baseline=window.innerWidth<=780?38:40;
-      const maximum=window.innerWidth<=780?92:116;
-      area.style.setProperty('height','0px','important');
-      const next=Math.max(baseline,Math.min(area.scrollHeight,maximum));
-      area.style.setProperty('height',`${next}px`,'important');
+      const maximum=window.innerWidth<=780?88:116;
+      area.style.setProperty('height',`${baseline}px`,'important');
+      if(!area.value) return;
+      const needed=area.scrollHeight;
+      if(needed>baseline+2) area.style.setProperty('height',`${Math.min(needed,maximum)}px`,'important');
     };
-    area.addEventListener('input',resize);
-    area.addEventListener('keydown',event=>{
-      if(event.key!=='Enter'||event.shiftKey||event.isComposing) return;
-      event.preventDefault();
-      if(!area.value.trim()) return;
-      if(form.requestSubmit) form.requestSubmit(); else form.submit();
-    });
+    if(area.dataset.enterSend!=='1'){
+      area.dataset.enterSend='1';
+      area.addEventListener('input',resize);
+      area.addEventListener('keydown',event=>{
+        if(event.key!=='Enter'||event.shiftKey||event.isComposing) return;
+        event.preventDefault();
+        if(!area.value.trim()) return;
+        if(form.requestSubmit) form.requestSubmit(); else form.submit();
+      });
+    }
     resize();
+    requestAnimationFrame(()=>requestAnimationFrame(resize));
   };
 
   let communityThreadScrolled=false;
