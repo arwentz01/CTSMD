@@ -8,6 +8,7 @@
       ['mobile-native-hotfixes.css', 'mobileNativeHotfixes'],
       ['mobile-theatre-polish.css', 'mobileTheatrePolish'],
       ['product-polish.css', 'productPolish'],
+      ['mobile-community-curtain.css', 'mobileCommunityCurtain'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -148,6 +149,31 @@
     }
   };
 
+  const configureCommunityCurtain = () => {
+    if (window.innerWidth > 780 || relativePath() !== '/channels') return;
+    const hero=document.querySelector('.comm-hero');
+    if(!hero || hero.querySelector('.community-curtain-toggle')) return;
+    const summary=document.createElement('span');
+    summary.className='community-curtain-summary';
+    summary.textContent='Community';
+    const toggle=document.createElement('button');
+    toggle.type='button';
+    toggle.className='community-curtain-toggle';
+    const storageKey='ctsmd-community-curtain-collapsed';
+    let collapsed=false;
+    try{collapsed=window.localStorage.getItem(storageKey)==='1';}catch(_){collapsed=false;}
+    const render=()=>{
+      hero.classList.toggle('community-curtain-collapsed',collapsed);
+      toggle.textContent=collapsed?'Curtain Up':'Curtain Down';
+      toggle.setAttribute('aria-expanded',collapsed?'false':'true');
+      toggle.setAttribute('aria-label',collapsed?'Expand Community introduction':'Collapse Community introduction');
+      try{window.localStorage.setItem(storageKey,collapsed?'1':'0');}catch(_){}
+    };
+    toggle.addEventListener('click',()=>{collapsed=!collapsed;render();});
+    hero.append(summary,toggle);
+    render();
+  };
+
   const preferMobileAgenda = () => {
     if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
     const params = new URLSearchParams(window.location.search);
@@ -165,6 +191,6 @@
   };
 
   if (preferMobileAgenda()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
