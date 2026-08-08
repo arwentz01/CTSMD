@@ -247,9 +247,10 @@
     const viewportHeight=window.visualViewport?.height||window.innerHeight;
     const top=Math.max(0,screen.getBoundingClientRect().top);
     const tabs=window.innerWidth<=780?document.querySelector('[data-mobile-app-tabs]'):null;
-    const bottomInset=tabs?.getBoundingClientRect().height||0;
+    const tabTop=tabs?.getBoundingClientRect().top;
+    const lowerEdge=window.innerWidth<=780&&Number.isFinite(tabTop)?Math.min(viewportHeight,tabTop):viewportHeight;
     const breathingRoom=window.innerWidth<=780?0:14;
-    const available=Math.max(260,Math.floor(viewportHeight-top-bottomInset-breathingRoom));
+    const available=Math.max(260,Math.floor(lowerEdge-top-breathingRoom));
     screen.style.height=`${available}px`;
 
     const thread=screen.querySelector('.comm-thread');
@@ -295,9 +296,10 @@
     const viewportHeight=window.visualViewport?.height||window.innerHeight;
     const top=Math.max(0,shell.getBoundingClientRect().top);
     const tabs=window.innerWidth<=780?document.querySelector('[data-mobile-app-tabs]'):null;
-    const bottomInset=tabs?.getBoundingClientRect().height||0;
+    const tabTop=tabs?.getBoundingClientRect().top;
+    const lowerEdge=window.innerWidth<=780&&Number.isFinite(tabTop)?Math.min(viewportHeight,tabTop):viewportHeight;
     const breathingRoom=window.innerWidth<=780?8:14;
-    const available=Math.max(260,Math.floor(viewportHeight-top-bottomInset-breathingRoom));
+    const available=Math.max(260,Math.floor(lowerEdge-top-breathingRoom));
     shell.style.setProperty('--community-chat-height',`${available}px`);
 
     if(!communityThreadScrolled){
