@@ -17,4 +17,7 @@
   .comm-hero p{
     color:#786d71!important;
   }
+  body[data-native-route="messages-thread"] .comm-thread-layout .comm-participants{
+    display:block!important;
+  }
 }
