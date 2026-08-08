@@ -57,7 +57,7 @@ final class CalendarExperience
 
     private static function page(PDO $db,array $user,string $basePath):never
     {
-        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$view=in_array(($_GET['view']??'month'),['month','week','agenda'],true)?(string)$_GET['view']:'month';$date=self::date((string)($_GET['date']??''));
+        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$requestedView=(string)($_GET['view']??'month');$view=in_array($requestedView,['month','week','agenda'],true)?$requestedView:'month';$date=self::date((string)($_GET['date']??''));
         $children=self::familyChildren($db,(int)$user['id']);$childId=filter_input(INPUT_GET,'child',FILTER_VALIDATE_INT)?:0;$calendarUser=$user;foreach($children as $child)if((int)$child['id']===$childId)$calendarUser=$child;
         $productions=ProductionContext::activeProductions($db,$calendarUser);$productionFilter=filter_input(INPUT_GET,'production',FILTER_VALIDATE_INT)?:0;$filter=$productionFilter>0?$productionFilter:null;$groups=self::groupOptions($db,$productions);$groupFilter=filter_input(INPUT_GET,'group',FILTER_VALIDATE_INT)?:0;
         [$from,$to]=self::range($view,$date);$events=CalendarService::visibleEvents($db,$calendarUser,$from,$to,$filter);
