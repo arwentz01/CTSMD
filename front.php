@@ -27,6 +27,7 @@ require_once __DIR__.'/src/AccountManagementExperience.php';if(AccountManagement
 require_once __DIR__.'/src/RegistrationOperationsExperience.php';if(RegistrationOperationsExperience::handles($route))RegistrationOperationsExperience::render($route,$detectedBasePath);
 require_once __DIR__.'/src/EmailOperationsExperience.php';if(EmailOperationsExperience::handles($route))EmailOperationsExperience::render($detectedBasePath);
 require_once __DIR__.'/src/NotificationPreferenceExperience.php';if(NotificationPreferenceExperience::handles($route))NotificationPreferenceExperience::render($detectedBasePath);
+require_once __DIR__.'/src/HelpExperience.php';if(HelpExperience::handles($route))HelpExperience::render($detectedBasePath);
 require_once __DIR__.'/src/FamilyDashboardExperience.php';if(FamilyDashboardExperience::handles($route))FamilyDashboardExperience::render($route,$detectedBasePath);
 require_once __DIR__.'/src/HomeExperience.php';if(HomeExperience::handles($route))HomeExperience::render($route,$detectedBasePath);
 require_once __DIR__.'/src/StaffDashboardExperience.php';if(StaffDashboardExperience::handles($route))StaffDashboardExperience::render($route,$detectedBasePath);
