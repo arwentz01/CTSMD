@@ -286,4 +286,132 @@ body[data-native-route="channels-view"] .community-page.channel-open .community-
     background:#fff!important;
     color:#756a6e!important;
   }
+
+  /* /channels landing: same CTSMD light app canvas as the rest of Connect. */
+  body[data-native-route="channels"],
+  body[data-native-route="channels"] .unified-main,
+  body[data-native-route="channels"] .comm-page.community-page{
+    background:#f7f4f2!important;
+    color:#211a1d!important;
+  }
+  body[data-native-route="channels"] .comm-page.community-page{
+    min-height:0!important;
+    padding:10px 12px calc(82px + env(safe-area-inset-bottom))!important;
+  }
+  body[data-native-route="channels"] .community-shell{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+  body[data-native-route="channels"] .community-rail{
+    width:100%!important;
+    background:#fff!important;
+    color:#211a1d!important;
+    border:1px solid #e4dcdf!important;
+    border-radius:16px!important;
+    box-shadow:0 5px 20px rgba(42,29,34,.045)!important;
+    overflow:hidden!important;
+  }
+  body[data-native-route="channels"] .community-rail-head{
+    padding:15px 15px 12px!important;
+    background:#fff!important;
+    border-bottom:1px solid #eee7e9!important;
+  }
+  body[data-native-route="channels"] .community-rail-head small{
+    color:#a6192e!important;
+    font-size:8px!important;
+    font-weight:850!important;
+    letter-spacing:.13em!important;
+  }
+  body[data-native-route="channels"] .community-rail-head h2{
+    color:#211a1d!important;
+    font-family:Georgia,serif!important;
+    font-size:24px!important;
+    line-height:1.05!important;
+    margin:3px 0 2px!important;
+  }
+  body[data-native-route="channels"] .community-rail-head p{
+    color:#7f7478!important;
+    font-size:10px!important;
+    margin:0!important;
+  }
+  body[data-native-route="channels"] .community-rail-head a{
+    display:inline-flex!important;
+    margin-top:8px!important;
+    color:#a6192e!important;
+    font-size:10px!important;
+    font-weight:800!important;
+  }
+  body[data-native-route="channels"] .community-rail-list{
+    display:block!important;
+    background:#fff!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+  body[data-native-route="channels"] .community-rail-item{
+    display:grid!important;
+    grid-template-columns:28px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-height:56px!important;
+    padding:10px 13px!important;
+    background:#fff!important;
+    color:#211a1d!important;
+    border:0!important;
+    border-top:1px solid #f0eaec!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  body[data-native-route="channels"] .community-rail-item:first-child{border-top:0!important}
+  body[data-native-route="channels"] .community-rail-item:active{background:#faf4f5!important}
+  body[data-native-route="channels"] .community-rail-item.active{
+    background:#f8edef!important;
+    box-shadow:inset 3px 0 0 #a6192e!important;
+  }
+  body[data-native-route="channels"] .community-rail-item>span{
+    width:28px!important;
+    height:28px!important;
+    display:grid!important;
+    place-items:center!important;
+    color:#a6192e!important;
+    font-size:17px!important;
+    font-weight:800!important;
+  }
+  body[data-native-route="channels"] .community-rail-item>div{min-width:0!important}
+  body[data-native-route="channels"] .community-rail-item b{
+    display:block!important;
+    color:#211a1d!important;
+    font-size:13px!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  body[data-native-route="channels"] .community-rail-item small{
+    display:block!important;
+    color:#8a7f83!important;
+    font-size:9px!important;
+    line-height:1.2!important;
+    margin-top:2px!important;
+  }
+  body[data-native-route="channels"] .community-rail-item em{
+    min-width:max-content!important;
+    height:22px!important;
+    padding:0 7px!important;
+    background:#a6192e!important;
+    color:#fff!important;
+    border:0!important;
+    border-radius:999px!important;
+    font-size:8px!important;
+    font-style:normal!important;
+    font-weight:850!important;
+    white-space:nowrap!important;
+  }
+  body[data-native-route="channels"] .community-pane{display:none!important}
 }
