@@ -222,21 +222,41 @@
     return true;
   };
 
-  const configureMessageComposerDock = () => {
+  let messageThreadScrolled=false;
+  const configureMessageThreadViewport = () => {
     if (relativePath() !== '/messages/thread') return;
+    const page=document.querySelector('.comm-page');
+    const head=page?.querySelector('.comm-thread-head');
+    const participants=page?.querySelector('.comm-participants');
+    const layout=page?.querySelector('.comm-thread-layout');
     const composer=document.querySelector('.comm-composer');
-    if(!composer) return;
-    if(!composer.dataset.originalParent){
-      const placeholder=document.createComment('message-composer-home');
-      composer.parentNode?.insertBefore(placeholder,composer);
-      composer.__ctsmdPlaceholder=placeholder;
-      composer.dataset.originalParent='1';
+    if(!page||!head||!layout||!composer) return;
+
+    let screen=page.querySelector(':scope > .comm-thread-screen');
+    if(!screen){
+      screen=document.createElement('section');
+      screen.className='comm-thread-screen';
+      head.before(screen);
+      screen.appendChild(head);
+      if(participants) screen.appendChild(participants);
+      screen.appendChild(layout);
+      screen.appendChild(composer);
     }
-    if(window.innerWidth<=780){
-      if(composer.parentElement!==document.body) document.body.appendChild(composer);
-    }else{
-      const placeholder=composer.__ctsmdPlaceholder;
-      if(placeholder?.parentNode) placeholder.parentNode.insertBefore(composer,placeholder.nextSibling);
+
+    const viewportHeight=window.visualViewport?.height||window.innerHeight;
+    const top=Math.max(0,screen.getBoundingClientRect().top);
+    const tabs=window.innerWidth<=780?document.querySelector('[data-mobile-app-tabs]'):null;
+    const bottomInset=tabs?.getBoundingClientRect().height||0;
+    const breathingRoom=window.innerWidth<=780?0:14;
+    const available=Math.max(260,Math.floor(viewportHeight-top-bottomInset-breathingRoom));
+    screen.style.height=`${available}px`;
+
+    const thread=screen.querySelector('.comm-thread');
+    if(thread&&!messageThreadScrolled){
+      requestAnimationFrame(()=>{
+        thread.scrollTop=thread.scrollHeight;
+        messageThreadScrolled=true;
+      });
     }
   };
 
@@ -284,11 +304,12 @@
     const width=window.innerWidth;
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
-    configureMessageComposerDock();
+    configureMessageThreadViewport();
   };
 
   if (preferMobileAgenda()) return;
   if (configureVolunteerLanding()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageComposerDock(); configureCommunityPostMenus(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageThreadViewport(); configureCommunityPostMenus(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
+  window.visualViewport?.addEventListener('resize', configureMessageThreadViewport, {passive:true});
 })();
