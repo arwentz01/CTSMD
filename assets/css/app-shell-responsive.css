@@ -26,11 +26,32 @@
   button,.button,a{touch-action:manipulation}
   table{font-size:.94em}
   .mobile-app-tabs{display:none!important}
+
+  /* Rehearsal tablet: treat operational pages like a digital clipboard. */
+  .pd-page,.att-page{padding:18px!important;max-width:none!important}
+  .pd-hero,.att-hero,.att-detail-head{border-radius:18px!important;padding:20px!important}
+  .pd-hero h2,.att-hero h2,.att-detail-head h2{font-size:clamp(1.65rem,3vw,2.3rem)!important}
+  .pd-summary{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important;margin:12px 0 16px!important}
+  .pd-summary article{padding:12px!important;border-radius:14px!important}.pd-summary b{font-size:1.35rem!important}
+  .pd-layout{grid-template-columns:minmax(0,1.55fr) minmax(260px,.7fr)!important;gap:14px!important}
+  .pd-section,.pd-panel,.pd-brief{border-radius:16px!important;padding:14px!important}
+  .pd-call{grid-template-columns:88px minmax(0,1fr)!important;padding:14px 0!important}.pd-call-title{gap:12px!important}
+  .pd-call-title a,.pd-hero-actions a,.pd-hero-actions button{min-height:44px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+  .pd-side{gap:12px!important}.pd-mini{min-height:48px!important}
+  .att-summary{grid-template-columns:repeat(4,1fr)!important;gap:8px!important}.att-summary span{padding:12px!important;border-radius:14px!important}.att-summary b{font-size:1.45rem!important}
+  .att-person{grid-template-columns:minmax(180px,1fr) minmax(180px,1fr)!important;gap:10px!important;padding:12px!important;border-radius:14px!important}.att-report{grid-column:2!important}
+  .att-person select,.att-person input{min-height:46px!important;font-size:15px!important}.att-roster{gap:8px!important}
+
+  /* Family/member surfaces stay calmer and more card-like on tablet. */
+  .family-dashboard{padding:18px!important}.fd-hero{padding:22px 24px!important;border-radius:18px!important}.fd-stats{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;margin-bottom:20px!important}.fd-main-grid{grid-template-columns:1fr!important}.fd-update-grid{grid-template-columns:repeat(2,1fr)!important}
+  .comm-page{padding:18px!important}.comm-channel-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.comm-thread-layout{grid-template-columns:minmax(0,1fr) minmax(220px,.42fr)!important}
 }
 
 @media (min-width:900px) and (max-width:1180px) and (orientation:landscape){
   :root{--app-shell-tablet-nav:226px}
   .unified-header{height:72px!important}.unified-page{padding:24px 28px!important}
+  .pd-layout{grid-template-columns:minmax(0,1.7fr) minmax(300px,.72fr)!important}
+  .att-person{grid-template-columns:minmax(190px,1fr) minmax(190px,1fr) minmax(145px,.68fr) minmax(160px,.9fr)!important}.att-report{grid-column:auto!important}
 }
 
 @media (max-width:780px){
@@ -50,6 +71,18 @@
   button,.button,a{touch-action:manipulation}
   .button,button{min-height:44px}
   [class$="-page"],[class*="-page "]{scroll-margin-top:80px}
+
+  /* Phone content should feel like stacked app screens, not compressed desktop dashboards. */
+  .family-dashboard,.pd-page,.att-page,.comm-page{padding:12px!important}
+  .fd-hero,.pd-hero,.att-hero,.att-detail-head,.comm-hero,.comm-message-intro,.comm-channel-head,.comm-thread-head{border-radius:18px!important}
+  .fd-stats{gap:7px!important}.fd-stats article{border-radius:14px!important;box-shadow:none!important}
+  .fd-child-card,.fd-panel,.comm-channel-card,.comm-conversation,.comm-post,.att-item,.att-person,.pd-section,.pd-panel,.pd-brief{border-radius:16px!important;box-shadow:none!important}
+  .comm-channel-grid,.comm-update-grid{grid-template-columns:1fr!important}
+  .comm-thread-layout{grid-template-columns:1fr!important}.comm-participants{order:-1}
+  .comm-composer{position:sticky;bottom:calc(var(--app-shell-phone-tab) + env(safe-area-inset-bottom) + 6px);z-index:18;background:rgba(243,239,237,.96);backdrop-filter:blur(12px);padding-top:8px!important}
+  .pd-summary{grid-template-columns:repeat(2,1fr)!important}.pd-summary article{padding:12px!important}.pd-call{padding:14px 0!important}
+  .att-summary{grid-template-columns:repeat(2,1fr)!important}.att-person{padding:12px!important}.att-person select,.att-person input{min-height:48px!important}
+  .att-roster>footer{position:sticky;bottom:calc(var(--app-shell-phone-tab) + env(safe-area-inset-bottom) + 6px);z-index:18;background:linear-gradient(transparent,#f3efed 28%);padding-top:20px!important}
 }
 
 @media (max-width:390px){
