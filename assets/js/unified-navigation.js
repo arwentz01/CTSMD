@@ -261,6 +261,29 @@
     }
   };
 
+  const configureMessageComposerKeys = () => {
+    if (relativePath() !== '/messages/thread') return;
+    const area=document.querySelector('.comm-composer textarea[name="body"]');
+    const form=area?.closest('form');
+    if(!area||!form||area.dataset.enterSend==='1') return;
+    area.dataset.enterSend='1';
+    const resize=()=>{
+      const baseline=window.innerWidth<=780?38:40;
+      const maximum=window.innerWidth<=780?92:116;
+      area.style.setProperty('height','0px','important');
+      const next=Math.max(baseline,Math.min(area.scrollHeight,maximum));
+      area.style.setProperty('height',`${next}px`,'important');
+    };
+    area.addEventListener('input',resize);
+    area.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'||event.shiftKey||event.isComposing) return;
+      event.preventDefault();
+      if(!area.value.trim()) return;
+      if(form.requestSubmit) form.requestSubmit(); else form.submit();
+    });
+    resize();
+  };
+
   let communityThreadScrolled=false;
   const configureCommunityThreadViewport = () => {
     if (relativePath() !== '/channels/view') return;
@@ -330,12 +353,13 @@
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
     configureMessageThreadViewport();
+    configureMessageComposerKeys();
     configureCommunityThreadViewport();
   };
 
   if (preferMobileAgenda()) return;
   if (configureVolunteerLanding()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageThreadViewport(); configureCommunityThreadViewport(); configureCommunityPostMenus(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageThreadViewport(); configureMessageComposerKeys(); configureCommunityThreadViewport(); configureCommunityPostMenus(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
-  window.visualViewport?.addEventListener('resize', ()=>{configureMessageThreadViewport();configureCommunityThreadViewport();}, {passive:true});
+  window.visualViewport?.addEventListener('resize', ()=>{configureMessageThreadViewport();configureMessageComposerKeys();configureCommunityThreadViewport();}, {passive:true});
 })();
