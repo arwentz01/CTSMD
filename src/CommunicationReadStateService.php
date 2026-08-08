@@ -60,6 +60,8 @@ final class CommunicationReadStateService
             JOIN channel_read_states crs ON crs.channel_id = cp.channel_id AND crs.user_id = :user
             WHERE cp.channel_id = :channel
               AND cp.moderation_status = 'published'
+              AND cp.hidden_at IS NULL
+              AND cp.deleted_at IS NULL
               AND cp.id > crs.last_read_post_id
               AND cp.author_user_id <> :author");
         foreach ($channels as $channel) {
@@ -84,7 +86,7 @@ final class CommunicationReadStateService
 
     public static function markChannelRead(PDO $db, int $userId, int $channelId): void
     {
-        $stmt = $db->prepare("SELECT COALESCE(MAX(id),0) FROM channel_posts WHERE channel_id = :channel AND moderation_status = 'published'");
+        $stmt = $db->prepare("SELECT COALESCE(MAX(id),0) FROM channel_posts WHERE channel_id = :channel AND moderation_status = 'published' AND hidden_at IS NULL AND deleted_at IS NULL");
         $stmt->execute(['channel' => $channelId]);
         $latest = (int)$stmt->fetchColumn();
         $upsert = $db->prepare("INSERT INTO channel_read_states (channel_id,user_id,last_read_post_id,last_read_at)
@@ -98,7 +100,7 @@ final class CommunicationReadStateService
         $epoch = (string)$db->query("SELECT started_at FROM communication_read_state_meta WHERE id = 1")->fetchColumn();
         if ($epoch === '') $epoch = '1970-01-01 00:00:00';
         $exists = $db->prepare('SELECT 1 FROM channel_read_states WHERE channel_id = :channel AND user_id = :user LIMIT 1');
-        $baseline = $db->prepare("SELECT COALESCE(MAX(id),0) FROM channel_posts WHERE channel_id = :channel AND moderation_status = 'published' AND created_at < :epoch");
+        $baseline = $db->prepare("SELECT COALESCE(MAX(id),0) FROM channel_posts WHERE channel_id = :channel AND moderation_status = 'published' AND hidden_at IS NULL AND deleted_at IS NULL AND created_at < :epoch");
         $insert = $db->prepare("INSERT IGNORE INTO channel_read_states (channel_id,user_id,last_read_post_id,last_read_at) VALUES (:channel,:user,:post,:read_at)");
         foreach ($channels as $channel) {
             $channelId = (int)$channel['id'];
