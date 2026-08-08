@@ -5,6 +5,7 @@
     const files = [
       ['app-shell-responsive.css', 'appShellResponsive'],
       ['mobile-native-experience.css', 'mobileNativeExperience'],
+      ['mobile-native-hotfixes.css', 'mobileNativeHotfixes'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
