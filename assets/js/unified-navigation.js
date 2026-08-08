@@ -222,6 +222,24 @@
     return true;
   };
 
+  const configureMessageComposerDock = () => {
+    if (relativePath() !== '/messages/thread') return;
+    const composer=document.querySelector('.comm-composer');
+    if(!composer) return;
+    if(!composer.dataset.originalParent){
+      const placeholder=document.createComment('message-composer-home');
+      composer.parentNode?.insertBefore(placeholder,composer);
+      composer.__ctsmdPlaceholder=placeholder;
+      composer.dataset.originalParent='1';
+    }
+    if(window.innerWidth<=780){
+      if(composer.parentElement!==document.body) document.body.appendChild(composer);
+    }else{
+      const placeholder=composer.__ctsmdPlaceholder;
+      if(placeholder?.parentNode) placeholder.parentNode.insertBefore(composer,placeholder.nextSibling);
+    }
+  };
+
   const preferMobileAgenda = () => {
     if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
     const params = new URLSearchParams(window.location.search);
@@ -236,10 +254,11 @@
     const width=window.innerWidth;
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
+    configureMessageComposerDock();
   };
 
   if (preferMobileAgenda()) return;
   if (configureVolunteerLanding()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageComposerDock(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
