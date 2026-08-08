@@ -6,6 +6,7 @@
       ['app-shell-responsive.css', 'appShellResponsive'],
       ['mobile-native-experience.css', 'mobileNativeExperience'],
       ['mobile-native-hotfixes.css', 'mobileNativeHotfixes'],
+      ['mobile-theatre-polish.css', 'mobileTheatrePolish'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -111,12 +112,23 @@
     }
   };
 
+  const preferMobileAgenda = () => {
+    if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('view')) return false;
+    params.set('view', 'agenda');
+    const target = `${window.location.pathname}?${params.toString()}`;
+    window.location.replace(target);
+    return true;
+  };
+
   const applyDeviceMode = () => {
     const width=window.innerWidth;
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
   };
 
+  if (preferMobileAgenda()) return;
   buildMobileTabs(); configureNativeHeader(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
