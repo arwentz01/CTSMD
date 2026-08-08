@@ -240,6 +240,36 @@
     }
   };
 
+  const configureCommunityPostMenus = () => {
+    if (relativePath() !== '/channels/view') return;
+    const menus=[...document.querySelectorAll('.comm-post-actions')];
+    if(!menus.length) return;
+    const closeMenus=except=>menus.forEach(menu=>{
+      if(menu===except) return;
+      menu.classList.remove('open');
+      menu.querySelector('.comm-post-menu-toggle')?.setAttribute('aria-expanded','false');
+    });
+    menus.forEach(menu=>{
+      if(menu.querySelector('.comm-post-menu-toggle')) return;
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='comm-post-menu-toggle';
+      button.textContent='•••';
+      button.setAttribute('aria-label','Post options');
+      button.setAttribute('aria-expanded','false');
+      button.addEventListener('click',event=>{
+        event.stopPropagation();
+        const open=!menu.classList.contains('open');
+        closeMenus(menu);
+        menu.classList.toggle('open',open);
+        button.setAttribute('aria-expanded',open?'true':'false');
+      });
+      menu.prepend(button);
+    });
+    document.addEventListener('click',()=>closeMenus(null));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenus(null);});
+  };
+
   const preferMobileAgenda = () => {
     if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
     const params = new URLSearchParams(window.location.search);
@@ -259,6 +289,6 @@
 
   if (preferMobileAgenda()) return;
   if (configureVolunteerLanding()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageComposerDock(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); configureMessageComposerDock(); configureCommunityPostMenus(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
