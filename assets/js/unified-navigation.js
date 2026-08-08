@@ -7,6 +7,7 @@
       ['mobile-native-experience.css', 'mobileNativeExperience'],
       ['mobile-native-hotfixes.css', 'mobileNativeHotfixes'],
       ['mobile-theatre-polish.css', 'mobileTheatrePolish'],
+      ['product-polish.css', 'productPolish'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -112,6 +113,41 @@
     }
   };
 
+  const configureHelp = () => {
+    const header=document.querySelector('.unified-header'); if(!header || header.querySelector('.unified-help')) return;
+    const path=relativePath();
+    const help=document.createElement('a');
+    help.className='unified-help';
+    help.href=`${appBase}/help${path.startsWith('/messages')?'#messages':''}`;
+    help.setAttribute('aria-label',path.startsWith('/messages')?'Messaging safety help':'Help and safety information');
+    help.title=path.startsWith('/messages')?'Messaging safety':'Help & Safety';
+    help.textContent='?';
+    const utilities=header.querySelector('.unified-utilities');
+    if(utilities) utilities.prepend(help); else header.appendChild(help);
+  };
+
+  const trimDemoCopy = () => {
+    const path=relativePath();
+    if(path==='/messages'){
+      const intro=document.querySelector('.comm-message-intro');
+      const heading=intro?.querySelector('h2');
+      const paragraph=intro?.querySelector('p');
+      if(heading) heading.textContent='Your conversations';
+      paragraph?.remove();
+    }
+    if(path==='/messages/new'){
+      const head=document.querySelector('.comm-channel-head');
+      const paragraph=head?.querySelector('p');
+      paragraph?.remove();
+    }
+    if(path.startsWith('/messages/thread')){
+      document.querySelectorAll('.comm-safety-banner').forEach(node=>node.remove());
+      const threadHead=document.querySelector('.comm-thread-head');
+      const participantCopy=threadHead?.querySelector('p');
+      if(participantCopy) participantCopy.textContent=participantCopy.textContent?.trim()||'';
+    }
+  };
+
   const preferMobileAgenda = () => {
     if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
     const params = new URLSearchParams(window.location.search);
@@ -129,6 +165,6 @@
   };
 
   if (preferMobileAgenda()) return;
-  buildMobileTabs(); configureNativeHeader(); applyDeviceMode();
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
