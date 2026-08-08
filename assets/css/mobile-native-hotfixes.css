@@ -1,0 +1,20 @@
+/* CTSMD Connect mobile-native corrective overrides.
+   Loaded after feature styles so native phone presentation wins deliberately. */
+@media (max-width:780px){
+  .comm-message-intro h2,
+  .comm-hero h2,
+  .comm-channel-head h2,
+  .comm-thread-head h2{
+    color:#211a1d!important;
+  }
+  .comm-message-intro>div>small,
+  .comm-hero>small,
+  .comm-channel-head small,
+  .comm-thread-head small{
+    color:#b31d35!important;
+  }
+  .comm-message-intro p,
+  .comm-hero p{
+    color:#786d71!important;
+  }
+}
