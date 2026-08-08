@@ -17,11 +17,11 @@ final class CommunityAttachmentService
     public static function forPosts(PDO $db,array $postIds):array
     {
         $postIds=array_values(array_unique(array_map('intval',$postIds)));if(!$postIds)return [];$ph=implode(',',array_fill(0,count($postIds),'?'));
-        $s=$db->prepare("SELECT cpa.id,cpa.post_id,cpa.stored_file_id,sfv.original_name,sfv.byte_size,sfv.extension,sfv.mime_type FROM channel_post_attachments cpa JOIN stored_files sf ON sf.id=cpa.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=cpa.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE cpa.post_id IN ($ph) ORDER BY cpa.post_id,cpa.sort_order,cpa.id");$s->execute($postIds);$out=[];foreach($s->fetchAll() as $row)$out[(int)$row['post_id']][]=$row;return$out;
+        $s=$db->prepare("SELECT cpa.id,cpa.post_id,cpa.stored_file_id,sfv.original_name,sfv.byte_size,sfv.extension,sfv.mime_type FROM channel_post_attachments cpa JOIN channel_posts cp ON cp.id=cpa.post_id AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL JOIN stored_files sf ON sf.id=cpa.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=cpa.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE cpa.post_id IN ($ph) ORDER BY cpa.post_id,cpa.sort_order,cpa.id");$s->execute($postIds);$out=[];foreach($s->fetchAll() as $row)$out[(int)$row['post_id']][]=$row;return$out;
     }
 
     public static function attachment(PDO $db,int $attachmentId):?array
     {
-        $s=$db->prepare("SELECT cpa.id,cpa.post_id,cpa.stored_file_id,cp.channel_id,cp.moderation_status,sfv.* FROM channel_post_attachments cpa JOIN channel_posts cp ON cp.id=cpa.post_id JOIN stored_files sf ON sf.id=cpa.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=cpa.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE cpa.id=:id LIMIT 1");$s->execute(['id'=>$attachmentId]);return$s->fetch()?:null;
+        $s=$db->prepare("SELECT cpa.id,cpa.post_id,cpa.stored_file_id,cp.channel_id,cp.moderation_status,cp.hidden_at,cp.deleted_at,sfv.* FROM channel_post_attachments cpa JOIN channel_posts cp ON cp.id=cpa.post_id JOIN stored_files sf ON sf.id=cpa.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=cpa.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE cpa.id=:id LIMIT 1");$s->execute(['id'=>$attachmentId]);return$s->fetch()?:null;
     }
 }
