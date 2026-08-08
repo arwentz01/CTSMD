@@ -1,4 +1,13 @@
 (() => {
+  const script = document.currentScript;
+  if (script?.src && !document.querySelector('link[data-app-shell-responsive]')) {
+    const responsive = document.createElement('link');
+    responsive.rel = 'stylesheet';
+    responsive.href = script.src.replace('/assets/js/unified-navigation.js', '/assets/css/app-shell-responsive.css');
+    responsive.dataset.appShellResponsive = '';
+    document.head.appendChild(responsive);
+  }
+
   const sidebar = document.querySelector('[data-unified-sidebar]');
   const scrim = document.querySelector('[data-nav-scrim]');
   const openButtons = document.querySelectorAll('[data-nav-open]');
