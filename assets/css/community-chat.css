@@ -1,0 +1,53 @@
+/* CTSMD Connect Community chat surface */
+.community-pane-feed{scrollbar-gutter:stable}.comm-post header{position:relative}.comm-post-actions{margin-left:auto;display:flex;gap:4px;align-items:center}.comm-post-action{border:0;background:transparent;color:#7a6f73;font:800 9px/1 system-ui;padding:5px 7px;border-radius:7px;cursor:pointer}.comm-post-action:hover{background:#f1eaec;color:#a6192e}.comm-post-action.danger:hover{background:#fdecef;color:#9f1028}.comm-post.pinned header>div>b:after{content:' · Pinned';color:#9a7214;font-size:10px;font-weight:800}.community-composer textarea{resize:none;overflow-y:hidden}.community-composer .comm-compose-actions{align-items:center}.community-composer .button{min-width:auto;padding:9px 14px}.community-composer .comm-attach-compact{width:34px!important;height:34px!important;min-width:34px!important;font-size:20px!important}
+
+@media(max-width:780px){
+  body[data-native-route="channels"],body[data-native-route="channels-view"]{background:#171315!important;color:#f7f2f3!important}
+  body[data-native-route="channels"] .unified-main,body[data-native-route="channels-view"] .unified-main{background:#171315!important}
+  body[data-native-route="channels"] .comm-page,body[data-native-route="channels-view"] .comm-page{background:#171315!important;padding:8px 10px calc(78px + env(safe-area-inset-bottom))!important;min-height:calc(100dvh - 56px)!important}
+  body[data-native-route="channels"] .community-shell,body[data-native-route="channels-view"] .community-shell{background:#211a1d!important;border:1px solid rgba(212,167,44,.25)!important;border-radius:16px!important;overflow:hidden!important}
+  body[data-native-route="channels"] .community-rail{background:linear-gradient(180deg,#24191d,#171315)!important}
+  body[data-native-route="channels"] .community-rail-head{padding:15px 14px 12px!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+  body[data-native-route="channels"] .community-rail-head small{color:#d4a72c!important}
+  body[data-native-route="channels"] .community-rail-head h2{color:#fff!important;font-family:Georgia,serif!important;font-size:25px!important;margin:3px 0!important}
+  body[data-native-route="channels"] .community-rail-head p{color:#b9adb1!important}
+  body[data-native-route="channels"] .community-rail-head a{display:inline-flex!important;margin-top:8px!important;color:#f0c95f!important;font-size:10px!important;font-weight:800!important}
+  body[data-native-route="channels"] .community-rail-list{background:transparent!important;border:0!important;border-radius:0!important}
+  body[data-native-route="channels"] .community-rail-item{color:#f2ecee!important;border-top:1px solid rgba(255,255,255,.07)!important;padding:12px 13px!important;background:transparent!important}
+  body[data-native-route="channels"] .community-rail-item:first-child{border-top:0!important}
+  body[data-native-route="channels"] .community-rail-item.active{background:rgba(166,25,46,.2)!important;box-shadow:inset 3px 0 0 #d4a72c!important}
+  body[data-native-route="channels"] .community-rail-item>span{color:#d4a72c!important}
+  body[data-native-route="channels"] .community-rail-item b{color:#fff!important;font-size:14px!important}
+  body[data-native-route="channels"] .community-rail-item small{color:#9f9498!important}
+
+  body[data-native-route="channels-view"] .community-page.channel-open .community-pane{display:flex!important;height:calc(100dvh - 56px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;min-height:0!important;background:#171315!important;border-radius:0!important}
+  body[data-native-route="channels-view"] .community-pane-head{flex:0 0 auto!important;background:#211a1d!important;border-bottom:1px solid rgba(212,167,44,.22)!important;padding:9px 10px!important;min-height:54px!important}
+  body[data-native-route="channels-view"] .community-pane-head>a{background:#31262a!important;color:#f0c95f!important;width:32px!important;height:32px!important}
+  body[data-native-route="channels-view"] .community-pane-head small{color:#d4a72c!important}
+  body[data-native-route="channels-view"] .community-pane-head h2{color:#fff!important;font-size:17px!important;margin:1px 0!important}
+  body[data-native-route="channels-view"] .community-pane-head p{color:#a99da1!important;font-size:9px!important}
+  body[data-native-route="channels-view"] .community-pane-feed{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;background:#171315!important;border:0!important;border-radius:0!important;padding:8px 10px 90px!important;touch-action:pan-y!important}
+  body[data-native-route="channels-view"] .comm-post{display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;column-gap:8px!important;background:transparent!important;border:0!important;border-radius:0!important;padding:8px 2px 9px!important;color:#f3edef!important}
+  body[data-native-route="channels-view"] .comm-post+ .comm-post{border-top:1px solid rgba(255,255,255,.055)!important}
+  body[data-native-route="channels-view"] .comm-post header{grid-column:1 / -1!important;display:grid!important;grid-template-columns:30px minmax(0,1fr) auto!important;gap:8px!important;align-items:start!important}
+  body[data-native-route="channels-view"] .comm-post header>i{width:30px!important;height:30px!important;background:#d4a72c!important;color:#2b210a!important;font-size:9px!important}
+  body[data-native-route="channels-view"] .comm-post header>div b{color:#fff!important;font-size:12px!important}
+  body[data-native-route="channels-view"] .comm-post header>div small{color:#867a7e!important;font-size:8px!important}
+  body[data-native-route="channels-view"] .comm-post>p{grid-column:2 / -1!important;color:#e6dde0!important;font-size:13px!important;line-height:1.38!important;margin:2px 0 1px!important}
+  body[data-native-route="channels-view"] .comm-post.pinned{box-shadow:inset 2px 0 0 #d4a72c!important;background:rgba(212,167,44,.045)!important}
+  body[data-native-route="channels-view"] .comm-post-actions{align-self:start!important;gap:1px!important}
+  body[data-native-route="channels-view"] .comm-post-action{color:#9e9296!important;font-size:8px!important;padding:4px 5px!important}
+  body[data-native-route="channels-view"] .comm-post-action:active{background:#34272c!important;color:#f0c95f!important}
+  body[data-native-route="channels-view"] .comm-attachments{grid-column:2 / -1!important;margin-top:5px!important}
+  body[data-native-route="channels-view"] .comm-attachments a{background:#2a2124!important;border-color:rgba(255,255,255,.08)!important;color:#eee5e8!important}
+
+  body[data-native-route="channels-view"] .community-composer{position:fixed!important;left:10px!important;right:10px!important;bottom:calc(64px + env(safe-area-inset-bottom))!important;z-index:40!important;margin:0!important;padding:7px 8px!important;border:1px solid rgba(212,167,44,.28)!important;border-radius:16px!important;background:rgba(35,27,30,.97)!important;box-shadow:0 -10px 28px rgba(0,0,0,.22)!important;backdrop-filter:blur(16px)!important}
+  body[data-native-route="channels-view"] .community-composer form,body[data-native-route="channels-view"] .community-composer{gap:0!important}
+  body[data-native-route="channels-view"] .community-composer textarea{height:38px!important;min-height:38px!important;max-height:112px!important;line-height:20px!important;padding:8px 10px!important;border-radius:12px!important;background:#171315!important;border:1px solid rgba(255,255,255,.1)!important;color:#fff!important;font-size:14px!important;margin:0!important;overflow-y:auto!important}
+  body[data-native-route="channels-view"] .community-composer textarea::placeholder{color:#8e8387!important}
+  body[data-native-route="channels-view"] .community-composer .comm-compose-actions{margin-top:5px!important;display:flex!important;gap:6px!important;min-height:34px!important}
+  body[data-native-route="channels-view"] .community-composer .comm-file-name{color:#a99da1!important;flex:1!important;max-width:none!important}
+  body[data-native-route="channels-view"] .community-composer .comm-attach-compact{background:#30262a!important;border-color:rgba(255,255,255,.09)!important;color:#f0c95f!important}
+  body[data-native-route="channels-view"] .community-composer .button{margin-left:auto!important;width:auto!important;min-width:58px!important;min-height:34px!important;padding:7px 12px!important;border-radius:999px!important;font-size:11px!important}
+  body[data-native-route="channels-view"] .community-readonly{position:fixed!important;left:10px!important;right:10px!important;bottom:calc(64px + env(safe-area-inset-bottom))!important;z-index:40!important;background:#2b2225!important;color:#d7cdd0!important;border:1px solid rgba(255,255,255,.08)!important;padding:10px 12px!important;border-radius:14px!important;text-align:center!important}
+}
