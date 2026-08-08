@@ -1,5 +1,12 @@
+@import url('community-landing-polish.css');
+
 /* CTSMD Connect — bounded Community conversation viewport.
    Keeps channel header + composer visible while only the post history scrolls. */
+
+@media(min-width:781px){
+  body[data-native-route="channels-view"] .native-back{display:none!important}
+  body[data-native-route="channels-view"] .unified-utilities{margin-left:auto!important}
+}
 
 body[data-native-route="channels-view"] .community-page.channel-open .community-shell{
   height:var(--community-chat-height,calc(100dvh - 150px));
