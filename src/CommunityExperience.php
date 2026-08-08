@@ -15,89 +15,378 @@ require_once __DIR__ . '/Auth.php';
 final class CommunityExperience
 {
     private const ROUTES = ['/channels', '/channels/view', '/channels/attachment'];
-    public static function handles(string $route): bool{return in_array($route,self::ROUTES,true);}
 
-    public static function render(string $route,string $basePath): never
+    public static function handles(string $route): bool
     {
-        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect($basePath.'/login');$_SESSION['community_csrf']??=bin2hex(random_bytes(24));
-        if($route==='/channels/attachment')self::streamAttachment($db,$user);
-        if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$basePath);
-        $channels=self::channels($db,$user);$unread=CommunicationReadStateService::communityUnread($db,$user);foreach($channels as &$channelRow)$channelRow['unread_count']=(int)($unread['channels'][(int)$channelRow['id']]??0);unset($channelRow);
-        $selected=null;$requested=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;if($route==='/channels/view'&&$requested>0)$selected=self::channel($db,$user,(int)$requested);elseif($channels)$selected=self::channel($db,$user,(int)$channels[0]['id']);self::page($route,$basePath,$user,$channels,$selected);
+        return in_array($route, self::ROUTES, true);
     }
 
-    private static function streamAttachment(PDO $db,array $user):never
+    public static function render(string $route, string $basePath): never
     {
-        $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$attachment=CommunityAttachmentService::attachment($db,(int)$id);if(!$attachment||$attachment['moderation_status']!=='published'){http_response_code(404);exit('Attachment unavailable.');}
-        $s=$db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id LIMIT 1");$s->execute(['id'=>(int)$attachment['channel_id']]);$channel=$s->fetch();if(!$channel||$channel['archived_at']!==null||!self::canRead($db,$user,$channel)){http_response_code(404);exit('Attachment unavailable.');}
-        StorageService::stream(dirname(__DIR__),$attachment,true);
+        Auth::startSession();
+        $db = Database::connect(dirname(__DIR__));
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect($basePath . '/login');
+        $_SESSION['community_csrf'] ??= bin2hex(random_bytes(24));
+
+        if ($route === '/channels/attachment') self::streamAttachment($db, $user);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') self::handlePost($db, $user, $basePath);
+
+        $channels = self::channels($db, $user);
+        $unread = CommunicationReadStateService::communityUnread($db, $user);
+        foreach ($channels as &$channelRow) {
+            $channelRow['unread_count'] = (int)($unread['channels'][(int)$channelRow['id']] ?? 0);
+        }
+        unset($channelRow);
+
+        $selected = null;
+        $requested = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
+        if ($route === '/channels/view' && $requested > 0) {
+            $selected = self::channel($db, $user, (int)$requested);
+        } elseif ($channels) {
+            $selected = self::channel($db, $user, (int)$channels[0]['id']);
+        }
+
+        self::page($route, $basePath, $user, $channels, $selected);
     }
 
-    private static function handlePost(PDO $db,array $user,string $basePath): never
+    private static function streamAttachment(PDO $db, array $user): never
     {
-        if(!hash_equals((string)($_SESSION['community_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired. Please try again.');self::redirect($basePath.'/channels');}$channelId=filter_input(INPUT_POST,'channel_id',FILTER_VALIDATE_INT)?:0;$action=(string)($_POST['action']??'create_post');
-        try{
-            if($action==='toggle_pin'){$postId=filter_input(INPUT_POST,'post_id',FILTER_VALIDATE_INT)?:0;self::togglePin($db,$user,(int)$channelId,(int)$postId);self::flash('success','Featured-post state updated.');}
-            else{$body=trim((string)($_POST['body']??''));$result=self::createPost($db,$user,(int)$channelId,$body,$_FILES['attachment']??[]);$status=$result['status'];if($status==='pending')self::flash('success','Your post is awaiting moderator review and is not visible yet.');elseif($status==='rejected')self::flash('error','This post contains language that is not permitted in CTSMD Community.');else self::flash('success',!empty($result['attached'])?'Post and attachment published to the channel.':'Post published to the channel.');}
-        }catch(RuntimeException $e){self::flash('error',$e->getMessage());}self::redirect($basePath.'/channels/view?id='.(int)$channelId);
+        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
+        $attachment = CommunityAttachmentService::attachment($db, (int)$id);
+        if (!$attachment || $attachment['moderation_status'] !== 'published' || !empty($attachment['hidden_at']) || !empty($attachment['deleted_at'])) {
+            http_response_code(404);
+            exit('Attachment unavailable.');
+        }
+
+        $s = $db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id LIMIT 1");
+        $s->execute(['id' => (int)$attachment['channel_id']]);
+        $channel = $s->fetch();
+        if (!$channel || $channel['archived_at'] !== null || !self::canRead($db, $user, $channel)) {
+            http_response_code(404);
+            exit('Attachment unavailable.');
+        }
+
+        StorageService::stream(dirname(__DIR__), $attachment, true);
     }
 
-    private static function createPost(PDO $db,array $user,int $channelId,string $body,array $upload): array
+    private static function handlePost(PDO $db, array $user, string $basePath): never
     {
-        if($channelId<1)throw new RuntimeException('That channel could not be found.');if($body===''||mb_strlen($body)>5000)throw new RuntimeException('Write a post up to 5,000 characters.');$db->beginTransaction();try{$stmt=$db->prepare("SELECT c.id,c.production_id,c.name,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id FOR UPDATE");$stmt->execute(['id'=>$channelId]);$channel=$stmt->fetch();if(!$channel||$channel['archived_at']!==null)throw new RuntimeException('That channel is no longer available.');if(!self::canRead($db,$user,$channel))throw new RuntimeException('You do not have access to that channel.');if(!self::canPost($db,$user,$channel))throw new RuntimeException('This channel is read-only for your account.');$decision=ModerationService::evaluate($db,$body);$status=(string)($decision['status']??'');if(!in_array($status,['published','pending','rejected'],true))throw new RuntimeException('We could not verify this post right now. Please try again.');$term=is_array($decision['term']??null)?$decision['term']:null;$termId=$term?(int)$term['id']:null;$reason=$decision['reason']??null;$insert=$db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,moderation_status,moderation_term_id,moderation_reason,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,:status,:term_id,:reason,0,NULL,CURRENT_TIMESTAMP)');$insert->execute(['channel'=>$channelId,'author'=>(int)$user['id'],'body'=>$body,'status'=>$status,'term_id'=>$termId,'reason'=>$reason]);$postId=(int)$db->lastInsertId();$attached=null;if($status!=='rejected')$attached=CommunityAttachmentService::attachUpload($db,dirname(__DIR__),$postId,(int)$user['id'],$upload);self::audit($db,(int)$user['id'],$status==='published'?'community.post_created':'community.post_flagged','channel_post',$postId,$status==='published'?'Published a community channel post.':'Community post intercepted by moderation.',['channel_id'=>$channelId,'channel_name'=>$channel['name'],'moderation_status'=>$status,'moderation_term_id'=>$termId,'attachment'=>!empty($attached),'category'=>$term['category']??null,'severity'=>$term['severity']??null]);$db->commit();return ['status'=>$status,'post_id'=>$postId,'attached'=>(bool)$attached];}catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('We could not verify and publish this post right now. Please try again.');}
+        if (!hash_equals((string)($_SESSION['community_csrf'] ?? ''), (string)($_POST['csrf_token'] ?? ''))) {
+            self::flash('error', 'Your session token expired. Please try again.');
+            self::redirect($basePath . '/channels');
+        }
+
+        $channelId = filter_input(INPUT_POST, 'channel_id', FILTER_VALIDATE_INT) ?: 0;
+        $action = (string)($_POST['action'] ?? 'create_post');
+
+        try {
+            if ($action === 'toggle_pin') {
+                $postId = filter_input(INPUT_POST, 'post_id', FILTER_VALIDATE_INT) ?: 0;
+                self::togglePin($db, $user, (int)$channelId, (int)$postId);
+                self::flash('success', 'Pin updated.');
+            } elseif ($action === 'hide_post') {
+                $postId = filter_input(INPUT_POST, 'post_id', FILTER_VALIDATE_INT) ?: 0;
+                self::hidePost($db, $user, (int)$channelId, (int)$postId);
+                self::flash('success', 'Post hidden from Community.');
+            } elseif ($action === 'delete_post') {
+                $postId = filter_input(INPUT_POST, 'post_id', FILTER_VALIDATE_INT) ?: 0;
+                self::deletePost($db, $user, (int)$channelId, (int)$postId);
+                self::flash('success', 'Post deleted from Community.');
+            } else {
+                $body = trim((string)($_POST['body'] ?? ''));
+                $result = self::createPost($db, $user, (int)$channelId, $body, $_FILES['attachment'] ?? []);
+                $status = $result['status'];
+                if ($status === 'pending') self::flash('success', 'Your post is awaiting moderator review and is not visible yet.');
+                elseif ($status === 'rejected') self::flash('error', 'This post contains language that is not permitted in CTSMD Community.');
+                else self::flash('success', !empty($result['attached']) ? 'Post and attachment published.' : 'Post published.');
+            }
+        } catch (RuntimeException $e) {
+            self::flash('error', $e->getMessage());
+        }
+
+        self::redirect($basePath . '/channels/view?id=' . (int)$channelId);
     }
 
-    private static function togglePin(PDO $db,array $user,int $channelId,int $postId):void
+    private static function createPost(PDO $db, array $user, int $channelId, string $body, array $upload): array
     {
-        if(!AccessPolicy::canManageCommunity($user)&&!AccessPolicy::canModerateCommunity($user))throw new RuntimeException('Community management permission is required to feature posts.');
-        $db->beginTransaction();try{$c=$db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id FOR UPDATE");$c->execute(['id'=>$channelId]);$channel=$c->fetch();if(!$channel||!self::canRead($db,$user,$channel))throw new RuntimeException('That channel is unavailable.');$p=$db->prepare("SELECT id,pinned FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' FOR UPDATE");$p->execute(['post'=>$postId,'channel'=>$channelId]);$post=$p->fetch();if(!$post)throw new RuntimeException('That post is unavailable.');$next=!(bool)$post['pinned'];$u=$db->prepare('UPDATE channel_posts SET pinned=:pinned,pinned_at=:pinned_at,pinned_by_user_id=:actor WHERE id=:id');$u->execute(['pinned'=>$next?1:0,'pinned_at'=>$next?date('Y-m-d H:i:s'):null,'actor'=>$next?(int)$user['id']:null,'id'=>$postId]);self::audit($db,(int)$user['id'],$next?'community.post_pinned':'community.post_unpinned','channel_post',$postId,$next?'Featured Community post.':'Removed Community post from featured position.',['channel_id'=>$channelId]);$db->commit();}catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e instanceof RuntimeException?$e:new RuntimeException('The featured-post state could not be changed.');}
+        if ($channelId < 1) throw new RuntimeException('That channel could not be found.');
+        if ($body === '' || mb_strlen($body) > 5000) throw new RuntimeException('Write a post up to 5,000 characters.');
+
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare("SELECT c.id,c.production_id,c.name,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id FOR UPDATE");
+            $stmt->execute(['id' => $channelId]);
+            $channel = $stmt->fetch();
+            if (!$channel || $channel['archived_at'] !== null) throw new RuntimeException('That channel is no longer available.');
+            if (!self::canRead($db, $user, $channel)) throw new RuntimeException('You do not have access to that channel.');
+            if (!self::canPost($db, $user, $channel)) throw new RuntimeException('This channel is read-only for your account.');
+
+            $decision = ModerationService::evaluate($db, $body);
+            $status = (string)($decision['status'] ?? '');
+            if (!in_array($status, ['published', 'pending', 'rejected'], true)) throw new RuntimeException('We could not verify this post right now. Please try again.');
+            $term = is_array($decision['term'] ?? null) ? $decision['term'] : null;
+            $termId = $term ? (int)$term['id'] : null;
+            $reason = $decision['reason'] ?? null;
+
+            $insert = $db->prepare('INSERT INTO channel_posts (channel_id,author_user_id,body,moderation_status,moderation_term_id,moderation_reason,pinned,reactions_json,created_at) VALUES (:channel,:author,:body,:status,:term_id,:reason,0,NULL,CURRENT_TIMESTAMP)');
+            $insert->execute(['channel' => $channelId, 'author' => (int)$user['id'], 'body' => $body, 'status' => $status, 'term_id' => $termId, 'reason' => $reason]);
+            $postId = (int)$db->lastInsertId();
+            $attached = null;
+            if ($status !== 'rejected') $attached = CommunityAttachmentService::attachUpload($db, dirname(__DIR__), $postId, (int)$user['id'], $upload);
+
+            self::audit($db, (int)$user['id'], $status === 'published' ? 'community.post_created' : 'community.post_flagged', 'channel_post', $postId, $status === 'published' ? 'Published a Community post.' : 'Community post intercepted by moderation.', ['channel_id' => $channelId, 'channel_name' => $channel['name'], 'moderation_status' => $status, 'moderation_term_id' => $termId, 'attachment' => !empty($attached), 'category' => $term['category'] ?? null, 'severity' => $term['severity'] ?? null]);
+            $db->commit();
+            return ['status' => $status, 'post_id' => $postId, 'attached' => (bool)$attached];
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            if ($e instanceof RuntimeException) throw $e;
+            throw new RuntimeException('We could not verify and publish this post right now. Please try again.');
+        }
     }
 
-    private static function channels(PDO $db,array $user): array
+    private static function togglePin(PDO $db, array $user, int $channelId, int $postId): void
     {
-        $rows=$db->query("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count,MAX(cp.created_at) latest_at FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id AND cp.moderation_status='published' WHERE c.archived_at IS NULL GROUP BY c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title,p.is_active,c.sort_order ORDER BY c.sort_order,c.name")->fetchAll();$visible=[];foreach($rows as $row){if(self::canRead($db,$user,$row)){$row['can_post']=self::canPost($db,$user,$row);$visible[]=$row;}}return $visible;
+        self::requireStaff($user);
+        $db->beginTransaction();
+        try {
+            $post = self::postForModeration($db, $user, $channelId, $postId);
+            $next = !(bool)$post['pinned'];
+            $u = $db->prepare('UPDATE channel_posts SET pinned=:pinned,pinned_at=:pinned_at,pinned_by_user_id=:actor WHERE id=:id');
+            $u->execute(['pinned' => $next ? 1 : 0, 'pinned_at' => $next ? date('Y-m-d H:i:s') : null, 'actor' => $next ? (int)$user['id'] : null, 'id' => $postId]);
+            self::audit($db, (int)$user['id'], $next ? 'community.post_pinned' : 'community.post_unpinned', 'channel_post', $postId, $next ? 'Pinned Community post.' : 'Unpinned Community post.', ['channel_id' => $channelId]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e instanceof RuntimeException ? $e : new RuntimeException('The pin state could not be changed.');
+        }
     }
 
-    private static function channel(PDO $db,array $user,int $id): ?array
+    private static function hidePost(PDO $db, array $user, int $channelId, int $postId): void
     {
-        if($id<1)return null;$stmt=$db->prepare("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");$stmt->execute(['id'=>$id]);$channel=$stmt->fetch();if(!$channel||!self::canRead($db,$user,$channel))return null;$channel['can_post']=self::canPost($db,$user,$channel);$posts=$db->prepare("SELECT cp.id,cp.body,cp.pinned,cp.pinned_at,cp.reactions_json,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' ORDER BY cp.pinned DESC,COALESCE(cp.pinned_at,cp.created_at) DESC,cp.created_at DESC,cp.id DESC");$posts->execute(['id'=>$id]);$channel['posts']=$posts->fetchAll();$attachments=CommunityAttachmentService::forPosts($db,array_map(static fn(array $p):int=>(int)$p['id'],$channel['posts']));foreach($channel['posts'] as &$post)$post['attachments']=$attachments[(int)$post['id']]??[];unset($post);return $channel;
+        self::requireStaff($user);
+        $db->beginTransaction();
+        try {
+            self::postForModeration($db, $user, $channelId, $postId);
+            $u = $db->prepare("UPDATE channel_posts SET hidden_at=CURRENT_TIMESTAMP,hidden_by_user_id=:actor,hidden_reason='Hidden by CTSMD staff',pinned=0,pinned_at=NULL,pinned_by_user_id=NULL WHERE id=:id AND deleted_at IS NULL");
+            $u->execute(['actor' => (int)$user['id'], 'id' => $postId]);
+            self::audit($db, (int)$user['id'], 'community.post_hidden', 'channel_post', $postId, 'Hid Community post from member view.', ['channel_id' => $channelId]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e instanceof RuntimeException ? $e : new RuntimeException('The post could not be hidden.');
+        }
     }
 
-    private static function canRead(PDO $db,array $user,array $channel): bool
+    private static function deletePost(PDO $db, array $user, int $channelId, int $postId): void
     {
-        if(empty($channel['production_id'])&&!Auth::isApprovedMember($user))return false;$mode=(string)($channel['access_mode']??'audience');if($mode==='audience'&&AccessPolicy::isStaff($user))return true;return self::access($db,$user,$channel,'read');
+        self::requireStaff($user);
+        $db->beginTransaction();
+        try {
+            self::postForModeration($db, $user, $channelId, $postId);
+            $u = $db->prepare("UPDATE channel_posts SET deleted_at=CURRENT_TIMESTAMP,deleted_by_user_id=:actor,deleted_reason='Deleted by CTSMD staff',hidden_at=COALESCE(hidden_at,CURRENT_TIMESTAMP),hidden_by_user_id=COALESCE(hidden_by_user_id,:actor2),pinned=0,pinned_at=NULL,pinned_by_user_id=NULL WHERE id=:id AND deleted_at IS NULL");
+            $u->execute(['actor' => (int)$user['id'], 'actor2' => (int)$user['id'], 'id' => $postId]);
+            self::audit($db, (int)$user['id'], 'community.post_deleted', 'channel_post', $postId, 'Deleted Community post from member view.', ['channel_id' => $channelId]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e instanceof RuntimeException ? $e : new RuntimeException('The post could not be deleted.');
+        }
     }
 
-    private static function canPost(PDO $db,array $user,array $channel): bool
+    private static function postForModeration(PDO $db, array $user, int $channelId, int $postId): array
     {
-        if(empty($channel['production_id'])&&!Auth::isApprovedMember($user))return false;$mode=(string)($channel['access_mode']??'audience');if($mode==='audience'&&AccessPolicy::isStaff($user))return true;return self::access($db,$user,$channel,'post');
+        if ($channelId < 1 || $postId < 1) throw new RuntimeException('That post is unavailable.');
+        $c = $db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id LIMIT 1 FOR UPDATE");
+        $c->execute(['id' => $channelId]);
+        $channel = $c->fetch();
+        if (!$channel || !self::canRead($db, $user, $channel)) throw new RuntimeException('That channel is unavailable.');
+        $p = $db->prepare("SELECT id,pinned,hidden_at,deleted_at FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' LIMIT 1 FOR UPDATE");
+        $p->execute(['post' => $postId, 'channel' => $channelId]);
+        $post = $p->fetch();
+        if (!$post || !empty($post['deleted_at'])) throw new RuntimeException('That post is unavailable.');
+        return $post;
     }
 
-    private static function access(PDO $db,array $user,array $channel,string $mode): bool
+    private static function requireStaff(array $user): void
     {
-        $accessMode=(string)($channel['access_mode']??'audience');$audienceOk=self::matchesAnyAudience($db,$user,$channel,self::audiences($channel,$mode));$selectedOk=self::selectedAccess($db,(int)$channel['id'],(int)$user['id'],$mode);$teamOk=self::teamAccess($db,(int)$channel['id'],(int)$user['id'],$mode,$channel);return match($accessMode){'selected'=>$selectedOk,'team'=>$teamOk,'hybrid'=>$audienceOk||$selectedOk||$teamOk,default=>$audienceOk};
+        if (!AccessPolicy::isStaff($user)) throw new RuntimeException('CTSMD staff access is required for Community moderation.');
     }
 
-    private static function selectedAccess(PDO $db,int $channelId,int $userId,string $mode): bool{$column=$mode==='post'?'can_post':'can_read';$stmt=$db->prepare("SELECT $column FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' LIMIT 1");$stmt->execute(['channel'=>$channelId,'user'=>$userId]);return(bool)$stmt->fetchColumn();}
-    private static function teamAccess(PDO $db,int $channelId,int $userId,string $mode,array $channel): bool{if(!empty($channel['production_id'])&&!(bool)($channel['production_active']??false))return false;$column=$mode==='post'?'ct.can_post':'ct.can_read';$stmt=$db->prepare("SELECT 1 FROM channel_teams ct JOIN teams t ON t.id=ct.team_id AND t.active=1 JOIN team_members tm ON tm.team_id=t.id AND tm.status='active' WHERE ct.channel_id=:channel AND tm.user_id=:user AND $column=1 LIMIT 1");$stmt->execute(['channel'=>$channelId,'user'=>$userId]);return(bool)$stmt->fetchColumn();}
-    private static function audiences(array $channel,string $mode): array{$json=(string)($channel[$mode.'_audiences_json']??'');if($json!==''){$decoded=json_decode($json,true);if(is_array($decoded)&&$decoded)return array_values(array_unique(array_map('strval',$decoded)));}$legacy=(string)($channel[$mode.'_scope']??'staff');return[$legacy];}
-
-    private static function matchesAnyAudience(PDO $db,array $user,array $channel,array $audiences): bool
+    private static function channels(PDO $db, array $user): array
     {
-        $userId=(int)$user['id'];$productionId=(int)($channel['production_id']??0);$productionActive=$productionId>0&&(bool)($channel['production_active']??false);$isStudent=AccessPolicy::isStudent($user);$isAdult=!$isStudent;$audienceType=$productionActive?ProductionContext::audienceType($db,$userId,$productionId):null;$activeProductionMember=$productionActive&&$audienceType!==null;foreach($audiences as $audience){$ok=match($audience){'all_members'=>Auth::isApprovedMember($user),'adults'=>Auth::isApprovedMember($user)&&$isAdult,'students'=>Auth::isApprovedMember($user)&&$isStudent,'staff'=>AccessPolicy::isStaff($user),'volunteers'=>Auth::isApprovedMember($user)&&self::activeVolunteer($db,$userId),'production_members'=>$activeProductionMember,'production_adults'=>$activeProductionMember&&$isAdult,'production_students'=>$activeProductionMember&&$audienceType==='student','production_guardians'=>$activeProductionMember&&$audienceType==='guardian','production_staff'=>$activeProductionMember&&$audienceType==='staff',default=>false};if($ok)return true;}return false;
+        $rows = $db->query("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count,MAX(cp.created_at) latest_at FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL WHERE c.archived_at IS NULL GROUP BY c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title,p.is_active,c.sort_order ORDER BY c.sort_order,c.name")->fetchAll();
+        $visible = [];
+        foreach ($rows as $row) {
+            if (self::canRead($db, $user, $row)) {
+                $row['can_post'] = self::canPost($db, $user, $row);
+                $visible[] = $row;
+            }
+        }
+        return $visible;
     }
 
-    private static function activeVolunteer(PDO $db,int $userId): bool{$stmt=$db->prepare('SELECT 1 FROM volunteer_profiles WHERE user_id=:id AND active=1 LIMIT 1');$stmt->execute(['id'=>$userId]);return(bool)$stmt->fetchColumn();}
-    private static function accessLabel(array $channel): string{return match((string)($channel['access_mode']??'audience')){'selected'=>'Selected members','team'=>'Team members','hybrid'=>'Audience + selected members/teams',default=>self::audienceLabel(self::audiences($channel,'read'))};}
-    private static function audienceLabel(array $audiences): string{$labels=['all_members'=>'All members','adults'=>'Adults only','students'=>'Students','staff'=>'Staff only','volunteers'=>'Volunteers','production_members'=>'Production members','production_adults'=>'Production adults','production_students'=>'Production students','production_guardians'=>'Production guardians','production_staff'=>'Production staff'];return implode(', ',array_map(static fn($a)=>$labels[$a]??$a,$audiences));}
-    private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void{$stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$stmt->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
-    private static function flash(string $type,string $message): void{$_SESSION['community_flash']=['type'=>$type,'message'=>$message];}
-    private static function redirect(string $url): never{header('Location: '.$url,true,303);exit;}
-
-    private static function page(string $route,string $basePath,array $user,array $channels,?array $selected): never
+    private static function channel(PDO $db, array $user, int $id): ?array
     {
-        $url=static fn(string $p):string=>($basePath?:'').$p;$esc=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=$_SESSION['community_flash']??$_SESSION['team_flash']??null;unset($_SESSION['community_flash'],$_SESSION['team_flash']);$title=$route==='/channels'?'Community':($selected['name']??'Channel');$channelOpen=$route==='/channels/view';header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=$esc($title)?> · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/communication-implementation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/community-permissions.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/community-attachments.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/channels',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Community',$title,$basePath);?><div class="comm-page community-page<?=$channelOpen?' channel-open':''?>">
+        if ($id < 1) return null;
+        $stmt = $db->prepare("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,p.title production_title,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        $channel = $stmt->fetch();
+        if (!$channel || !self::canRead($db, $user, $channel)) return null;
+        $channel['can_post'] = self::canPost($db, $user, $channel);
+
+        $posts = $db->prepare("SELECT cp.id,cp.body,cp.pinned,cp.pinned_at,cp.reactions_json,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at ASC,cp.id ASC");
+        $posts->execute(['id' => $id]);
+        $channel['posts'] = $posts->fetchAll();
+        $attachments = CommunityAttachmentService::forPosts($db, array_map(static fn(array $p): int => (int)$p['id'], $channel['posts']));
+        foreach ($channel['posts'] as &$post) $post['attachments'] = $attachments[(int)$post['id']] ?? [];
+        unset($post);
+        return $channel;
+    }
+
+    private static function canRead(PDO $db, array $user, array $channel): bool
+    {
+        if (empty($channel['production_id']) && !Auth::isApprovedMember($user)) return false;
+        $mode = (string)($channel['access_mode'] ?? 'audience');
+        if ($mode === 'audience' && AccessPolicy::isStaff($user)) return true;
+        return self::access($db, $user, $channel, 'read');
+    }
+
+    private static function canPost(PDO $db, array $user, array $channel): bool
+    {
+        if (empty($channel['production_id']) && !Auth::isApprovedMember($user)) return false;
+        $mode = (string)($channel['access_mode'] ?? 'audience');
+        if ($mode === 'audience' && AccessPolicy::isStaff($user)) return true;
+        return self::access($db, $user, $channel, 'post');
+    }
+
+    private static function access(PDO $db, array $user, array $channel, string $mode): bool
+    {
+        $accessMode = (string)($channel['access_mode'] ?? 'audience');
+        $audienceOk = self::matchesAnyAudience($db, $user, $channel, self::audiences($channel, $mode));
+        $selectedOk = self::selectedAccess($db, (int)$channel['id'], (int)$user['id'], $mode);
+        $teamOk = self::teamAccess($db, (int)$channel['id'], (int)$user['id'], $mode, $channel);
+        return match ($accessMode) {
+            'selected' => $selectedOk,
+            'team' => $teamOk,
+            'hybrid' => $audienceOk || $selectedOk || $teamOk,
+            default => $audienceOk,
+        };
+    }
+
+    private static function selectedAccess(PDO $db, int $channelId, int $userId, string $mode): bool
+    {
+        $column = $mode === 'post' ? 'can_post' : 'can_read';
+        $stmt = $db->prepare("SELECT $column FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' LIMIT 1");
+        $stmt->execute(['channel' => $channelId, 'user' => $userId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    private static function teamAccess(PDO $db, int $channelId, int $userId, string $mode, array $channel): bool
+    {
+        if (!empty($channel['production_id']) && !(bool)($channel['production_active'] ?? false)) return false;
+        $column = $mode === 'post' ? 'ct.can_post' : 'ct.can_read';
+        $stmt = $db->prepare("SELECT 1 FROM channel_teams ct JOIN teams t ON t.id=ct.team_id AND t.active=1 JOIN team_members tm ON tm.team_id=t.id AND tm.status='active' WHERE ct.channel_id=:channel AND tm.user_id=:user AND $column=1 LIMIT 1");
+        $stmt->execute(['channel' => $channelId, 'user' => $userId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    private static function audiences(array $channel, string $mode): array
+    {
+        $json = (string)($channel[$mode . '_audiences_json'] ?? '');
+        if ($json !== '') {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded) && $decoded) return array_values(array_unique(array_map('strval', $decoded)));
+        }
+        return [(string)($channel[$mode . '_scope'] ?? 'staff')];
+    }
+
+    private static function matchesAnyAudience(PDO $db, array $user, array $channel, array $audiences): bool
+    {
+        $userId = (int)$user['id'];
+        $productionId = (int)($channel['production_id'] ?? 0);
+        $productionActive = $productionId > 0 && (bool)($channel['production_active'] ?? false);
+        $isStudent = AccessPolicy::isStudent($user);
+        $isAdult = !$isStudent;
+        $audienceType = $productionActive ? ProductionContext::audienceType($db, $userId, $productionId) : null;
+        $activeProductionMember = $productionActive && $audienceType !== null;
+
+        foreach ($audiences as $audience) {
+            $ok = match ($audience) {
+                'all_members' => Auth::isApprovedMember($user),
+                'adults' => Auth::isApprovedMember($user) && $isAdult,
+                'students' => Auth::isApprovedMember($user) && $isStudent,
+                'staff' => AccessPolicy::isStaff($user),
+                'volunteers' => Auth::isApprovedMember($user) && self::activeVolunteer($db, $userId),
+                'production_members' => $activeProductionMember,
+                'production_adults' => $activeProductionMember && $isAdult,
+                'production_students' => $activeProductionMember && $audienceType === 'student',
+                'production_guardians' => $activeProductionMember && $audienceType === 'guardian',
+                'production_staff' => $activeProductionMember && $audienceType === 'staff',
+                default => false,
+            };
+            if ($ok) return true;
+        }
+        return false;
+    }
+
+    private static function activeVolunteer(PDO $db, int $userId): bool
+    {
+        $stmt = $db->prepare('SELECT 1 FROM volunteer_profiles WHERE user_id=:id AND active=1 LIMIT 1');
+        $stmt->execute(['id' => $userId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    private static function accessLabel(array $channel): string
+    {
+        return match ((string)($channel['access_mode'] ?? 'audience')) {
+            'selected' => 'Selected members',
+            'team' => 'Team members',
+            'hybrid' => 'Audience + selected members/teams',
+            default => self::audienceLabel(self::audiences($channel, 'read')),
+        };
+    }
+
+    private static function audienceLabel(array $audiences): string
+    {
+        $labels = ['all_members' => 'All members', 'adults' => 'Adults only', 'students' => 'Students', 'staff' => 'Staff only', 'volunteers' => 'Volunteers', 'production_members' => 'Production members', 'production_adults' => 'Production adults', 'production_students' => 'Production students', 'production_guardians' => 'Production guardians', 'production_staff' => 'Production staff'];
+        return implode(', ', array_map(static fn($a) => $labels[$a] ?? $a, $audiences));
+    }
+
+    private static function audit(PDO $db, int $actor, string $event, string $type, int $id, string $summary, array $meta): void
+    {
+        $stmt = $db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');
+        $stmt->execute(['actor' => $actor, 'event' => $event, 'type' => $type, 'id' => $id, 'summary' => $summary, 'meta' => json_encode($meta, JSON_THROW_ON_ERROR)]);
+    }
+
+    private static function flash(string $type, string $message): void
+    {
+        $_SESSION['community_flash'] = ['type' => $type, 'message' => $message];
+    }
+
+    private static function redirect(string $url): never
+    {
+        header('Location: ' . $url, true, 303);
+        exit;
+    }
+
+    private static function page(string $route, string $basePath, array $user, array $channels, ?array $selected): never
+    {
+        $url = static fn(string $p): string => ($basePath ?: '') . $p;
+        $esc = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        $flash = $_SESSION['community_flash'] ?? $_SESSION['team_flash'] ?? null;
+        unset($_SESSION['community_flash'], $_SESSION['team_flash']);
+        $title = $route === '/channels' ? 'Community' : ($selected['name'] ?? 'Channel');
+        $channelOpen = $route === '/channels/view';
+        $staff = AccessPolicy::isStaff($user);
+        header('Content-Type:text/html; charset=utf-8');
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=$esc($title)?> · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/communication-implementation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/community-permissions.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/community-attachments.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/community-chat.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/channels',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Community',$title,$basePath);?><div class="comm-page community-page<?=$channelOpen?' channel-open':''?>">
         <?php if($flash):?><div class="comm-flash <?=$esc($flash['type'])?>"><?=$esc($flash['message'])?></div><?php endif;?>
-        <section class="community-shell"><aside class="community-rail"><header class="community-rail-head"><small>CTSMD COMMUNITY</small><h2>Channels</h2><p>Choose a room to open the conversation.</p><?php if(AccessPolicy::isStaff($user)):?><a href="<?=$url('/admin/channels')?>">Manage channels</a><?php endif;?></header><nav class="community-rail-list"><?php foreach($channels as $c):$active=$selected&&(int)$selected['id']===(int)$c['id'];?><a class="community-rail-item<?=$active?' active':''?>" href="<?=$url('/channels/view?id='.(int)$c['id'])?>"><span>#</span><div><b><?=$esc($c['name'])?></b><small><?=$esc($c['production_title']?:ucfirst($c['channel_type']))?></small></div><?php if((int)($c['unread_count']??0)>0):?><em><?=(int)$c['unread_count']?></em><?php endif;?></a><?php endforeach;?><?php if(!$channels):?><div class="comm-empty"><b>No channels available</b></div><?php endif;?></nav></aside><section class="community-pane"><?php if(!$selected):?><div class="community-pane-empty"><div><b>No channel selected</b><p>Choose a channel to begin.</p></div></div><?php else:?><header class="community-pane-head"><a href="<?=$url('/channels')?>" aria-label="Back to channels">‹</a><div><small><?=$esc($selected['production_title']?:strtoupper($selected['channel_type']))?></small><h2># <?=$esc($selected['name'])?></h2><p><?=$esc($selected['description']?:'Community updates and discussion.')?></p></div></header><div class="community-pane-feed comm-feed"><?php foreach($selected['posts'] as $p):?><article class="comm-post<?=$p['pinned']?' pinned':''?>"><header><i><?=$esc($p['initials'])?></i><div><b><?=$esc($p['author'])?><?=$p['pinned']?' · Featured':''?></b><small><?=$esc($p['author_role'])?> · <?=$esc(date('M j · g:i A',strtotime($p['created_at'])))?></small></div><?php if(AccessPolicy::canManageCommunity($user)||AccessPolicy::canModerateCommunity($user)):?><form class="comm-pin-form" method="post"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="post_id" value="<?=(int)$p['id']?>"><button type="submit" name="action" value="toggle_pin"><?=$p['pinned']?'Unfeature':'Feature'?></button></form><?php endif;?></header><p><?=nl2br($esc($p['body']))?></p><?php if($p['attachments']):?><div class="comm-attachments"><?php foreach($p['attachments'] as $attachment):?><a href="<?=$url('/channels/attachment?id='.(int)$attachment['id'])?>"><span>▣</span><div><b><?=$esc((string)$attachment['original_name'])?></b><small><?=StorageService::humanSize((int)$attachment['byte_size'])?> · <?=$esc(strtoupper((string)$attachment['extension']))?></small></div><em>Download</em></a><?php endforeach;?></div><?php endif;?></article><?php endforeach;?><?php if(!$selected['posts']):?><div class="comm-empty"><b>No posts yet</b></div><?php endif;?></div><?php if($selected['can_post']):?><form class="community-composer comm-composer" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="action" value="create_post"><textarea name="body" rows="3" maxlength="5000" required placeholder="Message #<?=$esc($selected['name'])?>"></textarea><div class="comm-compose-actions"><label class="comm-attach-compact" title="Add attachment">+<input type="file" name="attachment" data-file-input></label><span class="comm-file-name" data-file-name></span><button class="button" type="submit">Post</button></div></form><?php else:?><div class="community-readonly"><b>Read-only for your account</b></div><?php endif;?><?php endif;?></section></section></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script><script>document.querySelectorAll('[data-file-input]').forEach(function(input){input.addEventListener('change',function(){var form=input.closest('form');var label=form?form.querySelector('[data-file-name]'):null;if(label)label.textContent=input.files&&input.files[0]?input.files[0].name:'';});});</script></body></html><?php exit;
+        <section class="community-shell"><aside class="community-rail"><header class="community-rail-head"><small>CTSMD COMMUNITY</small><h2>Channels</h2><p>Choose a room to open the conversation.</p><?php if($staff):?><a href="<?=$url('/admin/channels')?>">Manage channels</a><?php endif;?></header><nav class="community-rail-list"><?php foreach($channels as $c):$active=$selected&&(int)$selected['id']===(int)$c['id'];?><a class="community-rail-item<?=$active?' active':''?>" href="<?=$url('/channels/view?id='.(int)$c['id'])?>"><span>#</span><div><b><?=$esc($c['name'])?></b><small><?=$esc($c['production_title']?:ucfirst($c['channel_type']))?></small></div><?php if((int)($c['unread_count']??0)>0):?><em><?=(int)$c['unread_count']?></em><?php endif;?></a><?php endforeach;?><?php if(!$channels):?><div class="comm-empty"><b>No channels available</b></div><?php endif;?></nav></aside><section class="community-pane"><?php if(!$selected):?><div class="community-pane-empty"><div><b>No channel selected</b><p>Choose a channel to begin.</p></div></div><?php else:?><header class="community-pane-head"><a href="<?=$url('/channels')?>" aria-label="Back to channels">‹</a><div><small><?=$esc($selected['production_title']?:strtoupper($selected['channel_type']))?></small><h2># <?=$esc($selected['name'])?></h2><p><?=$esc($selected['description']?:'Community updates and discussion.')?></p></div></header><div class="community-pane-feed comm-feed"><?php foreach($selected['posts'] as $p):?><article class="comm-post<?=$p['pinned']?' pinned':''?>"><header><i><?=$esc($p['initials'])?></i><div><b><?=$esc($p['author'])?></b><small><?=$esc($p['author_role'])?> · <?=$esc(date('M j · g:i A',strtotime($p['created_at'])))?></small></div><?php if($staff):?><div class="comm-post-actions"><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="post_id" value="<?=(int)$p['id']?>"><button class="comm-post-action" type="submit" name="action" value="toggle_pin"><?=$p['pinned']?'Unpin':'Pin'?></button></form><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="post_id" value="<?=(int)$p['id']?>"><button class="comm-post-action" type="submit" name="action" value="hide_post">Hide</button></form><form method="post" data-delete-post><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="post_id" value="<?=(int)$p['id']?>"><button class="comm-post-action danger" type="submit" name="action" value="delete_post">Delete</button></form></div><?php endif;?></header><p><?=nl2br($esc($p['body']))?></p><?php if($p['attachments']):?><div class="comm-attachments"><?php foreach($p['attachments'] as $attachment):?><a href="<?=$url('/channels/attachment?id='.(int)$attachment['id'])?>"><span>▣</span><div><b><?=$esc((string)$attachment['original_name'])?></b><small><?=StorageService::humanSize((int)$attachment['byte_size'])?> · <?=$esc(strtoupper((string)$attachment['extension']))?></small></div><em>Download</em></a><?php endforeach;?></div><?php endif;?></article><?php endforeach;?><?php if(!$selected['posts']):?><div class="comm-empty"><b>No posts yet</b></div><?php endif;?></div><?php if($selected['can_post']):?><form class="community-composer comm-composer" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['community_csrf'])?>"><input type="hidden" name="channel_id" value="<?=(int)$selected['id']?>"><input type="hidden" name="action" value="create_post"><textarea name="body" rows="1" maxlength="5000" required placeholder="Message #<?=$esc($selected['name'])?>" data-auto-grow></textarea><div class="comm-compose-actions"><label class="comm-attach-compact" title="Add attachment">+<input type="file" name="attachment" data-file-input></label><span class="comm-file-name" data-file-name></span><button class="button" type="submit">Post</button></div></form><?php else:?><div class="community-readonly"><b>Read-only for your account</b></div><?php endif;?><?php endif;?></section></section></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script><script>
+document.querySelectorAll('[data-file-input]').forEach(function(input){input.addEventListener('change',function(){var form=input.closest('form');var label=form?form.querySelector('[data-file-name]'):null;if(label)label.textContent=input.files&&input.files[0]?input.files[0].name:'';});});
+document.querySelectorAll('[data-auto-grow]').forEach(function(textarea){var resize=function(){textarea.style.height='38px';textarea.style.height=Math.min(textarea.scrollHeight,112)+'px';};textarea.addEventListener('input',resize);resize();});
+document.querySelectorAll('[data-delete-post]').forEach(function(form){form.addEventListener('submit',function(event){if(!window.confirm('Delete this post from Community? The deletion will remain in the audit record.'))event.preventDefault();});});
+var feed=document.querySelector('.community-pane-feed');if(feed&&window.matchMedia('(max-width:780px)').matches){requestAnimationFrame(function(){feed.scrollTop=feed.scrollHeight;});}
+</script></body></html><?php exit;
     }
 }
