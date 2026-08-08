@@ -9,6 +9,31 @@
     viewport.content = `${viewport.content},viewport-fit=cover`;
   }
 
+  const appHome = document.querySelector('.unified-nav-item[href$="/app"], .unified-brand[href$="/app"]');
+  if (appHome) {
+    const appUrl = new URL(appHome.href, window.location.href);
+    const appBase = appUrl.pathname.replace(/\/app\/?$/, '');
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const manifest = document.createElement('link');
+      manifest.rel = 'manifest';
+      manifest.href = `${appBase}/manifest.webmanifest`;
+      document.head.appendChild(manifest);
+    }
+    const metadata = [
+      ['apple-mobile-web-app-capable', 'yes'],
+      ['apple-mobile-web-app-status-bar-style', 'black-translucent'],
+      ['apple-mobile-web-app-title', 'CTSMD Connect'],
+      ['mobile-web-app-capable', 'yes'],
+    ];
+    metadata.forEach(([name, content]) => {
+      if (document.querySelector(`meta[name="${name}"]`)) return;
+      const meta = document.createElement('meta');
+      meta.name = name;
+      meta.content = content;
+      document.head.appendChild(meta);
+    });
+  }
+
   const setOpen = (value) => {
     if (!sidebar || !scrim) return;
     sidebar.classList.toggle('open', value);
