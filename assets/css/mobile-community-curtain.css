@@ -1,0 +1,16 @@
+/* CTSMD Connect — mobile Community curtain control. Phone only. */
+@media (max-width:780px){
+  body[data-native-route="channels"] .comm-hero{transition:max-height .28s ease,padding .28s ease,margin .28s ease,box-shadow .28s ease;max-height:360px}
+  body[data-native-route="channels"] .comm-hero .community-curtain-toggle{position:absolute;right:14px;bottom:11px;z-index:4;border:0;background:transparent;color:rgba(255,255,255,.72);font:800 9px/1 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:10px 8px;cursor:pointer;min-height:36px}
+  body[data-native-route="channels"] .comm-hero .community-curtain-toggle:focus-visible{outline:2px solid #e3b64d;outline-offset:2px;border-radius:8px}
+  body[data-native-route="channels"] .comm-hero:after{display:none!important}
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed{max-height:58px!important;min-height:58px!important;padding:0 14px!important;margin:10px 0 12px!important;border-radius:16px!important;display:flex!important;align-items:center!important;box-shadow:0 8px 20px rgba(54,22,31,.11)!important}
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed:before{opacity:.35}
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed>small,
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed>h2,
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed>p,
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed>.community-manage{display:none!important}
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed .community-curtain-summary{display:block!important;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;letter-spacing:-.015em;position:relative;z-index:2;padding-right:110px}
+  body[data-native-route="channels"] .comm-hero .community-curtain-summary{display:none}
+  body[data-native-route="channels"] .comm-hero.community-curtain-collapsed .community-curtain-toggle{bottom:11px;color:#e3b64d}
+}
