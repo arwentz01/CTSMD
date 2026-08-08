@@ -28,7 +28,7 @@ final class PushEventBridgeService
     private static function community(PDO $db):int
     {
         $cursor=self::cursor($db,'community_posts');
-        $s=$db->prepare("SELECT cp.id,cp.channel_id,cp.author_user_id,c.name channel_name,CONCAT(u.first_name,' ',u.last_name) author FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id JOIN users u ON u.id=cp.author_user_id WHERE cp.id>:cursor AND cp.hidden_at IS NULL AND cp.moderation_status='published' ORDER BY cp.id LIMIT 150");
+        $s=$db->prepare("SELECT cp.id,cp.channel_id,cp.author_user_id,c.name channel_name,CONCAT(u.first_name,' ',u.last_name) author FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id JOIN users u ON u.id=cp.author_user_id WHERE cp.id>:cursor AND cp.moderation_status='published' ORDER BY cp.id LIMIT 150");
         $s->execute(['cursor'=>$cursor]);$count=0;$last=$cursor;
         foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$users=$db->query("SELECT id,first_name,last_name,display_role AS role,organization_membership_status,active FROM users WHERE active=1")->fetchAll();foreach($users as $user){if((int)$user['id']===(int)$row['author_user_id'])continue;try{$allowed=CommunicationReadStateService::canAccessChannel($db,$user,(int)$row['channel_id']);}catch(Throwable){$allowed=false;}if(!$allowed)continue;$id=PushService::queue($db,(int)$user['id'],'community','# '.$row['channel_name'],'New Community post from '.$row['author'],'/channels/view?id='.(int)$row['channel_id'],'low','ch-'.$row['channel_id']);if($id)$count++;}}
         if($last>$cursor)self::advance($db,'community_posts',$last);return$count;
