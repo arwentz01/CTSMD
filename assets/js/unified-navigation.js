@@ -9,6 +9,7 @@
       ['mobile-theatre-polish.css', 'mobileTheatrePolish'],
       ['product-polish.css', 'productPolish'],
       ['mobile-community-curtain.css', 'mobileCommunityCurtain'],
+      ['mobile-calendar-disclosure.css', 'mobileCalendarDisclosure'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -104,7 +105,7 @@
   const configureNativeHeader = () => {
     const header=document.querySelector('.unified-header'); if(!header) return;
     const path=relativePath();
-    const roots=['/app','/family-hub','/calendar','/channels','/messages','/volunteer-readiness','/production','/staff'];
+    const roots=['/app','/family-hub','/calendar','/channels','/messages','/volunteer-readiness','/volunteer-shifts','/production','/staff'];
     const parent=parentFor(path);
     document.body.classList.toggle('native-root-screen', roots.includes(path));
     document.body.dataset.nativeRoute = path.replace(/^\//,'').replace(/[^a-z0-9]+/gi,'-') || 'home';
@@ -174,6 +175,50 @@
     render();
   };
 
+  const configureCalendarSubscription = () => {
+    if (window.innerWidth > 780 || relativePath() !== '/calendar') return;
+    const card=document.querySelector('.cal-subscribe');
+    if(!card || card.querySelector('.cal-subscribe-toggle')) return;
+    card.classList.add('cal-subscribe-disclosure','collapsed');
+    const toggle=document.createElement('button');
+    toggle.type='button';
+    toggle.className='cal-subscribe-toggle';
+    toggle.innerHTML='<span><b>Calendar subscription</b><small>Apple · Google · Outlook</small></span><i>⌄</i>';
+    toggle.setAttribute('aria-expanded','false');
+    toggle.setAttribute('aria-label','Show Calendar subscription details');
+    toggle.addEventListener('click',()=>{
+      const collapsed=card.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded',collapsed?'false':'true');
+      toggle.setAttribute('aria-label',collapsed?'Show Calendar subscription details':'Hide Calendar subscription details');
+    });
+    card.prepend(toggle);
+  };
+
+  const configureVolunteerLanding = () => {
+    const path=relativePath();
+    const params=new URLSearchParams(window.location.search);
+    if(path==='/volunteer-shifts'){
+      document.querySelectorAll('a[href]').forEach(anchor=>{
+        try{
+          const target=new URL(anchor.href,window.location.href);
+          if(target.pathname.replace(/\/$/,'').endsWith('/volunteer-readiness')){
+            target.searchParams.set('show','1');
+            anchor.href=target.toString();
+          }
+        }catch(_){}
+      });
+      return false;
+    }
+    if(path!=='/volunteer-readiness'||params.get('show')==='1') return false;
+    const score=document.querySelector('.vol-score b')?.textContent?.trim()||'';
+    const match=score.match(/^(\d+)\s*\/\s*(\d+)$/);
+    if(!match) return false;
+    const current=Number(match[1]),total=Number(match[2]);
+    if(current<total) return false;
+    window.location.replace(`${appBase}/volunteer-shifts`);
+    return true;
+  };
+
   const preferMobileAgenda = () => {
     if (window.innerWidth > 780 || relativePath() !== '/calendar') return false;
     const params = new URLSearchParams(window.location.search);
@@ -191,6 +236,7 @@
   };
 
   if (preferMobileAgenda()) return;
-  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); applyDeviceMode();
+  if (configureVolunteerLanding()) return;
+  buildMobileTabs(); configureNativeHeader(); configureHelp(); trimDemoCopy(); configureCommunityCurtain(); configureCalendarSubscription(); applyDeviceMode();
   window.addEventListener('resize', applyDeviceMode, {passive:true});
 })();
