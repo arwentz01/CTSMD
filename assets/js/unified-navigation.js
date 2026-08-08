@@ -10,6 +10,7 @@
       ['product-polish.css', 'productPolish'],
       ['mobile-community-curtain.css', 'mobileCommunityCurtain'],
       ['mobile-calendar-disclosure.css', 'mobileCalendarDisclosure'],
+      ['mobile-forms-notifications.css', 'mobileFormsNotifications'],
     ];
     files.forEach(([file, dataKey]) => {
       if (document.querySelector(`link[data-${dataKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}]`)) return;
@@ -91,7 +92,9 @@
   const parentFor = path => {
     if (path.startsWith('/messages/thread') || path === '/messages/new') return '/messages';
     if (path === '/channels/view') return '/channels';
+    if (path === '/forms') return '/app';
     if (path.startsWith('/forms/view')) return '/forms';
+    if (path === '/notifications') return '/app';
     if (path.startsWith('/volunteer/shift')) return '/volunteer-shifts';
     if (path.startsWith('/attendance/take') || path.startsWith('/attendance/report')) return '/attendance';
     if (path.startsWith('/production/groups/view')) return '/production/groups';
