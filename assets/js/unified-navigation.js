@@ -226,6 +226,20 @@
 
   let messageThreadScrolled=false;
   let messageThreadHome=null;
+  const focusMessageThreadOnLatest = thread => {
+    if(!thread||messageThreadScrolled) return;
+    const scroll=()=>{thread.scrollTop=thread.scrollHeight;};
+    requestAnimationFrame(()=>{
+      scroll();
+      requestAnimationFrame(scroll);
+    });
+    setTimeout(scroll,80);
+    setTimeout(()=>{
+      scroll();
+      messageThreadScrolled=true;
+    },240);
+  };
+
   const configureMessageThreadViewport = () => {
     if (relativePath() !== '/messages/thread') return;
     const page=document.querySelector('.comm-page');
@@ -279,12 +293,7 @@
       screen.style.height=`${Math.max(320,Math.floor(viewportHeight-top-14))}px`;
     }
 
-    if(thread&&!messageThreadScrolled){
-      requestAnimationFrame(()=>{
-        thread.scrollTop=thread.scrollHeight;
-        messageThreadScrolled=true;
-      });
-    }
+    focusMessageThreadOnLatest(thread);
   };
 
   const configureMessageComposerKeys = () => {
