@@ -115,7 +115,7 @@
     document.body.classList.toggle('native-root-screen', roots.includes(path));
     document.body.dataset.nativeRoute = path.replace(/^\//,'').replace(/[^a-z0-9]+/gi,'-') || 'home';
     header.querySelector('.native-back')?.remove();
-    if(parent){
+    if(parent && window.innerWidth<=780){
       const back=document.createElement('a');back.className='native-back';back.href=`${appBase}${parent}`;back.setAttribute('aria-label','Back');back.textContent='‹';header.appendChild(back);
     }
   };
@@ -324,6 +324,20 @@
   };
 
   let communityThreadScrolled=false;
+  const focusCommunityThreadOnLatest = feed => {
+    if(!feed||communityThreadScrolled) return;
+    const scroll=()=>{feed.scrollTop=feed.scrollHeight;};
+    requestAnimationFrame(()=>{
+      scroll();
+      requestAnimationFrame(scroll);
+    });
+    setTimeout(scroll,80);
+    setTimeout(()=>{
+      scroll();
+      communityThreadScrolled=true;
+    },240);
+  };
+
   const configureCommunityThreadViewport = () => {
     if (relativePath() !== '/channels/view') return;
     const page=document.querySelector('.community-page.channel-open');
@@ -340,12 +354,7 @@
     const available=Math.max(260,Math.floor(lowerEdge-top-breathingRoom));
     shell.style.setProperty('--community-chat-height',`${available}px`);
 
-    if(!communityThreadScrolled){
-      requestAnimationFrame(()=>{
-        feed.scrollTop=feed.scrollHeight;
-        communityThreadScrolled=true;
-      });
-    }
+    focusCommunityThreadOnLatest(feed);
   };
 
   const configureCommunityPostMenus = () => {
@@ -392,6 +401,7 @@
     const width=window.innerWidth;
     document.documentElement.dataset.appViewport=width<=780?'phone':width<=1180?'tablet':'desktop';
     if(width>780)setOpen(false);
+    configureNativeHeader();
     configureMessageThreadViewport();
     configureMessageComposerKeys();
     configureCommunityThreadViewport();
