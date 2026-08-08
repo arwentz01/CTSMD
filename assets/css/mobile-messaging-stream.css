@@ -1,59 +1,124 @@
-/* CTSMD Connect — mobile message thread experience.
-   Purpose-built for /messages/thread and intentionally loaded after shared/native layers. */
+/* CTSMD Connect — message thread experience.
+   Desktop establishes a clean conversation workspace; phone becomes app-native chat. */
+
+/* Desktop / tablet thread workspace */
+.comm-thread-head{
+  max-width:1060px;
+  margin:0 auto 10px;
+  padding:20px 22px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+}
+.comm-thread-head>div{min-width:0}
+.comm-thread-head h2{margin:5px 0 0;font-size:32px;line-height:1.05}
+.comm-thread-head>a{font-size:12px;font-weight:800;color:var(--red);white-space:nowrap}
+.comm-thread-people{display:flex;align-items:center;gap:12px;margin-top:11px}
+.comm-avatar-stack{display:flex;align-items:center;padding-left:7px}
+.comm-avatar-stack i{
+  width:31px;height:31px;margin-left:-7px;border:2px solid #fff;border-radius:50%;
+  display:grid;place-items:center;background:#20191d;color:#fff;font-style:normal;font-size:8px;font-weight:850;
+}
+.comm-avatar-stack i.guardian{background:var(--gold);color:#342600}
+.comm-avatar-stack i.student{background:var(--red);color:#fff}
+.comm-people-toggle{
+  appearance:none;border:0;background:transparent;color:var(--red);padding:5px 0;
+  font:800 11px/1.2 system-ui;cursor:pointer;
+}
+.comm-people-toggle:hover{text-decoration:underline}
+.comm-participants{
+  max-width:1060px;margin:0 auto 10px;padding:0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;
+}
+.comm-participants.collapsed{display:none}
+.comm-participants-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;padding:6px 12px}
+.comm-participants-list>div{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:9px;padding:9px 8px}
+.comm-participants-list i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#f2edef;color:var(--red);font-style:normal;font-size:8px;font-weight:850}
+.comm-participants-list span{display:grid;min-width:0}
+.comm-participants-list b{font-size:11px;line-height:1.2}
+.comm-participants-list small{font-size:9px;color:var(--muted)}
+
+.comm-thread-layout{display:block;max-width:1060px;margin:0 auto}
+.comm-thread{
+  display:block;min-height:340px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 22px;
+}
+.comm-day-separator{display:flex;align-items:center;gap:10px;margin:15px 0 11px;color:#8a7e82;font-size:10px;font-weight:750;text-align:center}
+.comm-day-separator:before,.comm-day-separator:after{content:'';height:1px;background:var(--line);flex:1}
+.comm-message-row{display:flex;align-items:flex-end;gap:8px;margin:5px 0;width:100%}
+.comm-message-row.mine{justify-content:flex-end}
+.comm-message-avatar{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;background:#e8e1e3;color:#51464a;font-style:normal;font-size:8px;font-weight:850;margin-bottom:3px}
+.comm-message-row.mine .comm-message-avatar{display:none}
+.comm-message-row .comm-bubble{max-width:min(68%,720px);margin:0;padding:10px 13px 8px;border:0;border-radius:16px 16px 16px 5px;background:#f1edef;color:var(--ink);box-shadow:none}
+.comm-message-row .comm-bubble.mine{margin:0;background:#f5e8c9;color:var(--ink);border-radius:16px 16px 5px 16px}
+.comm-message-row .comm-bubble header{display:none}
+.comm-message-row .comm-bubble p{margin:0;font-size:14px;line-height:1.42}
+.comm-message-row .comm-bubble time{display:block;margin-top:4px;font-size:8px;line-height:1;color:var(--muted);text-align:right}
+
+.comm-composer{
+  max-width:1060px;margin:10px auto 0;padding:9px 10px;border:1px solid var(--line);border-radius:17px;background:#fff;box-shadow:0 8px 26px rgba(42,29,34,.06);
+}
+.comm-composer form{display:flex;align-items:flex-end;gap:8px;margin:0}
+.comm-composer textarea{
+  order:2;flex:1;width:auto;min-width:0;height:42px;min-height:42px;max-height:128px;resize:none;overflow-y:auto;
+  border:1px solid var(--line);border-radius:21px;padding:10px 14px;background:#fcfaf9;font:14px/20px inherit;
+}
+.comm-composer .comm-compose-actions{display:contents}
+.comm-composer .comm-attach-compact{order:1;width:40px!important;height:40px!important;min-width:40px!important;border:0!important;background:#f2edef!important}
+.comm-composer .comm-file-name{order:2;align-self:center;max-width:180px}
+.comm-composer .comm-file-name:empty{display:none}
+.comm-composer .comm-compose-actions .button{order:3;margin:0;width:auto;min-width:76px;height:40px;min-height:40px;padding:0 18px;border-radius:20px}
+
 @media (max-width:780px){
-  body[data-native-route="messages-thread"] .comm-page{padding:0 12px calc(132px + env(safe-area-inset-bottom))!important;max-width:none!important}
-  body[data-native-route="messages-thread"] .comm-thread-head{margin:0!important;padding:10px 2px 6px!important;border:0!important;background:transparent!important;display:block!important}
+  body[data-native-route="messages-thread"]{padding-bottom:0!important}
+  body[data-native-route="messages-thread"] .comm-page{padding:0 12px calc(118px + env(safe-area-inset-bottom))!important;max-width:none!important}
+  body[data-native-route="messages-thread"] .comm-thread-head{max-width:none!important;margin:0!important;padding:10px 2px 6px!important;border:0!important;background:transparent!important;border-radius:0!important;display:block!important}
   body[data-native-route="messages-thread"] .comm-thread-head small{font-size:9px!important;letter-spacing:.12em!important;color:#b31d35!important}
   body[data-native-route="messages-thread"] .comm-thread-head h2{font-size:24px!important;line-height:1.08!important;margin:3px 0 2px!important}
   body[data-native-route="messages-thread"] .comm-thread-head>a{display:none!important}
-  body[data-native-route="messages-thread"] .comm-safety-banner{margin:4px 0 6px!important;padding:7px 10px!important;border-radius:10px!important;border-left:3px solid #d4a72c!important}
-  body[data-native-route="messages-thread"] .comm-safety-banner b{font-size:11px!important}
-  body[data-native-route="messages-thread"] .comm-safety-banner span{font-size:9px!important}
+  body[data-native-route="messages-thread"] .comm-safety-banner{display:none!important}
 
   body[data-native-route="messages-thread"] .comm-thread-people{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:4px 0 8px!important}
   body[data-native-route="messages-thread"] .comm-avatar-stack{display:flex!important;align-items:center!important;padding-left:5px!important}
-  body[data-native-route="messages-thread"] .comm-avatar-stack i{width:28px!important;height:28px!important;margin-left:-5px!important;border:2px solid #f4f2f2!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#20191d!important;color:#fff!important;font-style:normal!important;font-size:8px!important;font-weight:850!important}
-  body[data-native-route="messages-thread"] .comm-avatar-stack i.guardian{background:#d4a72c!important;color:#342600!important}
-  body[data-native-route="messages-thread"] .comm-avatar-stack i.student{background:#a6192e!important;color:#fff!important}
-  body[data-native-route="messages-thread"] .comm-people-toggle{border:0!important;background:transparent!important;color:#a6192e!important;padding:5px 2px!important;font:inherit!important;font-size:10px!important;font-weight:800!important;min-height:34px!important}
+  body[data-native-route="messages-thread"] .comm-avatar-stack i{width:28px!important;height:28px!important;margin-left:-5px!important;border:2px solid #f4f2f2!important}
+  body[data-native-route="messages-thread"] .comm-people-toggle{font-size:10px!important;min-height:34px!important;padding:5px 2px!important}
 
-  /* Explicitly undo the older native rule that hid participant information. */
-  body[data-native-route="messages-thread"] .comm-participants{display:block!important;position:static!important;width:100%!important;padding:0!important;margin:0 0 8px!important;border:.5px solid rgba(54,39,44,.11)!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important;order:initial!important}
+  body[data-native-route="messages-thread"] .comm-participants{display:block!important;max-width:none!important;position:static!important;width:100%!important;padding:0!important;margin:0 0 8px!important;border:.5px solid rgba(54,39,44,.11)!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important}
   body[data-native-route="messages-thread"] .comm-participants.collapsed{display:none!important}
-  body[data-native-route="messages-thread"] .comm-participants-toggle{display:none!important}
-  body[data-native-route="messages-thread"] .comm-participants-list{display:grid!important;padding:5px 10px!important}
+  body[data-native-route="messages-thread"] .comm-participants-list{display:grid!important;grid-template-columns:1fr!important;padding:5px 10px!important}
   body[data-native-route="messages-thread"] .comm-participants-list>div{display:grid!important;grid-template-columns:28px minmax(0,1fr)!important;align-items:center!important;gap:8px!important;padding:7px 0!important;border-top:.5px solid rgba(54,39,44,.1)!important}
   body[data-native-route="messages-thread"] .comm-participants-list>div:first-child{border-top:0!important}
-  body[data-native-route="messages-thread"] .comm-participants-list i{width:28px!important;height:28px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#f2edef!important;color:#a6192e!important;font-style:normal!important;font-size:8px!important;font-weight:850!important}
-  body[data-native-route="messages-thread"] .comm-participants-list span{display:grid!important}
-  body[data-native-route="messages-thread"] .comm-participants-list b{font-size:11px!important;line-height:1.15!important}
-  body[data-native-route="messages-thread"] .comm-participants-list small{font-size:8px!important;color:#786d71!important}
 
-  body[data-native-route="messages-thread"] .comm-thread-layout{display:block!important;margin:0!important}
-  body[data-native-route="messages-thread"] .comm-thread{display:block!important;background:transparent!important;border:0!important;border-radius:0!important;padding:6px 0 8px!important;min-height:36vh!important}
-  body[data-native-route="messages-thread"] .comm-day-separator{display:flex!important;align-items:center!important;gap:8px!important;margin:13px 0 9px!important;color:#85797d!important;font-size:9px!important;font-weight:750!important;text-align:center!important}
+  body[data-native-route="messages-thread"] .comm-thread-layout{display:block!important;max-width:none!important;margin:0!important}
+  body[data-native-route="messages-thread"] .comm-thread{display:block!important;background:transparent!important;border:0!important;border-radius:0!important;padding:6px 0 16px!important;min-height:calc(100dvh - 260px)!important}
+  body[data-native-route="messages-thread"] .comm-day-separator{margin:13px 0 9px!important;font-size:9px!important}
   body[data-native-route="messages-thread"] .comm-day-separator:before,
-  body[data-native-route="messages-thread"] .comm-day-separator:after{content:''!important;height:.5px!important;background:rgba(54,39,44,.12)!important;flex:1!important}
-  body[data-native-route="messages-thread"] .comm-message-row{display:flex!important;align-items:flex-end!important;gap:6px!important;margin:3px 0!important;width:100%!important}
-  body[data-native-route="messages-thread"] .comm-message-row.mine{justify-content:flex-end!important}
-  body[data-native-route="messages-thread"] .comm-message-avatar{width:25px!important;height:25px!important;flex:0 0 25px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#ddd5d8!important;color:#51464a!important;font-style:normal!important;font-size:7px!important;font-weight:850!important;margin-bottom:3px!important}
-  body[data-native-route="messages-thread"] .comm-message-row.mine .comm-message-avatar{display:none!important}
-  body[data-native-route="messages-thread"] .comm-bubble{display:block!important;max-width:78%!important;margin:0!important;padding:7px 10px 6px!important;border-radius:15px 15px 15px 4px!important;background:#e8e4e5!important;color:#211a1d!important;box-shadow:none!important}
-  body[data-native-route="messages-thread"] .comm-bubble.mine{margin:0!important;background:#a6192e!important;color:#fff!important;border-radius:15px 15px 4px 15px!important}
-  body[data-native-route="messages-thread"] .comm-bubble header{display:none!important}
-  body[data-native-route="messages-thread"] .comm-bubble p{margin:0!important;font-size:14px!important;line-height:1.34!important}
-  body[data-native-route="messages-thread"] .comm-bubble time{display:block!important;margin-top:3px!important;font-size:7.5px!important;line-height:1!important;color:#82767a!important;text-align:right!important}
+  body[data-native-route="messages-thread"] .comm-day-separator:after{height:.5px!important;background:rgba(54,39,44,.12)!important}
+  body[data-native-route="messages-thread"] .comm-message-row{gap:6px!important;margin:3px 0!important}
+  body[data-native-route="messages-thread"] .comm-message-avatar{width:25px!important;height:25px!important;flex:0 0 25px!important;font-size:7px!important}
+  body[data-native-route="messages-thread"] .comm-bubble{max-width:78%!important;padding:7px 10px 6px!important;border-radius:15px 15px 15px 4px!important;background:#e8e4e5!important;color:#211a1d!important}
+  body[data-native-route="messages-thread"] .comm-bubble.mine{background:#a6192e!important;color:#fff!important;border-radius:15px 15px 4px 15px!important}
+  body[data-native-route="messages-thread"] .comm-bubble p{font-size:14px!important;line-height:1.34!important}
+  body[data-native-route="messages-thread"] .comm-bubble time{font-size:7.5px!important}
   body[data-native-route="messages-thread"] .comm-bubble.mine time{color:#f4dce1!important}
-  body[data-native-route="messages-thread"] .msg-attachments{margin-top:5px!important}
 
-  /* Composer is part of the app chrome, not part of the scrolling document. */
-  body[data-native-route="messages-thread"] .comm-composer{position:fixed!important;left:0!important;right:0!important;bottom:calc(64px + env(safe-area-inset-bottom))!important;z-index:43!important;margin:0!important;padding:7px 10px!important;border:0!important;border-top:.5px solid rgba(54,39,44,.12)!important;border-radius:0!important;background:rgba(252,251,251,.97)!important;box-shadow:0 -5px 20px rgba(33,23,26,.06)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
-  body[data-native-route="messages-thread"] .comm-composer form{display:flex!important;align-items:flex-end!important;gap:6px!important;max-width:760px!important;margin:0 auto!important}
-  body[data-native-route="messages-thread"] .comm-composer textarea{order:2!important;flex:1!important;width:auto!important;min-width:0!important;height:40px!important;min-height:40px!important;max-height:116px!important;resize:none!important;overflow-y:auto!important;border:1px solid rgba(54,39,44,.16)!important;border-radius:20px!important;padding:9px 13px!important;background:#fff!important;font-size:16px!important;line-height:20px!important}
-  body[data-native-route="messages-thread"] .comm-compose-actions{display:contents!important}
-  body[data-native-route="messages-thread"] .comm-attach-compact{order:1!important;width:38px!important;height:38px!important;min-width:38px!important;background:#f1ecee!important;border:0!important}
-  body[data-native-route="messages-thread"] .comm-file-name{position:absolute!important;left:54px!important;bottom:49px!important;max-width:55vw!important;padding:3px 7px!important;border-radius:8px!important;background:#fff!important;box-shadow:0 2px 8px rgba(0,0,0,.08)!important}
-  body[data-native-route="messages-thread"] .comm-file-name:empty{display:none!important}
-  body[data-native-route="messages-thread"] .comm-compose-actions .button{order:3!important;margin:0!important;width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;border-radius:50%!important;padding:0!important;font-size:0!important;display:grid!important;place-items:center!important}
-  body[data-native-route="messages-thread"] .comm-compose-actions .button:after{content:'➤'!important;font-size:15px!important;color:#fff!important;transform:translateX(1px)!important}
+  /* The composer is re-parented to body by the thread script so fixed means viewport-fixed. */
+  body[data-native-route="messages-thread"] > .comm-composer{
+    position:fixed!important;left:0!important;right:0!important;bottom:calc(64px + env(safe-area-inset-bottom))!important;z-index:80!important;
+    max-width:none!important;margin:0!important;padding:7px 10px!important;border:0!important;border-top:.5px solid rgba(54,39,44,.12)!important;border-radius:0!important;
+    background:rgba(252,251,251,.98)!important;box-shadow:0 -5px 20px rgba(33,23,26,.06)!important;
+    backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
+  }
+  body[data-native-route="messages-thread"] > .comm-composer form{display:flex!important;align-items:flex-end!important;gap:6px!important;max-width:760px!important;margin:0 auto!important}
+  body[data-native-route="messages-thread"] > .comm-composer textarea{
+    order:2!important;flex:1!important;width:auto!important;min-width:0!important;height:40px!important;min-height:40px!important;max-height:116px!important;
+    resize:none!important;overflow-y:auto!important;border:1px solid rgba(54,39,44,.16)!important;border-radius:20px!important;padding:9px 13px!important;background:#fff!important;font-size:16px!important;line-height:20px!important;
+  }
+  body[data-native-route="messages-thread"] > .comm-composer .comm-compose-actions{display:contents!important}
+  body[data-native-route="messages-thread"] > .comm-composer .comm-attach-compact{order:1!important;width:38px!important;height:38px!important;min-width:38px!important;background:#f1ecee!important;border:0!important}
+  body[data-native-route="messages-thread"] > .comm-composer .comm-file-name{position:absolute!important;left:54px!important;bottom:49px!important;max-width:55vw!important;padding:3px 7px!important;border-radius:8px!important;background:#fff!important;box-shadow:0 2px 8px rgba(0,0,0,.08)!important}
+  body[data-native-route="messages-thread"] > .comm-composer .comm-compose-actions .button{order:3!important;margin:0!important;width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;border-radius:50%!important;padding:0!important;font-size:0!important;display:grid!important;place-items:center!important}
+  body[data-native-route="messages-thread"] > .comm-composer .comm-compose-actions .button:after{content:'➤'!important;font-size:15px!important;color:#fff!important;transform:translateX(1px)!important}
 }
