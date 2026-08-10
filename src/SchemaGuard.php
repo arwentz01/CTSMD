@@ -44,7 +44,7 @@ final class SchemaGuard
 
             $sets=[$missing006,$missing007,$missing008,$missing009,$missing010,$missing011,$missing012,$missing013,$missing014,$missing015,$missing016,$missing017,$missing018,$missing019,$missing020,$missing021,$missing022,$missing023,$missing024,$missing025,$missing026,$missing027,$missing028,$missing029,$missing030,$missing031,$missing032,$missing033,$missing034,$missing041];
             foreach($sets as $set)if($set)self::render($sets);
-        }catch(PDOException $e){if(str_contains($e->getMessage(),"doesn't exist"))return;throw $e;}
+        }catch(PDOException $e){if(str_contains($e->getMessage(),"doesn't exist"))self::renderSetupError($e->getMessage());throw $e;}
     }
 
     public static function requireConcurrentProductionSchema(string $projectRoot,string $basePath):void{self::requireCurrentSchema($projectRoot,$basePath);}
@@ -57,5 +57,11 @@ final class SchemaGuard
         $steps=[];foreach($missingSets as $i=>$missing)if($missing)$steps[]=['file'=>'database/migrations/'.$files[$i],'missing'=>$missing];
         $esc=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');http_response_code(503);header('Content-Type:text/html; charset=utf-8');?>
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Database update required · CTSMD Connect</title><style>body{font-family:system-ui;background:#f5f1ef;color:#241b1e;padding:32px}.card{max-width:780px;margin:8vh auto;background:#fff;border:1px solid #ded5d8;border-radius:18px;padding:32px}code{display:block;background:#191519;color:#fff;padding:14px;border-radius:10px;margin:10px 0}.missing{font-size:12px;color:#786a6f}</style></head><body><main class="card"><small>DATABASE UPDATE REQUIRED</small><h1>CTSMD Connect needs a database migration.</h1><p>Run these against the CTSMD database in order, then refresh.</p><?php foreach($steps as $step):?><code><?=$esc($step['file'])?></code><p class="missing">Missing: <?=$esc(implode(', ',$step['missing']))?></p><?php endforeach;?><p>No demo seed reset is required.</p></main></body></html><?php exit;
+    }
+
+    private static function renderSetupError(string $detail):never
+    {
+        $esc=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');http_response_code(503);header('Content-Type:text/html; charset=utf-8');?>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Database setup required · CTSMD Connect</title><style>body{font-family:system-ui;background:#f5f1ef;color:#241b1e;padding:32px}.card{max-width:780px;margin:8vh auto;background:#fff;border:1px solid #ded5d8;border-radius:18px;padding:32px}code{display:block;background:#191519;color:#fff;padding:14px;border-radius:10px;margin:10px 0}.missing{font-size:12px;color:#786a6f}</style></head><body><main class="card"><small>DATABASE SETUP REQUIRED</small><h1>CTSMD Connect could not find the expected base schema.</h1><p>Import the base schema first, then apply the versioned migrations in order.</p><code>database/schema.sql</code><p class="missing"><?=$esc($detail)?></p></main></body></html><?php exit;
     }
 }

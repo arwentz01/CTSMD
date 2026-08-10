@@ -1,10 +1,9 @@
 Options -Indexes
 DirectoryIndex front.php
 
-# MAMP may honor .htaccess while mod_rewrite is unavailable or disabled.
-# FallbackResource keeps application routes such as /ctsmd/app working without
-# requiring rewrite rules. This local path should be adjusted for deployment.
 <IfModule mod_dir.c>
+    # MAMP may run without usable mod_rewrite. Keep this path aligned with the
+    # deployed folder name, or remove it when the app is served from vhost root.
     FallbackResource /ctsmd/front.php
 </IfModule>
 
@@ -25,6 +24,7 @@ DirectoryIndex front.php
 </IfModule>
 
 <IfModule mod_headers.c>
+    Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"

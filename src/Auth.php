@@ -78,7 +78,8 @@ final class Auth
 
     public static function localIdentitySwitchEnabled(): bool
     {
-        $environment=strtolower((string)(getenv('APP_ENV')?:($_ENV['APP_ENV']??'production')));if($environment==='local')return true;$remote=(string)($_SERVER['REMOTE_ADDR']??'');$host=strtolower((string)($_SERVER['HTTP_HOST']??''));$host=preg_replace('/:\\d+$/','',$host)?:$host;return in_array($remote,['127.0.0.1','::1'],true)&&in_array($host,['localhost','127.0.0.1','[::1]'],true);
+        $environment=strtolower((string)(getenv('APP_ENV')?:($_ENV['APP_ENV']??'production')));
+        return $environment==='local';
     }
 
     private static function assertPassword(string $password): void{if(strlen($password)<12)throw new RuntimeException('Use a password with at least 12 characters.');}

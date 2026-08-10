@@ -33,11 +33,12 @@ final class Database
     {
         self::loadEnv($projectRoot . '/.env');
 
-        $host = self::env('DB_HOST', '127.0.0.1');
-        $port = self::env('DB_PORT', '3306');
-        $database = self::env('DB_DATABASE', 'ctsmd');
-        $username = self::env('DB_USERNAME', 'andrew');
-        $password = self::env('DB_PASSWORD', 'password');
+        $allowLocalDefaults = self::localDefaultsAllowed();
+        $host = self::env('DB_HOST', $allowLocalDefaults ? '127.0.0.1' : null);
+        $port = self::env('DB_PORT', $allowLocalDefaults ? '3306' : null);
+        $database = self::env('DB_DATABASE', $allowLocalDefaults ? 'ctsmd' : null);
+        $username = self::env('DB_USERNAME', $allowLocalDefaults ? 'andrew' : null);
+        $password = self::env('DB_PASSWORD', $allowLocalDefaults ? 'password' : null);
         $charset = self::env('DB_CHARSET', 'utf8mb4');
 
         $dsn = "mysql:host={$host};port={$port};dbname={$database};charset={$charset}";
@@ -71,9 +72,30 @@ final class Database
         }
     }
 
-    private static function env(string $key, string $default): string
+    private static function env(string $key, ?string $default): string
     {
         $value = $_ENV[$key] ?? getenv($key);
-        return ($value === false || $value === null || $value === '') ? $default : (string)$value;
+        if ($value !== false && $value !== null && $value !== '') {
+            return (string)$value;
+        }
+        if ($default !== null) {
+            return $default;
+        }
+        throw new RuntimeException($key . ' must be configured outside local development.');
+    }
+
+    private static function localDefaultsAllowed(): bool
+    {
+        $environment = strtolower((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: ''));
+        if ($environment === 'local') {
+            return true;
+        }
+        if (PHP_SAPI === 'cli') {
+            return true;
+        }
+        $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+        return in_array($remote, ['127.0.0.1', '::1'], true) && in_array($host, ['localhost', '127.0.0.1', '[::1]'], true);
     }
 }

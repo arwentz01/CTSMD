@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (function_exists('header_remove')) {
+    header_remove('X-Powered-By');
+}
+
 $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
 $detectedBasePath = rtrim(str_replace('/front.php', '', $scriptName), '/');
 $_ENV['APP_BASE_PATH'] = $detectedBasePath;
@@ -12,7 +16,13 @@ $route = $requestPath;
 if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) $route = substr($route, strlen($detectedBasePath)) ?: '/';
 $route = rtrim($route, '/') ?: '/';
 require_once __DIR__ . '/src/Auth.php';Auth::startSession();
-if ($route === '/dev/identity') {require_once __DIR__ . '/src/DevIdentityExperience.php';DevIdentityExperience::render($detectedBasePath);}
+if ($route === '/dev/identity') {
+    if (!Auth::localIdentitySwitchEnabled()) {
+        http_response_code(404);
+        exit('Not found');
+    }
+    require_once __DIR__ . '/src/DevIdentityExperience.php';DevIdentityExperience::render($detectedBasePath);
+}
 if ($route === '/navigation' && Auth::localIdentitySwitchEnabled()) {require_once __DIR__ . '/src/NavigationReview.php';$data=require __DIR__.'/src/mock-data.php';NavigationReview::render($detectedBasePath,$data);}
 require_once __DIR__ . '/src/SchemaGuard.php';SchemaGuard::requireCurrentSchema(__DIR__,$detectedBasePath);
 require_once __DIR__ . '/src/PublicExperience.php';if(PublicExperience::handles($route))PublicExperience::render($route,$detectedBasePath);
