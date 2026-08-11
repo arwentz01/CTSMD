@@ -96,14 +96,14 @@ final class FamilyDashboardService
 
     private static function children(PDO $db, int $guardianId): array
     {
-        $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.first_name,u.initials,u.display_role role,fr.relationship_type,fr.is_primary FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY fr.is_primary DESC,u.last_name,u.first_name");
+        $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.first_name,u.initials,u.display_role role,fr.relationship_type,fr.is_primary FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY fr.is_primary DESC,u.last_name,u.first_name");
         $stmt->execute(['guardian' => $guardianId]);
         return $stmt->fetchAll();
     }
 
     private static function childUser(PDO $db, int $userId): ?array
     {
-        $stmt = $db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,first_name,last_name,email,initials,display_role role,active FROM users WHERE id=:id AND active=1 LIMIT 1");
+        $stmt = $db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,first_name,last_name,email,initials,display_role role,active FROM users WHERE id=:id AND active=1 AND account_status<>'disabled' LIMIT 1");
         $stmt->execute(['id' => $userId]);
         $user = $stmt->fetch();
         if (!$user) return null;
