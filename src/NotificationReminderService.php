@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/MailService.php';
+require_once __DIR__.'/VolunteerCoverageService.php';
 
 final class NotificationReminderService
 {
@@ -33,11 +34,14 @@ final class NotificationReminderService
         $shifts=$db->query("SELECT vss.id,vss.user_id,vss.shift_id,vs.title,vs.starts_at,vs.location,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM volunteer_shift_signups vss JOIN volunteer_shifts vs ON vs.id=vss.shift_id JOIN users u ON u.id=vss.user_id AND u.active=1 WHERE u.email IS NOT NULL AND u.account_status='active' AND vss.status IN ('signed_up','checked_in') AND vs.starts_at BETWEEN DATE_ADD(NOW(),INTERVAL 20 HOUR) AND DATE_ADD(NOW(),INTERVAL 28 HOUR)")->fetchAll();
         foreach($shifts as $row){
             $when=date('l, F j \\a\\t g:i A',strtotime((string)$row['starts_at']));
-            $missing=self::missingVolunteerRequirements($db,(int)$row['user_id'],(int)$row['shift_id']);
-            if($missing){
-                $needed=implode(', ',$missing);
-                $body="Hi {$row['name']},\n\nYou are scheduled for {$row['title']} {$when} at {$row['location']}, but your volunteer eligibility needs attention before check-in. Current requirement(s) needed: {$needed}.\n\nReview your volunteer readiness and contact CTSMD if you need help resolving it:\n{$appUrl}/volunteer-readiness\n\n— CTSMD Connect";
-                $id=MailService::queue($db,(int)$row['user_id'],(string)$row['email'],(string)$row['name'],'volunteer','Volunteer requirement needed · '.$row['title'],$body,null,'shift-eligibility-'.$row['id'].'-'.date('Y-m-d'));
+            $missing=VolunteerCoverageService::missingRequirements($db,(int)$row['user_id'],(int)$row['shift_id']);
+            $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,(int)$row['user_id']);
+            if(!$liveVolunteer||$missing){
+                $issues=[];
+                if(!$liveVolunteer)$issues[]='your volunteer profile is not currently active';
+                if($missing)$issues[]='current requirement(s) needed: '.implode(', ',$missing);
+                $body="Hi {$row['name']},\n\nYou are scheduled for {$row['title']} {$when} at {$row['location']}, but your volunteer eligibility needs attention before check-in. ".ucfirst(implode('; ',$issues)).".\n\nReview your volunteer readiness and contact CTSMD if you need help resolving it:\n{$appUrl}/volunteer-readiness\n\n— CTSMD Connect";
+                $id=MailService::queue($db,(int)$row['user_id'],(string)$row['email'],(string)$row['name'],'volunteer','Volunteer eligibility needs attention · '.$row['title'],$body,null,'shift-eligibility-'.$row['id'].'-'.date('Y-m-d'));
             }else{
                 $body="Hi {$row['name']},\n\nReminder: you are signed up for {$row['title']} {$when} at {$row['location']}.\n\nReview your volunteer schedule:\n{$appUrl}/volunteer-shifts\n\n— CTSMD Connect";
                 $id=MailService::queue($db,(int)$row['user_id'],(string)$row['email'],(string)$row['name'],'volunteer','Volunteer shift tomorrow · '.$row['title'],$body,null,'shift-reminder-'.$row['id']);
@@ -48,12 +52,5 @@ final class NotificationReminderService
         $credentials=$db->query("SELECT vc.id,vc.user_id,vc.expires_at,vr.name requirement_name,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM volunteer_credentials vc JOIN volunteer_requirements vr ON vr.id=vc.requirement_id JOIN users u ON u.id=vc.user_id AND u.active=1 WHERE u.email IS NOT NULL AND u.account_status='active' AND vc.status='approved' AND vc.expires_at IS NOT NULL AND DATE(vc.expires_at) IN (DATE(DATE_ADD(NOW(),INTERVAL 30 DAY)),DATE(DATE_ADD(NOW(),INTERVAL 7 DAY)))")->fetchAll();
         foreach($credentials as $row){$days=(int)round((strtotime($row['expires_at'])-time())/86400);$days=$days>15?30:7;$body="Hi {$row['name']},\n\nYour {$row['requirement_name']} credential expires in about {$days} days. Review your volunteer readiness in CTSMD Connect:\n{$appUrl}/volunteer-readiness\n\n— CTSMD Connect";$id=MailService::queue($db,(int)$row['user_id'],(string)$row['email'],(string)$row['name'],'volunteer','Credential expiring · '.$row['requirement_name'],$body,null,'credential-expiry-'.$row['id'].'-'.$days);if($id)$counts['credentials']++;}
         return $counts;
-    }
-
-    private static function missingVolunteerRequirements(PDO $db,int $userId,int $shiftId):array
-    {
-        $stmt=$db->prepare("SELECT vr.name FROM volunteer_shift_requirements vsr JOIN volunteer_requirements vr ON vr.id=vsr.requirement_id LEFT JOIN volunteer_credentials vc ON vc.requirement_id=vr.id AND vc.user_id=:user WHERE vsr.shift_id=:shift AND (vc.id IS NULL OR vc.status<>'approved' OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())) ORDER BY vr.name");
-        $stmt->execute(['user'=>$userId,'shift'=>$shiftId]);
-        return array_values($stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 }
