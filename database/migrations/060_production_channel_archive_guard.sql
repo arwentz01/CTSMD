@@ -4,6 +4,7 @@ UPDATE channels c
 JOIN productions p ON p.id=c.production_id
 SET c.archived_at=COALESCE(c.archived_at,CURRENT_TIMESTAMP)
 WHERE p.is_active=0
+  AND p.status='archived'
   AND c.archived_at IS NULL;
 
 DROP TRIGGER IF EXISTS trg_production_deactivate_archive_channels;
