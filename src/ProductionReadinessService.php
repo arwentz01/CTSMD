@@ -25,7 +25,7 @@ final class ProductionReadinessService
         $signals[]=['key'=>'volunteer','label'=>'Volunteer coverage','count'=>$openSlots,'status'=>$openSlots?'attention':'ready','detail'=>$openSlots?$openSlots.' upcoming volunteer slot'.($openSlots===1?'':'s').' still uncovered':'Upcoming volunteer shifts are covered','href'=>'/admin/volunteer-shifts'];
 
         $futureCalls=self::count($db,"SELECT COUNT(*) FROM schedule_items WHERE production_id=? AND status='active' AND starts_at>=NOW()",[$id]);
-        $signals[]=['key'=>'schedule','label'=>'Schedule','count'=>$futureCalls?'ready':'attention','status'=>$futureCalls?'ready':'attention','detail'=>$futureCalls?$futureCalls.' upcoming active schedule item'.($futureCalls===1?'':'s'):'No upcoming active schedule items','href'=>'/schedule'];
+        $signals[]=['key'=>'schedule','label'=>'Schedule','count'=>$futureCalls,'status'=>$futureCalls?'ready':'attention','detail'=>$futureCalls?$futureCalls.' upcoming active schedule item'.($futureCalls===1?'':'s'):'No upcoming active schedule items','href'=>'/schedule'];
 
         $draftNotices=self::count($db,"SELECT COUNT(*) FROM schedule_change_notices WHERE production_id=? AND status='draft'",[$id]);
         $signals[]=['key'=>'notices','label'=>'Production updates','count'=>$draftNotices,'status'=>$draftNotices?'attention':'ready','detail'=>$draftNotices?$draftNotices.' draft notice'.($draftNotices===1?'':'s').' waiting for review':'No draft schedule-change notices','href'=>'/production/notices'];
