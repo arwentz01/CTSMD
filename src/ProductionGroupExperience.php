@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -17,9 +18,10 @@ final class ProductionGroupExperience
 
     public static function render(string $route,string $basePath): never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db=Database::connect(dirname(__DIR__));
-        $user=self::currentUser($db);
+        $user=Auth::currentUser($db);
+        if(!$user) self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::canManageProduction($user)) self::forbidden($basePath,$user);
         $_SESSION['production_group_csrf']??=bin2hex(random_bytes(24));
         $production=ProductionContext::selected($db,$user);
@@ -163,11 +165,6 @@ final class ProductionGroupExperience
     {
         $stmt=$db->prepare("SELECT pgm.production_membership_id FROM production_group_members pgm JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active' WHERE pgm.group_id=:group_id AND pgm.status='active'");
         $stmt->execute(['group_id'=>$groupId]); return array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
-    }
-    private static function currentUser(PDO $db): array
-    {
-        $row=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if(!$row)throw new RuntimeException('Demo user is missing. Re-import the local seed data.'); return $row;
     }
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void
     {
