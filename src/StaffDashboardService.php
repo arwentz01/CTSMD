@@ -29,7 +29,7 @@ final class StaffDashboardService
         }
         if(AccessPolicy::canManageVolunteers($user)){
             $cards[]=['key'=>'volunteer','label'=>'Uncovered shifts','count'=>self::uncoveredShiftCount($db,$productionIds,$now,$to),'detail'=>'Upcoming shifts below required staffing','href'=>'/admin/volunteer-shifts','tone'=>'attention'];
-            $cards[]=['key'=>'volunteer_approval','label'=>'Volunteer approvals','count'=>self::pendingVolunteerApprovals($db),'detail'=>'Shift approval requests awaiting review','href'=>'/admin/volunteer-approvals','tone'=>'neutral'];
+            $cards[]=['key'=>'volunteer_approval','label'=>'Volunteer approvals','count'=>self::pendingVolunteerApprovals($db),'detail'=>'Upcoming shift approval requests awaiting review','href'=>'/admin/volunteer-approvals','tone'=>'neutral'];
         }
         if(AccessPolicy::canModerateCommunity($user)){
             $cards[]=['key'=>'moderation','label'=>'Moderation queue','count'=>self::moderationQueue($db),'detail'=>'Community posts waiting for review','href'=>'/admin/moderation/queue','tone'=>'attention'];
@@ -67,7 +67,7 @@ final class StaffDashboardService
 
     private static function formsNeedingAttention(PDO $db,array $ids):int
     {
-        if(!$ids)return 0;$ph=self::placeholders($ids);$s=$db->prepare("SELECT COUNT(*) FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 WHERE fa.production_id IN ($ph) AND fa.status IN ('missing','requires_review','due_soon')");$s->execute($ids);return (int)$s->fetchColumn();
+        if(!$ids)return 0;$ph=self::placeholders($ids);$s=$db->prepare("SELECT COUNT(*) FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) AND subject.active=1 AND subject.account_status<>'disabled' WHERE fa.production_id IN ($ph) AND fa.status IN ('missing','requires_review','due_soon')");$s->execute($ids);return (int)$s->fetchColumn();
     }
 
     private static function registrationIntake(PDO $db):int
@@ -79,10 +79,10 @@ final class StaffDashboardService
 
     private static function uncoveredShifts(PDO $db,array $ids,DateTimeImmutable $from,DateTimeImmutable $to):array
     {
-        if(!$ids)return [];$ph=self::placeholders($ids);$sql="SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title production_title,COUNT(CASE WHEN vss.status IN ('signed_up','checked_in') THEN 1 END) filled_slots FROM volunteer_shifts vs JOIN productions p ON p.id=vs.production_id LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id WHERE vs.production_id IN ($ph) AND p.is_active=1 AND vs.starts_at>=? AND vs.starts_at<? GROUP BY vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title HAVING filled_slots < vs.required_slots ORDER BY vs.starts_at LIMIT 12";$s=$db->prepare($sql);$s->execute([...$ids,$from->format('Y-m-d H:i:s'),$to->format('Y-m-d H:i:s')]);return $s->fetchAll();
+        if(!$ids)return [];$ph=self::placeholders($ids);$sql="SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title production_title,COUNT(CASE WHEN vss.status IN ('signed_up','checked_in') AND volunteer.id IS NOT NULL THEN 1 END) filled_slots FROM volunteer_shifts vs JOIN productions p ON p.id=vs.production_id LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id LEFT JOIN users volunteer ON volunteer.id=vss.user_id AND volunteer.active=1 AND volunteer.account_status='active' WHERE vs.production_id IN ($ph) AND p.is_active=1 AND vs.starts_at>=? AND vs.starts_at<? GROUP BY vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title HAVING filled_slots < vs.required_slots ORDER BY vs.starts_at LIMIT 12";$s=$db->prepare($sql);$s->execute([...$ids,$from->format('Y-m-d H:i:s'),$to->format('Y-m-d H:i:s')]);return $s->fetchAll();
     }
 
-    private static function pendingVolunteerApprovals(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM volunteer_shift_approval_requests WHERE status='pending'")->fetchColumn();}
+    private static function pendingVolunteerApprovals(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM volunteer_shift_approval_requests r JOIN volunteer_shifts vs ON vs.id=r.shift_id JOIN users u ON u.id=r.user_id AND u.active=1 AND u.account_status='active' WHERE r.status='pending' AND vs.starts_at>NOW()")->fetchColumn();}
     private static function moderationQueue(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM channel_posts WHERE moderation_status='pending'")->fetchColumn();}
 
     private static function registrationRows(PDO $db):array
