@@ -18,7 +18,7 @@ final class VolunteerDevelopmentExperience
     {
         Auth::startSession();
         $db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['volunteer_development_csrf']??=bin2hex(random_bytes(24));
-        if($route==='/admin/volunteer-development'&&!AccessPolicy::isStaff($user))self::forbidden();
+        if($route==='/admin/volunteer-development'&&!AccessPolicy::canManageVolunteers($user))self::forbidden();
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$route,$basePath);
         self::page($db,$route,$basePath,$user);
     }
@@ -26,7 +26,7 @@ final class VolunteerDevelopmentExperience
     private static function handlePost(PDO $db,array $user,string $route,string $basePath):never
     {
         if(!hash_equals((string)($_SESSION['volunteer_development_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired. Please try again.');self::redirect($basePath.$route);}
-        if(!AccessPolicy::isStaff($user))self::forbidden();$action=(string)($_POST['action']??'');
+        if(!AccessPolicy::canManageVolunteers($user))self::forbidden();$action=(string)($_POST['action']??'');
         try{
             if($action==='save_training'){
                 $title=trim((string)($_POST['title']??''));$description=trim((string)($_POST['description']??''));$instructions=trim((string)($_POST['completion_instructions']??''));$requirementId=filter_input(INPUT_POST,'requirement_id',FILTER_VALIDATE_INT)?:null;$validity=filter_input(INPUT_POST,'validity_days',FILTER_VALIDATE_INT)?:null;
@@ -45,7 +45,7 @@ final class VolunteerDevelopmentExperience
 
     private static function page(PDO $db,string $route,string $basePath,array $user):never
     {
-        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=self::takeFlash();$staff=AccessPolicy::isStaff($user);$uid=(int)$user['id'];
+        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=self::takeFlash();$staff=AccessPolicy::canManageVolunteers($user);$uid=(int)$user['id'];
         $history=self::hours($db,$uid);$total=VolunteerAutomationService::totalMinutes($db,$uid);$training=self::trainingForUser($db,$uid);$requirements=self::requirements($db);
         $users=$staff?self::volunteers($db):[];$forms=$staff?self::forms($db):[];$modules=$staff?self::modules($db):[];$mappings=$staff?self::mappings($db):[];
         $title=$route==='/volunteer/history'?'Volunteer history':($route==='/volunteer/training'?'Training':'Volunteer development');$subnav=[['label'=>'Readiness','href'=>'/volunteer-readiness','active'=>false],['label'=>'Opportunities','href'=>'/volunteer-shifts','active'=>false],['label'=>'Training','href'=>'/volunteer/training','active'=>$route==='/volunteer/training'],['label'=>'Service record','href'=>'/volunteer/history','active'=>$route==='/volunteer/history'],['label'=>'Verifications','href'=>'/volunteer/verifications','active'=>false]];
