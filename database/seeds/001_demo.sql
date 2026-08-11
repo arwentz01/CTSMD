@@ -3,6 +3,12 @@ SET NAMES utf8mb4;
 -- Demo reset. Apply all migrations before running this seed.
 -- Use DELETE rather than TRUNCATE so foreign-key relationships remain enforced.
 -- Child/dependent records are removed before their parents.
+DELETE FROM volunteer_service_verifications;
+DELETE FROM volunteer_coordinator_assignments;
+DELETE FROM volunteer_training_completions;
+DELETE FROM volunteer_hour_entries;
+DELETE FROM form_requirement_mappings;
+DELETE FROM volunteer_training_modules;
 DELETE FROM schedule_notice_deliveries;
 DELETE FROM app_notifications;
 DELETE FROM audit_events;
@@ -30,6 +36,11 @@ DELETE FROM productions;
 DELETE FROM family_relationships;
 DELETE FROM users;
 
+ALTER TABLE volunteer_service_verifications AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_coordinator_assignments AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_training_completions AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_hour_entries AUTO_INCREMENT = 1;
+ALTER TABLE volunteer_training_modules AUTO_INCREMENT = 1;
 ALTER TABLE schedule_notice_deliveries AUTO_INCREMENT = 1;
 ALTER TABLE app_notifications AUTO_INCREMENT = 1;
 ALTER TABLE audit_events AUTO_INCREMENT = 1;
@@ -111,7 +122,8 @@ INSERT INTO volunteer_requirements (id, code, name, category, expires) VALUES
 (1, 'facility_orientation', 'Facility orientation', 'orientation', 0),
 (2, 'background_check', 'Approved background check', 'background_check', 1),
 (3, 'child_safety_training', 'Child safety training', 'training', 1),
-(4, 'adult_18_plus', 'Adult volunteer', 'eligibility', 0);
+(4, 'adult_18_plus', 'Adult volunteer', 'eligibility', 0),
+(5, 'box_office_training', 'Box Office training', 'training', 0);
 
 INSERT INTO volunteer_credentials (user_id, requirement_id, status, completed_at, expires_at, verified_by_user_id) VALUES
 (1,1,'approved','2026-06-01 10:00:00',NULL,3),
@@ -130,29 +142,42 @@ INSERT INTO volunteer_credentials (user_id, requirement_id, status, completed_at
 (8,2,'pending',NULL,NULL,NULL),
 (8,3,'review','2026-07-15 10:00:00',NULL,NULL);
 
+INSERT INTO volunteer_training_modules (id, requirement_id, title, description, completion_instructions, validity_days, active, created_by_user_id) VALUES
+(1, 1, 'CTSMD Facility Education', 'Facility access, emergency exits, front-of-house expectations, and shared-space rules.', 'Complete the facility education session and have a coordinator verify completion.', NULL, 1, 3),
+(2, 5, 'Box Office Training', 'Ticket lookup, will-call workflow, patron assistance, and box office escalation basics.', 'Complete supervised box office training before taking an independent Box Office shift.', NULL, 1, 3);
+
+INSERT INTO volunteer_training_completions (module_id, user_id, status, completed_at, verified_by_user_id, note) VALUES
+(2,5,'completed','2026-08-05 18:00:00',3,'Completed supervised box office training.');
+
 INSERT INTO volunteer_shifts (id, production_id, title, category, starts_at, ends_at, location, required_slots, approval_required) VALUES
 (1,1,'Front of House','front_of_house','2026-08-07 17:30:00','2026-08-07 21:00:00','Lobby',4,0),
 (2,1,'Dressing Room Monitor','dressing_room','2026-08-08 13:00:00','2026-08-08 17:00:00','Backstage',2,1),
 (3,1,'Set Build Day','set_build','2026-08-08 10:00:00','2026-08-08 14:00:00','Scene Shop',8,0),
 (4,1,'Concessions','concessions','2026-08-09 12:30:00','2026-08-09 16:30:00','Lobby',5,0),
-(5,1,'Strike Crew','strike','2026-08-09 17:00:00','2026-08-09 20:00:00','Main Stage',6,0);
+(5,1,'Strike Crew','strike','2026-08-09 17:00:00','2026-08-09 20:00:00','Main Stage',6,0),
+(6,1,'Box Office','box_office','2026-08-15 12:00:00','2026-08-15 16:00:00','Lobby Box Office',3,0);
 
 INSERT INTO volunteer_shift_requirements (shift_id, requirement_id) VALUES
 (1,1),
 (2,2),(2,3),
-(3,4);
+(3,4),
+(6,2),(6,5);
 
 INSERT INTO volunteer_shift_signups (shift_id, user_id, status) VALUES
 (1,5,'signed_up'),(1,6,'signed_up'),
 (2,5,'signed_up'),
 (3,5,'signed_up'),(3,6,'signed_up'),(3,7,'signed_up'),(3,8,'signed_up'),
-(4,5,'signed_up'),(4,6,'signed_up');
+(4,5,'signed_up'),(4,6,'signed_up'),
+(6,5,'signed_up');
 
 INSERT INTO forms (id, title, form_type, instructions, completion_mode, review_required) VALUES
 (1,'Parent Handbook Acknowledgment','acknowledgment','Review the Parent Handbook and confirm that you understand and agree to follow CTSMD participation expectations.','acknowledgment',0),
 (2,'Media / Photo Release','release','Review the media and photo release terms and provide your typed signature to record your consent.','signature',0),
 (3,'Emergency Information','medical','Provide the current emergency information requested for your CTSMD household. Staff will review it before marking the assignment complete.','submission',1),
 (4,'Volunteer Facility Education','training_acknowledgment','Confirm that you completed the assigned facility education. Staff will review the acknowledgment before completion.','acknowledgment',1);
+
+INSERT INTO form_requirement_mappings (form_id, requirement_id, validity_days, active, created_by_user_id) VALUES
+(4,1,NULL,1,3);
 
 INSERT INTO form_assignments (form_id, user_id, status, due_at, completed_at) VALUES
 (1,1,'completed','2026-08-01 23:59:59','2026-07-29 18:00:00'),
