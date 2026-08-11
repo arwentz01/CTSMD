@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -16,8 +17,8 @@ final class ScheduleNoticeExperience
 
     public static function render(string $route,string $basePath):never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
-        $db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::canManageProduction($user))self::forbidden($basePath,$user);
         $_SESSION['schedule_notice_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$basePath);
@@ -101,7 +102,6 @@ final class ScheduleNoticeExperience
     private static function notice(PDO $db,int $id,int $productionId):?array{if($id<1||$productionId<1)return null;$s=$db->prepare("SELECT scn.*,si.title schedule_title,si.starts_at,si.location,si.audience_mode,p.title production_title,CONCAT(u.first_name,' ',u.last_name) creator FROM schedule_change_notices scn JOIN schedule_items si ON si.id=scn.schedule_item_id JOIN productions p ON p.id=scn.production_id LEFT JOIN users u ON u.id=scn.created_by_user_id WHERE scn.id=:id AND scn.production_id=:production LIMIT 1");$s->execute(['id'=>$id,'production'=>$productionId]);return $s->fetch()?:null;}
     private static function channels(PDO $db,int $productionId):array{$s=$db->prepare('SELECT id,name,description FROM channels WHERE production_id=:production AND archived_at IS NULL ORDER BY sort_order,name');$s->execute(['production'=>$productionId]);return $s->fetchAll();}
     private static function deliveries(PDO $db,int $noticeId):array{$s=$db->prepare("SELECT snd.destination_type,snd.destination_id,snd.recipient_count,snd.created_at,c.name channel_name,CONCAT(u.first_name,' ',u.last_name) creator FROM schedule_notice_deliveries snd LEFT JOIN channels c ON snd.destination_type='channel' AND c.id=snd.destination_id LEFT JOIN users u ON u.id=snd.created_by_user_id WHERE snd.notice_id=:notice ORDER BY snd.created_at");$s->execute(['notice'=>$noticeId]);return $s->fetchAll();}
-    private static function currentUser(PDO $db):array{$r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$r)throw new RuntimeException('Demo user is missing. Re-import the local seed data.');return $r;}
     private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'schedule_change_notice',:id,:summary,:meta)");$s->execute(['actor'=>$actor,'event'=>$event,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
 
     private static function page(string $route,string $basePath,array $user,?array $production,array $notices,?array $selected,array $channels,array $audience,array $deliveries):never
