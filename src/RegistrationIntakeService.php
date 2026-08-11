@@ -20,11 +20,11 @@ final class RegistrationIntakeService
     {
         $submission=self::review($db,$submissionId);if(!$submission)throw new RuntimeException('That registration no longer exists.');
         if($submission['participant_user_id'])throw new RuntimeException('This registration is already linked to CTSMD records.');
-        $participant=self::user($db,$participantUserId);if(!$participant)throw new RuntimeException('Choose a valid participant record.');
+        $participant=self::user($db,$participantUserId);if(!$participant)throw new RuntimeException('Choose an available participant record.');
         $minor=$submission['participant_age_group']!=='adult';
         if($minor){
             if(!$guardianUserId)throw new RuntimeException('Choose the guardian record for a minor participant.');
-            $guardian=self::user($db,$guardianUserId);if(!$guardian)throw new RuntimeException('Choose a valid guardian record.');
+            $guardian=self::user($db,$guardianUserId);if(!$guardian)throw new RuntimeException('Choose an available guardian record.');
             self::assertStudent($db,$participantUserId);
             self::assertAdultGuardian($db,$guardianUserId);
             if($guardianUserId===$participantUserId)throw new RuntimeException('A Student cannot be their own guardian.');
@@ -60,7 +60,7 @@ final class RegistrationIntakeService
                 self::ensureRelationship($db,$guardianId,$participantId,(int)$actor['id']);
             }else{
                 $participantId=self::userIdByEmail($db,(string)$submission['registrant_email']);
-                if(!$participantId){$participantId=self::createAdultPerson($db,(string)$submission['participant_first_name'],(string)$submission['participant_last_name'],(string)$submission['registrant_email'],(int)$actor['id']);$createdParticipant=true;}
+                if(!$participantId){$participantId=self::createAdultPerson($db,(string)$submission['participant_first_name'],(string)$submission['participant_last_name'],(string)$submission['registrant_email'],(int)$actor['id']);$createdParticipant=true;}else{self::assertAvailableAdult($db,$participantId);}
             }
             $method=($createdParticipant||$createdGuardian)?(($createdParticipant&&($createdGuardian||!$minor))?'created':'mixed'):'existing';
             self::saveLink($db,$submissionId,$participantId,$guardianId,(int)$actor['id'],$method);
@@ -72,14 +72,14 @@ final class RegistrationIntakeService
     private static function participantCandidates(PDO $db,array $submission): array
     {
         if($submission['participant_age_group']==='adult'){
-            $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email,display_role,account_status FROM users WHERE active=1 AND LOWER(email)=LOWER(:email) ORDER BY id LIMIT 10");$stmt->execute(['email'=>$submission['registrant_email']]);return $stmt->fetchAll();
+            $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email,display_role,account_status FROM users WHERE active=1 AND account_status<>'disabled' AND LOWER(email)=LOWER(:email) ORDER BY id LIMIT 10");$stmt->execute(['email'=>$submission['registrant_email']]);return $stmt->fetchAll();
         }
-        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status,CONCAT(g.first_name,' ',g.last_name) guardian_name,g.email guardian_email FROM users u LEFT JOIN family_relationships fr ON fr.student_user_id=u.id AND fr.status='active' LEFT JOIN users g ON g.id=fr.guardian_user_id WHERE u.active=1 AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id LIMIT 20");$stmt->execute(['first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);return $stmt->fetchAll();
+        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status,CONCAT(g.first_name,' ',g.last_name) guardian_name,g.email guardian_email FROM users u LEFT JOIN family_relationships fr ON fr.student_user_id=u.id AND fr.status='active' LEFT JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status<>'disabled' WHERE u.active=1 AND u.account_status<>'disabled' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id LIMIT 20");$stmt->execute(['first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);return $stmt->fetchAll();
     }
 
     private static function guardianCandidates(PDO $db,array $submission): array
     {
-        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status FROM users u WHERE u.active=1 AND u.email IS NOT NULL AND LOWER(u.email)=LOWER(:email) AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id LIMIT 10");$stmt->execute(['email'=>$submission['guardian_email']]);return $stmt->fetchAll();
+        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status FROM users u WHERE u.active=1 AND u.account_status<>'disabled' AND u.email IS NOT NULL AND LOWER(u.email)=LOWER(:email) AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id LIMIT 10");$stmt->execute(['email'=>$submission['guardian_email']]);return $stmt->fetchAll();
     }
 
     private static function createAdultPerson(PDO $db,string $first,string $last,string $email,int $actorId): int
@@ -103,21 +103,26 @@ final class RegistrationIntakeService
 
     private static function assertStudent(PDO $db,int $userId): void
     {
-        $stmt=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' JOIN users u ON u.id=ur.user_id AND u.active=1 WHERE ur.user_id=:user LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected participant is not an active Student profile.');
+        $stmt=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' JOIN users u ON u.id=ur.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE ur.user_id=:user LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected participant is not an available Student profile.');
     }
 
     private static function assertAdultGuardian(PDO $db,int $userId): void
     {
-        $stmt=$db->prepare("SELECT 1 FROM users u WHERE u.id=:user AND u.active=1 AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected guardian must be an active adult CTSMD person.');
+        $stmt=$db->prepare("SELECT 1 FROM users u WHERE u.id=:user AND u.active=1 AND u.account_status<>'disabled' AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected guardian must be an available adult CTSMD person.');
+    }
+
+    private static function assertAvailableAdult(PDO $db,int $userId): void
+    {
+        $stmt=$db->prepare("SELECT 1 FROM users u WHERE u.id=:user AND u.active=1 AND u.account_status<>'disabled' AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('That adult account is unavailable. Restore it in Account & Access before linking this registration.');
     }
 
     private static function childCandidateForGuardian(PDO $db,int $guardianId,string $first,string $last): ?int
     {
-        $stmt=$db->prepare("SELECT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) LIMIT 1");$stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;
+        $stmt=$db->prepare("SELECT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) LIMIT 1");$stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;
     }
 
     private static function userIdByEmail(PDO $db,string $email): ?int{$email=mb_strtolower(trim($email));if($email==='')return null;$stmt=$db->prepare('SELECT id FROM users WHERE active=1 AND LOWER(email)=:email LIMIT 1');$stmt->execute(['email'=>$email]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;}
-    private static function user(PDO $db,int $id):?array{$stmt=$db->prepare('SELECT id,first_name,last_name,email,display_role,account_status FROM users WHERE id=:id AND active=1 LIMIT 1');$stmt->execute(['id'=>$id]);return $stmt->fetch()?:null;}
+    private static function user(PDO $db,int $id):?array{$stmt=$db->prepare("SELECT id,first_name,last_name,email,display_role,account_status FROM users WHERE id=:id AND active=1 AND account_status<>'disabled' LIMIT 1");$stmt->execute(['id'=>$id]);return $stmt->fetch()?:null;}
     private static function saveLink(PDO $db,int $submissionId,int $participantId,?int $guardianId,int $actorId,string $method):void{$stmt=$db->prepare('INSERT INTO registration_submission_links (submission_id,participant_user_id,guardian_user_id,linked_by_user_id,link_method) VALUES (:submission,:participant,:guardian,:actor,:method)');$stmt->execute(['submission'=>$submissionId,'participant'=>$participantId,'guardian'=>$guardianId,'actor'=>$actorId,'method'=>$method]);}
     private static function audit(PDO $db,int $actor,string $event,int $submissionId,string $summary,array $meta):void{$stmt=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'registration_submission',:id,:summary,:meta)");$stmt->execute(['actor'=>$actor,'event'=>$event,'id'=>$submissionId,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
     private static function splitName(string $name):array{$parts=preg_split('/\s+/',trim($name))?:[];$first=array_shift($parts)?:'Guardian';$last=$parts?implode(' ',$parts):'Household';return [$first,$last];}
