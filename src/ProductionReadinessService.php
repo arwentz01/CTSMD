@@ -22,7 +22,7 @@ final class ProductionReadinessService
         $signals[]=['key'=>'forms','label'=>'Forms','count'=>$forms,'status'=>$forms?'attention':'ready','detail'=>$forms?$forms.' assignment'.($forms===1?'':'s').' still open':'No open production form assignments','href'=>'/admin/forms/manage'];
 
         $openSlots=self::openVolunteerSlots($db,$id);
-        $signals[]=['key'=>'volunteer','label'=>'Volunteer coverage','count'=>$openSlots,'status'=>$openSlots?'attention':'ready','detail'=>$openSlots?$openSlots.' upcoming volunteer slot'.($openSlots===1?'':'s').' still uncovered':'Upcoming volunteer shifts are covered','href'=>'/admin/volunteer-shifts'];
+        $signals[]=['key'=>'volunteer','label'=>'Volunteer coverage','count'=>$openSlots,'status'=>$openSlots?'attention':'ready','detail'=>$openSlots?$openSlots.' upcoming volunteer slot'.($openSlots===1?'':'s').' still uncovered':'Upcoming volunteer shifts are covered by currently eligible volunteers','href'=>'/admin/volunteer-shifts'];
 
         $futureCalls=self::count($db,"SELECT COUNT(*) FROM schedule_items WHERE production_id=? AND status='active' AND starts_at>=NOW()",[$id]);
         $signals[]=['key'=>'schedule','label'=>'Schedule','count'=>$futureCalls,'status'=>$futureCalls?'ready':'attention','detail'=>$futureCalls?$futureCalls.' upcoming active schedule item'.($futureCalls===1?'':'s'):'No upcoming active schedule items','href'=>'/schedule'];
@@ -80,7 +80,34 @@ final class ProductionReadinessService
     private static function staff(PDO $db,int $productionId):array{$s=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.audience_type='staff' AND pm.status='active' ORDER BY name");$s->execute(['production'=>$productionId]);return $s->fetchAll();}
     private static function staffMember(PDO $db,int $productionId,int $userId):bool{$s=$db->prepare("SELECT 1 FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type='staff' AND pm.status='active' LIMIT 1");$s->execute(['production'=>$productionId,'user'=>$userId]);return (bool)$s->fetchColumn();}
     private static function playbill(PDO $db,int $productionId):?array{$s=$db->prepare('SELECT id,status,published_at FROM playbills WHERE production_id=:production ORDER BY id DESC LIMIT 1');$s->execute(['production'=>$productionId]);return $s->fetch()?:null;}
-    private static function openVolunteerSlots(PDO $db,int $productionId):int{$s=$db->prepare("SELECT COALESCE(SUM(GREATEST(vs.required_slots-COALESCE(x.filled,0),0)),0) FROM volunteer_shifts vs LEFT JOIN (SELECT vss.shift_id,COUNT(*) filled FROM volunteer_shift_signups vss JOIN users u ON u.id=vss.user_id AND u.active=1 AND u.account_status='active' WHERE vss.status IN ('signed_up','checked_in') GROUP BY vss.shift_id) x ON x.shift_id=vs.id WHERE vs.production_id=:production AND vs.starts_at>=NOW()");$s->execute(['production'=>$productionId]);return (int)$s->fetchColumn();}
+    private static function openVolunteerSlots(PDO $db,int $productionId):int
+    {
+        $s=$db->prepare("SELECT COALESCE(SUM(GREATEST(vs.required_slots-COALESCE(x.filled,0),0)),0)
+            FROM volunteer_shifts vs
+            LEFT JOIN (
+                SELECT vss.shift_id,COUNT(*) filled
+                FROM volunteer_shift_signups vss
+                JOIN users u ON u.id=vss.user_id AND u.active=1 AND u.account_status='active'
+                JOIN volunteer_profiles vp ON vp.user_id=vss.user_id AND vp.active=1
+                WHERE vss.status IN ('signed_up','checked_in')
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM volunteer_shift_requirements vsr
+                      LEFT JOIN volunteer_credentials vc
+                        ON vc.requirement_id=vsr.requirement_id
+                       AND vc.user_id=vss.user_id
+                      WHERE vsr.shift_id=vss.shift_id
+                        AND (
+                            vc.id IS NULL
+                            OR vc.status<>'approved'
+                            OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())
+                        )
+                  )
+                GROUP BY vss.shift_id
+            ) x ON x.shift_id=vs.id
+            WHERE vs.production_id=:production AND vs.starts_at>=NOW()");
+        $s->execute(['production'=>$productionId]);return (int)$s->fetchColumn();
+    }
     private static function count(PDO $db,string $sql,array $params):int{$s=$db->prepare($sql);$s->execute($params);return (int)$s->fetchColumn();}
     private static function dateTime(string $value):?string{$value=trim($value);if($value==='')return null;$ts=strtotime($value);if($ts===false)throw new RuntimeException('Enter a valid due date/time.');return date('Y-m-d H:i:s',$ts);}
     private static function assertSelected(PDO $db,array $actor,int $productionId):void{$selected=ProductionContext::selected($db,$actor);if(!$selected||(int)$selected['id']!==$productionId)throw new RuntimeException('That checklist item is not in your current Working Production.');}
