@@ -228,10 +228,10 @@ final class FormManagementExperience
 
         $sql = match($audience){
             'all_active' => "SELECT id FROM users WHERE active=1 ORDER BY id",
-            'students' => "SELECT id FROM users WHERE active=1 AND display_role LIKE '%Student%' ORDER BY id",
-            'staff' => "SELECT id FROM users WHERE active=1 AND (display_role LIKE '%Director%' OR display_role LIKE '%Manager%' OR display_role LIKE '%Staff%' OR display_role LIKE '%Admin%') ORDER BY id",
+            'students' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE u.active=1 ORDER BY u.id",
+            'staff' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code IN ('administrator','production_staff') WHERE u.active=1 ORDER BY u.id",
             'volunteers' => "SELECT u.id FROM users u JOIN volunteer_profiles vp ON vp.user_id=u.id AND vp.active=1 WHERE u.active=1 ORDER BY u.id",
-            'adults' => "SELECT id FROM users WHERE active=1 AND display_role NOT LIKE '%Student%' ORDER BY id",
+            'adults' => "SELECT u.id FROM users u WHERE u.active=1 AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id",
             default => "SELECT id FROM users WHERE 1=0",
         };
         return array_map('intval',$db->query($sql)->fetchAll(PDO::FETCH_COLUMN));
