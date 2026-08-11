@@ -19,7 +19,7 @@ final class Playbill2Experience
         $db=Database::connect(dirname(__DIR__));
         if($route==='/playbill/asset'){self::asset($db);}
         if($route==='/playbill'){self::publicPage($db,$basePath);}
-        Auth::startSession();$user=Auth::currentUser($db);if(!$user||!AccessPolicy::canManageProduction($user)){http_response_code(403);exit('Playbill management permission is required.');}$production=ProductionContext::selected($db,$user);if(!$production){header('Location: '.($basePath?:'').'/production',true,303);exit;}$_SESSION['playbill2_csrf']??=bin2hex(random_bytes(24));$playbill=self::playbill($db,(int)$production['id']);if(!$playbill){header('Location: '.($basePath?:'').'/admin/playbill',true,303);exit;}if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$basePath,$user,$playbill);self::adminPage($db,$basePath,$user,$production,$playbill);
+        Auth::startSession();$user=Auth::currentUser($db);if(!$user||!AccessPolicy::canManagePlaybill($user)){http_response_code(403);exit('Playbill management permission is required.');}$production=ProductionContext::selected($db,$user);if(!$production){header('Location: '.($basePath?:'').'/production',true,303);exit;}$_SESSION['playbill2_csrf']??=bin2hex(random_bytes(24));$playbill=self::playbill($db,(int)$production['id']);if(!$playbill){header('Location: '.($basePath?:'').'/admin/playbill',true,303);exit;}if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$basePath,$user,$playbill);self::adminPage($db,$basePath,$user,$production,$playbill);
     }
     private static function post(PDO $db,string $basePath,array $user,array $playbill):never
     {
