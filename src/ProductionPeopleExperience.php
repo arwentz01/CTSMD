@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -19,12 +20,10 @@ final class ProductionPeopleExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         if (!AccessPolicy::canManageProduction($user)) {
             self::forbidden($basePath, $user);
         }
@@ -238,15 +237,6 @@ final class ProductionPeopleExperience
         $stmt = $db->prepare("SELECT student_pm.user_id AS student_id, CONCAT(student.first_name, ' ', student.last_name) AS student_name, COUNT(DISTINCT guardian_pm.user_id) AS guardian_count FROM production_memberships student_pm JOIN users student ON student.id = student_pm.user_id LEFT JOIN family_relationships fr ON fr.student_user_id = student_pm.user_id AND fr.status = 'active' LEFT JOIN production_memberships guardian_pm ON guardian_pm.user_id = fr.guardian_user_id AND guardian_pm.production_id = student_pm.production_id AND guardian_pm.audience_type = 'guardian' AND guardian_pm.status = 'active' WHERE student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' GROUP BY student_pm.user_id, student.first_name, student.last_name ORDER BY student.last_name, student.first_name");
         $stmt->execute(['production_id' => $productionId]);
         return $stmt->fetchAll();
-    }
-
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user = 1 AND active = 1 LIMIT 1")->fetch();
-        if (!$row) {
-            throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        }
-        return $row;
     }
 
     private static function audit(PDO $db, int $actorId, string $eventType, string $subjectType, int $subjectId, string $summary, array $metadata): void
