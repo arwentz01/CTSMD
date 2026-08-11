@@ -91,11 +91,11 @@ final class ProductionPeopleExperience
 
         $db->beginTransaction();
         try {
-            $personStmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, active FROM users WHERE id = :id FOR UPDATE");
+            $personStmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, active, account_status FROM users WHERE id = :id FOR UPDATE");
             $personStmt->execute(['id' => $userId]);
             $person = $personStmt->fetch();
-            if (!$person || !(bool)$person['active']) {
-                throw new RuntimeException('That person is not an active CTSMD user.');
+            if (!$person || !(bool)$person['active'] || $person['account_status'] === 'disabled') {
+                throw new RuntimeException('That person is not available for an active production roster.');
             }
 
             $isStudent = AccessPolicy::isStudent((string)$person['role']);
@@ -107,10 +107,10 @@ final class ProductionPeopleExperience
                 throw new RuntimeException('Only a staff account can be added as production staff.');
             }
             if ($audienceType === 'guardian') {
-                $guardianCheck = $db->prepare("SELECT COUNT(*) FROM family_relationships fr JOIN production_memberships student_pm ON student_pm.user_id = fr.student_user_id AND student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active'");
+                $guardianCheck = $db->prepare("SELECT COUNT(*) FROM family_relationships fr JOIN production_memberships student_pm ON student_pm.user_id = fr.student_user_id AND student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' JOIN users student ON student.id=student_pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active'");
                 $guardianCheck->execute(['production_id' => $productionId, 'guardian_id' => $userId]);
                 if ((int)$guardianCheck->fetchColumn() < 1) {
-                    throw new RuntimeException('A guardian can only be added when they have an active family relationship to a student already in this production.');
+                    throw new RuntimeException('A guardian can only be added when they have an active family relationship to a live student already in this production.');
                 }
             }
 
@@ -118,11 +118,11 @@ final class ProductionPeopleExperience
             $addedGuardians = [];
 
             if ($audienceType === 'student') {
-                $guardianStmt = $db->prepare("SELECT fr.guardian_user_id, fr.relationship_type, CONCAT(u.first_name, ' ', u.last_name) AS name FROM family_relationships fr JOIN users u ON u.id = fr.guardian_user_id AND u.active = 1 WHERE fr.student_user_id = :student_id AND fr.status = 'active' ORDER BY fr.is_primary DESC, fr.id ASC");
+                $guardianStmt = $db->prepare("SELECT fr.guardian_user_id, fr.relationship_type, CONCAT(u.first_name, ' ', u.last_name) AS name FROM family_relationships fr JOIN users u ON u.id = fr.guardian_user_id AND u.active = 1 AND u.account_status<>'disabled' WHERE fr.student_user_id = :student_id AND fr.status = 'active' ORDER BY fr.is_primary DESC, fr.id ASC");
                 $guardianStmt->execute(['student_id' => $userId]);
                 $guardians = $guardianStmt->fetchAll();
                 if (!$guardians) {
-                    throw new RuntimeException('This student has no active guardian relationship. Add a guardian relationship in People before adding them to a production.');
+                    throw new RuntimeException('This student has no available active guardian relationship. Add or restore a guardian in People before adding them to a production.');
                 }
                 foreach ($guardians as $guardian) {
                     $role = ucfirst((string)$guardian['relationship_type']);
@@ -178,17 +178,17 @@ final class ProductionPeopleExperience
             }
 
             if ($membership['audience_type'] === 'guardian') {
-                $studentStmt = $db->prepare("SELECT student_pm.user_id AS student_id, CONCAT(student.first_name, ' ', student.last_name) AS student_name FROM family_relationships fr JOIN production_memberships student_pm ON student_pm.user_id = fr.student_user_id AND student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' JOIN users student ON student.id = student_pm.user_id WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active'");
+                $studentStmt = $db->prepare("SELECT student_pm.user_id AS student_id, CONCAT(student.first_name, ' ', student.last_name) AS student_name FROM family_relationships fr JOIN production_memberships student_pm ON student_pm.user_id = fr.student_user_id AND student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' JOIN users student ON student.id = student_pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active'");
                 $studentStmt->execute(['production_id' => $productionId, 'guardian_id' => (int)$membership['user_id']]);
                 foreach ($studentStmt->fetchAll() as $student) {
-                    $otherStmt = $db->prepare("SELECT COUNT(DISTINCT guardian_pm.user_id) FROM family_relationships fr JOIN production_memberships guardian_pm ON guardian_pm.user_id = fr.guardian_user_id AND guardian_pm.production_id = :production_id AND guardian_pm.audience_type = 'guardian' AND guardian_pm.status = 'active' WHERE fr.student_user_id = :student_id AND fr.status = 'active' AND guardian_pm.user_id <> :guardian_id");
+                    $otherStmt = $db->prepare("SELECT COUNT(DISTINCT guardian_pm.user_id) FROM family_relationships fr JOIN production_memberships guardian_pm ON guardian_pm.user_id = fr.guardian_user_id AND guardian_pm.production_id = :production_id AND guardian_pm.audience_type = 'guardian' AND guardian_pm.status = 'active' JOIN users guardian ON guardian.id=guardian_pm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE fr.student_user_id = :student_id AND fr.status = 'active' AND guardian_pm.user_id <> :guardian_id");
                     $otherStmt->execute([
                         'production_id' => $productionId,
                         'student_id' => (int)$student['student_id'],
                         'guardian_id' => (int)$membership['user_id'],
                     ]);
                     if ((int)$otherStmt->fetchColumn() < 1) {
-                        throw new RuntimeException('Cannot remove this guardian while ' . $student['student_name'] . ' remains in the production without another active guardian member.');
+                        throw new RuntimeException('Cannot remove this guardian while ' . $student['student_name'] . ' remains in the production without another available active guardian member.');
                     }
                 }
             }
@@ -220,21 +220,21 @@ final class ProductionPeopleExperience
 
     private static function members(PDO $db, int $productionId): array
     {
-        $stmt = $db->prepare("SELECT pm.id, pm.user_id, pm.audience_type, pm.participation_role, pm.status, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS account_role FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = :production_id ORDER BY FIELD(pm.status,'active','inactive'), FIELD(pm.audience_type,'student','guardian','staff'), u.last_name, u.first_name");
+        $stmt = $db->prepare("SELECT pm.id, pm.user_id, pm.audience_type, pm.participation_role, pm.status, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS account_role, u.account_status FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.production_id = :production_id ORDER BY FIELD(pm.status,'active','inactive'), u.account_status='disabled', FIELD(pm.audience_type,'student','guardian','staff'), u.last_name, u.first_name");
         $stmt->execute(['production_id' => $productionId]);
         return $stmt->fetchAll();
     }
 
     private static function candidates(PDO $db, int $productionId): array
     {
-        $stmt = $db->prepare("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.display_role AS role, u.initials, EXISTS(SELECT 1 FROM production_memberships pm WHERE pm.production_id = :production_id AND pm.user_id = u.id AND pm.status = 'active') AS already_active FROM users u WHERE u.active = 1 ORDER BY u.last_name, u.first_name");
+        $stmt = $db->prepare("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.display_role AS role, u.initials, EXISTS(SELECT 1 FROM production_memberships pm WHERE pm.production_id = :production_id AND pm.user_id = u.id AND pm.status = 'active') AS already_active FROM users u WHERE u.active = 1 AND u.account_status<>'disabled' ORDER BY u.last_name, u.first_name");
         $stmt->execute(['production_id' => $productionId]);
         return $stmt->fetchAll();
     }
 
     private static function guardianCoverage(PDO $db, int $productionId): array
     {
-        $stmt = $db->prepare("SELECT student_pm.user_id AS student_id, CONCAT(student.first_name, ' ', student.last_name) AS student_name, COUNT(DISTINCT guardian_pm.user_id) AS guardian_count FROM production_memberships student_pm JOIN users student ON student.id = student_pm.user_id LEFT JOIN family_relationships fr ON fr.student_user_id = student_pm.user_id AND fr.status = 'active' LEFT JOIN production_memberships guardian_pm ON guardian_pm.user_id = fr.guardian_user_id AND guardian_pm.production_id = student_pm.production_id AND guardian_pm.audience_type = 'guardian' AND guardian_pm.status = 'active' WHERE student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' GROUP BY student_pm.user_id, student.first_name, student.last_name ORDER BY student.last_name, student.first_name");
+        $stmt = $db->prepare("SELECT student_pm.user_id AS student_id, CONCAT(student.first_name, ' ', student.last_name) AS student_name, COUNT(DISTINCT CASE WHEN guardian.id IS NOT NULL THEN guardian_pm.user_id END) AS guardian_count FROM production_memberships student_pm JOIN users student ON student.id = student_pm.user_id AND student.active=1 AND student.account_status<>'disabled' LEFT JOIN family_relationships fr ON fr.student_user_id = student_pm.user_id AND fr.status = 'active' LEFT JOIN production_memberships guardian_pm ON guardian_pm.user_id = fr.guardian_user_id AND guardian_pm.production_id = student_pm.production_id AND guardian_pm.audience_type = 'guardian' AND guardian_pm.status = 'active' LEFT JOIN users guardian ON guardian.id=guardian_pm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' GROUP BY student_pm.user_id, student.first_name, student.last_name ORDER BY student.last_name, student.first_name");
         $stmt->execute(['production_id' => $productionId]);
         return $stmt->fetchAll();
     }
@@ -258,7 +258,8 @@ final class ProductionPeopleExperience
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $flash = $_SESSION['production_people_flash'] ?? $_SESSION['production_context_flash'] ?? null;
         unset($_SESSION['production_people_flash'], $_SESSION['production_context_flash']);
-        $active = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active'));
+        $active = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active' && $m['account_status'] !== 'disabled'));
+        $disabledActive = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active' && $m['account_status'] === 'disabled'));
         $students = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'student'));
         $guardians = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'guardian'));
         $staff = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'staff'));
@@ -275,15 +276,16 @@ final class ProductionPeopleExperience
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>Production people · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-people.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production/people', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production', 'People & cast', $basePath, $subnav); ?><div class="production-people-page">
         <?php if ($flash): ?><div class="production-people-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <?php if (!$production): ?><section class="production-people-empty"><h2>No active production selected</h2><p>Activate a production or switch the working production before managing its membership.</p></section><?php else: ?>
-        <section class="production-people-hero"><div><small><?= $esc(strtoupper((string)$production['season'])) ?> · WORKING PRODUCTION</small><h2><?= $esc($production['title']) ?></h2><p>Manage only the people who belong to this selected production. Student additions automatically carry their active guardian relationships into this production audience.</p></div><div class="production-people-metrics"><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
+        <section class="production-people-hero"><div><small><?= $esc(strtoupper((string)$production['season'])) ?> · WORKING PRODUCTION</small><h2><?= $esc($production['title']) ?></h2><p>Manage only the people who belong to this selected production. Student additions automatically carry their available active guardian relationships into this production audience.</p></div><div class="production-people-metrics"><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
 
-        <div class="production-people-layout"><section class="production-people-panel"><header><div><small>ACTIVE ROSTER</small><h3>Production membership</h3></div><span><?= count($active) ?> active</span></header>
+        <div class="production-people-layout"><section class="production-people-panel"><header><div><small>ACTIVE ROSTER</small><h3>Production membership</h3></div><span><?= count($active) ?> live</span></header>
         <?php foreach (['student' => 'Students / Cast', 'guardian' => 'Guardians', 'staff' => 'Production Staff'] as $type => $label): ?><div class="production-people-group"><h4><?= $esc($label) ?></h4><?php $group = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === $type)); if (!$group): ?><p class="production-people-muted">No active <?= $esc($label) ?>.</p><?php else: foreach ($group as $member): ?><article class="production-member"><i><?= $esc($member['initials']) ?></i><div><b><?= $esc($member['name']) ?></b><span><?= $esc((string)$member['participation_role']) ?></span><small><?= $esc($member['account_role']) ?></small></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="remove"><input type="hidden" name="membership_id" value="<?= (int)$member['id'] ?>"><button type="submit">Remove</button></form></article><?php endforeach; endif; ?></div><?php endforeach; ?>
+        <?php if($disabledActive):?><div class="production-people-group"><h4>Disabled accounts · cleanup</h4><p class="production-people-muted">These memberships are retained for history but do not count in the live roster, schedule audiences, or guardian coverage. Remove the production membership when appropriate.</p><?php foreach($disabledActive as $member):?><article class="production-member"><i><?= $esc($member['initials']) ?></i><div><b><?= $esc($member['name']) ?></b><span><?= $esc((string)$member['participation_role']) ?></span><small>Account disabled · <?= $esc(ucfirst((string)$member['audience_type'])) ?></small></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="remove"><input type="hidden" name="membership_id" value="<?= (int)$member['id'] ?>"><button type="submit">Remove</button></form></article><?php endforeach;?></div><?php endif;?>
         </section>
 
-        <aside class="production-people-panel add"><header><div><small>ADD TO <?= $esc(strtoupper($production['title'])) ?></small><h3>Assign a person</h3></div></header><form method="post" class="production-people-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="add"><label>Person<select name="user_id" required><option value="">Choose a person</option><?php foreach ($candidates as $candidate): ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?> · <?= $esc($candidate['role']) ?><?= (bool)$candidate['already_active'] ? ' · already active' : '' ?></option><?php endforeach; ?></select></label><label>Production audience<select name="audience_type" required><option value="student">Student / cast</option><option value="guardian">Guardian</option><option value="staff">Staff</option></select></label><label>Participation role<input name="participation_role" maxlength="120" required placeholder="e.g. Matilda, Parent / Guardian, Director"></label><button class="button full" type="submit">Add to <?= $esc($production['title']) ?></button></form><div class="production-people-rule"><b>Guardian safety is automatic.</b><p>Students cannot be added without an active guardian relationship. Their active guardians are added to this production audience automatically.</p></div></aside></div>
+        <aside class="production-people-panel add"><header><div><small>ADD TO <?= $esc(strtoupper($production['title'])) ?></small><h3>Assign a person</h3></div></header><form method="post" class="production-people-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="add"><label>Person<select name="user_id" required><option value="">Choose a person</option><?php foreach ($candidates as $candidate): ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?> · <?= $esc($candidate['role']) ?><?= (bool)$candidate['already_active'] ? ' · already active' : '' ?></option><?php endforeach; ?></select></label><label>Production audience<select name="audience_type" required><option value="student">Student / cast</option><option value="guardian">Guardian</option><option value="staff">Staff</option></select></label><label>Participation role<input name="participation_role" maxlength="120" required placeholder="e.g. Matilda, Parent / Guardian, Director"></label><button class="button full" type="submit">Add to <?= $esc($production['title']) ?></button></form><div class="production-people-rule"><b>Guardian safety is automatic.</b><p>Students cannot be added without an available active guardian relationship. Their active guardians are added to this production audience automatically.</p></div></aside></div>
 
-        <section class="production-people-panel coverage"><header><div><small>SAFEGUARDING CHECK</small><h3>Student guardian coverage</h3></div></header><?php if (!$coverage): ?><p class="production-people-muted">No active students are assigned.</p><?php else: foreach ($coverage as $row): ?><article><span><b><?= $esc($row['student_name']) ?></b><small>Active production student</small></span><em class="<?= (int)$row['guardian_count'] > 0 ? 'good' : 'danger' ?>"><?= (int)$row['guardian_count'] ?> guardian<?= (int)$row['guardian_count'] === 1 ? '' : 's' ?></em></article><?php endforeach; endif; ?></section>
+        <section class="production-people-panel coverage"><header><div><small>SAFEGUARDING CHECK</small><h3>Student guardian coverage</h3></div></header><?php if (!$coverage): ?><p class="production-people-muted">No live students are assigned.</p><?php else: foreach ($coverage as $row): ?><article><span><b><?= $esc($row['student_name']) ?></b><small>Active production student</small></span><em class="<?= (int)$row['guardian_count'] > 0 ? 'good' : 'danger' ?>"><?= (int)$row['guardian_count'] ?> guardian<?= (int)$row['guardian_count'] === 1 ? '' : 's' ?></em></article><?php endforeach; endif; ?></section>
         <?php endif; ?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
