@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -25,10 +26,10 @@ final class ResourceExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         $staff = AccessPolicy::canManageProduction($user);
         $admin = str_starts_with($route, '/admin/resources');
         if ($admin && !$staff) self::forbidden($basePath, $user);
@@ -213,7 +214,7 @@ final class ResourceExperience
         if (in_array('production_students',$audiences,true) && in_array('student',$types,true)) return true;
         if (in_array('production_guardians',$audiences,true) && in_array('guardian',$types,true)) return true;
         if (in_array('production_staff',$audiences,true) && in_array('staff',$types,true)) return true;
-        if (in_array('production_adults',$audiences,true) && !AccessPolicy::isStudent((string)$user['role'])) return true;
+        if (in_array('production_adults',$audiences,true) && !AccessPolicy::isStudent($user)) return true;
         return false;
     }
 
@@ -224,13 +225,6 @@ final class ResourceExperience
         $labels=[];
         foreach($items as $item) if(isset(self::AUDIENCES[$item])) $labels[]=self::AUDIENCES[$item];
         return $labels;
-    }
-
-    private static function currentUser(PDO $db): array
-    {
-        $row=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if(!$row) throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        return $row;
     }
 
     private static function audit(PDO $db,int $actorId,string $eventType,string $subjectType,int $subjectId,string $summary,array $metadata): void
@@ -268,7 +262,7 @@ final class ResourceExperience
             <?php if($resource && (int)$resource['production_id']!==(int)$production['id']):$resource=null;endif;?>
             <section class="resource-head"><div><small><?= $esc(strtoupper($production['title'])) ?></small><h2><?= $resource?'Edit resource':'Add resource' ?></h2><p>Choose exactly who in this production should have this material on their shelf.</p></div><a href="<?= $url('/admin/resources') ?>">← Resource library</a></section>
             <div class="resource-edit-layout"><form method="post" class="resource-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['resource_csrf']) ?>"><input type="hidden" name="action" value="save"><?php if($resource):?><input type="hidden" name="resource_id" value="<?= (int)$resource['id'] ?>"><?php endif;?>
-            <label>Title<input name="title" maxlength="190" required value="<?= $resource?$esc($resource['title']):'' ?>" placeholder="Costume measurement guide"></label><div class="resource-pair"><label>Category<input name="category" maxlength="100" required value="<?= $resource?$esc($resource['category']):'' ?>" placeholder="Costumes"></label><label>Resource type<select name="resource_type"><option value="link"<?= !$resource||$resource['resource_type']==='link'?' selected':'' ?>>Link</option><option value="note"<?= $resource&&$resource['resource_type']==='note'?' selected':'' ?>>Reference note</option></select></label></div><label>Description<input name="description" maxlength="500" value="<?= $resource?$esc((string)$resource['description']):'' ?>" placeholder="What this resource is for"></label><label>Link URL<input type="url" name="resource_url" maxlength="1000" value="<?= $resource?$esc((string)$resource['resource_url']):'' ?>" placeholder="https://..."></label><label>Reference note<textarea name="body" rows="8" maxlength="10000" placeholder="Use this when Resource type is Reference note"><?= $resource?$esc((string)$resource['body']):'' ?></textarea></label><fieldset><legend>Audience</legend><?php foreach(self::AUDIENCES as $value=>$label):?><label class="resource-check"><input type="checkbox" name="audiences[]" value="<?= $esc($value) ?>"<?= in_array($value,$selectedAudiences,true)?' checked':'' ?>><span><?= $esc($label) ?></span></label><?php endforeach;?></fieldset><label class="resource-check pinned"><input type="checkbox" name="pinned" value="1"<?= $resource&&(bool)$resource['pinned']?' checked':'' ?>><span><b>Pin this resource</b><small>Keep it at the top of the resource library.</small></span></label><footer><a href="<?= $url('/admin/resources') ?>">Cancel</a><button class="button" type="submit"><?= $resource?'Save resource':'Publish resource' ?></button></footer></form><aside class="resource-side"><small>RESOURCE MODEL</small><h3>Durable information, not another post.</h3><p>Use Community for conversation and announcements. Use Resources for things people should be able to find again without scrolling through a feed.</p><div><b>Files come next.</b><span>This version deliberately supports links and notes while we keep storage portable between local MAMP and shared hosting.</span></div></aside></div>
+            <label>Title<input name="title" maxlength="190" required value="<?= $resource?$esc($resource['title']):'' ?>" placeholder="Costume measurement guide"></label><div class="resource-pair"><label>Category<input name="category" maxlength="100" required value="<?= $resource?$esc($resource['category']):'' ?>" placeholder="Costumes"></label><label>Resource type<select name="resource_type"><option value="link"<?= !$resource||$resource['resource_type']==='link'?' selected':'' ?>>Link</option><option value="note"<?= $resource&&$resource['resource_type']==='note'?' selected':'' ?>>Reference note</option></select></label></div><label>Description<input name="description" maxlength="500" value="<?= $resource?$esc((string)$resource['description']):'' ?>" placeholder="What this resource is for"></label><label>Link URL<input type="url" name="resource_url" maxlength="1000" value="<?= $resource?$esc((string)$resource['resource_url']):'' ?>" placeholder="https://..."></label><label>Reference note<textarea name="body" rows="8" maxlength="10000" placeholder="Use this when Resource type is Reference note"><?= $resource?$esc((string)$resource['body']):'' ?></textarea></label><fieldset><legend>Audience</legend><?php foreach(self::AUDIENCES as $value=>$label):?><label class="resource-check"><input type="checkbox" name="audiences[]" value="<?= $esc($value) ?>"<?= in_array($value,$selectedAudiences,true)?' checked':'' ?>><span><?= $esc($label) ?></span></label><?php endforeach;?></fieldset><label class="resource-check pinned"><input type="checkbox" name="pinned" value="1"<?= $resource&&(bool)$resource['pinned']?' checked':'' ?>><span><b>Pin this resource</b><small>Keep it at the top of the resource library.</small></span></label><footer><a href="<?= $url('/admin/resources') ?>">Cancel</a><button class="button" type="submit"><?= $resource?'Save resource':'Publish resource' ?></button></footer></form><aside class="resource-side"><small>RESOURCE MODEL</small><h3>Durable information, not another post.</h3><p>Use Community for conversation and announcements. Use Resources for things people should be able to find again without scrolling through a feed.</p><div><b>Files are separate.</b><span>Upload versioned files from File Operations and use this shelf for durable links and reference notes.</span></div></aside></div>
         <?php elseif($memberDetail):?>
             <?php if(!$resource):?><section class="resource-empty"><b>Resource not available.</b><p>It may belong to another production, be archived, or not be visible to your role.</p><a class="button" href="<?= $url('/resources') ?>">Back to resources</a></section><?php else:?><section class="resource-detail"><div class="resource-detail-top"><span><?= $resource['resource_type']==='link'?'↗':'▤' ?></span><div><small><?= $esc(strtoupper($resource['category'])) ?><?= $resource['pinned']?' · PINNED':'' ?></small><h2><?= $esc($resource['title']) ?></h2><p><?= $esc((string)$resource['description']) ?></p></div></div><?php if($resource['resource_type']==='link'):?><a class="button" href="<?= $esc((string)$resource['resource_url']) ?>" target="_blank" rel="noopener noreferrer">Open resource ↗</a><?php else:?><article class="resource-note"><?= nl2br($esc((string)$resource['body'])) ?></article><?php endif;?><footer><a href="<?= $url('/resources') ?>">← All resources</a><?php if($staff):?><a href="<?= $url('/admin/resources/edit?id='.(int)$resource['id']) ?>">Edit resource</a><?php endif;?></footer></section><?php endif;?>
         <?php else:?>
