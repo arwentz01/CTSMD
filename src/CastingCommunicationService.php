@@ -25,12 +25,20 @@ final class CastingCommunicationService
             if(in_array((string)$r['casting_status'],['offered','cast'],true)&&trim((string)($r['role_title']??''))==='')throw new RuntimeException('Add the offered/cast role before sending the result.');
             if(!empty($r['production_membership_id'])&&in_array((string)$r['casting_status'],['offered','cast'],true)&&$r['membership_status']!=='active')throw new RuntimeException('That finalized production membership is no longer active. Restore the roster membership or update the casting decision before communicating it.');
 
-            $recipients=[];
-            if(filter_var((string)$r['student_email'],FILTER_VALIDATE_EMAIL))$recipients[(string)$r['student_email']]=['user_id'=>(int)$r['user_id'],'name'=>(string)$r['student_name']];
             $g=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' ORDER BY fr.is_primary DESC,fr.id");
             $g->execute(['student'=>(int)$r['user_id']]);
-            foreach($g->fetchAll() as $guardian)if(filter_var((string)$guardian['email'],FILTER_VALIDATE_EMAIL))$recipients[(string)$guardian['email']]=['user_id'=>(int)$guardian['id'],'name'=>(string)$guardian['name']];
-            if(!$recipients)throw new RuntimeException('No deliverable Student or available guardian email address is available.');
+            $guardians=$g->fetchAll();
+            if(!$guardians)throw new RuntimeException('This Student has no available active guardian relationship. Restore guardian context before communicating a casting result.');
+
+            $recipients=[];
+            if(filter_var((string)$r['student_email'],FILTER_VALIDATE_EMAIL))$recipients[(string)$r['student_email']]=['user_id'=>(int)$r['user_id'],'name'=>(string)$r['student_name']];
+            $guardianRecipients=0;
+            foreach($guardians as $guardian){
+                if(!filter_var((string)$guardian['email'],FILTER_VALIDATE_EMAIL))continue;
+                $recipients[(string)$guardian['email']]=['user_id'=>(int)$guardian['id'],'name'=>(string)$guardian['name']];
+                $guardianRecipients++;
+            }
+            if($guardianRecipients<1)throw new RuntimeException('This Student has guardian context, but no available guardian email address can receive the casting result.');
 
             $status=(string)$r['casting_status'];$production=(string)$r['production_title'];$student=(string)$r['student_name'];$role=trim((string)($r['role_title']??''));
             $subject=$status==='not_cast'?'Casting update · '.$production:($status==='offered'?'Casting offer · '.$production:'Casting result · '.$production);
@@ -39,11 +47,11 @@ final class CastingCommunicationService
                 :($status==='offered'
                     ?"CTSMD has a casting offer for {$student} in {$production}.\n\nRole: {$role}\n\nPlease sign in to CTSMD Connect for production information and follow-up from the production team.\n\nCTSMD Connect"
                     :"CTSMD has finalized a casting result for {$student} in {$production}.\n\nRole: {$role}\n\nPlease sign in to CTSMD Connect for production information.\n\nCTSMD Connect");
-            $queued=0;$nonce=date('YmdHis');
-            foreach($recipients as $email=>$recipient){$id=MailService::queue($db,$recipient['user_id'],$email,$recipient['name'],'system',$subject,$body,null,'casting-result-'.$recordId.'-'.$status.'-'.$email.'-'.$nonce);if($id>0)$queued++;}
-            if($queued<1)throw new RuntimeException('The family has valid email addresses, but current email preferences prevented this casting result from being queued. No result was marked as communicated.');
+            $queued=0;$guardianQueued=0;$guardianIds=array_map(static fn(array $guardian):int=>(int)$guardian['id'],$guardians);$nonce=date('YmdHis');
+            foreach($recipients as $email=>$recipient){$id=MailService::queue($db,$recipient['user_id'],$email,$recipient['name'],'system',$subject,$body,null,'casting-result-'.$recordId.'-'.$status.'-'.$email.'-'.$nonce);if($id>0){$queued++;if(in_array((int)$recipient['user_id'],$guardianIds,true))$guardianQueued++;}}
+            if($guardianQueued<1)throw new RuntimeException('Current email preferences prevented every guardian copy from being queued. No casting result was marked as communicated.');
             $db->prepare('UPDATE production_casting_records SET result_communicated_at=CURRENT_TIMESTAMP,result_communicated_by_user_id=:actor WHERE id=:id')->execute(['actor'=>$actorId,'id'=>$recordId]);
-            self::audit($db,$actorId,'casting.result_communicated',$recordId,'Queued casting result communication.',['production_id'=>$productionId,'casting_status'=>$status,'recipient_count'=>count($recipients),'queue_count'=>$queued]);
+            self::audit($db,$actorId,'casting.result_communicated',$recordId,'Queued casting result communication.',['production_id'=>$productionId,'casting_status'=>$status,'recipient_count'=>count($recipients),'queue_count'=>$queued,'guardian_queue_count'=>$guardianQueued]);
             $db->commit();return $queued;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The casting result could not be queued.');}
     }
