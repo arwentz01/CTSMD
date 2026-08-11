@@ -68,7 +68,7 @@ final class SafeguardingCaseService
 
     public static function safeguardingUsers(PDO $db):array
     {
-        return $db->query("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM users u JOIN auth_user_roles aur ON aur.user_id=u.id JOIN auth_roles ar ON ar.id=aur.role_id LEFT JOIN auth_role_permissions arp ON arp.role_id=ar.id LEFT JOIN auth_permissions ap ON ap.id=arp.permission_id WHERE u.active=1 AND (ar.code IN ('administrator','safeguarding') OR ap.code='safeguarding.manage') ORDER BY u.last_name,u.first_name")->fetchAll();
+        return $db->query("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.last_name,u.first_name FROM users u JOIN auth_user_roles aur ON aur.user_id=u.id JOIN auth_roles ar ON ar.id=aur.role_id LEFT JOIN auth_role_permissions arp ON arp.role_id=ar.id LEFT JOIN auth_permissions ap ON ap.id=arp.permission_id WHERE u.active=1 AND (ar.code IN ('administrator','safeguarding') OR ap.code='safeguarding.manage') GROUP BY u.id,u.first_name,u.last_name ORDER BY u.last_name,u.first_name")->fetchAll();
     }
 
     public static function people(PDO $db):array{return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 ORDER BY last_name,first_name")->fetchAll();}
