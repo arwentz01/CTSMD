@@ -10,10 +10,11 @@ final class ScheduleAudience
     {
         if ($productionId < 1) return [];
         $sql = "SELECT pg.id,pg.production_id,pg.name,pg.group_type,pg.description,pg.active,pg.sort_order,
-                       COUNT(DISTINCT CASE WHEN pgm.status='active' AND pm.status='active' THEN pgm.production_membership_id END) member_count
+                       COUNT(DISTINCT CASE WHEN pgm.status='active' AND pm.status='active' AND u.id IS NOT NULL THEN pgm.production_membership_id END) member_count
                 FROM production_groups pg
                 LEFT JOIN production_group_members pgm ON pgm.group_id=pg.id
                 LEFT JOIN production_memberships pm ON pm.id=pgm.production_membership_id
+                LEFT JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
                 WHERE pg.production_id=:production_id" . ($activeOnly ? " AND pg.active=1" : "") . "
                 GROUP BY pg.id,pg.production_id,pg.name,pg.group_type,pg.description,pg.active,pg.sort_order
                 ORDER BY pg.active DESC,pg.sort_order,pg.name";
@@ -90,7 +91,7 @@ final class ScheduleAudience
               FROM production_group_members pgm
               JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1
               JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
-              JOIN users u ON u.id=pm.user_id AND u.active=1
+              JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
               WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders) AND pm.audience_type IN ($typePh)";
         $stmt=$db->prepare($sql);
         $stmt->execute(array_merge([$productionId],$groupIds,$types));
@@ -103,6 +104,7 @@ final class ScheduleAudience
                 FROM production_group_members pgm
                 JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1
                 JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active' AND pm.audience_type='student'
+                JOIN users student ON student.id=pm.user_id AND student.active=1 AND student.account_status<>'disabled'
                 WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders)");
             $studentStmt->execute(array_merge([$productionId],$groupIds));
             $studentIds=array_map('intval',$studentStmt->fetchAll(PDO::FETCH_COLUMN));
@@ -111,7 +113,7 @@ final class ScheduleAudience
                 $guardianStmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,gpm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name
                     FROM family_relationships fr
                     JOIN production_memberships gpm ON gpm.user_id=fr.guardian_user_id AND gpm.production_id=? AND gpm.audience_type='guardian' AND gpm.status='active'
-                    JOIN users u ON u.id=gpm.user_id AND u.active=1
+                    JOIN users u ON u.id=gpm.user_id AND u.active=1 AND u.account_status<>'disabled'
                     WHERE fr.status='active' AND fr.student_user_id IN ($studentPh)");
                 $guardianStmt->execute(array_merge([$productionId],$studentIds));
                 foreach($guardianStmt->fetchAll() as $row) $byId[(int)$row['id']]=$row;
@@ -125,7 +127,7 @@ final class ScheduleAudience
     {
         $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff']};
         $ph=implode(',',array_fill(0,count($types),'?'));
-        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND pm.audience_type IN ($ph) ORDER BY sort_last_name,sort_first_name");
+        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph) ORDER BY sort_last_name,sort_first_name");
         $stmt->execute(array_merge([$productionId],$types));
         return $stmt->fetchAll();
     }
@@ -149,6 +151,7 @@ final class ScheduleAudience
             JOIN production_groups pg ON pg.id=sig.group_id AND pg.active=1 AND pg.production_id=:production
             JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
             JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
+            JOIN users participant ON participant.id=pm.user_id AND participant.active=1 AND participant.account_status<>'disabled'
             WHERE sig.schedule_item_id=:item AND pm.user_id=:user LIMIT 1");
         $direct->execute(['production'=>$productionId,'item'=>$scheduleItemId,'user'=>(int)$user['id']]);
         if($direct->fetchColumn()) return true;
@@ -157,6 +160,7 @@ final class ScheduleAudience
             $guardian=$db->prepare("SELECT 1
                 FROM family_relationships fr
                 JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=:production AND spm.audience_type='student' AND spm.status='active'
+                JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
                 JOIN production_group_members pgm ON pgm.production_membership_id=spm.id AND pgm.status='active'
                 JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1 AND pg.production_id=:production_group
                 JOIN schedule_item_groups sig ON sig.group_id=pg.id AND sig.schedule_item_id=:item
