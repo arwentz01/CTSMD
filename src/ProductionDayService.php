@@ -99,7 +99,8 @@ final class ProductionDayService
     {
         $s=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,
             COALESCE(SUM(CASE
-                WHEN vss.status IN ('checked_in','completed') THEN 1
+                WHEN vss.status='completed' THEN 1
+                WHEN vss.status='checked_in' AND volunteer.id IS NOT NULL THEN 1
                 WHEN vss.status='signed_up' AND volunteer.id IS NOT NULL AND NOT EXISTS (
                     SELECT 1 FROM volunteer_shift_requirements vsr
                     LEFT JOIN volunteer_credentials vc ON vc.requirement_id=vsr.requirement_id AND vc.user_id=vss.user_id
@@ -111,7 +112,7 @@ final class ProductionDayService
                     LEFT JOIN volunteer_credentials vc2 ON vc2.requirement_id=vsr2.requirement_id AND vc2.user_id=vss.user_id
                     WHERE vsr2.shift_id=vs.id AND (vc2.id IS NULL OR vc2.status<>'approved' OR (vc2.expires_at IS NOT NULL AND vc2.expires_at<NOW()))
                 )) THEN 1 ELSE 0 END),0) eligibility_blocked,
-            COALESCE(SUM(CASE WHEN vss.status='checked_in' THEN 1 ELSE 0 END),0) checked_in,
+            COALESCE(SUM(CASE WHEN vss.status='checked_in' AND volunteer.id IS NOT NULL THEN 1 ELSE 0 END),0) checked_in,
             COALESCE(SUM(CASE WHEN vss.status='waitlisted' THEN 1 ELSE 0 END),0) waitlisted
             FROM volunteer_shifts vs
             LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id
