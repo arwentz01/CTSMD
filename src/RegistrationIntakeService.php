@@ -20,6 +20,7 @@ final class RegistrationIntakeService
     {
         $submission=self::review($db,$submissionId);if(!$submission)throw new RuntimeException('That registration no longer exists.');
         if($submission['participant_user_id'])throw new RuntimeException('This registration is already linked to CTSMD records.');
+        if(!in_array($submission['status'],['accepted','submitted','waitlisted'],true))throw new RuntimeException('Only an active registration can be linked to CTSMD records.');
         $participant=self::user($db,$participantUserId);if(!$participant)throw new RuntimeException('Choose an available participant record.');
         $minor=$submission['participant_age_group']!=='adult';
         if($minor){
