@@ -73,11 +73,11 @@ final class TeamExperience
     {
         $team=self::team($db,$teamId); if(!$team) throw new RuntimeException('That team no longer exists.');
         $ids=array_values(array_unique(array_filter(array_map('intval',$rawIds),static fn(int $id):bool=>$id>0)));
-        if($team['production_id']!==null && $ids){
-            $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$db->prepare("SELECT DISTINCT user_id FROM production_memberships WHERE production_id=? AND status='active' AND user_id IN ($ph)"); $stmt->execute(array_merge([(int)$team['production_id']],$ids)); $eligible=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
-            if(count($eligible)!==count($ids)) throw new RuntimeException('Production teams can only include active members of that production.');
-        }
         self::validateStudentGroup($db,$ids);
+        if($team['production_id']!==null && $ids){
+            $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$db->prepare("SELECT DISTINCT pm.user_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.status='active' AND pm.user_id IN ($ph)"); $stmt->execute(array_merge([(int)$team['production_id']],$ids)); $eligible=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
+            if(count($eligible)!==count($ids)) throw new RuntimeException('Production teams can only include available active members of that production.');
+        }
         $db->beginTransaction();
         try{
             $db->prepare("UPDATE team_members SET status='inactive' WHERE team_id=:team")->execute(['team'=>$teamId]);
@@ -90,10 +90,17 @@ final class TeamExperience
     private static function validateStudentGroup(PDO $db,array $ids): void
     {
         if(!$ids) return;
-        $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$db->prepare("SELECT id,display_role FROM users WHERE active=1 AND id IN ($ph)"); $stmt->execute($ids); $rows=$stmt->fetchAll();
-        $hasStudent=false; $hasStaff=false;
-        foreach($rows as $row){ $role=(string)$row['display_role']; if(str_contains($role,'Student'))$hasStudent=true; if(str_contains($role,'Director')||str_contains($role,'Manager')||str_contains($role,'Staff')||str_contains($role,'Admin'))$hasStaff=true; }
-        if($hasStudent && (count($rows)<3 || !$hasStaff)) throw new RuntimeException('Student-inclusive private groups must contain at least three active people and at least one staff member. Use safeguarded Messages for one-to-one communication.');
+        $ph=implode(',',array_fill(0,count($ids),'?'));
+        $stmt=$db->prepare("SELECT u.id,
+            EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 WHERE ur.user_id=u.id AND r.code='student') is_student,
+            EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 WHERE ur.user_id=u.id AND r.code IN ('administrator','production_staff')) is_staff
+            FROM users u
+            WHERE u.active=1 AND u.account_status<>'disabled' AND u.id IN ($ph)");
+        $stmt->execute($ids);$rows=$stmt->fetchAll();
+        if(count($rows)!==count($ids))throw new RuntimeException('Private groups can only include available CTSMD accounts.');
+        $hasStudent=false;$hasStaff=false;
+        foreach($rows as $row){if((bool)$row['is_student'])$hasStudent=true;if((bool)$row['is_staff'])$hasStaff=true;}
+        if($hasStudent && (count($rows)<3 || !$hasStaff)) throw new RuntimeException('Student-inclusive private groups must contain at least three available people and at least one Production Staff or Administrator account. Use safeguarded Messages for one-to-one communication.');
     }
 
     private static function toggleTeam(PDO $db,array $actor,int $teamId): void
@@ -124,7 +131,7 @@ final class TeamExperience
         if(count($ids)<2) throw new RuntimeException('Select at least one other person for a private channel.');
         self::validateStudentGroup($db,$ids);
         $productionId=null; if(isset($input['production_scope'])){ $selected=ProductionContext::selected($db,$actor); if(!$selected)throw new RuntimeException('Select an active production first.'); $productionId=(int)$selected['id']; }
-        if($productionId!==null){ $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$db->prepare("SELECT DISTINCT user_id FROM production_memberships WHERE production_id=? AND status='active' AND user_id IN ($ph)"); $stmt->execute(array_merge([$productionId],$ids)); if(count($stmt->fetchAll(PDO::FETCH_COLUMN))!==count($ids)) throw new RuntimeException('A production-scoped private channel can only include active members of that production.'); }
+        if($productionId!==null){ $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$db->prepare("SELECT DISTINCT pm.user_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.status='active' AND pm.user_id IN ($ph)"); $stmt->execute(array_merge([$productionId],$ids)); if(count($stmt->fetchAll(PDO::FETCH_COLUMN))!==count($ids)) throw new RuntimeException('A production-scoped private channel can only include available active members of that production.'); }
         $db->beginTransaction();
         try{
             $stmt=$db->prepare("INSERT INTO channels (production_id,name,channel_type,description,read_scope,post_scope,read_audiences_json,post_audiences_json,access_mode,sort_order,created_by_user_id) VALUES (:production,:name,'private',:description,'staff','staff',JSON_ARRAY('staff'),JSON_ARRAY('staff'),'selected',100,:actor)");
@@ -136,9 +143,9 @@ final class TeamExperience
 
     private static function channelName(array $input): string { $name=trim((string)($input['name']??'')); if($name===''||mb_strlen($name)>120)throw new RuntimeException('Enter a channel name no longer than 120 characters.'); return $name; }
     private static function team(PDO $db,int $id): ?array { if($id<1)return null; $s=$db->prepare('SELECT t.*,p.title production_title FROM teams t LEFT JOIN productions p ON p.id=t.production_id WHERE t.id=:id LIMIT 1'); $s->execute(['id'=>$id]); $r=$s->fetch(); if(!$r)return null; $r['member_ids']=self::teamMemberIds($db,$id); return $r; }
-    private static function teamMemberIds(PDO $db,int $id): array { $s=$db->prepare("SELECT user_id FROM team_members WHERE team_id=:id AND status='active' ORDER BY user_id"); $s->execute(['id'=>$id]); return array_map('intval',$s->fetchAll(PDO::FETCH_COLUMN)); }
-    private static function teams(PDO $db): array { return $db->query("SELECT t.id,t.name,t.description,t.active,t.production_id,p.title production_title,COUNT(CASE WHEN tm.status='active' THEN 1 END) member_count,COUNT(DISTINCT ct.channel_id) channel_count FROM teams t LEFT JOIN productions p ON p.id=t.production_id LEFT JOIN team_members tm ON tm.team_id=t.id LEFT JOIN channel_teams ct ON ct.team_id=t.id GROUP BY t.id,t.name,t.description,t.active,t.production_id,p.title ORDER BY t.active DESC,p.title IS NULL DESC,p.title,t.name")->fetchAll(); }
-    private static function people(PDO $db): array { return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 ORDER BY last_name,first_name")->fetchAll(); }
+    private static function teamMemberIds(PDO $db,int $id): array { $s=$db->prepare("SELECT tm.user_id FROM team_members tm JOIN users u ON u.id=tm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE tm.team_id=:id AND tm.status='active' ORDER BY tm.user_id"); $s->execute(['id'=>$id]); return array_map('intval',$s->fetchAll(PDO::FETCH_COLUMN)); }
+    private static function teams(PDO $db): array { return $db->query("SELECT t.id,t.name,t.description,t.active,t.production_id,p.title production_title,COUNT(CASE WHEN tm.status='active' AND member.id IS NOT NULL THEN 1 END) member_count,COUNT(DISTINCT ct.channel_id) channel_count FROM teams t LEFT JOIN productions p ON p.id=t.production_id LEFT JOIN team_members tm ON tm.team_id=t.id LEFT JOIN users member ON member.id=tm.user_id AND member.active=1 AND member.account_status<>'disabled' LEFT JOIN channel_teams ct ON ct.team_id=t.id GROUP BY t.id,t.name,t.description,t.active,t.production_id,p.title ORDER BY t.active DESC,p.title IS NULL DESC,p.title,t.name")->fetchAll(); }
+    private static function people(PDO $db): array { return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 AND account_status<>'disabled' ORDER BY last_name,first_name")->fetchAll(); }
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void { $s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:a,:e,:t,:i,:s,:m)'); $s->execute(['a'=>$actor,'e'=>$event,'t'=>$type,'i'=>$id,'s'=>$summary,'m'=>json_encode($meta,JSON_THROW_ON_ERROR)]); }
     private static function flash(string $t,string $m): void { $_SESSION['team_flash']=['type'=>$t,'message'=>$m]; }
     private static function redirect(string $u): never { header('Location: '.$u,true,303); exit; }
