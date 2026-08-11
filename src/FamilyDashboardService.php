@@ -96,7 +96,18 @@ final class FamilyDashboardService
 
     private static function children(PDO $db, int $guardianId): array
     {
-        $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.first_name,u.initials,u.display_role role,fr.relationship_type,fr.is_primary FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY fr.is_primary DESC,u.last_name,u.first_name");
+        $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.first_name,u.initials,u.display_role role,fr.relationship_type,fr.is_primary
+            FROM family_relationships fr
+            JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled'
+            WHERE fr.guardian_user_id=:guardian
+              AND fr.status='active'
+              AND EXISTS (
+                  SELECT 1
+                  FROM auth_user_roles ur
+                  JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student'
+                  WHERE ur.user_id=u.id
+              )
+            ORDER BY fr.is_primary DESC,u.last_name,u.first_name");
         $stmt->execute(['guardian' => $guardianId]);
         return $stmt->fetchAll();
     }
@@ -111,9 +122,9 @@ final class FamilyDashboardService
             $user['roles'] = Auth::roles($db, $userId);
             $user['permissions'] = Auth::permissions($db, $userId);
         } catch (Throwable) {
-            $user['roles'] = ['student'];
-            $user['permissions'] = [];
+            return null;
         }
+        if (!in_array('student', $user['roles'], true)) return null;
         return $user;
     }
 
