@@ -63,6 +63,18 @@ final class AttendanceService
     {
         $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Absence reports cannot be submitted for a cancelled schedule item.');
         $reason=trim($reason);if($reason===''||mb_strlen($reason)>1500)throw new RuntimeException('Enter a brief absence reason up to 1,500 characters.');
+
+        $expected=self::expectedMembers($db,$scheduleItemId);$studentExpected=false;
+        foreach($expected as $member){if((int)$member['id']===$studentUserId&&($member['audience_type']??'')==='student'){$studentExpected=true;break;}}
+        if(!$studentExpected)throw new RuntimeException('That Student is no longer expected for this active schedule item.');
+
+        $reporter=$db->prepare("SELECT u.id,u.active,u.account_status,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) is_student FROM users u WHERE u.id=:id LIMIT 1");
+        $reporter->execute(['id'=>$reporterUserId]);$reporterRow=$reporter->fetch();
+        if(!$reporterRow||!(bool)$reporterRow['active']||$reporterRow['account_status']==='disabled')throw new RuntimeException('The reporting account is no longer available.');
+        $authorized=(int)$reporterRow['id']===$studentUserId&&(bool)$reporterRow['is_student'];
+        if(!$authorized){$guardian=$db->prepare("SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active' LIMIT 1");$guardian->execute(['guardian'=>$reporterUserId,'student'=>$studentUserId]);$authorized=(bool)$guardian->fetchColumn();}
+        if(!$authorized)throw new RuntimeException('You can no longer submit an absence report for that Student.');
+
         $stmt=$db->prepare("INSERT INTO attendance_absence_reports (schedule_item_id,student_user_id,reported_by_user_id,reason,status,submitted_at) VALUES (:item,:student,:reporter,:reason,'submitted',CURRENT_TIMESTAMP)");$stmt->execute(['item'=>$scheduleItemId,'student'=>$studentUserId,'reporter'=>$reporterUserId,'reason'=>$reason]);return (int)$db->lastInsertId();
     }
 
