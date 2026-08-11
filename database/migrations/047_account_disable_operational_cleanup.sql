@@ -1,5 +1,19 @@
 SET NAMES utf8mb4;
 
+UPDATE volunteer_shift_signups vss
+JOIN volunteer_shifts vs ON vs.id=vss.shift_id
+JOIN users u ON u.id=vss.user_id AND u.account_status='disabled'
+SET vss.status='cancelled'
+WHERE vss.status='signed_up'
+  AND vs.starts_at>NOW();
+
+UPDATE volunteer_shift_approval_requests r
+JOIN volunteer_shifts vs ON vs.id=r.shift_id
+JOIN users u ON u.id=r.user_id AND u.account_status='disabled'
+SET r.status='withdrawn',r.updated_at=CURRENT_TIMESTAMP
+WHERE r.status='pending'
+  AND vs.starts_at>NOW();
+
 DROP TRIGGER IF EXISTS trg_user_disable_operational_cleanup;
 
 DELIMITER $$
