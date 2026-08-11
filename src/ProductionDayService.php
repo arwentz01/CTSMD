@@ -97,7 +97,28 @@ final class ProductionDayService
 
     private static function volunteerShifts(PDO $db,int $productionId,string $day):array
     {
-        $s=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,COALESCE(SUM(CASE WHEN vss.status IN ('signed_up','checked_in','completed') THEN 1 ELSE 0 END),0) filled_slots,COALESCE(SUM(CASE WHEN vss.status='checked_in' THEN 1 ELSE 0 END),0) checked_in,COALESCE(SUM(CASE WHEN vss.status='waitlisted' THEN 1 ELSE 0 END),0) waitlisted FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id WHERE vs.production_id=:production AND DATE(vs.starts_at)=:day GROUP BY vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required ORDER BY vs.starts_at,vs.id");
+        $s=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,
+            COALESCE(SUM(CASE
+                WHEN vss.status IN ('checked_in','completed') THEN 1
+                WHEN vss.status='signed_up' AND volunteer.id IS NOT NULL AND NOT EXISTS (
+                    SELECT 1 FROM volunteer_shift_requirements vsr
+                    LEFT JOIN volunteer_credentials vc ON vc.requirement_id=vsr.requirement_id AND vc.user_id=vss.user_id
+                    WHERE vsr.shift_id=vs.id AND (vc.id IS NULL OR vc.status<>'approved' OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW()))
+                ) THEN 1
+                ELSE 0 END),0) filled_slots,
+            COALESCE(SUM(CASE WHEN vss.status='signed_up' AND (volunteer.id IS NULL OR EXISTS (
+                    SELECT 1 FROM volunteer_shift_requirements vsr2
+                    LEFT JOIN volunteer_credentials vc2 ON vc2.requirement_id=vsr2.requirement_id AND vc2.user_id=vss.user_id
+                    WHERE vsr2.shift_id=vs.id AND (vc2.id IS NULL OR vc2.status<>'approved' OR (vc2.expires_at IS NOT NULL AND vc2.expires_at<NOW()))
+                )) THEN 1 ELSE 0 END),0) eligibility_blocked,
+            COALESCE(SUM(CASE WHEN vss.status='checked_in' THEN 1 ELSE 0 END),0) checked_in,
+            COALESCE(SUM(CASE WHEN vss.status='waitlisted' THEN 1 ELSE 0 END),0) waitlisted
+            FROM volunteer_shifts vs
+            LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id
+            LEFT JOIN users volunteer ON volunteer.id=vss.user_id AND volunteer.active=1 AND volunteer.account_status='active'
+            WHERE vs.production_id=:production AND DATE(vs.starts_at)=:day
+            GROUP BY vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required
+            ORDER BY vs.starts_at,vs.id");
         $s->execute(['production'=>$productionId,'day'=>$day]);return $s->fetchAll();
     }
 
