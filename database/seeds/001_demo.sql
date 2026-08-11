@@ -3,12 +3,59 @@ SET NAMES utf8mb4;
 -- Demo reset. Apply all migrations before running this seed.
 -- Use DELETE rather than TRUNCATE so foreign-key relationships remain enforced.
 -- Child/dependent records are removed before their parents.
+DELETE FROM push_delivery_log;
+DELETE FROM push_queue;
+DELETE FROM push_subscriptions;
+DELETE FROM push_event_cursors;
+DELETE FROM playbill_sponsors;
+DELETE FROM channel_post_attachments;
+DELETE FROM message_attachments;
+DELETE FROM safeguarding_case_events;
+DELETE FROM safeguarding_cases;
+DELETE FROM external_theatre_credits;
+DELETE FROM theatre_history_credits;
+DELETE FROM production_cast_publications;
+DELETE FROM production_casting_records;
+DELETE FROM production_day_briefs;
+DELETE FROM production_checklist_items;
 DELETE FROM volunteer_service_verifications;
 DELETE FROM volunteer_coordinator_assignments;
 DELETE FROM volunteer_training_completions;
 DELETE FROM volunteer_hour_entries;
 DELETE FROM form_requirement_mappings;
 DELETE FROM volunteer_training_modules;
+DELETE FROM registration_submission_links;
+DELETE FROM registration_submissions;
+DELETE FROM registration_opportunities;
+DELETE FROM email_delivery_log;
+DELETE FROM email_queue;
+DELETE FROM notification_preferences;
+DELETE FROM auth_email_verifications;
+DELETE FROM auth_password_resets;
+DELETE FROM auth_invitations;
+DELETE FROM auth_user_roles;
+DELETE FROM calendar_subscriptions;
+DELETE FROM channel_read_states;
+DELETE FROM communication_read_state_meta;
+DELETE FROM production_files;
+DELETE FROM organization_resources;
+DELETE FROM student_profiles;
+DELETE FROM sponsors;
+DELETE FROM stored_file_versions;
+DELETE FROM stored_files;
+DELETE FROM form_submission_answers;
+DELETE FROM form_fields;
+DELETE FROM attendance_absence_reports;
+DELETE FROM attendance_records;
+DELETE FROM schedule_item_groups;
+DELETE FROM production_group_members;
+DELETE FROM channel_teams;
+DELETE FROM channel_members;
+DELETE FROM team_members;
+DELETE FROM production_groups;
+DELETE FROM teams;
+DELETE FROM playbill_sections;
+DELETE FROM production_resources;
 DELETE FROM schedule_notice_deliveries;
 DELETE FROM app_notifications;
 DELETE FROM audit_events;
@@ -28,6 +75,7 @@ DELETE FROM volunteer_requirements;
 DELETE FROM volunteer_profiles;
 DELETE FROM channel_posts;
 DELETE FROM channels;
+DELETE FROM moderation_terms;
 DELETE FROM schedule_change_notices;
 DELETE FROM schedule_items;
 DELETE FROM announcements;
@@ -36,11 +84,44 @@ DELETE FROM productions;
 DELETE FROM family_relationships;
 DELETE FROM users;
 
+ALTER TABLE push_delivery_log AUTO_INCREMENT = 1;
+ALTER TABLE push_queue AUTO_INCREMENT = 1;
+ALTER TABLE push_subscriptions AUTO_INCREMENT = 1;
+ALTER TABLE sponsors AUTO_INCREMENT = 1;
+ALTER TABLE external_theatre_credits AUTO_INCREMENT = 1;
+ALTER TABLE message_attachments AUTO_INCREMENT = 1;
+ALTER TABLE channel_post_attachments AUTO_INCREMENT = 1;
+ALTER TABLE safeguarding_case_events AUTO_INCREMENT = 1;
+ALTER TABLE safeguarding_cases AUTO_INCREMENT = 1;
+ALTER TABLE theatre_history_credits AUTO_INCREMENT = 1;
+ALTER TABLE production_casting_records AUTO_INCREMENT = 1;
+ALTER TABLE production_day_briefs AUTO_INCREMENT = 1;
+ALTER TABLE production_checklist_items AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_service_verifications AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_coordinator_assignments AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_training_completions AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_hour_entries AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_training_modules AUTO_INCREMENT = 1;
+ALTER TABLE registration_submissions AUTO_INCREMENT = 1;
+ALTER TABLE registration_opportunities AUTO_INCREMENT = 1;
+ALTER TABLE email_delivery_log AUTO_INCREMENT = 1;
+ALTER TABLE email_queue AUTO_INCREMENT = 1;
+ALTER TABLE auth_email_verifications AUTO_INCREMENT = 1;
+ALTER TABLE auth_password_resets AUTO_INCREMENT = 1;
+ALTER TABLE auth_invitations AUTO_INCREMENT = 1;
+ALTER TABLE calendar_subscriptions AUTO_INCREMENT = 1;
+ALTER TABLE production_files AUTO_INCREMENT = 1;
+ALTER TABLE organization_resources AUTO_INCREMENT = 1;
+ALTER TABLE stored_file_versions AUTO_INCREMENT = 1;
+ALTER TABLE stored_files AUTO_INCREMENT = 1;
+ALTER TABLE form_submission_answers AUTO_INCREMENT = 1;
+ALTER TABLE form_fields AUTO_INCREMENT = 1;
+ALTER TABLE attendance_absence_reports AUTO_INCREMENT = 1;
+ALTER TABLE attendance_records AUTO_INCREMENT = 1;
+ALTER TABLE production_groups AUTO_INCREMENT = 1;
+ALTER TABLE teams AUTO_INCREMENT = 1;
+ALTER TABLE playbill_sections AUTO_INCREMENT = 1;
+ALTER TABLE production_resources AUTO_INCREMENT = 1;
 ALTER TABLE schedule_notice_deliveries AUTO_INCREMENT = 1;
 ALTER TABLE app_notifications AUTO_INCREMENT = 1;
 ALTER TABLE audit_events AUTO_INCREMENT = 1;
@@ -55,9 +136,9 @@ ALTER TABLE volunteer_shift_signups AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_shifts AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_credentials AUTO_INCREMENT = 1;
 ALTER TABLE volunteer_requirements AUTO_INCREMENT = 1;
-ALTER TABLE volunteer_profiles AUTO_INCREMENT = 1;
 ALTER TABLE channel_posts AUTO_INCREMENT = 1;
 ALTER TABLE channels AUTO_INCREMENT = 1;
+ALTER TABLE moderation_terms AUTO_INCREMENT = 1;
 ALTER TABLE schedule_change_notices AUTO_INCREMENT = 1;
 ALTER TABLE schedule_items AUTO_INCREMENT = 1;
 ALTER TABLE announcements AUTO_INCREMENT = 1;
@@ -75,6 +156,31 @@ INSERT INTO users (id, first_name, last_name, email, initials, display_role, is_
 (6, 'Alex', 'Morgan', 'alex@example.test', 'AM', 'Parent + Volunteer', 0),
 (7, 'Casey', 'Nguyen', 'casey@example.test', 'CN', 'Volunteer', 0),
 (8, 'Robin', 'Patel', 'robin@example.test', 'RP', 'Volunteer', 0);
+
+-- Re-establish post-authentication account state after recreating demo people.
+UPDATE users
+SET account_status = CASE WHEN id = 2 THEN 'managed' ELSE 'active' END,
+    email_verified_at = COALESCE(email_verified_at, CURRENT_TIMESTAMP),
+    onboarding_completed_at = COALESCE(onboarding_completed_at, CURRENT_TIMESTAMP),
+    organization_membership_status = 'approved',
+    organization_membership_reviewed_at = CURRENT_TIMESTAMP,
+    organization_membership_reviewed_by_user_id = CASE WHEN id = 3 THEN NULL ELSE 3 END;
+
+-- Restore current RBAC role assignments from the stable role codes seeded by migration 017.
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='student' WHERE LOWER(u.display_role) LIKE '%student%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='volunteer' WHERE LOWER(u.display_role) LIKE '%volunteer%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='member' WHERE LOWER(u.display_role) NOT LIKE '%student%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='production_staff' WHERE LOWER(u.display_role) LIKE '%director%' OR LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%staff%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='moderator' WHERE LOWER(u.display_role) LIKE '%director%' OR LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%staff%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='safeguarding' WHERE LOWER(u.display_role) LIKE '%director%' OR LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%staff%';
+INSERT IGNORE INTO auth_user_roles (user_id,role_id)
+SELECT u.id,r.id FROM users u JOIN auth_roles r ON r.code='administrator' WHERE LOWER(u.display_role) LIKE '%manager%' OR LOWER(u.display_role) LIKE '%admin%';
 
 INSERT INTO family_relationships (id, guardian_user_id, student_user_id, relationship_type, is_primary, status, created_by_user_id) VALUES
 (1, 1, 2, 'parent', 1, 'active', 3);
@@ -223,3 +329,28 @@ SET read_audiences_json = CASE read_scope
         WHEN 'staff' THEN JSON_ARRAY('staff')
         ELSE JSON_ARRAY('staff')
     END;
+
+-- Read-state/push migrations baseline existing data. Rebuild those baselines after a reset too,
+-- otherwise old cursor IDs can suppress newly-seeded activity or replay it unexpectedly.
+INSERT INTO communication_read_state_meta (id,started_at) VALUES (1,CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE started_at=VALUES(started_at);
+
+UPDATE conversation_participants cp
+LEFT JOIN (
+    SELECT conversation_id,MAX(id) latest_message_id
+    FROM messages
+    WHERE hidden_at IS NULL
+    GROUP BY conversation_id
+) latest ON latest.conversation_id=cp.conversation_id
+SET cp.last_read_message_id=COALESCE(latest.latest_message_id,0),
+    cp.last_read_at=CURRENT_TIMESTAMP;
+
+INSERT INTO push_event_cursors (source_key,last_id)
+SELECT 'messages',COALESCE(MAX(id),0) FROM messages
+ON DUPLICATE KEY UPDATE last_id=VALUES(last_id),updated_at=CURRENT_TIMESTAMP;
+INSERT INTO push_event_cursors (source_key,last_id)
+SELECT 'community_posts',COALESCE(MAX(id),0) FROM channel_posts
+ON DUPLICATE KEY UPDATE last_id=VALUES(last_id),updated_at=CURRENT_TIMESTAMP;
+INSERT INTO push_event_cursors (source_key,last_id)
+SELECT 'app_notifications',COALESCE(MAX(id),0) FROM app_notifications
+ON DUPLICATE KEY UPDATE last_id=VALUES(last_id),updated_at=CURRENT_TIMESTAMP;
