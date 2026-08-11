@@ -12,7 +12,7 @@ final class StudentProfileService
         $viewerId=(int)$viewer['id'];$subjects=[];
         if(self::isStudent($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
         $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
-        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
+        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
         return array_values(array_filter($subjects));
     }
 
@@ -23,7 +23,7 @@ final class StudentProfileService
 
     public static function profile(PDO $db,int $studentId):?array
     {
-        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE u.id=:student AND u.active=1 LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
+        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
     }
 
     public static function save(PDO $db,string $projectRoot,array $viewer,int $studentId,array $input,array $upload):void
@@ -54,6 +54,6 @@ final class StudentProfileService
     }
 
     private static function subject(PDO $db,int $id,string $relationship):?array{$p=self::profile($db,$id);if(!$p)return null;return['id'=>$id,'name'=>$p['preferred_name']?:$p['legal_name'],'relationship'=>$relationship];}
-    private static function isStudent(PDO $db,int $id):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id JOIN users u ON u.id=ur.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE ur.user_id=:user AND r.code='student' LIMIT 1");$s->execute(['user'=>$id]);return(bool)$s->fetchColumn();}
+    private static function isStudent(PDO $db,int $id):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN users u ON u.id=ur.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE ur.user_id=:user AND r.code='student' LIMIT 1");$s->execute(['user'=>$id]);return(bool)$s->fetchColumn();}
     private static function audit(PDO $db,int $actor,int $student,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'student.profile_updated','user',:student,:summary,:meta)");$s->execute(['actor'=>$actor,'student'=>$student,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
 }
