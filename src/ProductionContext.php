@@ -18,6 +18,7 @@ final class ProductionContext
         $stmt = $db->prepare("SELECT DISTINCT p.id, p.title, p.season, p.status, p.is_active
             FROM productions p
             JOIN production_memberships pm ON pm.production_id = p.id
+            JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
             WHERE p.is_active = 1
               AND pm.user_id = :user_id
               AND pm.status = 'active'
@@ -72,6 +73,7 @@ final class ProductionContext
         $stmt = $db->prepare("SELECT 1
             FROM production_memberships pm
             JOIN productions p ON p.id = pm.production_id
+            JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
             WHERE pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
@@ -86,6 +88,7 @@ final class ProductionContext
         $stmt = $db->prepare("SELECT 1
             FROM production_memberships pm
             JOIN productions p ON p.id = pm.production_id
+            JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
             WHERE pm.production_id = :production_id
               AND pm.user_id = :user_id
               AND pm.status = 'active'
@@ -101,6 +104,7 @@ final class ProductionContext
         $stmt = $db->prepare("SELECT pm.audience_type
             FROM production_memberships pm
             JOIN productions p ON p.id = pm.production_id
+            JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
             WHERE pm.production_id = :production_id
               AND pm.user_id = :user_id
               AND pm.status = 'active'
