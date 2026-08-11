@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 
@@ -26,8 +27,9 @@ final class CommunityManagementExperience
 
     public static function render(string $route,string $basePath): never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE) session_start();
-        $db=Database::connect(dirname(__DIR__)); $user=self::currentUser($db);
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__)); $user=Auth::currentUser($db);
+        if(!$user) self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::isStaff($user)) self::forbidden();
         $_SESSION['channel_admin_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
@@ -114,7 +116,6 @@ final class CommunityManagementExperience
     private static function channels(PDO $db): array { return $db->query("SELECT c.id,c.name,c.channel_type,c.description,c.read_audiences_json,c.post_audiences_json,c.archived_at,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id GROUP BY c.id,c.name,c.channel_type,c.description,c.read_audiences_json,c.post_audiences_json,c.archived_at,p.title,p.is_active,c.sort_order ORDER BY c.archived_at IS NOT NULL,c.sort_order,c.name")->fetchAll(); }
     private static function productions(PDO $db): array { return $db->query("SELECT id,title,season,status,is_active FROM productions ORDER BY is_active DESC,title")->fetchAll(); }
     private static function decode(?string $json,string $fallback): array { $d=$json?json_decode($json,true):null; return is_array($d)&&$d?$d:[$fallback]; }
-    private static function currentUser(PDO $db): array { $r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch(); if(!$r)throw new RuntimeException('Demo user is missing.'); return $r; }
     private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta): void { $s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:a,:e,\'channel\',:i,:s,:m)'); $s->execute(['a'=>$actor,'e'=>$event,'i'=>$id,'s'=>$summary,'m'=>json_encode($meta,JSON_THROW_ON_ERROR)]); }
     private static function flash(string $t,string $m): void { $_SESSION['channel_admin_flash']=['type'=>$t,'message'=>$m]; }
     private static function redirect(string $u): never { header('Location: '.$u,true,303); exit; }
