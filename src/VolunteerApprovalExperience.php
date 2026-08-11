@@ -15,7 +15,7 @@ final class VolunteerApprovalExperience
     public static function render(string $route,string $basePath):never
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['volunteer_approval_csrf']??=bin2hex(random_bytes(24));
-        $staffRoute=str_starts_with($route,'/admin/');if($staffRoute&&!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);
+        $staffRoute=str_starts_with($route,'/admin/');if($staffRoute&&!AccessPolicy::canManageVolunteers($user))self::forbidden($basePath,$user);
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);
         if($route==='/volunteer/approvals')self::volunteerPage($db,$basePath,$user);
         $requestId=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;self::staffPage($db,$route,$basePath,$user,(int)$requestId);
@@ -31,7 +31,7 @@ final class VolunteerApprovalExperience
                 elseif($action==='withdraw'){self::withdrawRequest($db,$user,(int)(filter_input(INPUT_POST,'request_id',FILTER_VALIDATE_INT)?:0));self::flash('success','Approval request withdrawn.');}
                 self::redirect($basePath.'/volunteer/approvals');
             }
-            if(!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);
+            if(!AccessPolicy::canManageVolunteers($user))self::forbidden($basePath,$user);
             $requestId=(int)(filter_input(INPUT_POST,'request_id',FILTER_VALIDATE_INT)?:0);$note=trim((string)($_POST['decision_note']??''));
             if($action==='approve'){self::decide($db,$user,$requestId,true,$note);self::flash('success','Volunteer approved and added to the shift.');}
             elseif($action==='decline'){self::decide($db,$user,$requestId,false,$note);self::flash('success','Approval request declined. The volunteer was notified.');}
