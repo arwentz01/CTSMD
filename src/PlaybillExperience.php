@@ -10,13 +10,12 @@ require_once __DIR__ . '/ProductionContext.php';
 
 final class PlaybillExperience
 {
-    private const ROUTES=['/playbills','/admin/playbill','/playbill'];
+    private const ROUTES=['/playbills','/admin/playbill'];
     public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath):never
     {
         $db=Database::connect(dirname(__DIR__));
-        if($route==='/playbill')self::publicPage($db,$basePath);
         Auth::startSession();$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['playbill_csrf']??=bin2hex(random_bytes(24));$production=ProductionContext::selected($db,$user);
         if($route==='/admin/playbill'&&!AccessPolicy::canManagePlaybill($user))self::forbidden();if($_SERVER['REQUEST_METHOD']==='POST'&&$route==='/admin/playbill')self::handlePost($db,$basePath,$user,$production);
         $playbill=$production?self::playbillForProduction($db,(int)$production['id']):null;$sections=$playbill?self::sections($db,(int)$playbill['id'],$route==='/admin/playbill'):[];$roster=$production?self::roster($db,(int)$production['id']):[];self::page($route,$basePath,$user,$production,$playbill,$sections,$roster);
