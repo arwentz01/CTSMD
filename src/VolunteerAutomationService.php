@@ -26,9 +26,9 @@ final class VolunteerAutomationService
 
     public static function applyApprovedForm(PDO $db,int $submissionId,int $actorUserId):array
     {
-        $stmt=$db->prepare("SELECT fs.form_id,fs.submitted_by_user_id FROM form_submissions fs WHERE fs.id=:id LIMIT 1");$stmt->execute(['id'=>$submissionId]);$submission=$stmt->fetch();if(!$submission)return [];
+        $stmt=$db->prepare("SELECT fs.form_id,COALESCE(fs.submitted_for_user_id,fs.submitted_by_user_id) credential_user_id FROM form_submissions fs WHERE fs.id=:id LIMIT 1");$stmt->execute(['id'=>$submissionId]);$submission=$stmt->fetch();if(!$submission)return [];
         $map=$db->prepare("SELECT requirement_id,validity_days FROM form_requirement_mappings WHERE form_id=:form AND active=1");$map->execute(['form'=>(int)$submission['form_id']]);$applied=[];
-        foreach($map->fetchAll() as $row){self::approveCredential($db,(int)$submission['submitted_by_user_id'],(int)$row['requirement_id'],$actorUserId,$row['validity_days']!==null?(int)$row['validity_days']:null);$applied[]=(int)$row['requirement_id'];}
+        foreach($map->fetchAll() as $row){self::approveCredential($db,(int)$submission['credential_user_id'],(int)$row['requirement_id'],$actorUserId,$row['validity_days']!==null?(int)$row['validity_days']:null);$applied[]=(int)$row['requirement_id'];}
         return $applied;
     }
 
