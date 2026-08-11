@@ -85,6 +85,8 @@ require_once __DIR__.'/src/ProductionExperience.php';if(ProductionExperience::ha
 require_once __DIR__.'/src/CommunicationExperience.php';if(CommunicationExperience::handles($route))CommunicationExperience::render($route,$detectedBasePath);
 require_once __DIR__.'/src/SafeguardingCaseExperience.php';if(SafeguardingCaseExperience::handles($route))SafeguardingCaseExperience::render($route,$detectedBasePath);
 require_once __DIR__.'/src/SafeguardingExperience.php';if(SafeguardingExperience::handles($route))SafeguardingExperience::render($route,$detectedBasePath);
-require_once __DIR__.'/src/VisualPass3.php';if(VisualPass3::handles($route)){$data=require __DIR__.'/src/mock-data.php';VisualPass3::render($route,$detectedBasePath,$data);}
-require_once __DIR__.'/src/VisualPass.php';if(VisualPass::handles($route)){$data=require __DIR__.'/src/mock-data.php';VisualPass::render($route,$detectedBasePath,$data);}
+if(Auth::localIdentitySwitchEnabled()){
+    require_once __DIR__.'/src/VisualPass3.php';if(VisualPass3::handles($route)){$data=require __DIR__.'/src/mock-data.php';VisualPass3::render($route,$detectedBasePath,$data);}
+    require_once __DIR__.'/src/VisualPass.php';if(VisualPass::handles($route)){$data=require __DIR__.'/src/mock-data.php';VisualPass::render($route,$detectedBasePath,$data);}
+}
 require __DIR__.'/index.php';
