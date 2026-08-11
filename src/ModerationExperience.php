@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ModerationService.php';
@@ -15,9 +16,10 @@ final class ModerationExperience
 
     public static function render(string $route,string $basePath): never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db=Database::connect(dirname(__DIR__));
-        $user=self::currentUser($db);
+        $user=Auth::currentUser($db);
+        if(!$user) self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::canModerateCommunity($user)) self::forbidden();
         $_SESSION['moderation_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
@@ -99,7 +101,6 @@ final class ModerationExperience
     private static function term(PDO $db,int $id): ?array { if($id<1)return null;$s=$db->prepare('SELECT * FROM moderation_terms WHERE id=:id LIMIT 1');$s->execute(['id'=>$id]);return $s->fetch()?:null; }
     private static function queue(PDO $db): array{return $db->query("SELECT cp.id,cp.body,cp.moderation_status,cp.moderation_reason,cp.created_at,cp.moderated_at,c.name channel_name,p.title production_title,CONCAT(a.first_name,' ',a.last_name) author,a.display_role author_role,mt.term matched_term,mt.category,mt.action rule_action,mt.severity,CONCAT(m.first_name,' ',m.last_name) moderator FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users a ON a.id=cp.author_user_id LEFT JOIN moderation_terms mt ON mt.id=cp.moderation_term_id LEFT JOIN users m ON m.id=cp.moderated_by_user_id WHERE cp.moderation_status IN ('pending','rejected') ORDER BY cp.moderation_status='pending' DESC,cp.created_at DESC LIMIT 150")->fetchAll();}
     private static function aliases(string $value): array { $parts=preg_split('/[\r\n,]+/', $value)?:[];$out=[];foreach($parts as $part){$part=trim($part);if($part!=='')$out[]=$part;}return array_values(array_unique($out)); }
-    private static function currentUser(PDO $db): array { $r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$r)throw new RuntimeException('Demo user is missing.');return $r; }
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void { $s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:a,:e,:t,:i,:s,:m)');$s->execute(['a'=>$actor,'e'=>$event,'t'=>$type,'i'=>$id,'s'=>$summary,'m'=>json_encode($meta,JSON_THROW_ON_ERROR)]); }
     private static function flash(string $type,string $message): void { $_SESSION['moderation_flash']=['type'=>$type,'message'=>$message]; }
     private static function redirect(string $url): never { header('Location: '.$url,true,303);exit; }
