@@ -23,7 +23,7 @@ final class FormManagementExperience
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
         if (!$user) self::redirect(($basePath ?: '') . '/login');
-        if (!AccessPolicy::isStaff($user)) self::forbidden($basePath, $user);
+        if (!AccessPolicy::canManageForms($user)) self::forbidden($basePath, $user);
         $_SESSION['form_manage_csrf'] ??= bin2hex(random_bytes(24));
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') self::handlePost($db, $user, $route, $basePath);
