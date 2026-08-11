@@ -70,7 +70,7 @@ final class ProductionArchiveService
         $s->execute(['channel'=>$channelId,'production'=>$productionId]);$channel=$s->fetch();if(!$channel)return null;
         $audiences=self::historicalAudiences($db,(int)$viewer['id'],$productionId);
         if(!AccessPolicy::canManageProduction($viewer)&&!self::historicalChannelAccess($db,$channel,$viewer,$audiences))return null;
-        $posts=$db->prepare("SELECT cp.id,cp.body,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author_name FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:channel AND cp.moderation_status='published' ORDER BY cp.created_at,cp.id");
+        $posts=$db->prepare("SELECT cp.id,cp.body,cp.created_at,CONCAT(u.first_name,' ',u.last_name) author_name FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:channel AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at,cp.id");
         $posts->execute(['channel'=>$channelId]);$channel['posts']=$posts->fetchAll();return$channel;
     }
 
@@ -168,7 +168,7 @@ final class ProductionArchiveService
 
     private static function channels(PDO $db,int $productionId,array $viewer,array $audiences,bool $manager):array
     {
-        $s=$db->prepare("SELECT c.id,c.name,c.description,c.access_mode,c.read_audiences_json,c.archived_at,(SELECT COUNT(*) FROM channel_posts cp WHERE cp.channel_id=c.id AND cp.moderation_status='published') post_count,(SELECT MAX(cp2.created_at) FROM channel_posts cp2 WHERE cp2.channel_id=c.id AND cp2.moderation_status='published') last_post_at FROM channels c WHERE c.production_id=:production AND c.archived_at IS NULL ORDER BY c.sort_order,c.name");
+        $s=$db->prepare("SELECT c.id,c.name,c.description,c.access_mode,c.read_audiences_json,c.archived_at,(SELECT COUNT(*) FROM channel_posts cp WHERE cp.channel_id=c.id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL) post_count,(SELECT MAX(cp2.created_at) FROM channel_posts cp2 WHERE cp2.channel_id=c.id AND cp2.moderation_status='published' AND cp2.hidden_at IS NULL AND cp2.deleted_at IS NULL) last_post_at FROM channels c WHERE c.production_id=:production AND c.archived_at IS NULL ORDER BY c.sort_order,c.name");
         $s->execute(['production'=>$productionId]);$out=[];
         foreach($s->fetchAll() as $channel){if($manager||self::historicalChannelAccess($db,$channel,$viewer,$audiences))$out[]=$channel;}
         return$out;
