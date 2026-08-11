@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 
@@ -17,9 +18,10 @@ final class ProductionLifecycleExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         if (!AccessPolicy::canManageProduction($user)) self::forbidden($basePath, $user);
         $_SESSION['production_lifecycle_csrf'] ??= bin2hex(random_bytes(24));
 
@@ -193,13 +195,6 @@ final class ProductionLifecycleExperience
             (SELECT COUNT(*) FROM production_memberships pm WHERE pm.production_id=p.id AND pm.status='active') active_members,
             (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_items
             FROM productions p ORDER BY p.is_active DESC, (p.status='current') DESC, p.id DESC")->fetchAll();
-    }
-
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if (!$row) throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        return $row;
     }
 
     private static function audit(PDO $db, int $actorId, string $event, int $subjectId, string $summary, array $metadata): void
