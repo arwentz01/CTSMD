@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/Auth.php';
 
 final class CalendarService
 {
@@ -59,7 +60,12 @@ final class CalendarService
     public static function userForToken(PDO $db,string $token):?array
     {
         if(!preg_match('/^[a-f0-9]{64}$/',$token))return null;
-        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM calendar_subscriptions cs JOIN users u ON u.id=cs.user_id AND u.active=1 WHERE cs.token=:token AND cs.active=1 LIMIT 1");$stmt->execute(['token'=>$token]);return $stmt->fetch()?:null;
+        $stmt=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.email,u.initials,u.display_role role,u.active,u.account_status,u.organization_membership_status,u.organization_membership_reviewed_at,u.last_login_at FROM calendar_subscriptions cs JOIN users u ON u.id=cs.user_id WHERE cs.token=:token AND cs.active=1 AND u.active=1 AND u.account_status='active' LIMIT 1");
+        $stmt->execute(['token'=>$token]);$user=$stmt->fetch();if(!$user)return null;
+        $user['name']=trim((string)$user['first_name'].' '.(string)$user['last_name']);
+        $user['roles']=Auth::roles($db,(int)$user['id']);
+        $user['permissions']=Auth::permissions($db,(int)$user['id']);
+        return $user;
     }
 
     public static function ics(array $events,string $calendarName):string
