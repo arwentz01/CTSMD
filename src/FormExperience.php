@@ -15,7 +15,7 @@ final class FormExperience
     public static function render(string $route,string $basePath):never
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['forms_csrf']??=bin2hex(random_bytes(24));
-        $staffRoute=str_starts_with($route,'/admin/forms');if($staffRoute&&!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);
+        $staffRoute=str_starts_with($route,'/admin/forms');if($staffRoute&&!AccessPolicy::canManageForms($user))self::forbidden($basePath,$user);
         if($_SERVER['REQUEST_METHOD']==='POST'){
             if($route==='/forms/view')self::handleSubmission($db,$user,$basePath);
             if($route==='/admin/forms/review')self::handleReview($db,$user,$basePath);
@@ -54,7 +54,7 @@ final class FormExperience
 
     private static function handleReview(PDO $db,array $user,string $basePath):never
     {
-        if(!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);self::assertCsrf();$submissionId=filter_input(INPUT_POST,'submission_id',FILTER_VALIDATE_INT)?:0;$decision=(string)($_POST['decision']??'');$note=trim((string)($_POST['reviewer_note']??''));
+        if(!AccessPolicy::canManageForms($user))self::forbidden($basePath,$user);self::assertCsrf();$submissionId=filter_input(INPUT_POST,'submission_id',FILTER_VALIDATE_INT)?:0;$decision=(string)($_POST['decision']??'');$note=trim((string)($_POST['reviewer_note']??''));
         try{self::reviewSubmission($db,$user,(int)$submissionId,$decision,$note);self::flash('success',$decision==='approve'?'Form approved.':'Form returned to the assignee.');}
         catch(RuntimeException $e){self::flash('error',$e->getMessage());self::redirect($basePath.'/admin/forms/review?id='.(int)$submissionId);}
         self::redirect($basePath.'/admin/forms');
@@ -83,7 +83,7 @@ final class FormExperience
 
     private static function page(string $route,string $basePath,PDO $db,array $user,?array $assignment,?array $review):never
     {
-        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=$_SESSION['forms_flash']??null;unset($_SESSION['forms_flash']);$staff=AccessPolicy::isStaff($user);$my=self::assignments($db,(int)$user['id']);$queue=$staff?self::reviewQueue($db):[];
+        $url=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=$_SESSION['forms_flash']??null;unset($_SESSION['forms_flash']);$staff=AccessPolicy::canManageForms($user);$my=self::assignments($db,(int)$user['id']);$queue=$staff?self::reviewQueue($db):[];
         $title=match($route){'/forms'=>'My forms','/forms/view'=>$assignment['title']??'Form','/admin/forms'=>'Forms review','/admin/forms/review'=>$review['title']??'Review form',default=>'Forms'};$sub=[['label'=>'My forms','href'=>'/forms','active'=>in_array($route,['/forms','/forms/view'],true)]];if($staff)$sub[]=['label'=>'Review queue','href'=>'/admin/forms','active'=>in_array($route,['/admin/forms','/admin/forms/review'],true)];
         header('Content-Type:text/html; charset=utf-8');?><!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=$e($title)?> · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/forms-implementation.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Forms',$title,$basePath,$sub);?><div class="forms-page"><?php if($flash):?><div class="forms-flash <?=$e($flash['type'])?>"><?=$e($flash['message'])?></div><?php endif;?>
         <?php if($route==='/forms'):?><section class="forms-hero"><div><small>ASSIGNED TO YOU</small><h2>Paperwork without the paper chase.</h2><p>Open requirements, acknowledgments, signatures, and submissions stay together with their current review status.</p></div><b><?=count(array_filter($my,static fn(array $a):bool=>$a['status']!=='completed'))?></b></section><div class="forms-list"><?php if(!$my):?><section class="forms-empty"><b>No forms assigned.</b></section><?php else:foreach($my as $item):?><a class="forms-card <?=$e($item['status'])?>" href="<?=$url('/forms/view?id='.(int)$item['id'])?>"><span class="forms-icon"><?=$item['completion_mode']==='signature'?'✎':($item['completion_mode']==='submission'?'▤':'✓')?></span><div><small><?=$e(strtoupper(str_replace('_',' ',$item['form_type'])))?></small><h3><?=$e($item['title'])?></h3><p><?=$item['due_at']?'Due '.$e(date('M j, Y',strtotime($item['due_at']))):'No due date'?> · <?=$item['review_required']?'Staff review required':'Completes on submission'?></p></div><em><?=$e(ucwords(str_replace('_',' ',$item['status'])))?></em></a><?php endforeach;endif;?></div>
