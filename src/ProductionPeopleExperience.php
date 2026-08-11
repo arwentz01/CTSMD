@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/IdentityRolePolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/TheatreHistoryService.php';
 
@@ -91,21 +92,14 @@ final class ProductionPeopleExperience
 
         $db->beginTransaction();
         try {
-            $personStmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, active, account_status FROM users WHERE id = :id FOR UPDATE");
+            $personStmt = $db->prepare("SELECT id, active, account_status FROM users WHERE id = :id FOR UPDATE");
             $personStmt->execute(['id' => $userId]);
             $person = $personStmt->fetch();
             if (!$person || !(bool)$person['active'] || $person['account_status'] === 'disabled') {
                 throw new RuntimeException('That person is not available for an active production roster.');
             }
+            IdentityRolePolicy::assertProductionAudience($db, $userId, $audienceType);
 
-            $isStudent = AccessPolicy::isStudent((string)$person['role']);
-            $isStaff = AccessPolicy::isStaff((string)$person['role']);
-            if ($audienceType === 'student' && !$isStudent) {
-                throw new RuntimeException('Only a student account can be added as a production student.');
-            }
-            if ($audienceType === 'staff' && !$isStaff) {
-                throw new RuntimeException('Only a staff account can be added as production staff.');
-            }
             if ($audienceType === 'guardian') {
                 $guardianCheck = $db->prepare("SELECT COUNT(*) FROM family_relationships fr JOIN production_memberships student_pm ON student_pm.user_id = fr.student_user_id AND student_pm.production_id = :production_id AND student_pm.audience_type = 'student' AND student_pm.status = 'active' JOIN users student ON student.id=student_pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active'");
                 $guardianCheck->execute(['production_id' => $productionId, 'guardian_id' => $userId]);
