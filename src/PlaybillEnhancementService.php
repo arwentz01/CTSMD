@@ -8,7 +8,7 @@ final class PlaybillEnhancementService
 {
     public static function castProfiles(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT pm.user_id,pm.participation_role,COALESCE(sp.preferred_name,CONCAT(u.first_name,' ',u.last_name)) display_name,sp.short_bio,sp.headshot_stored_file_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE pm.production_id=:production AND pm.status='active' AND pm.audience_type='student' ORDER BY pm.participation_role,u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return$s->fetchAll();
+        $s=$db->prepare("SELECT pm.user_id,pm.participation_role,COALESCE(sp.preferred_name,CONCAT(u.first_name,' ',u.last_name)) display_name,sp.short_bio,sp.headshot_stored_file_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE pm.production_id=:production AND pm.status='active' AND pm.audience_type='student' ORDER BY pm.participation_role,u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return$s->fetchAll();
     }
 
     public static function sponsors(PDO $db,int $playbillId):array
@@ -36,7 +36,7 @@ final class PlaybillEnhancementService
     {
         $p=$db->prepare("SELECT pb.id,pb.production_id,pb.artwork_stored_file_id FROM playbills pb WHERE pb.public_slug=:slug AND pb.status='current' LIMIT 1");$p->execute(['slug'=>$slug]);$playbill=$p->fetch();if(!$playbill)return null;$fileId=null;
         if($kind==='artwork')$fileId=$playbill['artwork_stored_file_id']?(int)$playbill['artwork_stored_file_id']:null;
-        elseif($kind==='headshot'){$s=$db->prepare("SELECT sp.headshot_stored_file_id FROM production_memberships pm JOIN student_profiles sp ON sp.user_id=pm.user_id WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type='student' AND pm.status='active' LIMIT 1");$s->execute(['production'=>(int)$playbill['production_id'],'user'=>$id]);$fileId=(int)($s->fetchColumn()?:0)?:null;}
+        elseif($kind==='headshot'){$s=$db->prepare("SELECT sp.headshot_stored_file_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' JOIN student_profiles sp ON sp.user_id=pm.user_id WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type='student' AND pm.status='active' LIMIT 1");$s->execute(['production'=>(int)$playbill['production_id'],'user'=>$id]);$fileId=(int)($s->fetchColumn()?:0)?:null;}
         elseif($kind==='sponsor'){$s=$db->prepare("SELECT s.logo_stored_file_id FROM playbill_sponsors ps JOIN sponsors s ON s.id=ps.sponsor_id AND s.status='active' WHERE ps.playbill_id=:playbill AND s.id=:sponsor LIMIT 1");$s->execute(['playbill'=>(int)$playbill['id'],'sponsor'=>$id]);$fileId=(int)($s->fetchColumn()?:0)?:null;}
         return$fileId?StorageService::currentVersion($db,$fileId):null;
     }
