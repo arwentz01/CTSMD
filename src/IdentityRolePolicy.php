@@ -32,4 +32,22 @@ final class IdentityRolePolicy
         if($audienceType==='staff'&&!self::isStaff($db,$userId))throw new RuntimeException('Only Production Staff or an Administrator can be added as production staff.');
         if($audienceType==='guardian'&&self::isStudent($db,$userId))throw new RuntimeException('A Student cannot be added as a production guardian.');
     }
+
+    public static function assertRoleSelection(PDO $db,int $userId,array $roleIds):void
+    {
+        if($userId<1)throw new RuntimeException('Choose a valid account.');
+        $ids=array_values(array_unique(array_filter(array_map('intval',$roleIds),static fn(int $id):bool=>$id>0)));
+        $selected=[];
+        if($ids){$ph=implode(',',array_fill(0,count($ids),'?'));$s=$db->prepare("SELECT code FROM auth_roles WHERE active=1 AND id IN ($ph)");$s->execute($ids);$selected=array_values($s->fetchAll(PDO::FETCH_COLUMN));}
+
+        $child=$db->prepare("SELECT 1 FROM family_relationships WHERE student_user_id=:user AND status='active' LIMIT 1");$child->execute(['user'=>$userId]);
+        $productionStudent=$db->prepare("SELECT 1 FROM production_memberships WHERE user_id=:user AND audience_type='student' AND status='active' LIMIT 1");$productionStudent->execute(['user'=>$userId]);
+        if(($child->fetchColumn()||$productionStudent->fetchColumn())&&!in_array('student',$selected,true))throw new RuntimeException('This account is structurally linked as a Student. Remove active family/production Student relationships before removing the Student role.');
+
+        $guardian=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");$guardian->execute(['user'=>$userId]);
+        if($guardian->fetchColumn()&&in_array('student',$selected,true))throw new RuntimeException('An active parent, guardian, or caregiver cannot be assigned the Student role.');
+
+        $productionStaff=$db->prepare("SELECT 1 FROM production_memberships WHERE user_id=:user AND audience_type='staff' AND status='active' LIMIT 1");$productionStaff->execute(['user'=>$userId]);
+        if($productionStaff->fetchColumn()&&!in_array('production_staff',$selected,true)&&!in_array('administrator',$selected,true))throw new RuntimeException('This account is active production staff. Remove its production Staff memberships before removing staff authority.');
+    }
 }
