@@ -22,6 +22,24 @@ final class ProductionContext
             WHERE p.is_active = 1
               AND pm.user_id = :user_id
               AND pm.status = 'active'
+              AND (
+                  pm.audience_type <> 'guardian'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM family_relationships fr
+                      JOIN production_memberships spm
+                        ON spm.production_id=pm.production_id
+                       AND spm.user_id=fr.student_user_id
+                       AND spm.audience_type='student'
+                       AND spm.status='active'
+                      JOIN users student
+                        ON student.id=spm.user_id
+                       AND student.active=1
+                       AND student.account_status<>'disabled'
+                      WHERE fr.guardian_user_id=pm.user_id
+                        AND fr.status='active'
+                  )
+              )
             ORDER BY p.title, p.id");
         $stmt->execute(['user_id' => (int)$user['id']]);
         return $stmt->fetchAll();
@@ -77,6 +95,24 @@ final class ProductionContext
             WHERE pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND (
+                  pm.audience_type <> 'guardian'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM family_relationships fr
+                      JOIN production_memberships spm
+                        ON spm.production_id=pm.production_id
+                       AND spm.user_id=fr.student_user_id
+                       AND spm.audience_type='student'
+                       AND spm.status='active'
+                      JOIN users student
+                        ON student.id=spm.user_id
+                       AND student.active=1
+                       AND student.account_status<>'disabled'
+                      WHERE fr.guardian_user_id=pm.user_id
+                        AND fr.status='active'
+                  )
+              )
             LIMIT 1");
         $stmt->execute(['user_id' => $userId]);
         return (bool)$stmt->fetchColumn();
@@ -93,6 +129,24 @@ final class ProductionContext
               AND pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND (
+                  pm.audience_type <> 'guardian'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM family_relationships fr
+                      JOIN production_memberships spm
+                        ON spm.production_id=pm.production_id
+                       AND spm.user_id=fr.student_user_id
+                       AND spm.audience_type='student'
+                       AND spm.status='active'
+                      JOIN users student
+                        ON student.id=spm.user_id
+                       AND student.active=1
+                       AND student.account_status<>'disabled'
+                      WHERE fr.guardian_user_id=pm.user_id
+                        AND fr.status='active'
+                  )
+              )
             LIMIT 1");
         $stmt->execute(['production_id' => $productionId, 'user_id' => $userId]);
         return (bool)$stmt->fetchColumn();
@@ -109,6 +163,24 @@ final class ProductionContext
               AND pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND (
+                  pm.audience_type <> 'guardian'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM family_relationships fr
+                      JOIN production_memberships spm
+                        ON spm.production_id=pm.production_id
+                       AND spm.user_id=fr.student_user_id
+                       AND spm.audience_type='student'
+                       AND spm.status='active'
+                      JOIN users student
+                        ON student.id=spm.user_id
+                       AND student.active=1
+                       AND student.account_status<>'disabled'
+                      WHERE fr.guardian_user_id=pm.user_id
+                        AND fr.status='active'
+                  )
+              )
             ORDER BY FIELD(pm.audience_type,'staff','guardian','student')
             LIMIT 1");
         $stmt->execute(['production_id' => $productionId, 'user_id' => $userId]);
