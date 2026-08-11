@@ -54,6 +54,14 @@ final class MailService
                 $db->commit();
             }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
             $processed++;
+            if(!empty($row['user_id']) && (string)$row['category']!=='account_security'){
+                $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>(int)$row['user_id']]);
+                if(!$account->fetchColumn()){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Recipient account is unavailable.');
+                    continue;
+                }
+            }
             try{
                 self::deliver($projectRoot,$row);
                 $db->prepare("UPDATE email_queue SET status='sent',sent_at=CURRENT_TIMESTAMP,last_error=NULL WHERE id=:id")->execute(['id'=>(int)$row['id']]);
