@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/DynamicFormService.php';
@@ -14,8 +15,8 @@ final class DynamicFormExperience
 
     public static function render(string $route,string $basePath):never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
-        $db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);$_SESSION['dynamic_forms_csrf']??=bin2hex(random_bytes(24));
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['dynamic_forms_csrf']??=bin2hex(random_bytes(24));
         if($route==='/admin/forms/builder'){
             if(!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);
             $formId=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:filter_input(INPUT_POST,'form_id',FILTER_VALIDATE_INT)?:0;$form=self::form($db,(int)$formId);
@@ -94,7 +95,6 @@ final class DynamicFormExperience
     private static function form(PDO $db,int $id):?array{if($id<1)return null;$s=$db->prepare('SELECT id,production_id,title,form_type,instructions,completion_mode,review_required,definition_version,active FROM forms WHERE id=:id LIMIT 1');$s->execute(['id'=>$id]);return $s->fetch()?:null;}
     private static function assignment(PDO $db,int $userId,int $id):?array{if($id<1)return null;$s=$db->prepare("SELECT fa.id,fa.status,fa.due_at,fa.completed_at,fa.production_id,f.id form_id,f.title,f.form_type,f.instructions,f.review_required,f.definition_version,p.title production_title,fs.id submission_id FROM form_assignments fa JOIN forms f ON f.id=fa.form_id LEFT JOIN productions p ON p.id=fa.production_id LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.id=:id AND fa.user_id=:user AND f.active=1 LIMIT 1");$s->execute(['id'=>$id,'user'=>$userId]);return $s->fetch()?:null;}
     private static function reviewItem(PDO $db,int $id):?array{if($id<1)return null;$s=$db->prepare("SELECT fs.id,fs.assignment_id,fs.status,fs.definition_version,fs.submitted_at,f.title,f.form_type,CONCAT(u.first_name,' ',u.last_name) assignee FROM form_submissions fs JOIN forms f ON f.id=fs.form_id JOIN users u ON u.id=fs.submitted_by_user_id WHERE fs.id=:id LIMIT 1");$s->execute(['id'=>$id]);return $s->fetch()?:null;}
-    private static function currentUser(PDO $db):array{$r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$r)throw new RuntimeException('Demo user is missing.');return $r;}
     private static function csrf():void{if(!hash_equals((string)($_SESSION['dynamic_forms_csrf']??''),(string)($_POST['csrf_token']??'')))throw new RuntimeException('Your session token expired. Please try again.');}
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta):void{$s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$s->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
     private static function notify(PDO $db,int $recipient,string $sourceType,int $sourceId,string $title,string $body,string $path):void{$s=$db->prepare('INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path) VALUES (:recipient,:type,:source,:title,:body,:path)');$s->execute(['recipient'=>$recipient,'type'=>$sourceType,'source'=>$sourceId,'title'=>$title,'body'=>$body,'path'=>$path]);}
