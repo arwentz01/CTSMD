@@ -15,8 +15,10 @@ final class FamilyFormService
             LEFT JOIN productions p ON p.id=fa.production_id
             LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
-            WHERE fa.user_id=:viewer
-               OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active')
+            WHERE (subject.account_status<>'disabled' OR fa.status='completed') AND (
+                fa.user_id=:viewer
+                OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active')
+            )
             ORDER BY CASE fa.status WHEN 'missing' THEN 1 WHEN 'due_soon' THEN 2 WHEN 'requires_review' THEN 3 ELSE 4 END,fa.due_at IS NULL,fa.due_at,subject.last_name,subject.first_name,fa.id");
         $s->execute(['viewer'=>$viewerId,'guardian'=>$viewerId]);return$s->fetchAll();
     }
@@ -31,7 +33,7 @@ final class FamilyFormService
             LEFT JOIN productions p ON p.id=fa.production_id
             LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
-            WHERE fa.id=:id AND (
+            WHERE fa.id=:id AND (subject.account_status<>'disabled' OR fa.status='completed') AND (
                 fa.user_id=:viewer
                 OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active')
             ) LIMIT 1");
@@ -46,8 +48,8 @@ final class FamilyFormService
         if(!(bool)$context['group_active'])throw new RuntimeException('That Production Group is inactive.');
         if(!$context['production_id']||(int)$context['production_id']!==(int)$context['group_production'])throw new RuntimeException('The form and Production Group must belong to the same production.');
         $due=null;if($dueDate!==null&&trim($dueDate)!==''){$d=DateTimeImmutable::createFromFormat('Y-m-d',trim($dueDate));if(!$d||$d->format('Y-m-d')!==trim($dueDate))throw new RuntimeException('Choose a valid due date.');$due=$d->format('Y-m-d 23:59:59');}
-        $members=$db->prepare("SELECT DISTINCT pm.user_id FROM production_group_members pgm JOIN production_memberships pm ON pm.id=pgm.production_membership_id WHERE pgm.group_id=:group AND pgm.status='active' AND pm.status='active' AND pm.audience_type='student' ORDER BY pm.user_id");
-        $members->execute(['group'=>$groupId]);$userIds=array_map(static fn(array $r):int=>(int)$r['user_id'],$members->fetchAll());if(!$userIds)throw new RuntimeException('That Production Group has no active Student members.');
+        $members=$db->prepare("SELECT DISTINCT pm.user_id FROM production_group_members pgm JOIN production_memberships pm ON pm.id=pgm.production_membership_id JOIN users student ON student.id=pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE pgm.group_id=:group AND pgm.status='active' AND pm.status='active' AND pm.audience_type='student' ORDER BY pm.user_id");
+        $members->execute(['group'=>$groupId]);$userIds=array_map(static fn(array $r):int=>(int)$r['user_id'],$members->fetchAll());if(!$userIds)throw new RuntimeException('That Production Group has no live Student members.');
         $db->beginTransaction();$count=0;
         try{
             foreach($userIds as $studentId){
