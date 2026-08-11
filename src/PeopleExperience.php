@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__ . '/AccessPolicy.php';
 
 final class PeopleExperience
 {
@@ -16,15 +18,13 @@ final class PeopleExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         $_SESSION['people_csrf'] ??= bin2hex(random_bytes(24));
 
-        if ($route !== '/family-hub' && !self::isStaff((string)$user['role'])) {
+        if ($route !== '/family-hub' && !AccessPolicy::canManagePeople($user)) {
             self::forbidden($basePath, $user);
         }
 
@@ -48,7 +48,7 @@ final class PeopleExperience
 
     private static function handlePost(PDO $db, array $user, string $basePath): never
     {
-        if (!self::isStaff((string)$user['role'])) {
+        if (!AccessPolicy::canManagePeople($user)) {
             self::forbidden($basePath, $user);
         }
 
@@ -136,21 +136,6 @@ final class PeopleExperience
         }
     }
 
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user = 1 AND active = 1 LIMIT 1")->fetch();
-        if (!$row) {
-            throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        }
-        return $row;
-    }
-
-    private static function isStaff(string $role): bool
-    {
-        $role = strtolower($role);
-        return str_contains($role, 'manager') || str_contains($role, 'director') || str_contains($role, 'admin') || str_contains($role, 'staff');
-    }
-
     private static function familyForGuardian(PDO $db, int $guardianId): array
     {
         $stmt = $db->prepare("SELECT fr.id AS relationship_id, fr.relationship_type, fr.is_primary, u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role
@@ -209,8 +194,8 @@ final class PeopleExperience
         ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My family · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/people-implementation.css') ?>"></head>
 <body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/family-hub', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Home', 'My family', $basePath, [['label'=>'Today','href'=>'/app','active'=>false],['label'=>'My family','href'=>'/family-hub','active'=>true],['label'=>'Notifications','href'=>'/notifications','active'=>false]]); ?><div class="people-page">
-<section class="people-hero"><small>FAMILY RELATIONSHIPS</small><h2>Your theatre family</h2><p>Family links are now explicit organization records. They are used to determine guardian context and will later drive safe conversation creation.</p></section>
-<?php if ($family): ?><div class="family-card-grid"><?php foreach ($family as $person): ?><article class="family-person-card"><header><i><?= $esc($person['initials']) ?></i><div><h3><?= $esc($person['name']) ?></h3><p><?= $esc($person['role']) ?></p></div></header><div class="family-relation"><span><?= $esc(ucfirst($person['relationship_type'])) ?></span><?php if ($person['is_primary']): ?><b>Primary guardian</b><?php endif; ?></div><div class="family-safety-note"><b>Guardian context available</b><p>CTSMD can use this relationship when a safeguarded student/adult conversation is created.</p></div></article><?php endforeach; ?></div><?php else: ?><section class="people-empty"><b>No linked students</b><p>A staff member must establish family relationships before they can be used for safeguarding.</p></section><?php endif; ?>
+<section class="people-hero"><small>FAMILY RELATIONSHIPS</small><h2>Your theatre family</h2><p>Family links determine guardian context for household access and safeguarded communication.</p></section>
+<?php if ($family): ?><div class="family-card-grid"><?php foreach ($family as $person): ?><article class="family-person-card"><header><i><?= $esc($person['initials']) ?></i><div><h3><?= $esc($person['name']) ?></h3><p><?= $esc($person['role']) ?></p></div></header><div class="family-relation"><span><?= $esc(ucfirst($person['relationship_type'])) ?></span><?php if ($person['is_primary']): ?><b>Primary guardian</b><?php endif; ?></div><div class="family-safety-note"><b>Guardian context available</b><p>This relationship is used when CTSMD applies guardian visibility to safeguarded student communication.</p></div></article><?php endforeach; ?></div><?php else: ?><section class="people-empty"><b>No linked students</b><p>A staff member must establish family relationships before they can be used for safeguarding.</p></section><?php endif; ?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
     }
@@ -227,7 +212,7 @@ final class PeopleExperience
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/people-implementation.css') ?>"></head>
 <body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route, $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Administration', $title, $basePath); ?><div class="people-page"><?php if ($flash): ?><div class="people-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
 <?php if ($route === '/people'): ?>
-<section class="people-hero"><small>STAFF WORKSPACE</small><h2>People are relationships, not rows.</h2><p>See family context before access settings. This directory is restricted server-side to staff-like roles.</p></section>
+<section class="people-hero"><small>STAFF WORKSPACE</small><h2>People are relationships, not rows.</h2><p>See family context before access settings. This directory is restricted to staff with People permissions.</p></section>
 <div class="people-directory"><?php foreach ($people as $person): ?><a href="<?= $url('/people/view?id=' . (int)$person['id']) ?>"><i><?= $esc($person['initials']) ?></i><div><h3><?= $esc($person['name']) ?></h3><p><?= $esc($person['role']) ?></p><small><?= (int)$person['student_links'] ?> student links · <?= (int)$person['guardian_links'] ?> guardian links</small></div><span>Open →</span></a><?php endforeach; ?></div>
 <?php else: ?>
 <?php if (!$selected): ?><section class="people-empty"><b>Person not found</b><a class="button" href="<?= $url('/people') ?>">Back to people</a></section><?php else: $isStudent = str_contains(strtolower((string)$selected['role']), 'student'); $links = $isStudent ? self::guardiansForStudent($db, (int)$selected['id']) : self::familyForGuardian($db, (int)$selected['id']); $candidates = self::relationshipCandidates($db, (int)$selected['id']); ?>
