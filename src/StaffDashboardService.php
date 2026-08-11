@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/ProductionContext.php';
 require_once __DIR__.'/SafeguardingCaseService.php';
+require_once __DIR__.'/VolunteerCoverageService.php';
 
 final class StaffDashboardService
 {
@@ -28,7 +29,7 @@ final class StaffDashboardService
             $cards[]=['key'=>'registration','label'=>'Registration intake','count'=>self::registrationIntake($db),'detail'=>'Submitted or accepted registrations not yet linked to People','href'=>'/admin/registrations','tone'=>'attention'];
         }
         if(AccessPolicy::canManageVolunteers($user)){
-            $cards[]=['key'=>'volunteer','label'=>'Uncovered shifts','count'=>self::uncoveredShiftCount($db,$productionIds,$now,$to),'detail'=>'Upcoming shifts below required staffing','href'=>'/admin/volunteer-shifts','tone'=>'attention'];
+            $cards[]=['key'=>'volunteer','label'=>'Uncovered shifts','count'=>self::uncoveredShiftCount($db,$productionIds,$now,$to),'detail'=>'Upcoming shifts below required eligible staffing','href'=>'/admin/volunteer-shifts','tone'=>'attention'];
             $cards[]=['key'=>'volunteer_approval','label'=>'Volunteer approvals','count'=>self::pendingVolunteerApprovals($db),'detail'=>'Upcoming shift approval requests awaiting review','href'=>'/admin/volunteer-approvals','tone'=>'neutral'];
         }
         if(AccessPolicy::canModerateCommunity($user)){
@@ -79,7 +80,20 @@ final class StaffDashboardService
 
     private static function uncoveredShifts(PDO $db,array $ids,DateTimeImmutable $from,DateTimeImmutable $to):array
     {
-        if(!$ids)return [];$ph=self::placeholders($ids);$sql="SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title production_title,COUNT(CASE WHEN vss.status IN ('signed_up','checked_in') AND volunteer.id IS NOT NULL THEN 1 END) filled_slots FROM volunteer_shifts vs JOIN productions p ON p.id=vs.production_id LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id LEFT JOIN users volunteer ON volunteer.id=vss.user_id AND volunteer.active=1 AND volunteer.account_status='active' WHERE vs.production_id IN ($ph) AND p.is_active=1 AND vs.starts_at>=? AND vs.starts_at<? GROUP BY vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title HAVING filled_slots < vs.required_slots ORDER BY vs.starts_at LIMIT 12";$s=$db->prepare($sql);$s->execute([...$ids,$from->format('Y-m-d H:i:s'),$to->format('Y-m-d H:i:s')]);return $s->fetchAll();
+        if(!$ids)return [];
+        $ph=self::placeholders($ids);
+        $sql="SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.location,vs.required_slots,p.title production_title FROM volunteer_shifts vs JOIN productions p ON p.id=vs.production_id WHERE vs.production_id IN ($ph) AND p.is_active=1 AND vs.starts_at>=? AND vs.starts_at<? ORDER BY vs.starts_at";
+        $s=$db->prepare($sql);
+        $s->execute([...$ids,$from->format('Y-m-d H:i:s'),$to->format('Y-m-d H:i:s')]);
+        $uncovered=[];
+        foreach($s->fetchAll() as $row){
+            $row['filled_slots']=VolunteerCoverageService::eligibleLiveSignupCount($db,(int)$row['id']);
+            if((int)$row['filled_slots']<(int)$row['required_slots']){
+                $uncovered[]=$row;
+                if(count($uncovered)>=12)break;
+            }
+        }
+        return $uncovered;
     }
 
     private static function pendingVolunteerApprovals(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM volunteer_shift_approval_requests r JOIN volunteer_shifts vs ON vs.id=r.shift_id JOIN users u ON u.id=r.user_id AND u.active=1 AND u.account_status='active' WHERE r.status='pending' AND vs.starts_at>NOW()")->fetchColumn();}
