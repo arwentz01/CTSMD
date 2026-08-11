@@ -45,7 +45,15 @@ final class IdentityRolePolicy
         if(($child->fetchColumn()||$productionStudent->fetchColumn())&&!in_array('student',$selected,true))throw new RuntimeException('This account is structurally linked as a Student. Remove active family/production Student relationships before removing the Student role.');
 
         $guardian=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");$guardian->execute(['user'=>$userId]);
-        if($guardian->fetchColumn()&&in_array('student',$selected,true))throw new RuntimeException('An active parent, guardian, or caregiver cannot be assigned the Student role.');
+        $productionGuardian=$db->prepare("SELECT 1 FROM production_memberships WHERE user_id=:user AND audience_type='guardian' AND status='active' LIMIT 1");$productionGuardian->execute(['user'=>$userId]);
+        if(($guardian->fetchColumn()||$productionGuardian->fetchColumn())&&in_array('student',$selected,true))throw new RuntimeException('An active parent, guardian, or caregiver cannot be assigned the Student role. Remove active family/production Guardian relationships first.');
+
+        if(in_array('student',$selected,true)&&$ids){
+            $ph=implode(',',array_fill(0,count($ids),'?'));
+            $privileged=$db->prepare("SELECT 1 FROM auth_role_permissions rp JOIN auth_permissions p ON p.id=rp.permission_id WHERE rp.role_id IN ($ph) LIMIT 1");
+            $privileged->execute($ids);
+            if($privileged->fetchColumn())throw new RuntimeException('A Student identity cannot also hold staff, moderation, safeguarding, or administrative permissions. Remove privileged roles before saving the Student role.');
+        }
 
         $productionStaff=$db->prepare("SELECT 1 FROM production_memberships WHERE user_id=:user AND audience_type='staff' AND status='active' LIMIT 1");$productionStaff->execute(['user'=>$userId]);
         if($productionStaff->fetchColumn()&&!in_array('production_staff',$selected,true)&&!in_array('administrator',$selected,true))throw new RuntimeException('This account is active production staff. Remove its production Staff memberships before removing staff authority.');
