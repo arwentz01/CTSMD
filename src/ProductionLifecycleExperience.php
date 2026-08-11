@@ -148,8 +148,11 @@ final class ProductionLifecycleExperience
     {
         $production = self::production($db, $id);
         if (!$production) throw new RuntimeException('That production no longer exists.');
-        $stmt = $db->prepare("UPDATE productions SET status='planning', is_active=0, deactivated_at=NULL WHERE id=:id");
+        if ((bool)$production['is_active']) throw new RuntimeException('Deactivate the production before returning it to Planning.');
+        if ($production['status'] !== 'archived') throw new RuntimeException('Only an archived production can be returned to Planning.');
+        $stmt = $db->prepare("UPDATE productions SET status='planning', is_active=0, deactivated_at=NULL WHERE id=:id AND is_active=0 AND status='archived'");
         $stmt->execute(['id'=>$id]);
+        if ($stmt->rowCount() < 1) throw new RuntimeException('That production changed before it could be returned to Planning. Refresh and try again.');
         self::audit($db, (int)$actor['id'], 'production.restored_to_planning', $id, 'Returned inactive production to Planning.', []);
     }
 
@@ -166,7 +169,7 @@ final class ProductionLifecycleExperience
     {
         if ($id < 1) return null;
         $stmt = $db->prepare("SELECT p.id,p.title,p.season,p.status,p.is_active,p.activated_at,p.deactivated_at,p.created_at,
-            (SELECT COUNT(*) FROM production_memberships pm WHERE pm.production_id=p.id AND pm.status='active') active_members,
+            (SELECT COUNT(*) FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=p.id AND pm.status='active') active_members,
             (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_items,
             (SELECT COUNT(*) FROM volunteer_shifts vs WHERE vs.production_id=p.id) volunteer_shifts,
             (SELECT COUNT(*) FROM channels c WHERE c.production_id=p.id AND c.archived_at IS NULL) channels,
@@ -179,7 +182,7 @@ final class ProductionLifecycleExperience
     private static function productions(PDO $db): array
     {
         return $db->query("SELECT p.id,p.title,p.season,p.status,p.is_active,p.created_at,
-            (SELECT COUNT(*) FROM production_memberships pm WHERE pm.production_id=p.id AND pm.status='active') active_members,
+            (SELECT COUNT(*) FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=p.id AND pm.status='active') active_members,
             (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_items
             FROM productions p ORDER BY p.is_active DESC, p.id DESC")->fetchAll();
     }
