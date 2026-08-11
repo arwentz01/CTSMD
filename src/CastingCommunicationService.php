@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/MailService.php';
+require_once __DIR__.'/ProductionContext.php';
 
 final class CastingCommunicationService
 {
@@ -74,6 +75,7 @@ final class CastingCommunicationService
         $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.status='published' AND EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:user AND pm.status='active') ORDER BY pcp.published_at DESC,p.title");
         $s->execute(['user'=>$userId]);$out=[];
         foreach($s->fetchAll() as $production){
+            if(!ProductionContext::isActiveMember($db,$userId,(int)$production['production_id']))continue;
             $raw=$production['cast_snapshot_json']??null;
             $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
             $production['cast']=is_array($decoded)?$decoded:self::currentPublishableCast($db,(int)$production['production_id']);
