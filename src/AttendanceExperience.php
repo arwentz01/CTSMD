@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -17,9 +18,10 @@ final class AttendanceExperience
 
     public static function render(string $route,string $basePath):never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
+        Auth::startSession();
         $db=Database::connect(dirname(__DIR__));
-        $user=self::currentUser($db);
+        $user=Auth::currentUser($db);
+        if(!$user)self::redirect(($basePath?:'').'/login');
         $_SESSION['attendance_csrf']??=bin2hex(random_bytes(24));
         $production=ProductionContext::selected($db,$user);
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$production,$route,$basePath);
@@ -90,7 +92,6 @@ final class AttendanceExperience
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
     }
 
-    private static function currentUser(PDO $db):array{$row=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$row)throw new RuntimeException('Demo user is missing. Re-import the local seed data.');return $row;}
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta):void{$stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$stmt->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
     private static function flash(string $type,string $message):void{$_SESSION['attendance_flash']=['type'=>$type,'message'=>$message];}
     private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
