@@ -17,12 +17,13 @@ final class CastingCommunicationService
     {
         $db->beginTransaction();
         try{
-            $s=$db->prepare("SELECT cr.*,p.title production_title,CONCAT(u.first_name,' ',u.last_name) student_name,u.email student_email,u.active student_active,u.account_status student_account_status FROM production_casting_records cr JOIN productions p ON p.id=cr.production_id JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");
+            $s=$db->prepare("SELECT cr.*,p.title production_title,CONCAT(u.first_name,' ',u.last_name) student_name,u.email student_email,u.active student_active,u.account_status student_account_status,pm.status membership_status,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.active=1 AND ar.code='student' WHERE ur.user_id=cr.user_id) student_role_active FROM production_casting_records cr JOIN productions p ON p.id=cr.production_id JOIN users u ON u.id=cr.user_id LEFT JOIN production_memberships pm ON pm.id=cr.production_membership_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");
             $s->execute(['id'=>$recordId,'production'=>$productionId]);$r=$s->fetch();
             if(!$r)throw new RuntimeException('That casting record could not be found.');
-            if(!(bool)$r['student_active']||$r['student_account_status']==='disabled')throw new RuntimeException('That Student is no longer available for live casting communication.');
+            if(!(bool)$r['student_active']||$r['student_account_status']==='disabled'||!(bool)$r['student_role_active'])throw new RuntimeException('That Student identity is no longer available for live casting communication.');
             if(!in_array((string)$r['casting_status'],['offered','cast','not_cast'],true))throw new RuntimeException('Only Offered, Cast, or Not cast decisions can be communicated.');
             if(in_array((string)$r['casting_status'],['offered','cast'],true)&&trim((string)($r['role_title']??''))==='')throw new RuntimeException('Add the offered/cast role before sending the result.');
+            if(!empty($r['production_membership_id'])&&in_array((string)$r['casting_status'],['offered','cast'],true)&&$r['membership_status']!=='active')throw new RuntimeException('That finalized production membership is no longer active. Restore the roster membership or update the casting decision before communicating it.');
 
             $recipients=[];
             if(filter_var((string)$r['student_email'],FILTER_VALIDATE_EMAIL))$recipients[(string)$r['student_email']]=['user_id'=>(int)$r['user_id'],'name'=>(string)$r['student_name']];
