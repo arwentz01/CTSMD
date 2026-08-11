@@ -19,7 +19,7 @@ final class IdentityRolePolicy
     public static function assertFamilyPair(PDO $db,int $guardianId,int $studentId):void
     {
         if($guardianId<1||$studentId<1||$guardianId===$studentId)throw new RuntimeException('Choose a valid guardian and student.');
-        $people=$db->prepare('SELECT id,active FROM users WHERE id IN (:guardian,:student)');$people->execute(['guardian'=>$guardianId,'student'=>$studentId]);$rows=$people->fetchAll();if(count($rows)!==2)throw new RuntimeException('One of those people could not be found.');foreach($rows as $row)if(!(bool)$row['active'])throw new RuntimeException('Family relationships can only use active people.');
+        $people=$db->prepare('SELECT id,active,account_status FROM users WHERE id IN (:guardian,:student)');$people->execute(['guardian'=>$guardianId,'student'=>$studentId]);$rows=$people->fetchAll();if(count($rows)!==2)throw new RuntimeException('One of those people could not be found.');foreach($rows as $row)if(!(bool)$row['active']||$row['account_status']==='disabled')throw new RuntimeException('Family relationships can only use available people. Restore a disabled account before creating a live relationship.');
         if(!self::isStudent($db,$studentId))throw new RuntimeException('The linked child must currently have the Student role.');
         if(self::isStudent($db,$guardianId))throw new RuntimeException('A Student cannot be assigned as the guardian in this relationship.');
     }
@@ -27,7 +27,7 @@ final class IdentityRolePolicy
     public static function assertProductionAudience(PDO $db,int $userId,string $audienceType):void
     {
         if($userId<1||!in_array($audienceType,['student','guardian','staff'],true))throw new RuntimeException('Choose a valid person and production role.');
-        $person=$db->prepare('SELECT active FROM users WHERE id=:id LIMIT 1');$person->execute(['id'=>$userId]);if(!(bool)$person->fetchColumn())throw new RuntimeException('That person is not an active CTSMD user.');
+        $person=$db->prepare('SELECT active,account_status FROM users WHERE id=:id LIMIT 1');$person->execute(['id'=>$userId]);$row=$person->fetch();if(!$row||!(bool)$row['active']||$row['account_status']==='disabled')throw new RuntimeException('That person is not available for an active production roster.');
         if($audienceType==='student'&&!self::isStudent($db,$userId))throw new RuntimeException('Only an account with the Student role can be added as a production student.');
         if($audienceType==='staff'&&!self::isStaff($db,$userId))throw new RuntimeException('Only Production Staff or an Administrator can be added as production staff.');
         if($audienceType==='guardian'&&self::isStudent($db,$userId))throw new RuntimeException('A Student cannot be added as a production guardian.');
