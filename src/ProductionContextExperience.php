@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/ProductionContext.php';
 
 final class ProductionContextExperience
@@ -16,12 +17,11 @@ final class ProductionContextExperience
 
     public static function render(string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
+        Auth::startSession();
 
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             self::redirect($basePath . '/production');
@@ -47,15 +47,6 @@ final class ProductionContextExperience
         }
 
         self::redirect($basePath . $returnTo);
-    }
-
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user = 1 AND active = 1 LIMIT 1")->fetch();
-        if (!$row) {
-            throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        }
-        return $row;
     }
 
     private static function safeReturnPath(string $path): string
