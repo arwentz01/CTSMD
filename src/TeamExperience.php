@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -15,9 +16,10 @@ final class TeamExperience
 
     public static function render(string $route,string $basePath): never
     {
-        if(session_status()!==PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db=Database::connect(dirname(__DIR__));
-        $user=self::currentUser($db);
+        $user=Auth::currentUser($db);
+        if(!$user) self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::isStaff($user)) self::forbidden();
         $_SESSION['team_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
@@ -137,7 +139,6 @@ final class TeamExperience
     private static function teamMemberIds(PDO $db,int $id): array { $s=$db->prepare("SELECT user_id FROM team_members WHERE team_id=:id AND status='active' ORDER BY user_id"); $s->execute(['id'=>$id]); return array_map('intval',$s->fetchAll(PDO::FETCH_COLUMN)); }
     private static function teams(PDO $db): array { return $db->query("SELECT t.id,t.name,t.description,t.active,t.production_id,p.title production_title,COUNT(CASE WHEN tm.status='active' THEN 1 END) member_count,COUNT(DISTINCT ct.channel_id) channel_count FROM teams t LEFT JOIN productions p ON p.id=t.production_id LEFT JOIN team_members tm ON tm.team_id=t.id LEFT JOIN channel_teams ct ON ct.team_id=t.id GROUP BY t.id,t.name,t.description,t.active,t.production_id,p.title ORDER BY t.active DESC,p.title IS NULL DESC,p.title,t.name")->fetchAll(); }
     private static function people(PDO $db): array { return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 ORDER BY last_name,first_name")->fetchAll(); }
-    private static function currentUser(PDO $db): array { $r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch(); if(!$r)throw new RuntimeException('Demo user is missing.'); return $r; }
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void { $s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:a,:e,:t,:i,:s,:m)'); $s->execute(['a'=>$actor,'e'=>$event,'t'=>$type,'i'=>$id,'s'=>$summary,'m'=>json_encode($meta,JSON_THROW_ON_ERROR)]); }
     private static function flash(string $t,string $m): void { $_SESSION['team_flash']=['type'=>$t,'message'=>$m]; }
     private static function redirect(string $u): never { header('Location: '.$u,true,303); exit; }
