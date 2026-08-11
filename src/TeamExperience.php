@@ -20,7 +20,7 @@ final class TeamExperience
         $db=Database::connect(dirname(__DIR__));
         $user=Auth::currentUser($db);
         if(!$user) self::redirect(($basePath?:'').'/login');
-        if(!AccessPolicy::isStaff($user)) self::forbidden();
+        if(!AccessPolicy::canManageCommunity($user)) self::forbidden();
         $_SESSION['team_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
         $team=null;
