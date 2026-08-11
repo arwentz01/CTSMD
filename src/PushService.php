@@ -9,6 +9,7 @@ final class PushService
 
     public static function subscribe(PDO $db,int $userId,array $subscription,string $userAgent=''):void
     {
+        $available=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$available->execute(['user'=>$userId]);if(!$available->fetchColumn())throw new RuntimeException('This account cannot enable push notifications.');
         $endpoint=trim((string)($subscription['endpoint']??''));$keys=$subscription['keys']??[];$p256dh=trim((string)($keys['p256dh']??''));$auth=trim((string)($keys['auth']??''));
         if($endpoint===''||$p256dh===''||$auth==='')throw new RuntimeException('The browser did not provide a complete push subscription.');
         if(!str_starts_with($endpoint,'https://'))throw new RuntimeException('Push subscriptions require HTTPS.');
@@ -31,6 +32,7 @@ final class PushService
         if(!self::configured())throw new RuntimeException('Web Push is not configured. Set PUSH_VAPID_PUBLIC_KEY and PUSH_VAPID_PRIVATE_KEY_B64.');$sent=0;$failed=0;
         $q=$db->prepare("SELECT * FROM push_queue WHERE status='queued' AND available_at<=CURRENT_TIMESTAMP ORDER BY id LIMIT ".max(1,min($limit,100)));$q->execute();
         foreach($q->fetchAll() as $row){$db->prepare("UPDATE push_queue SET status='processing',claimed_at=CURRENT_TIMESTAMP,attempt_count=attempt_count+1 WHERE id=:id AND status='queued'")->execute(['id'=>$row['id']]);
+            $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$row['user_id']]);if(!$account->fetchColumn()){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>$row['id']]);$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND status='active'")->execute(['user'=>$row['user_id']]);continue;}
             $subs=$db->prepare("SELECT * FROM push_subscriptions WHERE user_id=:user AND status='active'");$subs->execute(['user'=>$row['user_id']]);$subscriptions=$subs->fetchAll();if(!$subscriptions){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='No active push-enabled device.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
             $ok=0;$bad=0;foreach($subscriptions as $sub){try{$result=self::send($sub,$row);$status=(int)$result['status'];$expired=in_array($status,[404,410],true);$success=$status>=200&&$status<300;$log=$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,http_status,result,error_message) VALUES (:queue,:sub,:status,:result,:error)");$log->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'status'=>$status?:null,'result'=>$success?'sent':($expired?'expired':'rejected'),'error'=>$success?null:mb_substr((string)$result['body'],0,1000)]);if($success){$ok++;$db->prepare("UPDATE push_subscriptions SET last_success_at=CURRENT_TIMESTAMP,failure_count=0 WHERE id=:id")->execute(['id'=>$sub['id']]);}else{$bad++;$db->prepare("UPDATE push_subscriptions SET status=:status,last_failure_at=CURRENT_TIMESTAMP,failure_count=failure_count+1 WHERE id=:id")->execute(['status'=>$expired?'expired':'active','id'=>$sub['id']]);}}catch(Throwable $e){$bad++;$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,result,error_message) VALUES (:queue,:sub,'error',:error)")->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'error'=>mb_substr($e->getMessage(),0,1000)]);}}
             $status=$ok>0?($bad>0?'partial':'sent'):'failed';$db->prepare("UPDATE push_queue SET status=:status,completed_at=CURRENT_TIMESTAMP,last_error=:error WHERE id=:id")->execute(['status'=>$status,'error'=>$bad&&$ok===0?'All device deliveries failed.':null,'id'=>$row['id']]);$sent+=$ok;$failed+=$bad;
@@ -39,6 +41,7 @@ final class PushService
 
     private static function pushAllowed(PDO $db,int $userId,string $category):bool
     {
+        $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$userId]);if(!$account->fetchColumn())return false;
         $s=$db->prepare('SELECT * FROM notification_preferences WHERE user_id=:user LIMIT 1');$s->execute(['user'=>$userId]);$p=$s->fetch();if(!$p)return true;if(!(bool)($p['push_enabled']??1))return false;$key=match($category){'schedule'=>'push_schedule','forms'=>'push_forms','volunteer'=>'push_volunteer','community'=>'push_community','messages'=>'push_messages',default=>null};return$key===null||(bool)($p[$key]??1);
     }
 
