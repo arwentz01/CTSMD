@@ -71,7 +71,7 @@ final class PeopleExperience
             if ($action === 'deactivate_relationship') {
                 $relationshipId = filter_input(INPUT_POST, 'relationship_id', FILTER_VALIDATE_INT) ?: 0;
                 $studentId = filter_input(INPUT_POST, 'student_user_id', FILTER_VALIDATE_INT) ?: 0;
-                self::deactivateRelationship($db, (int)$relationshipId);
+                self::deactivateRelationship($db, (int)$user['id'], (int)$relationshipId);
                 self::flash('success', 'Family relationship deactivated. History was retained.');
                 self::redirect($basePath . '/people/view?id=' . (int)$studentId);
             }
@@ -112,27 +112,57 @@ final class PeopleExperience
             throw new RuntimeException('A student cannot be assigned as the guardian in this relationship.');
         }
 
-        $sql = "INSERT INTO family_relationships (guardian_user_id, student_user_id, relationship_type, is_primary, status, created_by_user_id)
-                VALUES (:guardian, :student, :relationship_type, 0, 'active', :actor)
-                ON DUPLICATE KEY UPDATE relationship_type = VALUES(relationship_type), status = 'active', created_by_user_id = VALUES(created_by_user_id), updated_at = CURRENT_TIMESTAMP";
-        $insert = $db->prepare($sql);
-        $insert->execute([
-            'guardian' => $guardianId,
-            'student' => $studentId,
-            'relationship_type' => $type,
-            'actor' => $actorId,
-        ]);
+        $db->beginTransaction();
+        try {
+            $sql = "INSERT INTO family_relationships (guardian_user_id, student_user_id, relationship_type, is_primary, status, created_by_user_id)
+                    VALUES (:guardian, :student, :relationship_type, 0, 'active', :actor)
+                    ON DUPLICATE KEY UPDATE relationship_type = VALUES(relationship_type), status = 'active', created_by_user_id = VALUES(created_by_user_id), updated_at = CURRENT_TIMESTAMP";
+            $insert = $db->prepare($sql);
+            $insert->execute([
+                'guardian' => $guardianId,
+                'student' => $studentId,
+                'relationship_type' => $type,
+                'actor' => $actorId,
+            ]);
+            $idStmt = $db->prepare('SELECT id FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student LIMIT 1');
+            $idStmt->execute(['guardian'=>$guardianId,'student'=>$studentId]);
+            $relationshipId=(int)$idStmt->fetchColumn();
+            self::audit($db,$actorId,'family.relationship_saved','family_relationship',$relationshipId,'Saved family relationship.',['guardian_user_id'=>$guardianId,'student_user_id'=>$studentId,'relationship_type'=>$type,'status'=>'active']);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            if ($e instanceof RuntimeException) throw $e;
+            throw new RuntimeException('The family relationship could not be saved.');
+        }
     }
 
-    private static function deactivateRelationship(PDO $db, int $relationshipId): void
+    private static function deactivateRelationship(PDO $db, int $actorId, int $relationshipId): void
     {
         if ($relationshipId < 1) {
             throw new RuntimeException('That relationship could not be found.');
         }
-        $stmt = $db->prepare("UPDATE family_relationships SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = :id AND status = 'active'");
-        $stmt->execute(['id' => $relationshipId]);
-        if ($stmt->rowCount() < 1) {
-            throw new RuntimeException('That relationship is already inactive or unavailable.');
+        $db->beginTransaction();
+        try {
+            $stmt=$db->prepare("SELECT id,guardian_user_id,student_user_id,relationship_type,status FROM family_relationships WHERE id=:id FOR UPDATE");
+            $stmt->execute(['id'=>$relationshipId]);
+            $relationship=$stmt->fetch();
+            if(!$relationship || $relationship['status']!=='active') throw new RuntimeException('That relationship is already inactive or unavailable.');
+
+            $count=$db->prepare("SELECT COUNT(*) FROM family_relationships WHERE student_user_id=:student AND status='active'");
+            $count->execute(['student'=>(int)$relationship['student_user_id']]);
+            if((int)$count->fetchColumn()<=1){
+                throw new RuntimeException('A student must retain at least one active parent, guardian, or caregiver relationship. Add another guardian before deactivating this relationship.');
+            }
+
+            $update=$db->prepare("UPDATE family_relationships SET status='inactive',updated_at=CURRENT_TIMESTAMP WHERE id=:id AND status='active'");
+            $update->execute(['id'=>$relationshipId]);
+            if($update->rowCount()<1) throw new RuntimeException('That relationship is already inactive or unavailable.');
+            self::audit($db,$actorId,'family.relationship_deactivated','family_relationship',$relationshipId,'Deactivated family relationship.',['guardian_user_id'=>(int)$relationship['guardian_user_id'],'student_user_id'=>(int)$relationship['student_user_id'],'relationship_type'=>$relationship['relationship_type'],'status'=>'inactive']);
+            $db->commit();
+        } catch (Throwable $e) {
+            if($db->inTransaction()) $db->rollBack();
+            if($e instanceof RuntimeException) throw $e;
+            throw new RuntimeException('The family relationship could not be deactivated.');
         }
     }
 
@@ -182,6 +212,12 @@ final class PeopleExperience
         $stmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role FROM users WHERE active = 1 AND id <> :exclude ORDER BY last_name, first_name");
         $stmt->execute(['exclude' => $excludeId]);
         return $stmt->fetchAll();
+    }
+
+    private static function audit(PDO $db,int $actorId,string $eventType,string $subjectType,int $subjectId,string $summary,array $metadata):void
+    {
+        $stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event_type,:subject_type,:subject_id,:summary,:metadata)');
+        $stmt->execute(['actor'=>$actorId,'event_type'=>$eventType,'subject_type'=>$subjectType,'subject_id'=>$subjectId,'summary'=>$summary,'metadata'=>json_encode($metadata,JSON_THROW_ON_ERROR)]);
     }
 
     private static function familyPage(PDO $db, string $basePath, array $user): never
