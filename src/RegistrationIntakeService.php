@@ -26,6 +26,8 @@ final class RegistrationIntakeService
             if(!$guardianUserId)throw new RuntimeException('Choose the guardian record for a minor participant.');
             $guardian=self::user($db,$guardianUserId);if(!$guardian)throw new RuntimeException('Choose a valid guardian record.');
             self::assertStudent($db,$participantUserId);
+            self::assertAdultGuardian($db,$guardianUserId);
+            if($guardianUserId===$participantUserId)throw new RuntimeException('A Student cannot be their own guardian.');
         }else{$guardianUserId=null;}
 
         $db->beginTransaction();
@@ -52,7 +54,7 @@ final class RegistrationIntakeService
                 if(!$guardianId){
                     [$gFirst,$gLast]=self::splitName((string)$submission['guardian_name']);
                     $guardianId=self::createAdultPerson($db,$gFirst,$gLast,(string)$submission['guardian_email'],(int)$actor['id']);$createdGuardian=true;
-                }
+                }else self::assertAdultGuardian($db,$guardianId);
                 $participantId=self::childCandidateForGuardian($db,$guardianId,(string)$submission['participant_first_name'],(string)$submission['participant_last_name']);
                 if(!$participantId){$participantId=self::createManagedStudent($db,(string)$submission['participant_first_name'],(string)$submission['participant_last_name'],(int)$actor['id']);$createdParticipant=true;}
                 self::ensureRelationship($db,$guardianId,$participantId,(int)$actor['id']);
@@ -77,14 +79,14 @@ final class RegistrationIntakeService
 
     private static function guardianCandidates(PDO $db,array $submission): array
     {
-        $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email,display_role,account_status FROM users WHERE active=1 AND email IS NOT NULL AND LOWER(email)=LOWER(:email) ORDER BY id LIMIT 10");$stmt->execute(['email'=>$submission['guardian_email']]);return $stmt->fetchAll();
+        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status FROM users u WHERE u.active=1 AND u.email IS NOT NULL AND LOWER(u.email)=LOWER(:email) AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id LIMIT 10");$stmt->execute(['email'=>$submission['guardian_email']]);return $stmt->fetchAll();
     }
 
     private static function createAdultPerson(PDO $db,string $first,string $last,string $email,int $actorId): int
     {
         $email=mb_strtolower(trim($email));if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('A valid adult email is required before creating a CTSMD person record.');
         $initials=self::initials($first,$last);$stmt=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,organization_membership_status,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,:email,NULL,'invited','pending',:initials,'Member / Guardian',0,1)");
-        try{$stmt->execute(['first'=>$first,'last'=>$last,'email'=>$email,'initials'=>$initials]);}catch(PDOException $e){if((string)$e->getCode()==='23000'){ $id=self::userIdByEmail($db,$email);if($id)return $id;}throw $e;}
+        try{$stmt->execute(['first'=>$first,'last'=>$last,'email'=>$email,'initials'=>$initials]);}catch(PDOException $e){if((string)$e->getCode()==='23000'){ $id=self::userIdByEmail($db,$email);if($id){self::assertAdultGuardian($db,$id);return $id;}}throw $e;}
         $id=(int)$db->lastInsertId();$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :user,id,:actor FROM auth_roles WHERE code='member' AND active=1 LIMIT 1")->execute(['user'=>$id,'actor'=>$actorId]);return $id;
     }
 
@@ -95,17 +97,23 @@ final class RegistrationIntakeService
 
     private static function ensureRelationship(PDO $db,int $guardianId,int $studentId,int $actorId): void
     {
+        if($guardianId===$studentId)throw new RuntimeException('A Student cannot be their own guardian.');self::assertAdultGuardian($db,$guardianId);self::assertStudent($db,$studentId);
         $stmt=$db->prepare("INSERT INTO family_relationships (guardian_user_id,student_user_id,relationship_type,is_primary,status,created_by_user_id) VALUES (:guardian,:student,'guardian',1,'active',:actor) ON DUPLICATE KEY UPDATE status='active',updated_at=CURRENT_TIMESTAMP");$stmt->execute(['guardian'=>$guardianId,'student'=>$studentId,'actor'=>$actorId]);
     }
 
     private static function assertStudent(PDO $db,int $userId): void
     {
-        $stmt=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.code='student' WHERE ur.user_id=:user LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected participant is not a Student profile.');
+        $stmt=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' JOIN users u ON u.id=ur.user_id AND u.active=1 WHERE ur.user_id=:user LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected participant is not an active Student profile.');
+    }
+
+    private static function assertAdultGuardian(PDO $db,int $userId): void
+    {
+        $stmt=$db->prepare("SELECT 1 FROM users u WHERE u.id=:user AND u.active=1 AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) LIMIT 1");$stmt->execute(['user'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('The selected guardian must be an active adult CTSMD person.');
     }
 
     private static function childCandidateForGuardian(PDO $db,int $guardianId,string $first,string $last): ?int
     {
-        $stmt=$db->prepare("SELECT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) LIMIT 1");$stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;
+        $stmt=$db->prepare("SELECT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) LIMIT 1");$stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;
     }
 
     private static function userIdByEmail(PDO $db,string $email): ?int{$email=mb_strtolower(trim($email));if($email==='')return null;$stmt=$db->prepare('SELECT id FROM users WHERE active=1 AND LOWER(email)=:email LIMIT 1');$stmt->execute(['email'=>$email]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;}
