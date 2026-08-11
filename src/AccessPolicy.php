@@ -33,6 +33,7 @@ final class AccessPolicy
     public static function canManagePeople(array $user): bool{return self::permissionOrLegacy($user,'people.manage');}
     public static function canManageSafeguarding(array $user): bool{return self::permissionOrLegacy($user,'safeguarding.manage');}
     public static function canManageProduction(array $user): bool{return self::permissionOrLegacy($user,'production.manage');}
+    public static function canManageSchedule(array $user): bool{return self::permissionOrLegacy($user,'schedule.manage');}
     public static function canManageCommunity(array $user): bool{return self::permissionOrLegacy($user,'community.manage');}
     public static function canModerateCommunity(array $user): bool{return self::permissionOrLegacy($user,'community.moderate');}
     public static function canManageVolunteers(array $user): bool{return self::permissionOrLegacy($user,'volunteer.manage');}
