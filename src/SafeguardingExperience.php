@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 
@@ -17,12 +18,10 @@ final class SafeguardingExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         if (!AccessPolicy::canManageSafeguarding($user)) {
             self::forbidden($basePath, $user);
         }
@@ -238,15 +237,6 @@ final class SafeguardingExperience
             ORDER BY ae.created_at DESC, ae.id DESC LIMIT 100")->fetchAll();
     }
 
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role, initials FROM users WHERE is_demo_current_user = 1 AND active = 1 LIMIT 1")->fetch();
-        if (!$row) {
-            throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        }
-        return $row;
-    }
-
     private static function page(string $route, string $basePath, array $user, array $credentials, array $conversationIssues, ?array $selectedCredential, array $audit): never
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
@@ -259,7 +249,8 @@ final class SafeguardingExperience
             default => 'Safeguarding',
         };
         $subnav = [
-            ['label' => 'Review queue', 'href' => '/safeguarding', 'active' => in_array($route, ['/safeguarding','/safeguarding/review'], true)],
+            ['label' => 'Cases', 'href' => '/safeguarding/cases', 'active' => false],
+            ['label' => 'Credential & integrity review', 'href' => '/safeguarding', 'active' => in_array($route, ['/safeguarding','/safeguarding/review'], true)],
             ['label' => 'Audit history', 'href' => '/safeguarding/audit', 'active' => $route === '/safeguarding/audit'],
         ];
 
