@@ -117,7 +117,7 @@ final class HomeDashboardService
 
     private static function formsForUser(PDO $db,int $userId):array
     {
-        $stmt=$db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE fa.user_id=:user AND fa.status<>'completed' ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
+        $stmt=$db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE COALESCE(fa.subject_user_id,fa.user_id)=:user AND fa.status<>'completed' ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
         $stmt->execute(['user'=>$userId]);return $stmt->fetchAll();
     }
 
@@ -130,6 +130,9 @@ final class HomeDashboardService
     private static function notifications(PDO $db,int $userId):array
     {
         $stmt=$db->prepare("SELECT id,title,body,action_path,source_type,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC LIMIT 12");
-        $stmt->execute(['user'=>$userId]);$items=$stmt->fetchAll();$unread=0;foreach($items as $item)if($item['read_at']===null)$unread++;return ['items'=>$items,'unread_count'=>$unread];
+        $stmt->execute(['user'=>$userId]);$items=$stmt->fetchAll();
+        $count=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
+        $count->execute(['user'=>$userId]);
+        return ['items'=>$items,'unread_count'=>(int)$count->fetchColumn()];
     }
 }
