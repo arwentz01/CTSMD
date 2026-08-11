@@ -7,6 +7,7 @@ require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/FamilyDashboardService.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/VolunteerCoverageService.php';
 
 final class HomeDashboardService
 {
@@ -30,8 +31,6 @@ final class HomeDashboardService
         $productions = ProductionContext::activeProductions($db, $user);
         $selectedProduction = $staff ? ProductionContext::selected($db, $user) : null;
 
-        // Guardians may see the same call through their own guardian audience and a linked child.
-        // Prefer the child-labeled family event so the account-wide timeline does not duplicate it.
         $familyEventIds = [];
         foreach ($family['events'] as $event) $familyEventIds[(int)$event['id']] = true;
         if ($familyEventIds) $ownEvents = array_values(array_filter($ownEvents, static fn(array $event): bool => !isset($familyEventIds[(int)$event['id']])));
@@ -82,6 +81,13 @@ final class HomeDashboardService
         }
         foreach ($volunteer as $shift) {
             if (($shift['status'] ?? '') === 'waitlisted') continue;
+            if (!($shift['eligible_now'] ?? false)) {
+                $detail = !empty($shift['missing_requirements'])
+                    ? 'Renew or complete: '.implode(', ', $shift['missing_requirements'])
+                    : 'Volunteer eligibility needs review';
+                $attention[]=['kind'=>'volunteer','urgent'=>true,'title'=>$shift['title'],'context'=>'Volunteer commitment needs attention'.($shift['production_title']?' · '.$shift['production_title']:''),'detail'=>$detail,'href'=>'/volunteer-readiness'];
+                continue;
+            }
             $starts = new DateTimeImmutable((string)$shift['starts_at']);
             if ($starts <= $now->modify('+2 days')) {
                 $attention[]=['kind'=>'volunteer','urgent'=>false,'title'=>$shift['title'],'context'=>'Volunteer commitment'.($shift['production_title']?' · '.$shift['production_title']:''),'detail'=>date('M j · g:i A',strtotime((string)$shift['starts_at'])),'href'=>'/volunteer-shifts'];
@@ -124,7 +130,15 @@ final class HomeDashboardService
     private static function volunteerCommitments(PDO $db,int $userId,DateTimeImmutable $from,DateTimeImmutable $to):array
     {
         $stmt=$db->prepare("SELECT vss.id signup_id,vss.status,vs.id shift_id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,p.title production_title FROM volunteer_shift_signups vss JOIN volunteer_shifts vs ON vs.id=vss.shift_id LEFT JOIN productions p ON p.id=vs.production_id WHERE vss.user_id=:user AND vss.status IN ('signed_up','checked_in','waitlisted') AND vs.starts_at>=:from_date AND vs.starts_at<:to_date ORDER BY vs.starts_at");
-        $stmt->execute(['user'=>$userId,'from_date'=>$from->format('Y-m-d H:i:s'),'to_date'=>$to->format('Y-m-d H:i:s')]);return $stmt->fetchAll();
+        $stmt->execute(['user'=>$userId,'from_date'=>$from->format('Y-m-d H:i:s'),'to_date'=>$to->format('Y-m-d H:i:s')]);
+        $rows=$stmt->fetchAll();
+        $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,$userId);
+        foreach($rows as &$row){
+            $row['missing_requirements']=$row['status']==='waitlisted'?[]:VolunteerCoverageService::missingRequirements($db,$userId,(int)$row['shift_id']);
+            $row['eligible_now']=$row['status']==='waitlisted'||($liveVolunteer&&!$row['missing_requirements']);
+        }
+        unset($row);
+        return $rows;
     }
 
     private static function notifications(PDO $db,int $userId):array
