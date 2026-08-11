@@ -196,14 +196,15 @@ INSERT INTO production_memberships (production_id, user_id, audience_type, parti
 (1,3,'staff','Production Manager'),
 (1,4,'staff','Director');
 
+-- Live demo timestamps are relative to the reset date so a fresh seed remains useful.
 INSERT INTO announcements (production_id, author_user_id, title, body, context_label, tone, published_at, pinned) VALUES
-(1, 3, 'Tech week schedule updated', 'Thursday call time moved to 5:30 PM. Please review the updated family notes before arrival.', 'Current Production', 'urgent', '2026-08-06 16:45:00', 1),
-(1, 4, 'Costume fitting reminders', 'Students with remaining fittings should arrive 20 minutes before rehearsal this Saturday.', 'Costumes', 'info', '2026-08-06 09:00:00', 0);
+(1, 3, 'Tech week schedule updated', 'Tomorrow’s call time moved to 5:30 PM. Please review the updated family notes before arrival.', 'Current Production', 'urgent', DATE_SUB(NOW(),INTERVAL 2 HOUR), 1),
+(1, 4, 'Costume fitting reminders', 'Students with remaining fittings should arrive 20 minutes before the next rehearsal.', 'Costumes', 'info', DATE_SUB(NOW(),INTERVAL 8 HOUR), 0);
 
 INSERT INTO schedule_items (production_id, title, starts_at, ends_at, family_call_at, location, visibility, item_type) VALUES
-(1, 'Full Cast Rehearsal', '2026-08-06 17:30:00', '2026-08-06 20:30:00', '2026-08-06 17:15:00', 'Main Stage', 'all', 'rehearsal'),
-(1, 'Parent Volunteer Orientation', '2026-08-06 18:45:00', '2026-08-06 19:15:00', NULL, 'Studio B', 'family', 'orientation'),
-(1, 'Set Build Day', '2026-08-08 10:00:00', '2026-08-08 14:00:00', NULL, 'Scene Shop', 'all', 'volunteer');
+(1, 'Full Cast Rehearsal', TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'17:30:00'), TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'20:30:00'), TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'17:15:00'), 'Main Stage', 'all', 'rehearsal'),
+(1, 'Parent Volunteer Orientation', TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'18:45:00'), TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'19:15:00'), NULL, 'Studio B', 'family', 'orientation'),
+(1, 'Set Build Day', TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'10:00:00'), TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'14:00:00'), NULL, 'Scene Shop', 'all', 'volunteer');
 
 INSERT INTO channels (id, production_id, name, channel_type, description, read_scope, post_scope, sort_order, created_by_user_id) VALUES
 (1, NULL, 'Announcements', 'announcement', 'Organization-wide updates', 'all_members', 'staff', 10, 3),
@@ -217,9 +218,9 @@ INSERT INTO channels (id, production_id, name, channel_type, description, read_s
 (9, NULL, 'Resources', 'resource', 'Read-only community resources', 'all_members', 'staff', 90, 3);
 
 INSERT INTO channel_posts (channel_id, author_user_id, body, pinned, reactions_json, created_at) VALUES
-(4, 3, 'Reminder: Thursday rehearsal begins 30 minutes earlier. Updated call times are now in the schedule.', 1, '{"thumbs_up":18,"heart":7}', '2026-08-06 16:12:00'),
-(4, 4, 'Great work on Act II last night. Please review the choreography video before Saturday.', 0, '{"theatre":12,"clap":9}', '2026-08-06 15:44:00'),
-(4, 6, 'Will the costume team need students to bring their show shoes Saturday?', 0, '{"thumbs_up":3}', '2026-08-06 14:08:00');
+(4, 3, 'Reminder: tomorrow’s rehearsal begins at 5:30 PM. Updated call times are now in the schedule.', 1, '{"thumbs_up":18,"heart":7}', DATE_SUB(NOW(),INTERVAL 90 MINUTE)),
+(4, 4, 'Great work on Act II. Please review the choreography video before the next rehearsal.', 0, '{"theatre":12,"clap":9}', DATE_SUB(NOW(),INTERVAL 3 HOUR)),
+(4, 6, 'Will the costume team need students to bring their show shoes to the next fitting?', 0, '{"thumbs_up":3}', DATE_SUB(NOW(),INTERVAL 5 HOUR));
 
 INSERT INTO volunteer_profiles (user_id, active) VALUES
 (1,1),(5,1),(6,1),(7,1),(8,1);
@@ -232,36 +233,41 @@ INSERT INTO volunteer_requirements (id, code, name, category, expires) VALUES
 (5, 'box_office_training', 'Box Office training', 'training', 0);
 
 INSERT INTO volunteer_credentials (user_id, requirement_id, status, completed_at, expires_at, verified_by_user_id) VALUES
-(1,1,'approved','2026-06-01 10:00:00',NULL,3),
-(1,2,'approved','2026-06-01 10:00:00','2027-06-01 23:59:59',3),
-(1,3,'approved','2026-06-05 10:00:00','2027-06-05 23:59:59',3),
-(1,4,'approved','2026-06-01 10:00:00',NULL,3),
-(5,1,'approved','2026-05-20 10:00:00',NULL,3),
-(5,2,'approved','2026-05-20 10:00:00','2027-05-20 23:59:59',3),
-(5,3,'approved','2026-05-22 10:00:00','2027-05-22 23:59:59',3),
-(6,1,'approved','2026-07-10 10:00:00',NULL,3),
+(1,1,'approved',DATE_SUB(NOW(),INTERVAL 70 DAY),NULL,3),
+(1,2,'approved',DATE_SUB(NOW(),INTERVAL 70 DAY),DATE_ADD(NOW(),INTERVAL 295 DAY),3),
+(1,3,'approved',DATE_SUB(NOW(),INTERVAL 66 DAY),DATE_ADD(NOW(),INTERVAL 299 DAY),3),
+(1,4,'approved',DATE_SUB(NOW(),INTERVAL 70 DAY),NULL,3),
+(5,1,'approved',DATE_SUB(NOW(),INTERVAL 80 DAY),NULL,3),
+(5,2,'approved',DATE_SUB(NOW(),INTERVAL 80 DAY),DATE_ADD(NOW(),INTERVAL 285 DAY),3),
+(5,3,'approved',DATE_SUB(NOW(),INTERVAL 78 DAY),DATE_ADD(NOW(),INTERVAL 287 DAY),3),
+(5,4,'approved',DATE_SUB(NOW(),INTERVAL 80 DAY),NULL,3),
+(5,5,'approved',DATE_SUB(NOW(),INTERVAL 6 DAY),NULL,3),
+(6,1,'approved',DATE_SUB(NOW(),INTERVAL 32 DAY),NULL,3),
 (6,2,'pending',NULL,NULL,NULL),
-(7,1,'approved','2026-07-12 10:00:00',NULL,3),
-(7,2,'approved','2026-07-12 10:00:00','2027-07-12 23:59:59',3),
+(6,4,'approved',DATE_SUB(NOW(),INTERVAL 32 DAY),NULL,3),
+(7,1,'approved',DATE_SUB(NOW(),INTERVAL 30 DAY),NULL,3),
+(7,2,'approved',DATE_SUB(NOW(),INTERVAL 30 DAY),DATE_ADD(NOW(),INTERVAL 335 DAY),3),
 (7,3,'missing',NULL,NULL,NULL),
-(8,1,'approved','2026-07-15 10:00:00',NULL,3),
+(7,4,'approved',DATE_SUB(NOW(),INTERVAL 30 DAY),NULL,3),
+(8,1,'approved',DATE_SUB(NOW(),INTERVAL 27 DAY),NULL,3),
 (8,2,'pending',NULL,NULL,NULL),
-(8,3,'review','2026-07-15 10:00:00',NULL,NULL);
+(8,3,'review',DATE_SUB(NOW(),INTERVAL 27 DAY),NULL,NULL),
+(8,4,'approved',DATE_SUB(NOW(),INTERVAL 27 DAY),NULL,3);
 
 INSERT INTO volunteer_training_modules (id, requirement_id, title, description, completion_instructions, validity_days, active, created_by_user_id) VALUES
 (1, 1, 'CTSMD Facility Education', 'Facility access, emergency exits, front-of-house expectations, and shared-space rules.', 'Complete the facility education session and have a coordinator verify completion.', NULL, 1, 3),
 (2, 5, 'Box Office Training', 'Ticket lookup, will-call workflow, patron assistance, and box office escalation basics.', 'Complete supervised box office training before taking an independent Box Office shift.', NULL, 1, 3);
 
 INSERT INTO volunteer_training_completions (module_id, user_id, status, completed_at, verified_by_user_id, note) VALUES
-(2,5,'completed','2026-08-05 18:00:00',3,'Completed supervised box office training.');
+(2,5,'completed',DATE_SUB(NOW(),INTERVAL 6 DAY),3,'Completed supervised box office training.');
 
 INSERT INTO volunteer_shifts (id, production_id, title, category, starts_at, ends_at, location, required_slots, approval_required) VALUES
-(1,1,'Front of House','front_of_house','2026-08-07 17:30:00','2026-08-07 21:00:00','Lobby',4,0),
-(2,1,'Dressing Room Monitor','dressing_room','2026-08-08 13:00:00','2026-08-08 17:00:00','Backstage',2,1),
-(3,1,'Set Build Day','set_build','2026-08-08 10:00:00','2026-08-08 14:00:00','Scene Shop',8,0),
-(4,1,'Concessions','concessions','2026-08-09 12:30:00','2026-08-09 16:30:00','Lobby',5,0),
-(5,1,'Strike Crew','strike','2026-08-09 17:00:00','2026-08-09 20:00:00','Main Stage',6,0),
-(6,1,'Box Office','box_office','2026-08-15 12:00:00','2026-08-15 16:00:00','Lobby Box Office',3,0);
+(1,1,'Front of House','front_of_house',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'17:30:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'21:00:00'),'Lobby',4,0),
+(2,1,'Dressing Room Monitor','dressing_room',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'13:00:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'17:00:00'),'Backstage',2,1),
+(3,1,'Set Build Day','set_build',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'10:00:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'14:00:00'),'Scene Shop',8,0),
+(4,1,'Concessions','concessions',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'12:30:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'16:30:00'),'Lobby',5,0),
+(5,1,'Strike Crew','strike',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'17:00:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'20:00:00'),'Main Stage',6,0),
+(6,1,'Box Office','box_office',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 4 DAY),'12:00:00'),TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 4 DAY),'16:00:00'),'Lobby Box Office',3,0);
 
 INSERT INTO volunteer_shift_requirements (shift_id, requirement_id) VALUES
 (1,1),
@@ -286,10 +292,10 @@ INSERT INTO form_requirement_mappings (form_id, requirement_id, validity_days, a
 (4,1,NULL,1,3);
 
 INSERT INTO form_assignments (form_id, user_id, status, due_at, completed_at) VALUES
-(1,1,'completed','2026-08-01 23:59:59','2026-07-29 18:00:00'),
-(2,1,'due_soon','2026-08-10 23:59:59',NULL),
-(3,1,'missing','2026-08-08 23:59:59',NULL),
-(4,1,'requires_review','2026-08-12 23:59:59',NULL);
+(1,1,'completed',TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 10 DAY),'23:59:59'),TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 12 DAY),'18:00:00')),
+(2,1,'due_soon',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'23:59:59'),NULL),
+(3,1,'missing',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'23:59:59'),NULL),
+(4,1,'requires_review',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'23:59:59'),NULL);
 
 INSERT INTO playbills (production_id, status, public_slug) VALUES
 (1,'current','matilda-jr-summer-2026'),
@@ -297,18 +303,18 @@ INSERT INTO playbills (production_id, status, public_slug) VALUES
 (3,'archived','frozen-jr-winter-2025');
 
 INSERT INTO conversations (id, subject, conversation_type, created_at) VALUES
-(1,'Emma Carter · Rehearsal question','safeguarded','2026-08-06 15:50:00'),
-(2,'Lobby volunteer table','direct','2026-08-04 12:00:00');
+(1,'Emma Carter · Rehearsal question','safeguarded',DATE_SUB(NOW(),INTERVAL 5 HOUR)),
+(2,'Lobby volunteer table','direct',DATE_SUB(NOW(),INTERVAL 2 DAY));
 
 INSERT INTO conversation_participants (conversation_id, user_id, participant_role, guardian_required) VALUES
 (1,3,'adult',0),(1,2,'student',0),(1,1,'guardian',1),
 (2,4,'adult',0),(2,1,'adult',0);
 
 INSERT INTO messages (conversation_id, sender_user_id, body, created_at) VALUES
-(1,2,'Hi Ms. Maya, I’m not sure which shoes I need for Saturday’s costume fitting.','2026-08-06 15:54:00'),
-(1,3,'Bring both your black jazz shoes and character shoes, please. We’ll check both with the costume.','2026-08-06 16:02:00'),
-(1,1,'Thanks! We’ll make sure she has both.','2026-08-06 16:22:00'),
-(2,4,'Can you help with the lobby table?','2026-08-04 12:15:00');
+(1,2,'Hi Ms. Maya, I’m not sure which shoes I need for the next costume fitting.',DATE_SUB(NOW(),INTERVAL 4 HOUR)),
+(1,3,'Bring both your black jazz shoes and character shoes, please. We’ll check both with the costume.',DATE_SUB(NOW(),INTERVAL 3 HOUR)),
+(1,1,'Thanks! We’ll make sure she has both.',DATE_SUB(NOW(),INTERVAL 2 HOUR)),
+(2,4,'Can you help with the lobby table?',DATE_SUB(NOW(),INTERVAL 36 HOUR));
 
 -- Migration-aware runtime state. Re-establish active production and flexible audience JSON after every demo reset.
 UPDATE productions
