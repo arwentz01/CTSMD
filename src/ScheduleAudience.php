@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionContext.php';
 
 final class ScheduleAudience
 {
@@ -92,7 +93,13 @@ final class ScheduleAudience
               JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1
               JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
               JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
-              WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders) AND pm.audience_type IN ($typePh)";
+              WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders) AND pm.audience_type IN ($typePh)
+                AND (pm.audience_type<>'guardian' OR EXISTS (
+                    SELECT 1 FROM family_relationships fr
+                    JOIN production_memberships spm ON spm.production_id=pm.production_id AND spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
+                    JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
+                    WHERE fr.guardian_user_id=pm.user_id AND fr.status='active'
+                ))";
         $stmt=$db->prepare($sql);
         $stmt->execute(array_merge([$productionId],$groupIds,$types));
         $rows=$stmt->fetchAll();
@@ -127,7 +134,17 @@ final class ScheduleAudience
     {
         $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff']};
         $ph=implode(',',array_fill(0,count($types),'?'));
-        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph) ORDER BY sort_last_name,sort_first_name");
+        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name
+            FROM production_memberships pm
+            JOIN users u ON u.id=pm.user_id
+            WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph)
+              AND (pm.audience_type<>'guardian' OR EXISTS (
+                  SELECT 1 FROM family_relationships fr
+                  JOIN production_memberships spm ON spm.production_id=pm.production_id AND spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
+                  JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
+                  WHERE fr.guardian_user_id=pm.user_id AND fr.status='active'
+              ))
+            ORDER BY sort_last_name,sort_first_name");
         $stmt->execute(array_merge([$productionId],$types));
         return $stmt->fetchAll();
     }
@@ -173,10 +190,7 @@ final class ScheduleAudience
 
     private static function productionAudienceType(PDO $db,int $userId,int $productionId): ?string
     {
-        $stmt=$db->prepare("SELECT audience_type FROM production_memberships WHERE production_id=:production AND user_id=:user AND status='active' ORDER BY FIELD(audience_type,'staff','guardian','student') LIMIT 1");
-        $stmt->execute(['production'=>$productionId,'user'=>$userId]);
-        $value=$stmt->fetchColumn();
-        return $value===false?null:(string)$value;
+        return ProductionContext::audienceType($db,$userId,$productionId);
     }
 
     private static function normalizeGroupIds(array $groupIds): array
