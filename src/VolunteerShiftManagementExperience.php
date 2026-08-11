@@ -15,7 +15,7 @@ final class VolunteerShiftManagementExperience
 
     public static function render(string $route,string $basePath):never
     {
-        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');if(!AccessPolicy::isStaff($user))self::forbidden($basePath,$user);$_SESSION['volunteer_shift_admin_csrf']??=bin2hex(random_bytes(24));
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');if(!AccessPolicy::canManageVolunteers($user))self::forbidden($basePath,$user);$_SESSION['volunteer_shift_admin_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);
         $production=ProductionContext::selected($db,$user);$productionId=$production?(int)$production['id']:0;$requirements=self::requirements($db);$shift=null;if($route==='/admin/volunteer-shifts/view'){$id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$shift=self::shift($db,(int)$id,$productionId);}self::page($db,$route,$basePath,$user,$production,$requirements,$shift);
     }
