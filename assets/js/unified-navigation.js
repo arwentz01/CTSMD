@@ -103,7 +103,7 @@
     if (path.startsWith('/production/') && !['/production/day','/production/readiness','/production/casting','/production/people','/production/groups'].includes(path)) return '/production';
     if (path.startsWith('/archive/') && path !== '/archive') return '/archive';
     if (path.startsWith('/student-profile')) return '/theatre-history';
-    if (path === '/acting-resume') return '/theatre-history';
+    if (path === '/theatre-history/resume') return '/theatre-history';
     return null;
   };
 
