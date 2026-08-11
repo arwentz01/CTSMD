@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -18,9 +19,10 @@ final class FormManagementExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         if (!AccessPolicy::isStaff($user)) self::forbidden($basePath, $user);
         $_SESSION['form_manage_csrf'] ??= bin2hex(random_bytes(24));
 
@@ -260,13 +262,6 @@ final class FormManagementExperience
         return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 ORDER BY last_name,first_name")->fetchAll();
     }
 
-    private static function currentUser(PDO $db): array
-    {
-        $row=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if(!$row) throw new RuntimeException('Demo user is missing.');
-        return $row;
-    }
-
     private static function audit(PDO $db,int $actorId,string $event,string $subjectType,int $subjectId,string $summary,array $metadata):void
     {
         $stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:subject_type,:subject_id,:summary,:metadata)');
@@ -317,7 +312,7 @@ final class FormManagementExperience
         <section class="fm-head"><div><small><?= $form['production_title']?$esc($form['production_title']):'REUSABLE FORM' ?></small><h2><?= $esc($form['title']) ?></h2><p>Assign this form in bulk or choose specific people. Existing assignments in the same context are never duplicated.</p></div><a href="<?= $url('/admin/forms/manage') ?>">← Form library</a></section>
         <div class="fm-layout"><form class="fm-form" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['form_manage_csrf']) ?>"><input type="hidden" name="action" value="assign"><input type="hidden" name="form_id" value="<?= (int)$form['id'] ?>">
         <?php if($form['production_id']===null):?><label>Assignment context<select name="assignment_context"><option value="organization">Organization-wide</option><option value="production">Working production<?= $selectedProduction?' · '.$esc($selectedProduction['title']):'' ?></option></select></label><?php else:?><input type="hidden" name="assignment_context" value="production"><?php endif; ?>
-        <label>Audience<select name="audience"><optgroup label="Organization audiences"><option value="all_active">All active users</option><option value="adults">Adults only</option><option value="students">Students</option><option value="staff">Staff</option><option value="volunteers">Active volunteers</option></optgroup><optgroup label="Production audiences"><option value="production_all">Everyone in production</option><option value="production_students">Students / cast</option><option value="production_guardians">Guardians</option><option value="production_staff">Production staff</option></optgroup><option value="selected">Selected people</option></select></label><label>Due date <span>optional</span><input type="datetime-local" name="due_at"></label><fieldset><legend>Selected people</legend><p>Used only when “Selected people” is chosen. In production context, CTSMD filters the selection to active members of that production.</p><div class="fm-people"><?php foreach($people as $person):?><label><input type="checkbox" name="user_ids[]" value="<?= (int)$person['id'] ?>"><span><b><?= $esc($person['name']) ?></b><small><?= $esc($person['role']) ?></small></span></label><?php endforeach; ?></div></fieldset><button class="button" type="submit">Create assignments</button></form><aside class="fm-side"><small>ASSIGNMENT STATUS</small><h3><?= count($assignments) ?> people assigned</h3><p>Reusable forms can have separate Matilda and Seussical assignments. Each context gets its own completion status and due date.</p><a href="<?= $url('/admin/forms') ?>">Open review queue →</a></aside></div>
+        <label>Audience<select name="audience"><optgroup label="Organization audiences"><option value="all_active">All active users</option><option value="adults">Adults only</option><option value="students">Students</option><option value="staff">Staff</option><option value="volunteers">Active volunteers</option></optgroup><optgroup label="Production audiences"><option value="production_all">Everyone in production</option><option value="production_students">Students / cast</option><option value="production_guardians">Guardians</option><option value="production_staff">Production staff</option></optgroup><option value="selected">Selected people</option></select></label><label>Due date <span>optional</span><input type="datetime-local" name="due_at"></label><fieldset><legend>Selected people</legend><p>Used only when “Selected people” is chosen. In production context, CTSMD filters the selection to active members of that production.</p><div class="fm-people"><?php foreach($people as $person):?><label><input type="checkbox" name="user_ids[]" value="<?= (int)$person['id'] ?>"><span><b><?= $esc($person['name']) ?></b><small><?= $esc($person['role']) ?></small></span></label><?php endforeach; ?></div></fieldset><button class="button" type="submit">Create assignments</button></form><aside class="fm-side"><small>ASSIGNMENT STATUS</small><h3><?= count($assignments) ?> people assigned</h3><p>Reusable forms can have separate assignments per production. Each context gets its own completion status and due date.</p><a href="<?= $url('/admin/forms') ?>">Open review queue →</a></aside></div>
         <section class="fm-roster"><header><div><small>CURRENT ASSIGNMENTS</small><h3>Completion roster</h3></div><span><?= count($assignments) ?></span></header><?php if(!$assignments):?><div class="fm-empty compact"><b>No assignments yet.</b></div><?php else:foreach($assignments as $row):?><article><div><b><?= $esc($row['assignee']) ?></b><small><?= $esc($row['display_role']) ?> · <?= $row['production_title']?$esc($row['production_title']):'Organization' ?></small></div><span class="<?= $esc($row['status']) ?>"><?= $esc(ucwords(str_replace('_',' ',$row['status']))) ?></span><time><?= $row['due_at']?'Due '.$esc(date('M j, Y',strtotime($row['due_at']))):'No due date' ?></time></article><?php endforeach;endif;?></section>
         <?php endif;endif; ?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
