@@ -30,7 +30,7 @@ final class ResourceExperience
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
         if (!$user) self::redirect(($basePath ?: '') . '/login');
-        $staff = AccessPolicy::canManageProduction($user);
+        $staff = AccessPolicy::canManageResources($user);
         $admin = str_starts_with($route, '/admin/resources');
         if ($admin && !$staff) self::forbidden($basePath, $user);
 
@@ -107,7 +107,6 @@ final class ResourceExperience
         if (mb_strlen($description) > 500) throw new RuntimeException('Keep the description under 500 characters.');
         if (!in_array($type, ['link', 'note'], true)) throw new RuntimeException('Choose a valid resource type.');
         if (!$audiences) throw new RuntimeException('Choose at least one audience.');
-
         if ($type === 'link') {
             if ($url === '' || mb_strlen($url) > 1000 || !filter_var($url, FILTER_VALIDATE_URL)) {
                 throw new RuntimeException('Enter a valid resource URL.');
