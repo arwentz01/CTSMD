@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 
 final class NotificationExperience
@@ -14,12 +15,10 @@ final class NotificationExperience
 
     public static function render(string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         $_SESSION['notification_csrf'] ??= bin2hex(random_bytes(24));
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -83,13 +82,6 @@ final class NotificationExperience
         $stmt = $db->prepare("SELECT f.title,fa.status,fa.due_at FROM form_assignments fa JOIN forms f ON f.id=fa.form_id WHERE fa.user_id=:user_id AND fa.status<>'completed' ORDER BY fa.due_at");
         $stmt->execute(['user_id'=>$userId]);
         return $stmt->fetchAll();
-    }
-
-    private static function currentUser(PDO $db): array
-    {
-        $row = $db->query("SELECT id,CONCAT(first_name,' ',last_name) AS name,display_role AS role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();
-        if(!$row) throw new RuntimeException('Demo user is missing. Re-import the local seed data.');
-        return $row;
     }
 
     private static function flash(string $type,string $message): void
