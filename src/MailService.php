@@ -43,7 +43,7 @@ final class MailService
 
     public static function process(PDO $db, string $projectRoot, int $limit = 25): array
     {
-        $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;
+        $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;$suppressed=0;
         $db->exec("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
         for($i=0;$i<$limit;$i++){
             $db->beginTransaction();
@@ -54,14 +54,21 @@ final class MailService
                 $db->commit();
             }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
             $processed++;
-            if(!empty($row['user_id']) && (string)$row['category']!=='account_security'){
-                $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>(int)$row['user_id']]);
-                if(!$account->fetchColumn()){
+
+            if(!empty($row['user_id'])){
+                $account=$db->prepare("SELECT active,account_status FROM users WHERE id=:user LIMIT 1");$account->execute(['user'=>(int)$row['user_id']]);$recipient=$account->fetch();
+                $allowedAccount=$recipient && (bool)$recipient['active'] && (
+                    $recipient['account_status']==='active'
+                    || ((string)$row['category']==='account_security' && $recipient['account_status']==='invited')
+                );
+                if(!$allowedAccount){
                     $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
                     self::log($db,(int)$row['id'],self::driver(),'suppressed','Recipient account is unavailable.');
+                    $suppressed++;
                     continue;
                 }
             }
+
             try{
                 self::deliver($projectRoot,$row);
                 $db->prepare("UPDATE email_queue SET status='sent',sent_at=CURRENT_TIMESTAMP,last_error=NULL WHERE id=:id")->execute(['id'=>(int)$row['id']]);
@@ -72,7 +79,7 @@ final class MailService
                 self::log($db,(int)$row['id'],self::driver(),'failed',$e->getMessage());$failed++;
             }
         }
-        return ['processed'=>$processed,'sent'=>$sent,'failed'=>$failed];
+        return ['processed'=>$processed,'sent'=>$sent,'failed'=>$failed,'suppressed'=>$suppressed];
     }
 
     private static function deliver(string $projectRoot,array $row):void
