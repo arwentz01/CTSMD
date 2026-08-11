@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/ProductionContext.php';
@@ -17,8 +18,8 @@ final class CalendarExperience
     public static function render(string $route,string $basePath):never
     {
         if($route==='/calendar/feed'){self::feed();}
-        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
-        $db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);$_SESSION['calendar_csrf']??=bin2hex(random_bytes(24));
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect(($basePath?:'').'/login');$_SESSION['calendar_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$basePath);
         self::page($db,$user,$basePath);
     }
@@ -81,7 +82,6 @@ final class CalendarExperience
     private static function query(array $params):string{return http_build_query(array_filter($params,static fn($v):bool=>$v!==null&&$v!==''));}
     private static function returnQuery():string{$params=['view'=>$_POST['return_view']??null,'date'=>$_POST['return_date']??null,'production'=>$_POST['return_production']??null,'group'=>$_POST['return_group']??null,'child'=>$_POST['return_child']??null];$q=self::query($params);return $q!==''?'?'.$q:'';}
     private static function absoluteUrl(string $path):string{$https=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')||((string)($_SERVER['HTTP_X_FORWARDED_PROTO']??'')==='https');$scheme=$https?'https':'http';$host=(string)($_SERVER['HTTP_HOST']??'localhost');return $scheme.'://'.$host.$path;}
-    private static function currentUser(PDO $db):array{$r=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch();if(!$r)throw new RuntimeException('Demo user is missing.');return $r;}
     private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'schedule_item',:id,:summary,:meta)");$s->execute(['actor'=>$actor,'event'=>$event,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
     private static function flash(string $type,string $message):void{$_SESSION['calendar_flash']=['type'=>$type,'message'=>$message];}
     private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
