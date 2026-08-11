@@ -174,6 +174,7 @@ final class ProductionFileExperience
         if (!(bool)($file['production_active'] ?? true)) return false;
         if (AccessPolicy::canManageResources($user)) return true;
         if (($file['status'] ?? '') !== 'active') return false;
+        if (!ProductionContext::isActiveMember($db,(int)$user['id'],(int)$file['production_id'])) return false;
         $audiences = json_decode((string)$file['audiences_json'],true);
         if (!is_array($audiences) || !$audiences) return false;
         $stmt = $db->prepare("SELECT audience_type FROM production_memberships WHERE production_id=:production AND user_id=:user AND status='active'");
