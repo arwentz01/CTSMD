@@ -10,7 +10,7 @@ final class AttendanceService
     public static function scheduleItem(PDO $db,int $itemId,int $productionId):?array
     {
         if($itemId<1||$productionId<1)return null;
-        $stmt=$db->prepare("SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.family_call_at,si.location,si.visibility,si.item_type,si.audience_mode,p.title production_title FROM schedule_items si JOIN productions p ON p.id=si.production_id WHERE si.id=:id AND si.production_id=:production LIMIT 1");
+        $stmt=$db->prepare("SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.family_call_at,si.location,si.visibility,si.item_type,si.audience_mode,si.status,p.title production_title FROM schedule_items si JOIN productions p ON p.id=si.production_id WHERE si.id=:id AND si.production_id=:production AND si.status='active' LIMIT 1");
         $stmt->execute(['id'=>$itemId,'production'=>$productionId]);
         return $stmt->fetch()?:null;
     }
@@ -42,6 +42,7 @@ final class AttendanceService
 
     public static function saveRoster(PDO $db,int $scheduleItemId,int $actorUserId,array $statuses,array $notes):void
     {
+        $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Attendance cannot be changed for a cancelled schedule item.');
         $expected=self::expectedMembers($db,$scheduleItemId);
         $allowed=[];foreach($expected as $member)$allowed[(int)$member['id']]=true;
         $validStatuses=['unmarked','present','absent','late','excused','left_early'];
@@ -51,21 +52,23 @@ final class AttendanceService
 
     public static function reportableStudents(PDO $db,array $user,int $scheduleItemId):array
     {
+        $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())return [];
         $expected=self::expectedMembers($db,$scheduleItemId);$expectedStudents=[];foreach($expected as $member)if(($member['audience_type']??'')==='student')$expectedStudents[(int)$member['id']]=$member;
         if(!$expectedStudents)return [];
         if(AccessPolicy::isStudent($user))return isset($expectedStudents[(int)$user['id']])?[$expectedStudents[(int)$user['id']]]:[];
-        $stmt=$db->prepare("SELECT fr.student_user_id FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.status='active'");$stmt->execute(['guardian'=>(int)$user['id']]);$ids=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));$out=[];foreach($ids as $id)if(isset($expectedStudents[$id]))$out[]=$expectedStudents[$id];return $out;
+        $stmt=$db->prepare("SELECT fr.student_user_id FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active'");$stmt->execute(['guardian'=>(int)$user['id']]);$ids=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));$out=[];foreach($ids as $id)if(isset($expectedStudents[$id]))$out[]=$expectedStudents[$id];return $out;
     }
 
     public static function submitAbsenceReport(PDO $db,int $scheduleItemId,int $studentUserId,int $reporterUserId,string $reason):int
     {
+        $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Absence reports cannot be submitted for a cancelled schedule item.');
         $reason=trim($reason);if($reason===''||mb_strlen($reason)>1500)throw new RuntimeException('Enter a brief absence reason up to 1,500 characters.');
         $stmt=$db->prepare("INSERT INTO attendance_absence_reports (schedule_item_id,student_user_id,reported_by_user_id,reason,status,submitted_at) VALUES (:item,:student,:reporter,:reason,'submitted',CURRENT_TIMESTAMP)");$stmt->execute(['item'=>$scheduleItemId,'student'=>$studentUserId,'reporter'=>$reporterUserId,'reason'=>$reason]);return (int)$db->lastInsertId();
     }
 
     public static function acknowledgeReport(PDO $db,int $reportId,int $actorUserId):void
     {
-        $stmt=$db->prepare("SELECT id,schedule_item_id,student_user_id,status FROM attendance_absence_reports WHERE id=:id FOR UPDATE");$stmt->execute(['id'=>$reportId]);$report=$stmt->fetch();if(!$report||$report['status']!=='submitted')throw new RuntimeException('That absence report is no longer awaiting review.');
+        $stmt=$db->prepare("SELECT aar.id,aar.schedule_item_id,aar.student_user_id,aar.status FROM attendance_absence_reports aar JOIN schedule_items si ON si.id=aar.schedule_item_id AND si.status='active' WHERE aar.id=:id FOR UPDATE");$stmt->execute(['id'=>$reportId]);$report=$stmt->fetch();if(!$report||$report['status']!=='submitted')throw new RuntimeException('That absence report is no longer awaiting review on an active schedule item.');
         $expected=self::expectedMembers($db,(int)$report['schedule_item_id']);$expectedIds=array_map(static fn(array $m):int=>(int)$m['id'],$expected);if(!in_array((int)$report['student_user_id'],$expectedIds,true))throw new RuntimeException('That student is no longer expected for this schedule item. Review the schedule audience before acknowledging the report.');
         $db->prepare("UPDATE attendance_absence_reports SET status='acknowledged',reviewed_by_user_id=:actor,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['actor'=>$actorUserId,'id'=>$reportId]);
         $db->prepare("INSERT INTO attendance_records (schedule_item_id,user_id,status,marked_by_user_id,marked_at) VALUES (:item,:user,'excused',:actor,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE status='excused',marked_by_user_id=VALUES(marked_by_user_id),marked_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP")->execute(['item'=>(int)$report['schedule_item_id'],'user'=>(int)$report['student_user_id'],'actor'=>$actorUserId]);
