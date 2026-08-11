@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -19,9 +20,10 @@ final class ScheduleCreateExperience
 
     public static function render(string $route, string $basePath): never
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
-        $user = self::currentUser($db);
+        $user = Auth::currentUser($db);
+        if (!$user) self::redirect(($basePath ?: '') . '/login');
         if (!AccessPolicy::canManageProduction($user)) self::forbidden($basePath, $user);
 
         $_SESSION['schedule_create_csrf'] ??= bin2hex(random_bytes(24));
@@ -128,10 +130,6 @@ final class ScheduleCreateExperience
     {
         if(trim($value)==='')return null; $date=DateTimeImmutable::createFromFormat('Y-m-d\\TH:i',trim($value)); if(!$date)throw new RuntimeException($label.' is not a valid date and time.'); return $date;
     }
-    private static function currentUser(PDO $db):array
-    {
-        $row=$db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE is_demo_current_user=1 AND active=1 LIMIT 1")->fetch(); if(!$row)throw new RuntimeException('Demo user is missing. Re-import the local seed data.'); return $row;
-    }
 
     private static function page(string $basePath,array $user,?array $production,array $groups):never
     {
@@ -148,7 +146,7 @@ final class ScheduleCreateExperience
 <fieldset class="sc-target"><legend>Who is this for?</legend><label class="sc-radio"><input type="radio" name="audience_mode" value="production" checked><span><b>Whole production</b><small>Uses the broad audience choice above.</small></span></label><label class="sc-radio"><input type="radio" name="audience_mode" value="groups"><span><b>Specific production groups</b><small>Only members of the selected groups are called. Student guardians inherit family-facing calls.</small></span></label><div class="sc-groups"><?php if($groups):foreach($groups as $group):?><label><input type="checkbox" name="group_ids[]" value="<?= (int)$group['id'] ?>"><span><b><?= $esc($group['name']) ?></b><small><?= (int)$group['member_count'] ?> active members · <?= $esc(ucfirst($group['group_type'])) ?></small></span></label><?php endforeach;else:?><p>No groups exist yet. <a href="<?= $url('/production/groups') ?>">Create production groups →</a></p><?php endif;?></div></fieldset>
 <div class="sc-pair"><label>Start<input type="datetime-local" name="starts_at" required value="<?= $esc($defaultStart) ?>"></label><label>End<input type="datetime-local" name="ends_at" value="<?= $esc($defaultEnd) ?>"></label></div><div class="sc-pair"><label>Family call <span>optional</span><input type="datetime-local" name="family_call_at"></label><label>Location<input name="location" maxlength="190" required placeholder="Main Stage"></label></div>
 <label class="sc-check"><input type="checkbox" name="prepare_notice" value="1" checked><span><b>Prepare a communication draft</b><small>The draft uses the same resolved production/group audience. Nothing is sent automatically.</small></span></label><footer><a href="<?= $url('/schedule') ?>">Cancel</a><button class="button" type="submit">Create schedule item</button></footer></form>
-<aside class="sc-side"><small>TARGETED CALLS</small><h3>One schedule, less noise.</h3><ol><li>Create reusable groups like Full Cast, Ensemble, Principals or Tech Crew.</li><li>Choose one or several groups for a rehearsal.</li><li>Students see their group calls; their active guardians inherit family-facing calls.</li><li>Communication drafts resolve from that same audience.</li></ol><div><b>No duplicate parent lists.</b><span>Guardian visibility follows the family relationship already stored in CTSMD.</span></div></aside></div><?php endif;?>
+<aside class="sc-side"><small>TARGETED CALLS</small><h3>One schedule, less noise.</h3><ol><li>Create reusable groups like Full Cast, Ensemble, Principals or Tech Crew.</li><li>Choose one or several groups for a rehearsal.</li><li>Students see their group calls; their active guardians inherit family-facing calls.</li><li>Communication drafts resolve from that same audience.</li></ol></aside></div><?php endif;?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
     }
 
