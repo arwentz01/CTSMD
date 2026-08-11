@@ -11,7 +11,7 @@ final class NotificationReminderService
         $counts=['forms'=>0,'volunteer_shifts'=>0,'credentials'=>0];
         $appUrl=rtrim($appUrl,'/');
 
-        $forms=$db->query("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.due_at,f.title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.code='student' AND r.active=1 WHERE ur.user_id=COALESCE(fa.subject_user_id,fa.user_id)) subject_is_student FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) AND subject.active=1 WHERE fa.status IN ('due_soon','missing') AND fa.due_at IS NOT NULL AND fa.due_at BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 3 DAY)")->fetchAll();
+        $forms=$db->query("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.due_at,f.title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.code='student' AND r.active=1 WHERE ur.user_id=COALESCE(fa.subject_user_id,fa.user_id)) subject_is_student FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) AND subject.active=1 AND subject.account_status<>'disabled' WHERE fa.status IN ('due_soon','missing') AND fa.due_at IS NOT NULL AND fa.due_at BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 3 DAY)")->fetchAll();
         foreach($forms as $row){
             $date=date('l, F j',strtotime((string)$row['due_at']));
             if((bool)$row['subject_is_student']){
