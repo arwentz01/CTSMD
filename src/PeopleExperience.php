@@ -91,7 +91,7 @@ final class PeopleExperience
             throw new RuntimeException('Choose a valid relationship type.');
         }
 
-        $stmt = $db->prepare('SELECT id, display_role, active FROM users WHERE id IN (:guardian, :student)');
+        $stmt = $db->prepare('SELECT id, display_role, active, account_status FROM users WHERE id IN (:guardian, :student)');
         $stmt->execute(['guardian' => $guardianId, 'student' => $studentId]);
         $users = $stmt->fetchAll();
         if (count($users) !== 2) {
@@ -102,8 +102,8 @@ final class PeopleExperience
         foreach ($users as $row) {
             $byId[(int)$row['id']] = $row;
         }
-        if (empty($byId[$guardianId]['active']) || empty($byId[$studentId]['active'])) {
-            throw new RuntimeException('Family relationships can only use active people.');
+        if (empty($byId[$guardianId]['active']) || empty($byId[$studentId]['active']) || $byId[$guardianId]['account_status'] === 'disabled' || $byId[$studentId]['account_status'] === 'disabled') {
+            throw new RuntimeException('Family relationships can only use available people. Restore a disabled account first.');
         }
         if (!str_contains(strtolower((string)$byId[$studentId]['display_role']), 'student')) {
             throw new RuntimeException('The linked child must currently have a student role.');
@@ -148,10 +148,10 @@ final class PeopleExperience
             $relationship=$stmt->fetch();
             if(!$relationship || $relationship['status']!=='active') throw new RuntimeException('That relationship is already inactive or unavailable.');
 
-            $count=$db->prepare("SELECT COUNT(*) FROM family_relationships WHERE student_user_id=:student AND status='active'");
+            $count=$db->prepare("SELECT COUNT(DISTINCT fr.guardian_user_id) FROM family_relationships fr JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active'");
             $count->execute(['student'=>(int)$relationship['student_user_id']]);
             if((int)$count->fetchColumn()<=1){
-                throw new RuntimeException('A student must retain at least one active parent, guardian, or caregiver relationship. Add another guardian before deactivating this relationship.');
+                throw new RuntimeException('A live Student must retain at least one available parent, guardian, or caregiver. Add another guardian before deactivating this relationship.');
             }
 
             $update=$db->prepare("UPDATE family_relationships SET status='inactive',updated_at=CURRENT_TIMESTAMP WHERE id=:id AND status='active'");
@@ -171,7 +171,7 @@ final class PeopleExperience
         $stmt = $db->prepare("SELECT fr.id AS relationship_id, fr.relationship_type, fr.is_primary, u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role
                               FROM family_relationships fr
                               JOIN users u ON u.id = fr.student_user_id
-                              WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active' AND u.active = 1
+                              WHERE fr.guardian_user_id = :guardian_id AND fr.status = 'active' AND u.active = 1 AND u.account_status<>'disabled'
                               ORDER BY fr.is_primary DESC, u.last_name, u.first_name");
         $stmt->execute(['guardian_id' => $guardianId]);
         return $stmt->fetchAll();
@@ -182,7 +182,7 @@ final class PeopleExperience
         $stmt = $db->prepare("SELECT fr.id AS relationship_id, fr.relationship_type, fr.is_primary, u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.initials, u.display_role AS role
                               FROM family_relationships fr
                               JOIN users u ON u.id = fr.guardian_user_id
-                              WHERE fr.student_user_id = :student_id AND fr.status = 'active' AND u.active = 1
+                              WHERE fr.student_user_id = :student_id AND fr.status = 'active' AND u.active = 1 AND u.account_status<>'disabled'
                               ORDER BY fr.is_primary DESC, u.last_name, u.first_name");
         $stmt->execute(['student_id' => $studentId]);
         return $stmt->fetchAll();
@@ -209,7 +209,7 @@ final class PeopleExperience
 
     private static function relationshipCandidates(PDO $db, int $excludeId): array
     {
-        $stmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role FROM users WHERE active = 1 AND id <> :exclude ORDER BY last_name, first_name");
+        $stmt = $db->prepare("SELECT id, CONCAT(first_name, ' ', last_name) AS name, display_role AS role FROM users WHERE active = 1 AND account_status<>'disabled' AND id <> :exclude ORDER BY last_name, first_name");
         $stmt->execute(['exclude' => $excludeId]);
         return $stmt->fetchAll();
     }
@@ -230,8 +230,8 @@ final class PeopleExperience
         ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My family · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/people-implementation.css') ?>"></head>
 <body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/family-hub', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Home', 'My family', $basePath, [['label'=>'Today','href'=>'/app','active'=>false],['label'=>'My family','href'=>'/family-hub','active'=>true],['label'=>'Notifications','href'=>'/notifications','active'=>false]]); ?><div class="people-page">
-<section class="people-hero"><small>FAMILY RELATIONSHIPS</small><h2>Your theatre family</h2><p>Family links determine guardian context for household access and safeguarded communication.</p></section>
-<?php if ($family): ?><div class="family-card-grid"><?php foreach ($family as $person): ?><article class="family-person-card"><header><i><?= $esc($person['initials']) ?></i><div><h3><?= $esc($person['name']) ?></h3><p><?= $esc($person['role']) ?></p></div></header><div class="family-relation"><span><?= $esc(ucfirst($person['relationship_type'])) ?></span><?php if ($person['is_primary']): ?><b>Primary guardian</b><?php endif; ?></div><div class="family-safety-note"><b>Guardian context available</b><p>This relationship is used when CTSMD applies guardian visibility to safeguarded student communication.</p></div></article><?php endforeach; ?></div><?php else: ?><section class="people-empty"><b>No linked students</b><p>A staff member must establish family relationships before they can be used for safeguarding.</p></section><?php endif; ?>
+<section class="people-hero"><small>FAMILY RELATIONSHIPS</small><h2>Your theatre family</h2><p>Available family links determine guardian context for household access and safeguarded communication.</p></section>
+<?php if ($family): ?><div class="family-card-grid"><?php foreach ($family as $person): ?><article class="family-person-card"><header><i><?= $esc($person['initials']) ?></i><div><h3><?= $esc($person['name']) ?></h3><p><?= $esc($person['role']) ?></p></div></header><div class="family-relation"><span><?= $esc(ucfirst($person['relationship_type'])) ?></span><?php if ($person['is_primary']): ?><b>Primary guardian</b><?php endif; ?></div><div class="family-safety-note"><b>Guardian context available</b><p>This relationship is used when CTSMD applies guardian visibility to safeguarded student communication.</p></div></article><?php endforeach; ?></div><?php else: ?><section class="people-empty"><b>No available linked students</b><p>CTSMD staff can establish or restore family relationships before they are used for safeguarding.</p></section><?php endif; ?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
     }
@@ -253,7 +253,7 @@ final class PeopleExperience
 <?php else: ?>
 <?php if (!$selected): ?><section class="people-empty"><b>Person not found</b><a class="button" href="<?= $url('/people') ?>">Back to people</a></section><?php else: $isStudent = str_contains(strtolower((string)$selected['role']), 'student'); $links = $isStudent ? self::guardiansForStudent($db, (int)$selected['id']) : self::familyForGuardian($db, (int)$selected['id']); $candidates = self::relationshipCandidates($db, (int)$selected['id']); ?>
 <section class="person-header"><div class="person-id"><i><?= $esc($selected['initials']) ?></i><div><small>PERSON RECORD</small><h2><?= $esc($selected['name']) ?></h2><p><?= $esc($selected['role']) ?> · <?= $esc((string)$selected['email']) ?></p></div></div><a href="<?= $url('/people') ?>">← Directory</a></section>
-<div class="person-layout"><section class="people-panel"><header><small>FAMILY CONTEXT</small><h3><?= $isStudent ? 'Guardians & caregivers' : 'Linked students' ?></h3></header><?php if ($links): ?><?php foreach ($links as $link): ?><article class="relationship-row"><div><b><?= $esc($link['name']) ?></b><small><?= $esc(ucfirst($link['relationship_type'])) ?><?= $link['is_primary'] ? ' · Primary' : '' ?></small></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc($_SESSION['people_csrf']) ?>"><input type="hidden" name="action" value="deactivate_relationship"><input type="hidden" name="relationship_id" value="<?= (int)$link['relationship_id'] ?>"><input type="hidden" name="student_user_id" value="<?= $isStudent ? (int)$selected['id'] : (int)$link['id'] ?>"><button type="submit">Deactivate</button></form></article><?php endforeach; ?><?php else: ?><div class="people-empty compact"><b>No active family links</b><p>This person has no explicit family relationship in CTSMD yet.</p></div><?php endif; ?></section>
+<div class="person-layout"><section class="people-panel"><header><small>FAMILY CONTEXT</small><h3><?= $isStudent ? 'Available guardians & caregivers' : 'Available linked students' ?></h3></header><?php if ($links): ?><?php foreach ($links as $link): ?><article class="relationship-row"><div><b><?= $esc($link['name']) ?></b><small><?= $esc(ucfirst($link['relationship_type'])) ?><?= $link['is_primary'] ? ' · Primary' : '' ?></small></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc($_SESSION['people_csrf']) ?>"><input type="hidden" name="action" value="deactivate_relationship"><input type="hidden" name="relationship_id" value="<?= (int)$link['relationship_id'] ?>"><input type="hidden" name="student_user_id" value="<?= $isStudent ? (int)$selected['id'] : (int)$link['id'] ?>"><button type="submit">Deactivate</button></form></article><?php endforeach; ?><?php else: ?><div class="people-empty compact"><b>No available family links</b><p>This person has no currently available family relationship in CTSMD.</p></div><?php endif; ?></section>
 <section class="people-panel"><header><small>ADD RELATIONSHIP</small><h3><?= $isStudent ? 'Link a guardian' : 'Link a student' ?></h3></header><form class="relationship-form" method="post"><input type="hidden" name="csrf_token" value="<?= $esc($_SESSION['people_csrf']) ?>"><input type="hidden" name="action" value="add_relationship"><?php if ($isStudent): ?><input type="hidden" name="student_user_id" value="<?= (int)$selected['id'] ?>"><label>Guardian<select name="guardian_user_id" required><option value="">Choose person</option><?php foreach ($candidates as $candidate): if (str_contains(strtolower((string)$candidate['role']), 'student')) continue; ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name'] . ' · ' . $candidate['role']) ?></option><?php endforeach; ?></select></label><?php else: ?><input type="hidden" name="guardian_user_id" value="<?= (int)$selected['id'] ?>"><label>Student<select name="student_user_id" required><option value="">Choose student</option><?php foreach ($candidates as $candidate): if (!str_contains(strtolower((string)$candidate['role']), 'student')) continue; ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?></option><?php endforeach; ?></select></label><?php endif; ?><label>Relationship<select name="relationship_type"><option value="parent">Parent</option><option value="guardian">Guardian</option><option value="caregiver">Caregiver</option></select></label><button class="button" type="submit">Save relationship</button><p class="people-help">Relationships are deactivated, not deleted, so safeguarding history remains traceable.</p></form></section></div>
 <?php endif; ?><?php endif; ?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
