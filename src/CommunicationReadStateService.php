@@ -8,12 +8,30 @@ require_once __DIR__ . '/ProductionContext.php';
 
 final class CommunicationReadStateService
 {
+    private const NAV_CACHE_TTL = 15;
+    private const NAV_CACHE_KEY = 'communication_navigation_counts';
+
     public static function navigationCounts(PDO $db, array $user): array
     {
-        return [
+        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
+        $cached=$_SESSION[self::NAV_CACHE_KEY]??null;
+        if(is_array($cached)
+            && (int)($cached['user_id']??0)===(int)$user['id']
+            && (int)($cached['expires_at']??0)>=time()
+            && isset($cached['counts']['messages'],$cached['counts']['community'])){
+            return $cached['counts'];
+        }
+
+        $counts = [
             'messages' => self::messageUnreadCount($db, (int)$user['id']),
             'community' => self::communityUnread($db, $user)['total'],
         ];
+        $_SESSION[self::NAV_CACHE_KEY]=[
+            'user_id'=>(int)$user['id'],
+            'expires_at'=>time()+self::NAV_CACHE_TTL,
+            'counts'=>$counts,
+        ];
+        return $counts;
     }
 
     public static function messageUnreadCount(PDO $db, int $userId): int
@@ -38,6 +56,7 @@ final class CommunicationReadStateService
             SET last_read_message_id = GREATEST(last_read_message_id, :message), last_read_at = CURRENT_TIMESTAMP
             WHERE conversation_id = :conversation AND user_id = :user");
         $stmt->execute(['message' => $messageId, 'conversation' => $conversationId, 'user' => $userId]);
+        self::invalidateNavigationCounts();
     }
 
     public static function markConversationThroughMessage(PDO $db, int $userId, int $conversationId, int $messageId): void
@@ -46,6 +65,7 @@ final class CommunicationReadStateService
             SET last_read_message_id = GREATEST(last_read_message_id, :message), last_read_at = CURRENT_TIMESTAMP
             WHERE conversation_id = :conversation AND user_id = :user");
         $stmt->execute(['message' => $messageId, 'conversation' => $conversationId, 'user' => $userId]);
+        self::invalidateNavigationCounts();
     }
 
     public static function communityUnread(PDO $db, array $user): array
@@ -93,6 +113,13 @@ final class CommunicationReadStateService
             VALUES (:channel,:user,:post,CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE last_read_post_id = GREATEST(last_read_post_id, VALUES(last_read_post_id)), last_read_at = CURRENT_TIMESTAMP");
         $upsert->execute(['channel' => $channelId, 'user' => $userId, 'post' => $latest]);
+        self::invalidateNavigationCounts();
+    }
+
+    public static function invalidateNavigationCounts():void
+    {
+        if(session_status()!==PHP_SESSION_ACTIVE)session_start();
+        unset($_SESSION[self::NAV_CACHE_KEY]);
     }
 
     private static function ensureChannelBaselines(PDO $db, int $userId, array $channels): void
