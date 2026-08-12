@@ -66,7 +66,7 @@ final class ProductionArchiveService
     public static function channelDetail(PDO $db,array $viewer,int $productionId,int $channelId):?array
     {
         if(!self::canViewProduction($db,$viewer,$productionId))return null;
-        $s=$db->prepare("SELECT c.id,c.production_id,c.name,c.description,c.access_mode,c.read_audiences_json,p.title production_title,p.season FROM channels c JOIN productions p ON p.id=c.production_id WHERE c.id=:channel AND c.production_id=:production AND c.archived_at IS NULL AND p.is_active=0 AND p.status='archived' LIMIT 1");
+        $s=$db->prepare("SELECT c.id,c.production_id,c.name,c.description,c.access_mode,c.read_audiences_json,p.title production_title,p.season FROM channels c JOIN productions p ON p.id=c.production_id WHERE c.id=:channel AND c.production_id=:production AND p.is_active=0 AND p.status='archived' LIMIT 1");
         $s->execute(['channel'=>$channelId,'production'=>$productionId]);$channel=$s->fetch();if(!$channel)return null;
         $audiences=self::historicalAudiences($db,(int)$viewer['id'],$productionId);
         if(!AccessPolicy::canManageProduction($viewer)&&!self::historicalChannelAccess($db,$channel,$viewer,$audiences))return null;
@@ -168,7 +168,7 @@ final class ProductionArchiveService
 
     private static function channels(PDO $db,int $productionId,array $viewer,array $audiences,bool $manager):array
     {
-        $s=$db->prepare("SELECT c.id,c.name,c.description,c.access_mode,c.read_audiences_json,c.archived_at,(SELECT COUNT(*) FROM channel_posts cp WHERE cp.channel_id=c.id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL) post_count,(SELECT MAX(cp2.created_at) FROM channel_posts cp2 WHERE cp2.channel_id=c.id AND cp2.moderation_status='published' AND cp2.hidden_at IS NULL AND cp2.deleted_at IS NULL) last_post_at FROM channels c WHERE c.production_id=:production AND c.archived_at IS NULL ORDER BY c.sort_order,c.name");
+        $s=$db->prepare("SELECT c.id,c.name,c.description,c.access_mode,c.read_audiences_json,c.archived_at,(SELECT COUNT(*) FROM channel_posts cp WHERE cp.channel_id=c.id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL) post_count,(SELECT MAX(cp2.created_at) FROM channel_posts cp2 WHERE cp2.channel_id=c.id AND cp2.moderation_status='published' AND cp2.hidden_at IS NULL AND cp2.deleted_at IS NULL) last_post_at FROM channels c WHERE c.production_id=:production ORDER BY c.sort_order,c.name");
         $s->execute(['production'=>$productionId]);$out=[];
         foreach($s->fetchAll() as $channel){if($manager||self::historicalChannelAccess($db,$channel,$viewer,$audiences))$out[]=$channel;}
         return$out;
