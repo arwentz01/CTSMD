@@ -32,15 +32,15 @@ final class ProductionContext
                       SELECT 1
                       FROM family_relationships fr
                       JOIN production_memberships spm
-                        ON spm.production_id=pm.production_id
-                       AND spm.user_id=fr.student_user_id
+                        ON spm.user_id=fr.student_user_id
                        AND spm.audience_type='student'
                        AND spm.status='active'
                       JOIN users student
                         ON student.id=spm.user_id
                        AND student.active=1
                        AND student.account_status<>'disabled'
-                      WHERE fr.guardian_user_id=pm.user_id
+                      WHERE spm.production_id=pm.production_id
+                        AND fr.guardian_user_id=pm.user_id
                         AND fr.status='active'
                   )
               )
@@ -107,15 +107,15 @@ final class ProductionContext
                       SELECT 1
                       FROM family_relationships fr
                       JOIN production_memberships spm
-                        ON spm.production_id=pm.production_id
-                       AND spm.user_id=fr.student_user_id
+                        ON spm.user_id=fr.student_user_id
                        AND spm.audience_type='student'
                        AND spm.status='active'
                       JOIN users student
                         ON student.id=spm.user_id
                        AND student.active=1
                        AND student.account_status<>'disabled'
-                      WHERE fr.guardian_user_id=pm.user_id
+                      WHERE spm.production_id=pm.production_id
+                        AND fr.guardian_user_id=pm.user_id
                         AND fr.status='active'
                   )
               )
@@ -141,15 +141,15 @@ final class ProductionContext
                       SELECT 1
                       FROM family_relationships fr
                       JOIN production_memberships spm
-                        ON spm.production_id=pm.production_id
-                       AND spm.user_id=fr.student_user_id
+                        ON spm.user_id=fr.student_user_id
                        AND spm.audience_type='student'
                        AND spm.status='active'
                       JOIN users student
                         ON student.id=spm.user_id
                        AND student.active=1
                        AND student.account_status<>'disabled'
-                      WHERE fr.guardian_user_id=pm.user_id
+                      WHERE spm.production_id=pm.production_id
+                        AND fr.guardian_user_id=pm.user_id
                         AND fr.status='active'
                   )
               )
@@ -175,15 +175,15 @@ final class ProductionContext
                       SELECT 1
                       FROM family_relationships fr
                       JOIN production_memberships spm
-                        ON spm.production_id=pm.production_id
-                       AND spm.user_id=fr.student_user_id
+                        ON spm.user_id=fr.student_user_id
                        AND spm.audience_type='student'
                        AND spm.status='active'
                       JOIN users student
                         ON student.id=spm.user_id
                        AND student.active=1
                        AND student.account_status<>'disabled'
-                      WHERE fr.guardian_user_id=pm.user_id
+                      WHERE spm.production_id=pm.production_id
+                        AND fr.guardian_user_id=pm.user_id
                         AND fr.status='active'
                   )
               )
