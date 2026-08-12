@@ -194,7 +194,11 @@ INSERT INTO production_memberships (production_id, user_id, audience_type, parti
 (1,2,'student','Cast'),
 (1,1,'guardian','Parent / Guardian'),
 (1,3,'staff','Production Manager'),
-(1,4,'staff','Director');
+(1,4,'staff','Director'),
+(2,2,'student','Ensemble'),
+(2,1,'guardian','Parent / Guardian'),
+(3,2,'student','Ensemble'),
+(3,1,'guardian','Parent / Guardian');
 
 -- Live demo timestamps are relative to the reset date so a fresh seed remains useful.
 INSERT INTO announcements (production_id, author_user_id, title, body, context_label, tone, published_at, pinned) VALUES
@@ -298,7 +302,11 @@ INSERT INTO form_assignments (form_id, user_id, subject_user_id, status, due_at,
 (1,1,1,'completed',TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 10 DAY),'23:59:59'),TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 12 DAY),'18:00:00')),
 (2,1,1,'due_soon',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'23:59:59'),NULL),
 (3,1,2,'missing',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'23:59:59'),NULL),
-(4,1,1,'requires_review',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'23:59:59'),NULL);
+(4,1,1,'missing',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'23:59:59'),NULL);
+
+INSERT INTO form_submissions (assignment_id,form_id,submitted_by_user_id,submitted_for_user_id,acknowledgment,status,submitted_at) VALUES
+(4,4,1,1,1,'submitted',DATE_SUB(NOW(),INTERVAL 3 HOUR));
+UPDATE form_assignments SET status='requires_review' WHERE id=4;
 
 INSERT INTO playbills (production_id, status, public_slug) VALUES
 (1,'current','matilda-jr-summer-2026'),
