@@ -18,8 +18,8 @@ final class VolunteerCoverageService
                   FROM volunteer_shift_requirements vsr
                   LEFT JOIN volunteer_credentials vc
                     ON vc.requirement_id=vsr.requirement_id
-                   AND vc.user_id=vss.user_id
                   WHERE vsr.shift_id=vss.shift_id
+                    AND (vc.user_id=vss.user_id OR vc.id IS NULL)
                     AND (
                         vc.id IS NULL
                         OR vc.status<>'approved'
@@ -97,8 +97,8 @@ final class VolunteerCoverageService
                   FROM volunteer_shift_requirements vsr
                   LEFT JOIN volunteer_credentials vc
                     ON vc.requirement_id=vsr.requirement_id
-                   AND vc.user_id=vss.user_id
                   WHERE vsr.shift_id=vss.shift_id
+                    AND (vc.user_id=vss.user_id OR vc.id IS NULL)
                     AND (
                         vc.id IS NULL
                         OR vc.status<>'approved'
