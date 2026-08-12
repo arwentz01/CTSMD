@@ -189,8 +189,10 @@ final class ProductionPeopleExperience
 
             $update = $db->prepare("UPDATE production_memberships SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = :id");
             $update->execute(['id' => $membershipId]);
+            $autoRetiredGuardians = [];
             if ($membership['audience_type'] === 'student') {
                 TheatreHistoryService::closeStudentCredit($db, $productionId, (int)$membership['user_id']);
+                $autoRetiredGuardians = self::retireOrphanGuardians($db, $productionId, (int)$membership['user_id']);
             }
 
             self::audit($db, (int)$actor['id'], 'production.membership_removed', 'production', $productionId, 'Deactivated a production membership.', [
@@ -198,6 +200,7 @@ final class ProductionPeopleExperience
                 'user_id' => (int)$membership['user_id'],
                 'audience_type' => $membership['audience_type'],
                 'participation_role' => $membership['participation_role'],
+                'auto_retired_guardian_user_ids' => $autoRetiredGuardians,
             ]);
 
             $db->commit();
@@ -210,6 +213,25 @@ final class ProductionPeopleExperience
             }
             throw new RuntimeException('The production membership could not be removed.');
         }
+    }
+
+    private static function retireOrphanGuardians(PDO $db, int $productionId, int $studentId): array
+    {
+        $guardianStmt = $db->prepare("SELECT DISTINCT gpm.user_id FROM family_relationships fr JOIN production_memberships gpm ON gpm.user_id=fr.guardian_user_id AND gpm.production_id=:production_id AND gpm.audience_type='guardian' AND gpm.status='active' JOIN users guardian ON guardian.id=gpm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE fr.student_user_id=:student_id AND fr.status='active' FOR UPDATE");
+        $guardianStmt->execute(['production_id' => $productionId, 'student_id' => $studentId]);
+        $guardianIds = array_map('intval', $guardianStmt->fetchAll(PDO::FETCH_COLUMN));
+        if (!$guardianIds) return [];
+
+        $remainingStudent = $db->prepare("SELECT spm.id FROM family_relationships fr JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=:production_id AND spm.audience_type='student' AND spm.status='active' JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian_id AND fr.status='active' LIMIT 1 FOR UPDATE");
+        $retire = $db->prepare("UPDATE production_memberships SET status='inactive',updated_at=CURRENT_TIMESTAMP WHERE production_id=:production_id AND user_id=:guardian_id AND audience_type='guardian' AND status='active'");
+        $retired = [];
+        foreach ($guardianIds as $guardianId) {
+            $remainingStudent->execute(['production_id' => $productionId, 'guardian_id' => $guardianId]);
+            if ($remainingStudent->fetchColumn()) continue;
+            $retire->execute(['production_id' => $productionId, 'guardian_id' => $guardianId]);
+            if ($retire->rowCount() > 0) $retired[] = $guardianId;
+        }
+        return $retired;
     }
 
     private static function members(PDO $db, int $productionId): array
