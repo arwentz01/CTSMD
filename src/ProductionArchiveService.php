@@ -192,18 +192,21 @@ final class ProductionArchiveService
     private static function audienceAllows(string $json,array $viewer,array $audiences):bool
     {
         $allowed=json_decode($json,true);if(!is_array($allowed)||!$allowed)return false;
-        $isStudent=AccessPolicy::isStudent($viewer);$isStaff=AccessPolicy::isStaff($viewer);$hasProduction=(bool)$audiences;
+        $hasProduction=(bool)$audiences;
+        $historicalStudent=in_array('student',$audiences,true);
+        $historicalStaff=in_array('staff',$audiences,true);
+        $historicalAdult=$hasProduction&&!$historicalStudent;
         foreach($allowed as $audience){
             if($audience==='all_members'&&$hasProduction)return true;
             if($audience==='production_members'&&$hasProduction)return true;
-            if($audience==='production_students'&&in_array('student',$audiences,true))return true;
+            if($audience==='production_students'&&$historicalStudent)return true;
             if($audience==='production_guardians'&&in_array('guardian',$audiences,true))return true;
-            if($audience==='production_staff'&&in_array('staff',$audiences,true))return true;
-            if($audience==='production_adults'&&$hasProduction&&!in_array('student',$audiences,true))return true;
-            if($audience==='students'&&$isStudent)return true;
-            if($audience==='staff'&&$isStaff)return true;
-            if($audience==='adults'&&!$isStudent)return true;
-            if($audience==='volunteers'&&str_contains(strtolower((string)($viewer['role']??'')),'volunteer'))return true;
+            if($audience==='production_staff'&&$historicalStaff)return true;
+            if($audience==='production_adults'&&$historicalAdult)return true;
+            if($audience==='students'&&$historicalStudent)return true;
+            if($audience==='staff'&&$historicalStaff)return true;
+            if($audience==='adults'&&$historicalAdult)return true;
+            if($audience==='volunteers')continue;
         }
         return false;
     }
