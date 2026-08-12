@@ -7,6 +7,8 @@ require_once __DIR__ . '/Database.php';
 final class Auth
 {
     public const SESSION_USER_ID = 'auth_user_id';
+    private static array $roleCache = [];
+    private static array $permissionCache = [];
 
     public static function startSession(): void
     {
@@ -35,21 +37,38 @@ final class Auth
 
     public static function establishSession(PDO $db,int $userId): void
     {
-        $stmt=$db->prepare("SELECT id FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('This account is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_authenticated_at']=time();unset($_SESSION['auth_local_identity']);$db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
+        $stmt=$db->prepare("SELECT id FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('This account is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_authenticated_at']=time();unset($_SESSION['auth_local_identity']);self::clearRequestCache($userId);$db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
     }
 
     public static function loginAsLocalUser(PDO $db,int $userId): void
     {
-        if(!self::localIdentitySwitchEnabled())throw new RuntimeException('Local identity switching is disabled.');$stmt=$db->prepare('SELECT id FROM users WHERE id=:id AND active=1 LIMIT 1');$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('That local test identity is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_local_identity']=true;
+        if(!self::localIdentitySwitchEnabled())throw new RuntimeException('Local identity switching is disabled.');$stmt=$db->prepare('SELECT id FROM users WHERE id=:id AND active=1 LIMIT 1');$stmt->execute(['id'=>$userId]);if(!$stmt->fetchColumn())throw new RuntimeException('That local test identity is unavailable.');self::startSession();session_regenerate_id(true);$_SESSION[self::SESSION_USER_ID]=$userId;$_SESSION['auth_local_identity']=true;self::clearRequestCache($userId);
     }
 
-    public static function logout(): void{self::startSession();unset($_SESSION[self::SESSION_USER_ID],$_SESSION['auth_authenticated_at'],$_SESSION['auth_local_identity']);session_regenerate_id(true);}
+    public static function logout(): void{self::startSession();$userId=(int)($_SESSION[self::SESSION_USER_ID]??0);unset($_SESSION[self::SESSION_USER_ID],$_SESSION['auth_authenticated_at'],$_SESSION['auth_local_identity']);if($userId>0)self::clearRequestCache($userId);session_regenerate_id(true);}
     public static function hasPermission(array $user,string $permission): bool{return in_array($permission,(array)($user['permissions']??[]),true);}
     public static function hasRole(array $user,string $role): bool{return in_array($role,(array)($user['roles']??[]),true);}
     public static function isApprovedMember(array $user): bool{return ($user['organization_membership_status']??null)==='approved'||self::hasRole($user,'production_staff')||self::hasRole($user,'administrator');}
 
-    public static function roles(PDO $db,int $userId): array{$s=$db->prepare("SELECT r.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.active=1 ORDER BY r.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));}
-    public static function permissions(PDO $db,int $userId): array{$s=$db->prepare("SELECT DISTINCT p.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN auth_role_permissions rp ON rp.role_id=r.id JOIN auth_permissions p ON p.id=rp.permission_id WHERE ur.user_id=:user ORDER BY p.code");$s->execute(['user'=>$userId]);return array_values($s->fetchAll(PDO::FETCH_COLUMN));}
+    public static function roles(PDO $db,int $userId): array
+    {
+        if(isset(self::$roleCache[$userId]))return self::$roleCache[$userId];
+        $s=$db->prepare("SELECT r.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=:user AND r.active=1 ORDER BY r.code");$s->execute(['user'=>$userId]);
+        return self::$roleCache[$userId]=array_values($s->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    public static function permissions(PDO $db,int $userId): array
+    {
+        if(isset(self::$permissionCache[$userId]))return self::$permissionCache[$userId];
+        $s=$db->prepare("SELECT DISTINCT p.code FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN auth_role_permissions rp ON rp.role_id=r.id JOIN auth_permissions p ON p.id=rp.permission_id WHERE ur.user_id=:user ORDER BY p.code");$s->execute(['user'=>$userId]);
+        return self::$permissionCache[$userId]=array_values($s->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    public static function clearRequestCache(?int $userId=null): void
+    {
+        if($userId===null){self::$roleCache=[];self::$permissionCache=[];return;}
+        unset(self::$roleCache[$userId],self::$permissionCache[$userId]);
+    }
 
     public static function createInvitation(PDO $db,int $userId,?int $creatorId=null,int $hours=168): string
     {
