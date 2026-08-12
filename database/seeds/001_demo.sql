@@ -220,7 +220,7 @@ INSERT INTO channels (id, production_id, name, channel_type, description, read_s
 INSERT INTO channel_posts (channel_id, author_user_id, body, pinned, reactions_json, created_at) VALUES
 (4, 3, 'Reminder: tomorrow’s rehearsal begins at 5:30 PM. Updated call times are now in the schedule.', 1, '{"thumbs_up":18,"heart":7}', DATE_SUB(NOW(),INTERVAL 90 MINUTE)),
 (4, 4, 'Great work on Act II. Please review the choreography video before the next rehearsal.', 0, '{"theatre":12,"clap":9}', DATE_SUB(NOW(),INTERVAL 3 HOUR)),
-(4, 6, 'Will the costume team need students to bring their show shoes to the next fitting?', 0, '{"thumbs_up":3}', DATE_SUB(NOW(),INTERVAL 5 HOUR));
+(4, 1, 'Will the costume team need students to bring their show shoes to the next fitting?', 0, '{"thumbs_up":3}', DATE_SUB(NOW(),INTERVAL 5 HOUR));
 
 INSERT INTO volunteer_profiles (user_id, active) VALUES
 (1,1),(5,1),(6,1),(7,1),(8,1);
@@ -282,6 +282,9 @@ INSERT INTO volunteer_shift_signups (shift_id, user_id, status) VALUES
 (4,5,'signed_up'),(4,6,'signed_up'),
 (6,5,'signed_up');
 
+INSERT INTO volunteer_shift_approval_requests (shift_id,user_id,status,request_note,decision_note,reviewed_by_user_id,requested_at,reviewed_at) VALUES
+(2,5,'approved','Available for the Dressing Room Monitor shift.','Approved after current readiness review.',3,DATE_SUB(NOW(),INTERVAL 2 DAY),DATE_SUB(NOW(),INTERVAL 1 DAY));
+
 INSERT INTO forms (id, title, form_type, instructions, completion_mode, review_required) VALUES
 (1,'Parent Handbook Acknowledgment','acknowledgment','Review the Parent Handbook and confirm that you understand and agree to follow CTSMD participation expectations.','acknowledgment',0),
 (2,'Media / Photo Release','release','Review the media and photo release terms and provide your typed signature to record your consent.','signature',0),
@@ -291,11 +294,11 @@ INSERT INTO forms (id, title, form_type, instructions, completion_mode, review_r
 INSERT INTO form_requirement_mappings (form_id, requirement_id, validity_days, active, created_by_user_id) VALUES
 (4,1,NULL,1,3);
 
-INSERT INTO form_assignments (form_id, user_id, status, due_at, completed_at) VALUES
-(1,1,'completed',TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 10 DAY),'23:59:59'),TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 12 DAY),'18:00:00')),
-(2,1,'due_soon',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'23:59:59'),NULL),
-(3,1,'missing',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'23:59:59'),NULL),
-(4,1,'requires_review',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'23:59:59'),NULL);
+INSERT INTO form_assignments (form_id, user_id, subject_user_id, status, due_at, completed_at) VALUES
+(1,1,1,'completed',TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 10 DAY),'23:59:59'),TIMESTAMP(DATE_SUB(CURDATE(),INTERVAL 12 DAY),'18:00:00')),
+(2,1,1,'due_soon',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 2 DAY),'23:59:59'),NULL),
+(3,1,2,'missing',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 1 DAY),'23:59:59'),NULL),
+(4,1,1,'requires_review',TIMESTAMP(DATE_ADD(CURDATE(),INTERVAL 3 DAY),'23:59:59'),NULL);
 
 INSERT INTO playbills (production_id, status, public_slug) VALUES
 (1,'current','matilda-jr-summer-2026'),
