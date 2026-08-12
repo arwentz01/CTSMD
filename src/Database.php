@@ -29,6 +29,9 @@ final class CTSMDPDO extends PDO
 
 final class Database
 {
+    /** @var array<string, PDO> */
+    private static array $connections = [];
+
     public static function connect(string $projectRoot): PDO
     {
         self::loadEnv($projectRoot . '/.env');
@@ -42,12 +45,18 @@ final class Database
         $charset = self::env('DB_CHARSET', 'utf8mb4');
 
         $dsn = "mysql:host={$host};port={$port};dbname={$database};charset={$charset}";
+        $connectionKey = hash('sha256', $dsn . "\0" . $username);
+        if (isset(self::$connections[$connectionKey])) {
+            return self::$connections[$connectionKey];
+        }
 
-        return new CTSMDPDO($dsn, $username, $password, [
+        $connection = new CTSMDPDO($dsn, $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+        self::$connections[$connectionKey] = $connection;
+        return $connection;
     }
 
     private static function loadEnv(string $path): void
