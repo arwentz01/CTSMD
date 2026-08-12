@@ -117,7 +117,16 @@ final class ProductionDayService
                         WHERE vsr2.shift_id=vs.id AND (vc2.id IS NULL OR vc2.status<>'approved' OR (vc2.expires_at IS NOT NULL AND vc2.expires_at<NOW()))
                     )
                 ) THEN 1 ELSE 0 END),0) eligibility_blocked,
-            COALESCE(SUM(CASE WHEN vss.status='checked_in' AND volunteer.id IS NOT NULL AND vp.user_id IS NOT NULL THEN 1 ELSE 0 END),0) checked_in,
+            COALESCE(SUM(CASE
+                WHEN vss.status='checked_in'
+                     AND volunteer.id IS NOT NULL
+                     AND vp.user_id IS NOT NULL
+                     AND NOT EXISTS (
+                        SELECT 1 FROM volunteer_shift_requirements vsr3
+                        LEFT JOIN volunteer_credentials vc3 ON vc3.requirement_id=vsr3.requirement_id AND vc3.user_id=vss.user_id
+                        WHERE vsr3.shift_id=vs.id AND (vc3.id IS NULL OR vc3.status<>'approved' OR (vc3.expires_at IS NOT NULL AND vc3.expires_at<NOW()))
+                     ) THEN 1
+                ELSE 0 END),0) checked_in,
             COALESCE(SUM(CASE WHEN vss.status='waitlisted' THEN 1 ELSE 0 END),0) waitlisted
             FROM volunteer_shifts vs
             LEFT JOIN volunteer_shift_signups vss ON vss.shift_id=vs.id
@@ -132,14 +141,14 @@ final class ProductionDayService
     private static function notices(PDO $db,int $productionId,string $day):array
     {
         $s=$db->prepare("SELECT scn.id,scn.schedule_item_id,scn.subject,scn.audience_scope,scn.audience_count,scn.status,scn.created_at,scn.published_at,si.title schedule_title FROM schedule_change_notices scn JOIN schedule_items si ON si.id=scn.schedule_item_id WHERE scn.production_id=:production AND DATE(si.starts_at)=:day AND scn.status<>'cancelled' ORDER BY FIELD(scn.status,'draft','published'),scn.created_at DESC");
-        $s->execute(['production'=>$productionId,'day'=>$day]);return $s->fetchAll();
+        $s->execute(['production'=>$productionId,'day'=>$day]);return$s->fetchAll();
     }
 
     private static function checklist(PDO $db,int $productionId,string $day):array
     {
         $end=$day.' 23:59:59';
         $s=$db->prepare("SELECT pci.id,pci.title,pci.category,pci.status,pci.due_at,pci.notes,pci.completed_at,CONCAT(u.first_name,' ',u.last_name) owner_name FROM production_checklist_items pci LEFT JOIN users u ON u.id=pci.assigned_to_user_id WHERE pci.production_id=:production AND (pci.status<>'done' AND (pci.due_at IS NULL OR pci.due_at<=:end) OR pci.status='done' AND DATE(pci.completed_at)=:day) ORDER BY pci.status='done',pci.due_at IS NULL,pci.due_at,pci.sort_order,pci.id LIMIT 20");
-        $s->execute(['production'=>$productionId,'end'=>$end,'day'=>$day]);return $s->fetchAll();
+        $s->execute(['production'=>$productionId,'end'=>$end,'day'=>$day]);return$s->fetchAll();
     }
 
     private static function parseDate(string $date):string
