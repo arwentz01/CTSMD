@@ -209,10 +209,10 @@ final class FormManagementExperience
             if (!$ids) return [];
             $placeholders = implode(',',array_fill(0,count($ids),'?'));
             if ($productionId !== null) {
-                $stmt = $db->prepare("SELECT DISTINCT u.id FROM users u JOIN production_memberships pm ON pm.user_id=u.id WHERE u.active=1 AND pm.production_id=? AND pm.status='active' AND u.id IN ($placeholders)");
+                $stmt = $db->prepare("SELECT DISTINCT u.id FROM users u JOIN production_memberships pm ON pm.user_id=u.id WHERE u.active=1 AND u.account_status<>'disabled' AND pm.production_id=? AND pm.status='active' AND (pm.audience_type<>'guardian' OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=pm.production_id AND spm.audience_type='student' AND spm.status='active' JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=pm.user_id AND fr.status='active')) AND u.id IN ($placeholders)");
                 $stmt->execute(array_merge([$productionId],$ids));
             } else {
-                $stmt = $db->prepare("SELECT id FROM users WHERE active=1 AND id IN ($placeholders)");
+                $stmt = $db->prepare("SELECT id FROM users WHERE active=1 AND account_status<>'disabled' AND id IN ($placeholders)");
                 $stmt->execute($ids);
             }
             return array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
@@ -221,17 +221,17 @@ final class FormManagementExperience
         if ($productionId !== null) {
             $types = match($audience){'production_students'=>['student'],'production_guardians'=>['guardian'],'production_staff'=>['staff'],default=>['student','guardian','staff']};
             $ph = implode(',',array_fill(0,count($types),'?'));
-            $stmt=$db->prepare("SELECT DISTINCT u.id FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND pm.audience_type IN ($ph) ORDER BY u.id");
+            $stmt=$db->prepare("SELECT DISTINCT u.id FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph) AND (pm.audience_type<>'guardian' OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=pm.production_id AND spm.audience_type='student' AND spm.status='active' JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=pm.user_id AND fr.status='active')) ORDER BY u.id");
             $stmt->execute(array_merge([$productionId],$types));
             return array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
         }
 
         $sql = match($audience){
-            'all_active' => "SELECT id FROM users WHERE active=1 ORDER BY id",
-            'students' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE u.active=1 ORDER BY u.id",
-            'staff' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code IN ('administrator','production_staff') WHERE u.active=1 ORDER BY u.id",
-            'volunteers' => "SELECT u.id FROM users u JOIN volunteer_profiles vp ON vp.user_id=u.id AND vp.active=1 WHERE u.active=1 ORDER BY u.id",
-            'adults' => "SELECT u.id FROM users u WHERE u.active=1 AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id",
+            'all_active' => "SELECT id FROM users WHERE active=1 AND account_status<>'disabled' ORDER BY id",
+            'students' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.id",
+            'staff' => "SELECT DISTINCT u.id FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code IN ('administrator','production_staff') WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.id",
+            'volunteers' => "SELECT u.id FROM users u JOIN volunteer_profiles vp ON vp.user_id=u.id AND vp.active=1 WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.id",
+            'adults' => "SELECT u.id FROM users u WHERE u.active=1 AND u.account_status<>'disabled' AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE ur.user_id=u.id) ORDER BY u.id",
             default => "SELECT id FROM users WHERE 1=0",
         };
         return array_map('intval',$db->query($sql)->fetchAll(PDO::FETCH_COLUMN));
@@ -259,7 +259,7 @@ final class FormManagementExperience
 
     private static function people(PDO $db): array
     {
-        return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 ORDER BY last_name,first_name")->fetchAll();
+        return $db->query("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role FROM users WHERE active=1 AND account_status<>'disabled' ORDER BY last_name,first_name")->fetchAll();
     }
 
     private static function audit(PDO $db,int $actorId,string $event,string $subjectType,int $subjectId,string $summary,array $metadata):void
@@ -312,7 +312,7 @@ final class FormManagementExperience
         <section class="fm-head"><div><small><?= $form['production_title']?$esc($form['production_title']):'REUSABLE FORM' ?></small><h2><?= $esc($form['title']) ?></h2><p>Assign this form in bulk or choose specific people. Existing assignments in the same context are never duplicated.</p></div><a href="<?= $url('/admin/forms/manage') ?>">← Form library</a></section>
         <div class="fm-layout"><form class="fm-form" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['form_manage_csrf']) ?>"><input type="hidden" name="action" value="assign"><input type="hidden" name="form_id" value="<?= (int)$form['id'] ?>">
         <?php if($form['production_id']===null):?><label>Assignment context<select name="assignment_context"><option value="organization">Organization-wide</option><option value="production">Working production<?= $selectedProduction?' · '.$esc($selectedProduction['title']):'' ?></option></select></label><?php else:?><input type="hidden" name="assignment_context" value="production"><?php endif; ?>
-        <label>Audience<select name="audience"><optgroup label="Organization audiences"><option value="all_active">All active users</option><option value="adults">Adults only</option><option value="students">Students</option><option value="staff">Staff</option><option value="volunteers">Active volunteers</option></optgroup><optgroup label="Production audiences"><option value="production_all">Everyone in production</option><option value="production_students">Students / cast</option><option value="production_guardians">Guardians</option><option value="production_staff">Production staff</option></optgroup><option value="selected">Selected people</option></select></label><label>Due date <span>optional</span><input type="datetime-local" name="due_at"></label><fieldset><legend>Selected people</legend><p>Used only when “Selected people” is chosen. In production context, CTSMD filters the selection to active members of that production.</p><div class="fm-people"><?php foreach($people as $person):?><label><input type="checkbox" name="user_ids[]" value="<?= (int)$person['id'] ?>"><span><b><?= $esc($person['name']) ?></b><small><?= $esc($person['role']) ?></small></span></label><?php endforeach; ?></div></fieldset><button class="button" type="submit">Create assignments</button></form><aside class="fm-side"><small>ASSIGNMENT STATUS</small><h3><?= count($assignments) ?> people assigned</h3><p>Reusable forms can have separate assignments per production. Each context gets its own completion status and due date.</p><a href="<?= $url('/admin/forms') ?>">Open review queue →</a></aside></div>
+        <label>Audience<select name="audience"><optgroup label="Organization audiences"><option value="all_active">All active users</option><option value="adults">Adults only</option><option value="students">Students</option><option value="staff">Staff</option><option value="volunteers">Active volunteers</option></optgroup><optgroup label="Production audiences"><option value="production_all">Everyone in production</option><option value="production_students">Students / cast</option><option value="production_guardians">Guardians</option><option value="production_staff">Production staff</option></optgroup><option value="selected">Selected people</option></select></label><label>Due date <span>optional</span><input type="datetime-local" name="due_at"></label><fieldset><legend>Selected people</legend><p>Used only when “Selected people” is chosen. In production context, CTSMD filters the selection to available active members of that production.</p><div class="fm-people"><?php foreach($people as $person):?><label><input type="checkbox" name="user_ids[]" value="<?= (int)$person['id'] ?>"><span><b><?= $esc($person['name']) ?></b><small><?= $esc($person['role']) ?></small></span></label><?php endforeach; ?></div></fieldset><button class="button" type="submit">Create assignments</button></form><aside class="fm-side"><small>ASSIGNMENT STATUS</small><h3><?= count($assignments) ?> people assigned</h3><p>Reusable forms can have separate assignments per production. Each context gets its own completion status and due date.</p><a href="<?= $url('/admin/forms') ?>">Open review queue →</a></aside></div>
         <section class="fm-roster"><header><div><small>CURRENT ASSIGNMENTS</small><h3>Completion roster</h3></div><span><?= count($assignments) ?></span></header><?php if(!$assignments):?><div class="fm-empty compact"><b>No assignments yet.</b></div><?php else:foreach($assignments as $row):?><article><div><b><?= $esc($row['assignee']) ?></b><small><?= $esc($row['display_role']) ?> · <?= $row['production_title']?$esc($row['production_title']):'Organization' ?></small></div><span class="<?= $esc($row['status']) ?>"><?= $esc(ucwords(str_replace('_',' ',$row['status']))) ?></span><time><?= $row['due_at']?'Due '.$esc(date('M j, Y',strtotime($row['due_at']))):'No due date' ?></time></article><?php endforeach;endif;?></section>
         <?php endif;endif; ?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
