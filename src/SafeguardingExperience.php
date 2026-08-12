@@ -195,34 +195,74 @@ final class SafeguardingExperience
 
     private static function conversationIssues(PDO $db): array
     {
-        $conversations = $db->query("SELECT c.id, c.subject, c.conversation_type,
-            SUM(CASE WHEN cp.participant_role = 'student' AND u.active = 1 THEN 1 ELSE 0 END) AS students,
-            SUM(CASE WHEN cp.participant_role = 'adult' AND u.active = 1 THEN 1 ELSE 0 END) AS adults,
-            SUM(CASE WHEN cp.participant_role = 'guardian' AND u.active = 1 THEN 1 ELSE 0 END) AS guardians
+        $conversationRows = $db->query("SELECT c.id,c.subject,c.conversation_type,cp.user_id,cp.participant_role,
+            CASE WHEN u.active=1 AND u.account_status<>'disabled' THEN 1 ELSE 0 END available
             FROM conversations c
-            JOIN conversation_participants cp ON cp.conversation_id = c.id
-            JOIN users u ON u.id = cp.user_id
-            GROUP BY c.id, c.subject, c.conversation_type
-            ORDER BY c.id DESC")->fetchAll();
+            JOIN conversation_participants cp ON cp.conversation_id=c.id
+            JOIN users u ON u.id=cp.user_id
+            ORDER BY c.id DESC,cp.user_id")->fetchAll();
+
+        $byConversation = [];
+        foreach ($conversationRows as $row) {
+            $id = (int)$row['id'];
+            if (!isset($byConversation[$id])) {
+                $byConversation[$id] = [
+                    'id'=>$id,
+                    'subject'=>(string)$row['subject'],
+                    'conversation_type'=>(string)$row['conversation_type'],
+                    'participants'=>[],
+                ];
+            }
+            $byConversation[$id]['participants'][] = $row;
+        }
 
         $issues = [];
-        foreach ($conversations as $row) {
-            $students = (int)$row['students'];
-            $adults = (int)$row['adults'];
-            $guardians = (int)$row['guardians'];
-            $reason = null;
-            if ($students > 0 && $row['conversation_type'] !== 'safeguarded') {
-                $reason = 'Student is present in a non-safeguarded conversation.';
-            } elseif ($row['conversation_type'] === 'safeguarded' && $students < 1) {
-                $reason = 'Safeguarded conversation has no active student.';
-            } elseif ($students > 0 && $guardians < 1) {
-                $reason = 'Required guardian is missing or inactive.';
-            } elseif ($students > 0 && $adults < 1) {
-                $reason = 'Safeguarded conversation has no active adult participant.';
+        foreach ($byConversation as $conversation) {
+            $available = array_values(array_filter($conversation['participants'],static fn(array $p):bool=>(bool)$p['available']));
+            $currentStudents = [];
+            $currentStaff = [];
+            $guardianParticipantIds = [];
+            foreach ($available as $participant) {
+                $participantId = (int)$participant['user_id'];
+                $roles = Auth::roles($db,$participantId);
+                if (in_array('student',$roles,true)) $currentStudents[] = $participantId;
+                if (in_array('production_staff',$roles,true) || in_array('administrator',$roles,true)) $currentStaff[] = $participantId;
+                if ((string)$participant['participant_role']==='guardian') $guardianParticipantIds[] = $participantId;
             }
+            $currentStudents = array_values(array_unique($currentStudents));
+            $currentStaff = array_values(array_unique($currentStaff));
+            $guardianParticipantIds = array_values(array_unique($guardianParticipantIds));
+
+            $reason = null;
+            if (count($currentStudents)>1) {
+                $reason = 'More than one current Student is present in a direct conversation.';
+            } elseif ($currentStudents && $conversation['conversation_type']!=='safeguarded') {
+                $reason = 'A current Student is present in a non-safeguarded conversation.';
+            } elseif ($conversation['conversation_type']==='safeguarded' && count($currentStudents)!==1) {
+                $reason = 'Safeguarded conversation does not contain exactly one available current Student.';
+            } elseif ($conversation['conversation_type']==='safeguarded' && !$currentStaff) {
+                $reason = 'Safeguarded conversation has no available current CTSMD staff participant.';
+            } elseif ($conversation['conversation_type']==='safeguarded') {
+                $studentId = (int)$currentStudents[0];
+                if (!$guardianParticipantIds) {
+                    $reason = 'Required guardian participant is missing or unavailable.';
+                } else {
+                    $placeholders = implode(',',array_fill(0,count($guardianParticipantIds),'?'));
+                    $relation = $db->prepare("SELECT 1 FROM family_relationships fr
+                        JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status<>'disabled'
+                        WHERE fr.student_user_id=? AND fr.status='active' AND fr.guardian_user_id IN ($placeholders) LIMIT 1");
+                    $relation->execute(array_merge([$studentId],$guardianParticipantIds));
+                    if (!$relation->fetchColumn()) $reason = 'No available guardian participant is currently linked to this Student.';
+                }
+            }
+
             if ($reason !== null) {
-                $row['reason'] = $reason;
-                $issues[] = $row;
+                $issues[] = [
+                    'id'=>$conversation['id'],
+                    'subject'=>$conversation['subject'],
+                    'conversation_type'=>$conversation['conversation_type'],
+                    'reason'=>$reason,
+                ];
             }
         }
         return $issues;
