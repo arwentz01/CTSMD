@@ -16,14 +16,14 @@ final class VolunteerCoverageService
               AND NOT EXISTS (
                   SELECT 1
                   FROM volunteer_shift_requirements vsr
-                  LEFT JOIN volunteer_credentials vc
-                    ON vc.requirement_id=vsr.requirement_id
                   WHERE vsr.shift_id=vss.shift_id
-                    AND (vc.user_id=vss.user_id OR vc.id IS NULL)
-                    AND (
-                        vc.id IS NULL
-                        OR vc.status<>'approved'
-                        OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM volunteer_credentials vc
+                        WHERE vc.requirement_id=vsr.requirement_id
+                          AND vc.user_id=vss.user_id
+                          AND vc.status='approved'
+                          AND (vc.expires_at IS NULL OR vc.expires_at>=NOW())
                     )
               )");
         $stmt->execute(['shift'=>$shiftId]);
@@ -95,14 +95,14 @@ final class VolunteerCoverageService
               AND NOT EXISTS (
                   SELECT 1
                   FROM volunteer_shift_requirements vsr
-                  LEFT JOIN volunteer_credentials vc
-                    ON vc.requirement_id=vsr.requirement_id
                   WHERE vsr.shift_id=vss.shift_id
-                    AND (vc.user_id=vss.user_id OR vc.id IS NULL)
-                    AND (
-                        vc.id IS NULL
-                        OR vc.status<>'approved'
-                        OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM volunteer_credentials vc
+                        WHERE vc.requirement_id=vsr.requirement_id
+                          AND vc.user_id=vss.user_id
+                          AND vc.status='approved'
+                          AND (vc.expires_at IS NULL OR vc.expires_at>=NOW())
                     )
               )
             LIMIT 1");
