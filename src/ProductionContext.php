@@ -7,12 +7,16 @@ require_once __DIR__ . '/AccessPolicy.php';
 final class ProductionContext
 {
     private const SESSION_KEY = 'selected_production_id';
+    private static array $activeProductionCache = [];
 
     public static function activeProductions(PDO $db, array $user): array
     {
+        $cacheKey=(int)$user['id'].':'.(AccessPolicy::isStaff($user)?'staff':'member');
+        if(isset(self::$activeProductionCache[$cacheKey]))return self::$activeProductionCache[$cacheKey];
+
         if (AccessPolicy::isStaff($user)) {
             $stmt = $db->query("SELECT id, title, season, status, is_active FROM productions WHERE is_active = 1 ORDER BY title, id");
-            return $stmt->fetchAll();
+            return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
         }
 
         $stmt = $db->prepare("SELECT DISTINCT p.id, p.title, p.season, p.status, p.is_active
@@ -42,7 +46,7 @@ final class ProductionContext
               )
             ORDER BY p.title, p.id");
         $stmt->execute(['user_id' => (int)$user['id']]);
-        return $stmt->fetchAll();
+        return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
     }
 
     public static function selected(PDO $db, array $user, ?int $requestedId = null): ?array
@@ -85,6 +89,8 @@ final class ProductionContext
         }
         return $selected;
     }
+
+    public static function clearRequestCache():void{self::$activeProductionCache=[];}
 
     public static function userHasActiveProduction(PDO $db, int $userId): bool
     {
