@@ -119,7 +119,11 @@ final class RegistrationIntakeService
 
     private static function childCandidateForGuardian(PDO $db,int $guardianId,string $first,string $last): ?int
     {
-        $stmt=$db->prepare("SELECT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) LIMIT 1");$stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;
+        $stmt=$db->prepare("SELECT DISTINCT u.id FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 AND r.code='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id LIMIT 2");
+        $stmt->execute(['guardian'=>$guardianId,'first'=>$first,'last'=>$last]);
+        $ids=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
+        if(count($ids)>1)throw new RuntimeException('Multiple available Student profiles in this household share that name. Use Link existing and choose the correct child instead of automatic conversion.');
+        return $ids[0]??null;
     }
 
     private static function userIdByEmail(PDO $db,string $email): ?int{$email=mb_strtolower(trim($email));if($email==='')return null;$stmt=$db->prepare('SELECT id FROM users WHERE active=1 AND LOWER(email)=:email LIMIT 1');$stmt->execute(['email'=>$email]);$id=$stmt->fetchColumn();return $id!==false?(int)$id:null;}
