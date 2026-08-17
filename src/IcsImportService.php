@@ -160,7 +160,7 @@ final class IcsImportService
             $copy = $event;
             $copy['starts_at'] = $occurrenceStart->format('Y-m-d H:i:s');
             $copy['ends_at'] = $occurrenceStart->modify('+' . $duration . ' seconds')->format('Y-m-d H:i:s');
-            $copy['recurring'] = true;
+            $copy['recurring'] = false;
             $copy['recurrence_supported'] = true;
             $copy['recurrence_index'] = $index++;
             $expanded[] = $copy;
