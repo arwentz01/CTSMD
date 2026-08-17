@@ -7,6 +7,7 @@ require_once __DIR__ . '/Database.php';
 final class Auth
 {
     public const SESSION_USER_ID = 'auth_user_id';
+    public const PASSWORD_MIN_LENGTH = 8;
     private static array $roleCache = [];
     private static array $permissionCache = [];
 
@@ -101,5 +102,5 @@ final class Auth
         return $environment==='local';
     }
 
-    private static function assertPassword(string $password): void{if(strlen($password)<12)throw new RuntimeException('Use a password with at least 12 characters.');}
+    private static function assertPassword(string $password): void{if(strlen($password)<self::PASSWORD_MIN_LENGTH)throw new RuntimeException('Use a password with at least '.self::PASSWORD_MIN_LENGTH.' characters.');}
 }
