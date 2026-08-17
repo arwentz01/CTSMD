@@ -48,8 +48,11 @@ final class PushExperience
     private static function test(PDO $db,array $user,string $basePath):never
     {
         if($_SERVER['REQUEST_METHOD']==='POST'&&hash_equals((string)($_SESSION['push_csrf']??''),(string)($_POST['csrf_token']??''))){
-            try{$id=PushService::queue($db,(int)$user['id'],'general','CTSMD Connect','Push notifications are ready on this device.','/notifications','normal','push-test');$_SESSION['push_flash']=$id?['success','Test notification queued.']:['error','Push is disabled in your preferences.'];}
-            catch(Throwable $e){$_SESSION['push_flash']=['error',$e->getMessage()];}
+            try{
+                $stmt=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path) VALUES (:user,'push_test',NULL,'CTSMD Connect','Push notifications are ready on this device.','/notifications')");
+                $stmt->execute(['user'=>(int)$user['id']]);
+                $_SESSION['push_flash']=['success','Test notification created. Run the push queue processor to deliver it to this device.'];
+            }catch(Throwable $e){$_SESSION['push_flash']=['error',$e->getMessage()];}
         }
         header('Location: '.($basePath?:'').'/push-settings',true,303);exit;
     }
