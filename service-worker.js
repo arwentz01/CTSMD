@@ -1,4 +1,12 @@
 /* CTSMD Connect service worker: push delivery + notification deep links. */
+self.addEventListener('install', event => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (_) { data = {title:'CTSMD Connect', body:event.data ? event.data.text() : ''}; }
