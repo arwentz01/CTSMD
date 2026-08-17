@@ -41,7 +41,7 @@ final class AppNavigation
             if (AccessPolicy::canManageProduction($user)) {
                 $hasArchive = (bool)$db->query("SELECT 1 FROM productions WHERE is_active=0 AND status='archived' LIMIT 1")->fetchColumn();
             } else {
-                $archiveStmt = $db->prepare("SELECT 1 FROM productions p WHERE p.is_active=0 AND p.status='archived' AND (EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer) OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.production_id=p.id AND cpm.audience_type='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active')) LIMIT 1");
+                $archiveStmt = $db->prepare("SELECT 1 FROM productions p WHERE p.is_active=0 AND p.status='archived' AND (EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer) OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.audience_type='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND cpm.production_id=p.id)) LIMIT 1");
                 $archiveStmt->execute(['viewer'=>(int)$user['id'],'guardian'=>(int)$user['id']]);
                 $hasArchive = (bool)$archiveStmt->fetchColumn();
             }
