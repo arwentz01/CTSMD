@@ -137,6 +137,16 @@ final class AppNavigation
     {
         $url=static fn(string $path):string=>($basePath?:'').$path;
         $esc=static fn(string $value):string=>htmlspecialchars($value,ENT_QUOTES,'UTF-8');
-        ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a href="<?=$url('/notifications')?>">Notifications</a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
+        $notificationUnread=0;
+        try {
+            if(session_status()===PHP_SESSION_ACTIVE && (int)($_SESSION['auth_user_id']??0)>0){
+                $db=Database::connect(dirname(__DIR__));
+                $stmt=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
+                $stmt->execute(['user'=>(int)$_SESSION['auth_user_id']]);
+                $notificationUnread=(int)$stmt->fetchColumn();
+            }
+        } catch (Throwable) {
+        }
+        ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a href="<?=$url('/notifications')?>">Notifications<?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread?></strong><?php endif;?></a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
     }
 }
