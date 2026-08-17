@@ -9,6 +9,14 @@
   const enable=page.querySelector('[data-push-enable]');
   const localTest=page.querySelector('[data-push-local-test]');
   const disable=page.querySelector('[data-push-disable]');
+  const diagButton=page.querySelector('[data-push-diagnostics]');
+  const pageTest=page.querySelector('[data-push-page-test]');
+  const workerTest=page.querySelector('[data-push-worker-test]');
+  const diagPermission=page.querySelector('[data-diag-permission]');
+  const diagWorker=page.querySelector('[data-diag-worker]');
+  const diagSubscription=page.querySelector('[data-diag-subscription]');
+  const diagEndpoint=page.querySelector('[data-diag-endpoint]');
+  const diagResult=page.querySelector('[data-diag-result]');
 
   const b64ToUint8 = value => {
     const padding='='.repeat((4-value.length%4)%4);
@@ -23,6 +31,7 @@
   };
   const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
   const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const endpointHost=value=>{try{return new URL(value).host;}catch(_){return value||'None';}};
 
   const registration=async()=>{
     const reg=await navigator.serviceWorker.register(`${base}/service-worker.js`,{scope:`${base}/`});
@@ -30,17 +39,34 @@
     return navigator.serviceWorker.ready;
   };
 
+  const diagnostics=async()=>{
+    diagPermission.textContent=('Notification' in window)?Notification.permission:'Unsupported';
+    if(!('serviceWorker' in navigator)){
+      diagWorker.textContent='Unsupported';diagSubscription.textContent='Unavailable';diagEndpoint.textContent='Unavailable';return;
+    }
+    try{
+      const reg=await registration();
+      diagWorker.textContent=reg.active?`Active · ${reg.scope}`:'Registered, not active';
+      const sub=await reg.pushManager.getSubscription();
+      diagSubscription.textContent=sub?'Active':'None';
+      diagEndpoint.textContent=sub?endpointHost(sub.endpoint):'None';
+    }catch(error){
+      diagWorker.textContent='Error';diagSubscription.textContent='Unknown';diagEndpoint.textContent='Unknown';diagResult.textContent=error.message||String(error);
+    }
+  };
+
   const refresh=async()=>{
     if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
-      status.textContent='Push notifications are not supported here';detail.textContent='Use a current version of Safari, Chrome, Edge, or another push-capable browser.';enable.hidden=true;localTest.hidden=true;disable.hidden=true;return;
+      status.textContent='Push notifications are not supported here';detail.textContent='Use a current version of Safari, Chrome, Edge, or another push-capable browser.';enable.hidden=true;localTest.hidden=true;disable.hidden=true;await diagnostics();return;
     }
     if(isIOS()&&!standalone()){
-      status.textContent='Add Connect to your Home Screen first';detail.textContent='On iPhone and iPad, open Safari → Share → Add to Home Screen, then launch Connect from the new icon.';enable.hidden=true;localTest.hidden=true;disable.hidden=true;return;
+      status.textContent='Add Connect to your Home Screen first';detail.textContent='On iPhone and iPad, open Safari → Share → Add to Home Screen, then launch Connect from the new icon.';enable.hidden=true;localTest.hidden=true;disable.hidden=true;await diagnostics();return;
     }
     const reg=await registration();
     const sub=await reg.pushManager.getSubscription();
-    if(sub){status.textContent='Notifications are enabled';detail.textContent=`Browser permission is ${Notification.permission}. Use “Show browser test” to confirm this computer can display a notification before testing remote push.`;enable.hidden=true;localTest.hidden=Notification.permission!=='granted';disable.hidden=false;}
+    if(sub){status.textContent='Notifications are enabled';detail.textContent=`Browser permission is ${Notification.permission}. Use the diagnostics below to confirm whether this computer is actually presenting notifications.`;enable.hidden=true;localTest.hidden=Notification.permission!=='granted';disable.hidden=false;}
     else{status.textContent=Notification.permission==='denied'?'Notifications are blocked':'Notifications are off';detail.textContent=Notification.permission==='denied'?'Enable notifications for CTSMD Connect in your device/browser settings, then return here.':'Enable them when you are ready. You stay in control of notification categories.';enable.hidden=Notification.permission==='denied'||!publicKey;localTest.hidden=true;disable.hidden=true;}
+    await diagnostics();
   };
 
   enable?.addEventListener('click',async()=>{
@@ -56,20 +82,48 @@
     }catch(error){status.textContent='Could not enable notifications';detail.textContent=error.message||String(error);}finally{enable.disabled=false;}
   });
 
+  const runWorkerTest=async()=>{
+    if(Notification.permission!=='granted')throw new Error('Browser notification permission is not granted.');
+    const reg=await registration();
+    await reg.showNotification('CTSMD Connect browser test',{
+      body:'If you can see this, this computer is allowed to display CTSMD notifications.',
+      tag:'ctsmd-browser-test',
+      requireInteraction:true,
+      silent:false,
+      data:{url:`${base}/push-settings`}
+    });
+    await new Promise(resolve=>setTimeout(resolve,300));
+    const visible=await reg.getNotifications({tag:'ctsmd-browser-test'});
+    diagResult.textContent=visible.length
+      ? `Service worker accepted the notification and still reports ${visible.length} active notification${visible.length===1?'':'s'}. If no banner is visible, macOS/browser presentation is suppressing it.`
+      : 'Service worker accepted the request, but the browser does not report an active notification afterward.';
+  };
+
   localTest?.addEventListener('click',async()=>{
     localTest.disabled=true;
-    try{
-      if(Notification.permission!=='granted')throw new Error('Browser notification permission is not granted.');
-      const reg=await registration();
-      await reg.showNotification('CTSMD Connect browser test',{
-        body:'If you can see this, this computer is allowed to display CTSMD notifications.',
-        tag:'ctsmd-browser-test',
-        data:{url:`${base}/push-settings`}
-      });
-      status.textContent='Browser test requested';
-      detail.textContent='A desktop notification should appear now. If it does not, check this browser in macOS System Settings → Notifications.';
-    }catch(error){status.textContent='Browser test failed';detail.textContent=error.message||String(error);}finally{localTest.disabled=false;}
+    try{await runWorkerTest();status.textContent='Browser test requested';detail.textContent=diagResult.textContent;}
+    catch(error){status.textContent='Browser test failed';detail.textContent=error.message||String(error);diagResult.textContent=detail.textContent;}finally{localTest.disabled=false;}
   });
+
+  workerTest?.addEventListener('click',async()=>{
+    workerTest.disabled=true;
+    try{await runWorkerTest();}catch(error){diagResult.textContent=`Service-worker test failed: ${error.message||String(error)}`;}finally{workerTest.disabled=false;await diagnostics();}
+  });
+
+  pageTest?.addEventListener('click',async()=>{
+    pageTest.disabled=true;
+    try{
+      if(!('Notification' in window))throw new Error('Notification API is not available in this browser.');
+      if(Notification.permission!=='granted')throw new Error(`Browser permission is ${Notification.permission}.`);
+      let shown=false;
+      const notification=new Notification('CTSMD Connect direct test',{body:'This notification was created directly by the open CTSMD page.',tag:'ctsmd-direct-test',requireInteraction:true,silent:false});
+      notification.onshow=()=>{shown=true;diagResult.textContent='Direct page notification fired its show event. If you still cannot see it, macOS is suppressing presentation.';};
+      notification.onerror=()=>{diagResult.textContent='The browser fired an error event for the direct page notification.';};
+      setTimeout(()=>{if(!shown&&diagResult)diagResult.textContent='The browser created the direct notification object, but no show event arrived within 2 seconds. That points to browser/OS notification presentation rather than CTSMD push delivery.';},2000);
+    }catch(error){diagResult.textContent=`Direct page test failed: ${error.message||String(error)}`;}finally{pageTest.disabled=false;await diagnostics();}
+  });
+
+  diagButton?.addEventListener('click',async()=>{diagButton.disabled=true;try{await diagnostics();diagResult.textContent='Diagnostics refreshed.';}finally{diagButton.disabled=false;}});
 
   disable?.addEventListener('click',async()=>{
     disable.disabled=true;
@@ -81,5 +135,5 @@
     }catch(error){status.textContent='Could not disable notifications';detail.textContent=error.message||String(error);}finally{disable.disabled=false;}
   });
 
-  refresh().catch(error=>{status.textContent='Notification setup unavailable';detail.textContent=error.message||String(error);});
+  refresh().catch(error=>{status.textContent='Notification setup unavailable';detail.textContent=error.message||String(error);diagnostics().catch(()=>{});});
 })();
