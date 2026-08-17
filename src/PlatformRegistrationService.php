@@ -19,7 +19,7 @@ final class PlatformRegistrationService
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter your first and last name.');
         if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid email address.');
         if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');
-        if(strlen($password)<12)throw new RuntimeException('Use a password with at least 12 characters.');
+        if(strlen($password)<Auth::PASSWORD_MIN_LENGTH)throw new RuntimeException('Use a password with at least '.Auth::PASSWORD_MIN_LENGTH.' characters.');
         if(!in_array($relationship,['parent','guardian','caregiver'],true))throw new RuntimeException('Choose your household relationship.');
 
         $existing=$db->prepare('SELECT id,account_status FROM users WHERE LOWER(email)=:email LIMIT 1');
