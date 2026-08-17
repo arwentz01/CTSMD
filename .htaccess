@@ -1,5 +1,5 @@
 Options -Indexes
-DirectoryIndex front.php
+DirectoryIndex front.php index.php
 
 <IfModule mod_dir.c>
     # MAMP may run without usable mod_rewrite. Keep this path aligned with the
@@ -13,6 +13,11 @@ DirectoryIndex front.php
     # Keep internal project directories out of direct web access when rewrite
     # support is available.
     RewriteRule ^(?:\.env|\.git|config|database|docs|src|storage|tools|views)(?:/|$) - [F,L]
+
+    # The ICS importer lives beneath a physical production/ directory. Keep the
+    # application-level /production destination routed through the front
+    # controller while allowing deeper real importer paths to resolve normally.
+    RewriteRule ^production/?$ front.php [QSA,L]
 
     # Let real files and directories bypass the front controller.
     RewriteCond %{REQUEST_FILENAME} -f [OR]
