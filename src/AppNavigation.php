@@ -117,7 +117,7 @@ final class AppNavigation
 
                 <?php if ($staff): ?>
                     <span class="unified-nav-label">Staff</span>
-                    <a class="unified-nav-item<?=$active('operations')?>" href="<?=$url('/staff')?>"><i>◎</i><span><b>Operations</b><small>Queues, people & administration</small></span></a>
+                    <a class="unified-nav-item<?=$active('operations')?>" href="<?=$url('/admin/operations')?>"><i>◎</i><span><b>Operations</b><small>Queues, people & administration</small></span></a>
                 <?php endif; ?>
             </nav>
             <div class="unified-sidebar-foot">
