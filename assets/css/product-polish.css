@@ -4,6 +4,13 @@
 /* Explanatory safety banners are reference material, not primary workflow chrome. */
 .comm-safety-banner{display:none!important}
 
+/* Community moderation menu: keep post actions in one anchored popover. */
+.community-pane-feed .comm-post header>.comm-post-actions{display:block;flex:0 0 auto;min-width:28px;width:28px;margin-left:auto;padding:0;align-self:start;position:relative;z-index:8}
+.community-pane-feed .comm-post header>.comm-post-actions.open{position:absolute;right:0;top:0;width:148px;min-width:148px;padding-top:31px}
+.community-pane-feed .comm-post header>.comm-post-actions.open form{display:block;width:100%;margin:0;padding:0;flex:none}
+.community-pane-feed .comm-post header>.comm-post-actions.open .comm-post-action{display:block;width:100%;margin:0;white-space:nowrap}
+.community-pane-feed .comm-post header>.comm-post-actions.open .comm-post-menu-toggle{position:absolute;right:0;top:0}
+
 /*
  * Product density pass.
  * The product should read like an operational tool, not a stack of oversized tiles.
