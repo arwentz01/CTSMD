@@ -131,8 +131,8 @@ final class AppNavigation
             </div>
         </aside>
         <div class="unified-nav-scrim" data-nav-scrim></div>
-        <nav class="mobile-app-tabs" aria-label="Mobile navigation">
-            <a class="mobile-app-tab<?=in_array($route,$homeRoutes,true)?' active':''?>" href="<?=$url('/app')?>"><span class="mobile-app-tab-icon">⌂</span><span class="mobile-app-tab-label">Home</span></a>
+        <nav class="mobile-app-tabs" data-mobile-app-tabs aria-label="Mobile navigation">
+            <a class="mobile-app-tab<?=$route==='/app'?' active':''?>" href="<?=$url('/app')?>"><span class="mobile-app-tab-icon">⌂</span><span class="mobile-app-tab-label">Home</span></a>
             <?php if($communicationsAvailable):?>
                 <a class="mobile-app-tab<?=$route==='/calendar'?' active':''?>" href="<?=$url('/calendar')?>"><span class="mobile-app-tab-icon">◫</span><span class="mobile-app-tab-label">Calendar</span></a>
                 <a class="mobile-app-tab<?=$active('community')?>" href="<?=$url('/channels')?>"><span class="mobile-app-tab-icon">#<?php if((int)$unread['community']>0):?><strong class="mobile-app-tab-badge"><?=(int)$unread['community']>99?'99+':(int)$unread['community']?></strong><?php endif;?></span><span class="mobile-app-tab-label">Channels</span></a>
