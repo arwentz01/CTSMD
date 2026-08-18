@@ -3,9 +3,94 @@
 .help-page{max-width:1040px;margin:0 auto;padding:34px;display:grid;gap:16px}.help-hero{position:relative;overflow:hidden;padding:34px;border-radius:22px;background:linear-gradient(135deg,#181317,#451823 68%,#7f1529);color:#fff}.help-hero:after{content:'?';position:absolute;right:24px;top:8px;font:700 112px/1 Georgia,serif;color:rgba(255,255,255,.07)}.help-hero small,.help-section small{font-size:10px;letter-spacing:.14em;font-weight:900;color:#e2b84f}.help-hero h2{font:700 clamp(34px,5vw,54px)/1.02 Georgia,serif;margin:8px 0 10px}.help-hero p{max-width:680px;margin:0;color:#e7dcdf;line-height:1.55}.help-jumps{display:flex;gap:8px;flex-wrap:wrap}.help-jumps a{padding:9px 12px;border:1px solid #e3dadd;border-radius:999px;background:#fff;color:#5e4f55;text-decoration:none;font-size:12px;font-weight:800}.help-section{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;padding:22px;background:#fff;border:1px solid #e4dcdf;border-radius:18px;scroll-margin-top:90px}.help-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#f8e8eb;color:#a6192e;font-size:20px;font-weight:900}.help-section small{color:#a6192e}.help-section h3{margin:3px 0 8px;font-size:20px}.help-section p{margin:5px 0;color:#6f6267;line-height:1.55}
 /* Explanatory safety banners are reference material, not primary workflow chrome. */
 .comm-safety-banner{display:none!important}
+
+/*
+ * Product density pass.
+ * The product should read like an operational tool, not a stack of oversized tiles.
+ * Primary surfaces retain separation; secondary surfaces become flatter, tighter and more editorial.
+ */
+@media(min-width:781px){
+  .unified-header{height:70px;padding-left:26px;padding-right:26px}
+  .unified-subnav{padding-left:26px;padding-right:26px;gap:18px}
+  .unified-subnav a{padding:10px 0}
+  .unified-sidebar{padding-top:16px;padding-bottom:16px}
+  .unified-nav-item{padding:8px 10px}
+  .unified-nav-label{padding-top:11px}
+
+  .home-page,.ff-page,.df-page,.account-library,.help-page{padding:22px 24px}
+
+  .home-hero{padding:27px 30px;border-radius:16px;margin-bottom:12px}
+  .home-hero h2{font-size:clamp(31px,3.1vw,44px);margin:5px 0 8px}
+  .home-priority-grid,.home-content-grid{gap:12px;margin-bottom:12px}
+  .home-side-stack{gap:12px}
+  .home-priority-stack,.home-card,.home-today-card{padding:16px;border-radius:13px}
+  .home-today-card strong{font-size:34px;margin-top:10px}
+  .home-today-card h3{font-size:18px}
+  .home-today-card>a{margin-top:9px}
+  .home-section-head{margin-bottom:7px}
+  .home-section-head h3{font-size:17px}
+  .home-action{grid-template-columns:35px 1fr auto;padding:10px 0;gap:10px}
+  .home-action>i{width:30px;height:30px}
+  .home-stats{gap:8px;margin-bottom:12px}
+  .home-stats article{padding:11px 14px;border-radius:11px;grid-template-columns:auto 1fr;align-items:baseline;column-gap:8px}
+  .home-stats strong{font-size:26px}
+  .home-stats span{font-size:10px}
+  .home-membership{padding:14px 17px;border-radius:12px;margin-bottom:12px}
+  .home-timeline-row,.home-notice,.home-production,.home-person{padding-top:9px;padding-bottom:9px}
+  .home-empty{padding:17px 0}
+  .home-volunteer{margin-top:12px}
+  .home-volunteer-grid article{padding:11px;border-radius:9px}
+
+  .ff-hero,.ff-form-head{padding:18px 20px;border-radius:14px;margin-bottom:13px}
+  .ff-form{gap:11px;padding:15px 17px;border-radius:13px}
+  .ff-form fieldset{padding-bottom:11px}
+  .ff-row{padding:11px 13px;border-radius:11px;gap:13px}
+  .ff-list{gap:7px}
+  .ff-empty{padding:20px;border-radius:13px}
+  .ff-review article{padding:12px 14px;border-radius:11px}
+
+  .df-hero,.df-form-head,.df-review-head{padding:18px 20px;border-radius:14px;margin-bottom:14px}
+  .df-hero h2,.df-form-head h2,.df-review-head h2{font-size:28px}
+  .df-layout{gap:14px}
+  .df-fields,.df-editor{padding:15px 17px;border-radius:12px}
+  .df-field{padding:11px 0}
+  .df-editor label,.df-review-form label{margin:10px 0}
+  .df-form-grid{gap:10px}
+  .df-form-card{padding:14px;border-radius:12px}
+  .df-form-card h3{font-size:20px}
+  .df-empty{padding:20px;border-radius:12px}
+
+  .library-hero,.library-detail{border-radius:14px!important}
+  .library-hero{padding:19px 21px!important;margin-bottom:12px!important}
+  .library-grid{gap:10px!important}
+  .library-card{padding:14px!important;border-radius:12px!important}
+  .library-card h3{margin-top:4px!important;margin-bottom:5px!important}
+  .library-filters{margin-bottom:12px!important}
+
+  .help-page{gap:11px}
+  .help-hero{padding:24px 26px;border-radius:15px}
+  .help-hero h2{font-size:40px}
+  .help-section{padding:15px 17px;border-radius:12px;gap:12px}
+  .help-icon{width:38px;height:38px;border-radius:10px}
+}
+
 @media(max-width:780px){
   .unified-help{position:absolute;right:58px;bottom:11px;width:34px;height:34px;background:transparent;border:0;font-size:16px;color:#a6192e}.unified-help:active{background:rgba(166,25,46,.08)}
   .help-page{padding:12px 12px calc(88px + env(safe-area-inset-bottom));gap:12px}.help-hero{padding:24px 20px;border-radius:20px}.help-hero h2{font-size:34px}.help-hero p{font-size:13px}.help-jumps{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none}.help-jumps::-webkit-scrollbar{display:none}.help-jumps a{white-space:nowrap}.help-section{grid-template-columns:40px minmax(0,1fr);gap:12px;padding:17px 15px;border-radius:17px}.help-icon{width:38px;height:38px;border-radius:12px}
+
+  /* Mobile still feels spacious enough to tap, but avoids giant decorative blocks. */
+  .home-hero{min-height:0!important;padding:20px 18px!important;border-radius:17px!important}
+  .home-hero h2{font-size:30px!important}
+  .home-priority-stack,.home-card,.home-today-card{padding:15px!important;border-radius:15px!important}
+  .home-today-card{min-height:0!important}
+  .home-stats article{min-height:76px!important;border-radius:14px!important;padding:12px!important}
+  .home-action,.home-timeline-row,.home-notice,.home-production,.home-person{padding-top:11px!important;padding-bottom:11px!important}
+  .ff-hero,.ff-form-head{padding:17px!important;border-radius:16px!important}
+  .ff-form{padding:15px!important;border-radius:15px!important;gap:12px!important}
+  .ff-row{padding:13px!important;border-radius:14px!important}
+  .df-hero,.df-form-head,.df-review-head{padding:17px!important;border-radius:16px!important}
+  .df-fields,.df-editor,.df-fill{padding:15px!important;border-radius:15px!important}
+
   /* Leave enough scroll runway for the fixed bottom tabs; never bury Reply controls. */
   body[data-native-route="messages-thread"] .comm-page{padding-bottom:calc(150px + env(safe-area-inset-bottom))!important}
   body[data-native-route="messages-thread"] .comm-composer{position:relative!important;margin:14px 12px calc(84px + env(safe-area-inset-bottom))!important;padding:14px!important;border-radius:18px!important;box-sizing:border-box!important;overflow:visible!important}
