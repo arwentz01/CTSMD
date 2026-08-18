@@ -12,6 +12,12 @@
     });
   }
 
+  let capturedInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    capturedInstallPrompt = event;
+  });
+
   const run = () => {
     if (window.innerWidth > 780 || document.querySelector('[data-mobile-engagement]')) return;
 
@@ -42,9 +48,10 @@
       document.querySelector('[data-mobile-engagement]')?.remove();
     });
 
-    let installPrompt = null;
+    let installPrompt = capturedInstallPrompt;
     window.addEventListener('beforeinstallprompt', event => {
       event.preventDefault();
+      capturedInstallPrompt = event;
       installPrompt = event;
       maybeShow();
     });
@@ -121,6 +128,7 @@
             await installPrompt.prompt();
             const choice = await installPrompt.userChoice;
             installPrompt = null;
+            capturedInstallPrompt = null;
             if (choice.outcome === 'accepted') {
               markInstalled();
               panel.remove();
