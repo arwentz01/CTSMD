@@ -144,6 +144,7 @@ final class AppNavigation
             <?php endif;?>
             <button class="mobile-app-tab mobile-app-more" type="button" data-nav-open aria-label="Open full navigation"><span class="mobile-app-tab-icon">•••</span><span class="mobile-app-tab-label">More</span></button>
         </nav>
+        <script defer src="<?=$url('/assets/js/mobile-engagement.js')?>"></script>
         <?php
     }
 
