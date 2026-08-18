@@ -50,6 +50,7 @@ final class AppNavigation
         }
 
         $memberTheatre = $approved || $hasActiveProduction || $hasArchive || $staff;
+        $communicationsAvailable = $approved || $hasActiveProduction;
         $homeRoutes = ['/app','/family/action','/notifications','/notification-preferences','/push-settings'];
         $familyRoutes = ['/family-hub','/parent','/family/manage','/onboarding'];
         $productionRoutes = ['/production','/production/casting','/production/readiness','/production/people','/production/groups','/production/groups/view','/production/schedule/new','/production/schedule/import','/schedule','/production/day','/production/edit','/production/notices','/production/notice','/attendance','/attendance/take','/attendance/report','/playbills','/admin/playbill','/admin/playbill/media','/admin/productions','/calendar','/cast'];
@@ -110,7 +111,7 @@ final class AppNavigation
                     <a class="unified-nav-item<?=$active('my-theatre')?>" href="<?=$url('/my-theatre/')?>"><i>✦</i><span><b>My Theatre</b><small>Calendar, cast, forms & more</small></span></a>
                 <?php endif; ?>
 
-                <?php if ($approved || $hasActiveProduction): ?>
+                <?php if ($communicationsAvailable): ?>
                     <a class="unified-nav-item<?=$active('community')?>" href="<?=$url('/channels')?>"><i>#</i><span><b>Community<?php if((int)$unread['community']>0):?><strong class="unified-unread"><?=(int)$unread['community']?></strong><?php endif;?></b><small><?=$approved?'CTSMD + production channels':'Production channels'?></small></span></a>
                     <a class="unified-nav-item<?=$active('messages')?>" href="<?=$url('/messages')?>"><i>✉</i><span><b>Messages<?php if((int)$unread['messages']>0):?><strong class="unified-unread"><?=(int)$unread['messages']?></strong><?php endif;?></b><small>Your conversations</small></span></a>
                 <?php endif; ?>
@@ -130,6 +131,19 @@ final class AppNavigation
             </div>
         </aside>
         <div class="unified-nav-scrim" data-nav-scrim></div>
+        <nav class="mobile-app-tabs" aria-label="Mobile navigation">
+            <a class="mobile-app-tab<?=in_array($route,$homeRoutes,true)?' active':''?>" href="<?=$url('/app')?>"><span class="mobile-app-tab-icon">⌂</span><span class="mobile-app-tab-label">Home</span></a>
+            <?php if($communicationsAvailable):?>
+                <a class="mobile-app-tab<?=$route==='/calendar'?' active':''?>" href="<?=$url('/calendar')?>"><span class="mobile-app-tab-icon">◫</span><span class="mobile-app-tab-label">Calendar</span></a>
+                <a class="mobile-app-tab<?=$active('community')?>" href="<?=$url('/channels')?>"><span class="mobile-app-tab-icon">#<?php if((int)$unread['community']>0):?><strong class="mobile-app-tab-badge"><?=(int)$unread['community']>99?'99+':(int)$unread['community']?></strong><?php endif;?></span><span class="mobile-app-tab-label">Channels</span></a>
+                <a class="mobile-app-tab<?=$active('messages')?>" href="<?=$url('/messages')?>"><span class="mobile-app-tab-icon">✉<?php if((int)$unread['messages']>0):?><strong class="mobile-app-tab-badge"><?=(int)$unread['messages']>99?'99+':(int)$unread['messages']?></strong><?php endif;?></span><span class="mobile-app-tab-label">Messages</span></a>
+            <?php else:?>
+                <a class="mobile-app-tab<?=$active('family')?>" href="<?=$url($hasFamily?'/family-hub':'/family/manage')?>"><span class="mobile-app-tab-icon">♟</span><span class="mobile-app-tab-label"><?=$hasFamily?'Family':'Setup'?></span></a>
+                <a class="mobile-app-tab<?=$route==='/notifications'?' active':''?>" href="<?=$url('/notifications')?>"><span class="mobile-app-tab-icon">●</span><span class="mobile-app-tab-label">Updates</span></a>
+                <a class="mobile-app-tab<?=$route==='/account'?' active':''?>" href="<?=$url('/account')?>"><span class="mobile-app-tab-icon">◎</span><span class="mobile-app-tab-label">Account</span></a>
+            <?php endif;?>
+            <button class="mobile-app-tab mobile-app-more" type="button" data-nav-open aria-label="Open full navigation"><span class="mobile-app-tab-icon">•••</span><span class="mobile-app-tab-label">More</span></button>
+        </nav>
         <?php
     }
 
