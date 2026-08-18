@@ -15,7 +15,7 @@ final class ProductionReadinessService
 
         $signals=[];
         $students=self::count($db,"SELECT COUNT(DISTINCT pm.user_id) FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.audience_type='student' AND pm.status='active'",[$id]);
-        $guardiansMissing=self::count($db,"SELECT COUNT(*) FROM production_memberships pm JOIN users student ON student.id=pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE pm.production_id=? AND pm.audience_type='student' AND pm.status='active' AND NOT EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships gm ON gm.production_id=pm.production_id AND gm.user_id=fr.guardian_user_id AND gm.audience_type='guardian' AND gm.status='active' JOIN users guardian ON guardian.id=gm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE fr.student_user_id=pm.user_id AND fr.status='active')",[$id]);
+        $guardiansMissing=self::count($db,"SELECT COUNT(*) FROM production_memberships pm JOIN users student ON student.id=pm.user_id AND student.active=1 AND student.account_status<>'disabled' WHERE pm.production_id=? AND pm.audience_type='student' AND pm.status='active' AND NOT EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships gm ON gm.user_id=fr.guardian_user_id AND gm.audience_type='guardian' AND gm.status='active' JOIN users guardian ON guardian.id=gm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled' WHERE fr.student_user_id=pm.user_id AND fr.status='active' AND gm.production_id=pm.production_id)",[$id]);
         $signals[]=['key'=>'roster','label'=>'Roster & guardians','count'=>$guardiansMissing,'status'=>$guardiansMissing?'attention':'ready','detail'=>$students.' active student'.($students===1?'':'s').($guardiansMissing?' · '.$guardiansMissing.' missing production guardian coverage':' · guardian coverage complete'),'href'=>'/production/people'];
 
         $forms=self::count($db,"SELECT COUNT(*) FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) AND subject.active=1 AND subject.account_status<>'disabled' WHERE fa.production_id=? AND fa.status<>'completed'",[$id]);
@@ -93,14 +93,14 @@ final class ProductionReadinessService
                   AND NOT EXISTS (
                       SELECT 1
                       FROM volunteer_shift_requirements vsr
-                      LEFT JOIN volunteer_credentials vc
-                        ON vc.requirement_id=vsr.requirement_id
-                       AND vc.user_id=vss.user_id
                       WHERE vsr.shift_id=vss.shift_id
-                        AND (
-                            vc.id IS NULL
-                            OR vc.status<>'approved'
-                            OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM volunteer_credentials vc
+                            WHERE vc.requirement_id=vsr.requirement_id
+                              AND vc.user_id=vss.user_id
+                              AND vc.status='approved'
+                              AND (vc.expires_at IS NULL OR vc.expires_at>=NOW())
                         )
                   )
                 GROUP BY vss.shift_id
