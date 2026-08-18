@@ -150,7 +150,8 @@ final class DynamicFormService
 
     public static function resourceWasOpened(PDO $db,int $assignmentId,int $fieldId,int $userId):bool
     {
-        $s=$db->prepare("SELECT 1 FROM audit_events WHERE actor_user_id=:user AND event_type='form.resource_opened' AND subject_type='form_assignment' AND subject_id=:assignment AND CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.field_id')) AS UNSIGNED)=:field LIMIT 1");$s->execute(['user'=>$userId,'assignment'=>$assignmentId,'field'=>$fieldId]);return(bool)$s->fetchColumn();
+        $f=$db->prepare("SELECT options_json FROM form_fields WHERE id=:id AND field_type='resource_link' LIMIT 1");$f->execute(['id'=>$fieldId]);$cfg=json_decode((string)($f->fetchColumn()?:''),true);if(!is_array($cfg))return false;$resourceId=(int)($cfg['resource_id']??0);$scope=(string)($cfg['scope']??'');if($resourceId<1||!in_array($scope,['organization','production'],true))return false;
+        $s=$db->prepare("SELECT 1 FROM audit_events WHERE actor_user_id=:user AND event_type='form.resource_opened' AND subject_type='form_assignment' AND subject_id=:assignment AND CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.field_id')) AS UNSIGNED)=:field AND CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.resource_id')) AS UNSIGNED)=:resource AND JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.resource_scope'))=:scope LIMIT 1");$s->execute(['user'=>$userId,'assignment'=>$assignmentId,'field'=>$fieldId,'resource'=>$resourceId,'scope'=>$scope]);return(bool)$s->fetchColumn();
     }
 
     public static function recordResourceOpen(PDO $db,int $assignmentId,array $field,int $userId,array $resource):void
@@ -162,7 +163,11 @@ final class DynamicFormService
 
     public static function assertRequiredResourcesOpened(PDO $db,array $fields,int $assignmentId,int $userId):void
     {
-        foreach($fields as $field){if(($field['field_type']??'')!=='resource_link'||empty($field['required']))continue;if(!self::resourceWasOpened($db,$assignmentId,(int)$field['id'],$userId))throw new RuntimeException('Open the required resource before submitting: '.$field['label'].'.');}
+        foreach($fields as $field){
+            if(($field['field_type']??'')!=='resource_link'||empty($field['required']))continue;
+            if(!self::linkedResource($db,$field,null))throw new RuntimeException('A required linked resource is unavailable: '.$field['label'].'. Contact CTSMD staff before submitting.');
+            if(!self::resourceWasOpened($db,$assignmentId,(int)$field['id'],$userId))throw new RuntimeException('Open the required resource before submitting: '.$field['label'].'.');
+        }
     }
 
     private static function formScope(PDO $db,int $formId):?array
