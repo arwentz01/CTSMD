@@ -1,4 +1,17 @@
 (() => {
+  const script = document.currentScript;
+  if (script?.src) {
+    const files = ['mobile-engagement.css','community-workspace-polish.css'];
+    files.forEach(file => {
+      if (document.querySelector(`link[data-ctsmd-polish="${file}"]`)) return;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = script.src.replace('/assets/js/mobile-engagement.js', `/assets/css/${file}`);
+      link.dataset.ctsmdPolish = file;
+      document.head.appendChild(link);
+    });
+  }
+
   const run = () => {
     if (window.innerWidth > 780 || document.querySelector('[data-mobile-engagement]')) return;
 
