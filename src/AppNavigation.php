@@ -10,6 +10,9 @@ require_once __DIR__ . '/CommunicationReadStateService.php';
 
 final class AppNavigation
 {
+    private static array $sidebarContextCache = [];
+    private static array $notificationUnreadCache = [];
+
     public static function renderSidebar(string $route, string $basePath, array $user): void
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
@@ -20,34 +23,13 @@ final class AppNavigation
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
         $_SESSION['auth_csrf'] ??= bin2hex(random_bytes(24));
 
-        $productionOptions = [];
-        $selectedProduction = null;
-        $hasFamily = false;
-        $hasActiveProduction = false;
-        $hasArchive = false;
-        $unread = ['community'=>0,'messages'=>0];
-
-        try {
-            $db = Database::connect(dirname(__DIR__));
-            $memberProductions = ProductionContext::activeProductions($db, $user);
-            $hasActiveProduction = (bool)$memberProductions;
-            if ($staff) {
-                $productionOptions = $memberProductions;
-                $selectedProduction = ProductionContext::selected($db, $user);
-            }
-            $familyStmt = $db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");
-            $familyStmt->execute(['user'=>(int)$user['id']]);
-            $hasFamily = (bool)$familyStmt->fetchColumn();
-            if (AccessPolicy::canManageProduction($user)) {
-                $hasArchive = (bool)$db->query("SELECT 1 FROM productions WHERE is_active=0 AND status='archived' LIMIT 1")->fetchColumn();
-            } else {
-                $archiveStmt = $db->prepare("SELECT 1 FROM productions p WHERE p.is_active=0 AND p.status='archived' AND (EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer) OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.audience_type='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND cpm.production_id=p.id)) LIMIT 1");
-                $archiveStmt->execute(['viewer'=>(int)$user['id'],'guardian'=>(int)$user['id']]);
-                $hasArchive = (bool)$archiveStmt->fetchColumn();
-            }
-            $unread = CommunicationReadStateService::navigationCounts($db, $user);
-        } catch (Throwable) {
-        }
+        $context = self::sidebarContext($user, $staff);
+        $productionOptions = $context['productionOptions'];
+        $selectedProduction = $context['selectedProduction'];
+        $hasFamily = $context['hasFamily'];
+        $hasActiveProduction = $context['hasActiveProduction'];
+        $hasArchive = $context['hasArchive'];
+        $unread = $context['unread'];
 
         $memberTheatre = $approved || $hasActiveProduction || $hasArchive || $staff;
         $communicationsAvailable = $approved || $hasActiveProduction;
@@ -148,6 +130,45 @@ final class AppNavigation
         <?php
     }
 
+    private static function sidebarContext(array $user, bool $staff): array
+    {
+        $cacheKey=(int)$user['id'].':'.($staff?'staff':'member').':'.(AccessPolicy::canManageProduction($user)?'archive-all':'archive-own');
+        if(isset(self::$sidebarContextCache[$cacheKey]))return self::$sidebarContextCache[$cacheKey];
+
+        $context=[
+            'productionOptions'=>[],
+            'selectedProduction'=>null,
+            'hasFamily'=>false,
+            'hasActiveProduction'=>false,
+            'hasArchive'=>false,
+            'unread'=>['community'=>0,'messages'=>0],
+        ];
+
+        try {
+            $db = Database::connect(dirname(__DIR__));
+            $memberProductions = ProductionContext::activeProductions($db, $user);
+            $context['hasActiveProduction'] = (bool)$memberProductions;
+            if ($staff) {
+                $context['productionOptions'] = $memberProductions;
+                $context['selectedProduction'] = ProductionContext::selected($db, $user);
+            }
+            $familyStmt = $db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");
+            $familyStmt->execute(['user'=>(int)$user['id']]);
+            $context['hasFamily'] = (bool)$familyStmt->fetchColumn();
+            if (AccessPolicy::canManageProduction($user)) {
+                $context['hasArchive'] = (bool)$db->query("SELECT 1 FROM productions WHERE is_active=0 AND status='archived' LIMIT 1")->fetchColumn();
+            } else {
+                $archiveStmt = $db->prepare("SELECT 1 FROM productions p WHERE p.is_active=0 AND p.status='archived' AND (EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer) OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.audience_type='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND cpm.production_id=p.id)) LIMIT 1");
+                $archiveStmt->execute(['viewer'=>(int)$user['id'],'guardian'=>(int)$user['id']]);
+                $context['hasArchive'] = (bool)$archiveStmt->fetchColumn();
+            }
+            $context['unread'] = CommunicationReadStateService::navigationCounts($db, $user);
+        } catch (Throwable) {
+        }
+
+        return self::$sidebarContextCache[$cacheKey]=$context;
+    }
+
     public static function renderHeader(string $eyebrow,string $title,string $basePath,?array $subnav=null):void
     {
         $url=static fn(string $path):string=>($basePath?:'').$path;
@@ -155,13 +176,19 @@ final class AppNavigation
         $notificationUnread=0;
         try {
             if(session_status()===PHP_SESSION_ACTIVE && (int)($_SESSION['auth_user_id']??0)>0){
-                $db=Database::connect(dirname(__DIR__));
-                $stmt=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
-                $stmt->execute(['user'=>(int)$_SESSION['auth_user_id']]);
-                $notificationUnread=(int)$stmt->fetchColumn();
+                $notificationUnread=self::notificationUnread((int)$_SESSION['auth_user_id']);
             }
         } catch (Throwable) {
         }
         ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a href="<?=$url('/notifications')?>">Notifications<?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread?></strong><?php endif;?></a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
+    }
+
+    private static function notificationUnread(int $userId): int
+    {
+        if(isset(self::$notificationUnreadCache[$userId]))return self::$notificationUnreadCache[$userId];
+        $db=Database::connect(dirname(__DIR__));
+        $stmt=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
+        $stmt->execute(['user'=>$userId]);
+        return self::$notificationUnreadCache[$userId]=(int)$stmt->fetchColumn();
     }
 }

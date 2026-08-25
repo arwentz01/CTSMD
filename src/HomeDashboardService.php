@@ -133,8 +133,9 @@ final class HomeDashboardService
         $stmt->execute(['user'=>$userId,'from_date'=>$from->format('Y-m-d H:i:s'),'to_date'=>$to->format('Y-m-d H:i:s')]);
         $rows=$stmt->fetchAll();
         $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,$userId);
+        $requirementMap=VolunteerCoverageService::missingRequirementsForShifts($db,$userId,array_column($rows,'shift_id'));
         foreach($rows as &$row){
-            $row['missing_requirements']=$row['status']==='waitlisted'?[]:VolunteerCoverageService::missingRequirements($db,$userId,(int)$row['shift_id']);
+            $row['missing_requirements']=$row['status']==='waitlisted'?[]:($requirementMap[(int)$row['shift_id']]??[]);
             $row['eligible_now']=$row['status']==='waitlisted'||($liveVolunteer&&!$row['missing_requirements']);
         }
         unset($row);

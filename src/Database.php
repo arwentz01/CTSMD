@@ -31,6 +31,8 @@ final class Database
 {
     /** @var array<string, PDO> */
     private static array $connections = [];
+    /** @var array<string, bool> */
+    private static array $loadedEnvFiles = [];
 
     public static function connect(string $projectRoot): PDO
     {
@@ -61,6 +63,11 @@ final class Database
 
     private static function loadEnv(string $path): void
     {
+        if (isset(self::$loadedEnvFiles[$path])) {
+            return;
+        }
+        self::$loadedEnvFiles[$path] = true;
+
         if (!is_file($path)) {
             return;
         }

@@ -69,6 +69,31 @@ final class VolunteerCoverageService
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    public static function missingRequirementsForShifts(PDO $db,int $userId,array $shiftIds):array
+    {
+        $shiftIds=array_values(array_unique(array_filter(array_map('intval',$shiftIds),static fn(int $id):bool=>$id>0)));
+        if($userId<1||!$shiftIds)return [];
+        $placeholders=implode(',',array_fill(0,count($shiftIds),'?'));
+        $stmt=$db->prepare("SELECT vsr.shift_id,vr.name
+            FROM volunteer_shift_requirements vsr
+            JOIN volunteer_requirements vr ON vr.id=vsr.requirement_id
+            LEFT JOIN volunteer_credentials vc
+              ON vc.requirement_id=vr.id
+             AND vc.user_id=?
+            WHERE vsr.shift_id IN ($placeholders)
+              AND (
+                  vc.id IS NULL
+                  OR vc.status<>'approved'
+                  OR (vc.expires_at IS NOT NULL AND vc.expires_at<NOW())
+              )
+            ORDER BY vsr.shift_id,vr.id");
+        $stmt->execute(array_merge([$userId],$shiftIds));
+        $missing=[];
+        foreach($stmt->fetchAll() as $row)$missing[(int)$row['shift_id']][]=(string)$row['name'];
+        foreach($shiftIds as $id)$missing[$id]??=[];
+        return $missing;
+    }
+
     public static function isLiveVolunteer(PDO $db,int $userId):bool
     {
         if($userId<1)return false;

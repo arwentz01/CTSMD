@@ -132,9 +132,10 @@ final class VolunteerExperience
         $stmt->execute(['user_id' => $userId]);
         $rows = $stmt->fetchAll();
         $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,$userId);
+        $requirementMap=VolunteerCoverageService::missingRequirementsForShifts($db,$userId,array_column($rows,'id'));
         foreach ($rows as &$row) {
             $row['active_signups'] = VolunteerCoverageService::eligibleLiveSignupCount($db,(int)$row['id']);
-            $row['missing'] = VolunteerCoverageService::missingRequirements($db, $userId, (int)$row['id']);
+            $row['missing'] = $requirementMap[(int)$row['id']]??[];
             $row['requirements_met'] = !$row['missing'];
             $row['approval_gate'] = (bool)$row['approval_required'];
             $row['started'] = strtotime((string)$row['starts_at']) <= time();

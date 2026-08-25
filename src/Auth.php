@@ -8,6 +8,7 @@ final class Auth
 {
     public const SESSION_USER_ID = 'auth_user_id';
     public const PASSWORD_MIN_LENGTH = 8;
+    private static array $userCache = [];
     private static array $roleCache = [];
     private static array $permissionCache = [];
 
@@ -26,9 +27,11 @@ final class Auth
     public static function currentUser(PDO $db): ?array
     {
         $userId=self::userId();if(!$userId)return null;$local=!empty($_SESSION['auth_local_identity'])&&self::localIdentitySwitchEnabled();
+        $cacheKey=$userId.':'.($local?'local':'active');
+        if(isset(self::$userCache[$cacheKey]))return self::$userCache[$cacheKey];
         $sql="SELECT id,first_name,last_name,email,initials,display_role AS role,active,account_status,organization_membership_status,organization_membership_reviewed_at,last_login_at FROM users WHERE id=:id AND active=1".($local?'':" AND account_status='active'")." LIMIT 1";
         $stmt=$db->prepare($sql);$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();if(!$user){self::logout();return null;}
-        $user['name']=trim((string)$user['first_name'].' '.(string)$user['last_name']);$user['roles']=self::roles($db,$userId);$user['permissions']=self::permissions($db,$userId);return $user;
+        $user['name']=trim((string)$user['first_name'].' '.(string)$user['last_name']);$user['roles']=self::roles($db,$userId);$user['permissions']=self::permissions($db,$userId);return self::$userCache[$cacheKey]=$user;
     }
 
     public static function login(PDO $db,string $email,string $password): array
@@ -67,7 +70,8 @@ final class Auth
 
     public static function clearRequestCache(?int $userId=null): void
     {
-        if($userId===null){self::$roleCache=[];self::$permissionCache=[];return;}
+        if($userId===null){self::$userCache=[];self::$roleCache=[];self::$permissionCache=[];return;}
+        foreach(array_keys(self::$userCache) as $key)if(str_starts_with((string)$key,$userId.':'))unset(self::$userCache[$key]);
         unset(self::$roleCache[$userId],self::$permissionCache[$userId]);
     }
 
