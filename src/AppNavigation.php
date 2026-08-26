@@ -169,6 +169,53 @@ final class AppNavigation
         return self::$sidebarContextCache[$cacheKey]=$context;
     }
 
+    public static function productionSubnav(string $route, array $user): array
+    {
+        $canManageProduction = AccessPolicy::canManageProduction($user);
+        $canManageSchedule = AccessPolicy::canManageSchedule($user);
+        $canManageResources = AccessPolicy::canManageResources($user);
+        $canManagePlaybill = AccessPolicy::canManagePlaybill($user);
+
+        $active = static function(array $routes) use ($route): bool {
+            foreach ($routes as $candidate) {
+                if ($route === $candidate || str_starts_with($route, $candidate . '/')) return true;
+            }
+            return false;
+        };
+
+        $items = [
+            ['label'=>'Workspace','href'=>'/production','active'=>$route==='/production'],
+            ['label'=>'Schedule','href'=>'/schedule','active'=>in_array($route, ['/schedule','/production/edit','/production/schedule/new','/production/schedule/import'], true)],
+            ['label'=>'Attendance','href'=>'/attendance','active'=>$active(['/attendance'])],
+        ];
+
+        if ($canManageProduction) {
+            $items[] = ['label'=>'Groups','href'=>'/production/groups','active'=>$active(['/production/groups'])];
+            $items[] = ['label'=>'People','href'=>'/production/people','active'=>$active(['/production/people'])];
+            $items[] = ['label'=>'Casting','href'=>'/production/casting','active'=>$active(['/production/casting'])];
+        }
+
+        $items[] = ['label'=>'Readiness','href'=>'/production/readiness','active'=>$active(['/production/readiness'])];
+        $items[] = ['label'=>'Production day','href'=>'/production/day','active'=>$route==='/production/day'];
+        $items[] = ['label'=>'Resources','href'=>'/resources','active'=>$active(['/resources','/admin/resources'])];
+
+        if ($canManageResources) {
+            $items[] = ['label'=>'Files','href'=>'/files','active'=>$active(['/files','/admin/files'])];
+        }
+
+        if ($canManageSchedule) {
+            $items[] = ['label'=>'Updates','href'=>'/production/notices','active'=>$active(['/production/notices','/production/notice'])];
+        }
+
+        $items[] = ['label'=>'Playbill','href'=>'/playbills','active'=>$active(['/playbills','/admin/playbill'])];
+
+        if ($canManagePlaybill) {
+            $items[] = ['label'=>'Playbill media','href'=>'/admin/playbill/media','active'=>$route==='/admin/playbill/media'];
+        }
+
+        return $items;
+    }
+
     public static function renderHeader(string $eyebrow,string $title,string $basePath,?array $subnav=null):void
     {
         $url=static fn(string $path):string=>($basePath?:'').$path;

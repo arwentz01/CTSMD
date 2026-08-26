@@ -242,13 +242,7 @@ final class ResourceExperience
         $memberDetail=$route==='/resources/view';
         $selectedAudiences=$resource ? (json_decode((string)$resource['audiences_json'],true) ?: []) : ['production_all'];
         $title=$admin ? ($editing ? ($resource['title'] ?? 'Resource') : 'Resource Library') : ($memberDetail ? ($resource['title'] ?? 'Resource') : 'Resources');
-        $subnav=[
-            ['label'=>'Overview','href'=>'/production','active'=>false],
-            ['label'=>'Schedule','href'=>'/schedule','active'=>false],
-            ['label'=>'Resources','href'=>'/resources','active'=>!$admin],
-            ['label'=>'Playbill','href'=>'/playbills','active'=>false],
-        ];
-        if($staff) $subnav[]=['label'=>'Manage resources','href'=>'/admin/resources','active'=>$admin];
+        $subnav=AppNavigation::productionSubnav($route,$user);
 
         header('Content-Type: text/html; charset=utf-8');
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/resource-implementation.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav); ?><div class="resource-page">
