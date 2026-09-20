@@ -16,6 +16,7 @@ $route = $requestPath;
 if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) $route = substr($route, strlen($detectedBasePath)) ?: '/';
 $route = rtrim($route, '/') ?: '/';
 require_once __DIR__ . '/src/Auth.php';Auth::startSession();
+require_once __DIR__ . '/src/MobileApi.php';if(MobileApi::handles($route))MobileApi::render($route);
 if ($route === '/dev/identity') {
     if (!Auth::localIdentitySwitchEnabled()) {
         http_response_code(404);
