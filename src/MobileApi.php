@@ -36,6 +36,7 @@ final class MobileApi
                 '/api/mobile/channels' => self::channels($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
                 '/api/mobile/channel-post' => self::channelPost($db, $user),
+                '/api/mobile/push-subscription' => self::pushSubscription($db, $user),
                 '/api/mobile/logout' => self::logout($db),
                 default => self::json(['error' => 'Mobile API route not found.'], 404),
             };
@@ -145,6 +146,20 @@ final class MobileApi
     private static function logout(PDO $db): never
     {
         self::requireMethod('POST');$token=self::bearerToken();if($token){$db->prepare('UPDATE auth_mobile_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=:hash')->execute(['hash'=>hash('sha256',$token)]);}self::json(['ok'=>true]);
+    }
+
+    private static function pushSubscription(PDO $db,array $user): never
+    {
+        if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
+            $input=self::input();$sub=$input['subscription']??null;if(!is_array($sub))throw new RuntimeException('Push subscription is required.');
+            $identity=(string)($sub['endpoint']??$sub['fcmToken']??$sub['apnsToken']??'');if($identity==='')throw new RuntimeException('Push subscription identity is missing.');
+            $previous=trim((string)($input['previous_identity']??''));if($previous!==''&&$previous!==$identity){$d=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity");$d->execute(['user'=>(int)$user['id'],'identity'=>$previous]);}
+            $json=json_encode($sub,JSON_UNESCAPED_SLASHES);$s=$db->prepare("INSERT INTO mobile_push_subscriptions (user_id,identity,subscription_json,created_at,updated_at) VALUES (:user,:identity,:json,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),subscription_json=VALUES(subscription_json),updated_at=CURRENT_TIMESTAMP");$s->execute(['user'=>(int)$user['id'],'identity'=>$identity,'json'=>$json]);self::json(['ok'=>true]);
+        }
+        if(($_SERVER['REQUEST_METHOD']??'GET')==='DELETE'){
+            $identity=trim((string)($_GET['identity']??''));if($identity!==''){$s=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity");$s->execute(['user'=>(int)$user['id'],'identity'=>$identity]);}else{$s=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user");$s->execute(['user'=>(int)$user['id']]);}self::json(['ok'=>true]);
+        }
+        self::json(['error'=>'Method not allowed.'],405);
     }
 
     private static function bearerUser(PDO $db): ?array
