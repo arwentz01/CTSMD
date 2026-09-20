@@ -91,7 +91,7 @@ final class MobileApi
         $conversation = $access->fetch();
         if (!$conversation) self::json(['error'=>'Conversation not found.'],404);
 
-        $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.id");
+        $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.user_id");
         $p->execute(['id'=>$id]);
         $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL ORDER BY m.created_at,m.id");
         $m->execute(['id'=>$id]);
