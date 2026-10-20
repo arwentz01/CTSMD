@@ -15,7 +15,7 @@ final class PlatformOnboardingExperience
 
     public static function render(string $route,string $basePath):never
     {
-        Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['platform_onboarding_csrf']??=bin2hex(random_bytes(24));$user=self::isPublic($route)?null:Auth::currentUser($db);if(!self::isPublic($route)&&!$user)self::redirect($basePath.'/login?return_to='.rawurlencode($route));if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);if($route==='/join')self::joinPage($basePath);if($route==='/verify-email')self::verifyPage($db,$basePath);self::householdPage($db,$basePath,$user,$route);
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['platform_onboarding_csrf']??=bin2hex(random_bytes(24));$user=self::isPublic($route)?null:Auth::currentUser($db);if(!self::isPublic($route)&&!$user)self::redirect($basePath.'/login?return_to='.rawurlencode($route));if($user&&Auth::hasRole($user,'student'))self::forbidden();if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);if($route==='/join')self::joinPage($basePath);if($route==='/verify-email')self::verifyPage($db,$basePath);self::householdPage($db,$basePath,$user,$route);
     }
 
     private static function handlePost(PDO $db,string $route,string $basePath,?array $user):never
@@ -53,5 +53,5 @@ final class PlatformOnboardingExperience
     private static function publicHead(string $title,string $basePath):void{$u=static fn(string $p):string=>($basePath?:'').$p;header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#181416"><title><?=htmlspecialchars($title,ENT_QUOTES,'UTF-8')?> · CTSMD</title><link rel="stylesheet" href="<?=$u('/assets/css/platform-onboarding.css')?>"></head><body><?php }
     private static function publicFoot():never{?></body></html><?php exit;}
     private static function csrf():void{if(!hash_equals((string)($_SESSION['platform_onboarding_csrf']??''),(string)($_POST['csrf_token']??'')))throw new RuntimeException('Your session expired. Please try again.');}
-    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+    private static function forbidden():never{http_response_code(403);header('Content-Type:text/plain; charset=utf-8');exit('Household management is available to parents and guardians.');}\n    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
 }
