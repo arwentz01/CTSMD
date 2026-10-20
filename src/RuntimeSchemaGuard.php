@@ -6,7 +6,7 @@ require_once __DIR__ . '/SchemaGuard.php';
 
 final class RuntimeSchemaGuard
 {
-    private const EXPECTED_SCHEMA_VERSION = 60;
+    private const EXPECTED_SCHEMA_VERSION = 62;
     private const APCU_TTL_SECONDS = 300;
 
     public static function requireCurrentSchema(string $projectRoot, string $basePath): void
