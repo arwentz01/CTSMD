@@ -95,7 +95,7 @@ final class CommunicationExperience
         try{
             SafeguardedConversationPolicy::enforceForSend($db,$conversationId,$userId);
             $insert=$db->prepare('INSERT INTO messages (conversation_id,sender_user_id,body,created_at) VALUES (:conversation,:sender,:body,CURRENT_TIMESTAMP)');
-            $insert->execute(['conversation'=>$conversationId,'sender'=>$userId]);$messageId=(int)$db->lastInsertId();
+            $insert->execute(['conversation'=>$conversationId,'sender'=>$userId,'body'=>$body]);$messageId=(int)$db->lastInsertId();
             $attached=MessageAttachmentService::attachUpload($db,dirname(__DIR__),$messageId,$userId,$upload);
             $db->commit();return(bool)$attached;
         }catch(Throwable $e){
