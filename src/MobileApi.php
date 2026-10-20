@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
+require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 
 final class MobileApi
@@ -79,7 +80,7 @@ final class MobileApi
     private static function messages(PDO $db, array $user): never
     {
         self::requireMethod('GET');
-        $stmt = $db->prepare("SELECT c.id,c.subject,c.conversation_type,MAX(m.created_at) latest_at,COUNT(DISTINCT m.id) message_count,COUNT(DISTINCT cp.user_id) participant_count,(SELECT COUNT(*) FROM messages um WHERE um.conversation_id=c.id AND um.hidden_at IS NULL AND um.id>mine.last_read_message_id AND um.sender_user_id<>mine.user_id) unread_count,(SELECT sm.body FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL ORDER BY sm.id DESC LIMIT 1) preview FROM conversations c JOIN conversation_participants mine ON mine.conversation_id=c.id AND mine.user_id=:user JOIN conversation_participants cp ON cp.conversation_id=c.id LEFT JOIN messages m ON m.conversation_id=c.id AND m.hidden_at IS NULL GROUP BY c.id,c.subject,c.conversation_type,mine.last_read_message_id,mine.user_id ORDER BY latest_at DESC,c.id DESC");
+        $stmt = $db->prepare("SELECT c.id,c.subject,c.conversation_type,MAX(m.created_at) latest_at,COUNT(DISTINCT m.id) message_count,COUNT(DISTINCT cp.user_id) participant_count,(SELECT COUNT(*) FROM messages um WHERE um.conversation_id=c.id AND um.hidden_at IS NULL AND um.id>mine.last_read_message_id AND um.sender_user_id<>mine.user_id AND (mine.history_through_message_id IS NULL OR um.id<=mine.history_through_message_id)) unread_count,(SELECT sm.body FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR sm.id<=mine.history_through_message_id) ORDER BY sm.id DESC LIMIT 1) preview FROM conversations c JOIN conversation_participants mine ON mine.conversation_id=c.id AND mine.user_id=:user JOIN conversation_participants cp ON cp.conversation_id=c.id LEFT JOIN messages m ON m.conversation_id=c.id AND m.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR m.id<=mine.history_through_message_id) GROUP BY c.id,c.subject,c.conversation_type,mine.last_read_message_id,mine.user_id,mine.history_through_message_id ORDER BY latest_at DESC,c.id DESC");
         $stmt->execute(['user'=>(int)$user['id']]);
         self::json(['conversations'=>$stmt->fetchAll()]);
     }
@@ -89,15 +90,15 @@ final class MobileApi
         self::requireMethod('GET');
         $id = (int)($_GET['id'] ?? 0);
         if ($id < 1) throw new RuntimeException('Conversation id is required.');
-        $access = $db->prepare("SELECT c.id,c.subject,c.conversation_type FROM conversations c JOIN conversation_participants cp ON cp.conversation_id=c.id AND cp.user_id=:user WHERE c.id=:id LIMIT 1");
+        $access = $db->prepare("SELECT c.id,c.subject,c.conversation_type,cp.history_through_message_id,cp.access_revoked_at FROM conversations c JOIN conversation_participants cp ON cp.conversation_id=c.id AND cp.user_id=:user WHERE c.id=:id LIMIT 1");
         $access->execute(['user'=>(int)$user['id'],'id'=>$id]);
         $conversation = $access->fetch();
         if (!$conversation) self::json(['error'=>'Conversation not found.'],404);
 
         $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.user_id");
         $p->execute(['id'=>$id]);
-        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL ORDER BY m.created_at,m.id");
-        $m->execute(['id'=>$id]);
+        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
+        $m->execute(['id'=>$id,'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
         self::json(['conversation'=>$conversation,'participants'=>$p->fetchAll(),'messages'=>$m->fetchAll()]);
     }
@@ -107,12 +108,19 @@ final class MobileApi
         self::requireMethod('POST');
         $input=self::input();$id=(int)($input['conversation_id']??0);$body=trim((string)($input['body']??''));
         if($id<1||$body===''||mb_strlen($body)>4000)throw new RuntimeException('Choose a conversation and write a message up to 4,000 characters.');
-        $membership=$db->prepare("SELECT c.conversation_type FROM conversations c JOIN conversation_participants cp ON cp.conversation_id=c.id AND cp.user_id=:user WHERE c.id=:id LIMIT 1");
-        $membership->execute(['user'=>(int)$user['id'],'id'=>$id]);$row=$membership->fetch();if(!$row)self::json(['error'=>'Conversation not found.'],404);
-        if((string)$row['conversation_type']==='safeguarded')self::assertSafeguarded($db,$id);
-        $db->prepare("INSERT INTO messages (conversation_id,sender_user_id,body,created_at) VALUES (:conversation,:sender,:body,CURRENT_TIMESTAMP)")->execute(['conversation'=>$id,'sender'=>(int)$user['id'],'body'=>$body]);
-        $messageId=(int)$db->lastInsertId();CommunicationReadStateService::markConversationThroughMessage($db,(int)$user['id'],$id,$messageId);
-        self::json(['ok'=>true,'message_id'=>$messageId]);
+        $db->beginTransaction();
+        try{
+            SafeguardedConversationPolicy::enforceForSend($db,$id,(int)$user['id']);
+            $insert=$db->prepare("INSERT INTO messages (conversation_id,sender_user_id,body,created_at) VALUES (:conversation,:sender,:body,CURRENT_TIMESTAMP)");
+            $insert->execute(['conversation'=>$id,'sender'=>(int)$user['id'],'body'=>$body]);
+            $messageId=(int)$db->lastInsertId();
+            CommunicationReadStateService::markConversationThroughMessage($db,(int)$user['id'],$id,$messageId);
+            $db->commit();
+            self::json(['ok'=>true,'message_id'=>$messageId]);
+        }catch(Throwable $e){
+            if($db->inTransaction())$db->rollBack();
+            throw $e instanceof RuntimeException?$e:new RuntimeException('We could not send that message. Please try again.');
+        }
     }
 
     private static function channels(PDO $db,array $user): never
@@ -181,15 +189,6 @@ final class MobileApi
     private static function bearerToken(): ?string{$h=(string)($_SERVER['HTTP_AUTHORIZATION']??'');return preg_match('/^Bearer\s+(.+)$/i',$h,$m)?trim($m[1]):null;}
     private static function input(): array{$raw=file_get_contents('php://input')?:'';$data=json_decode($raw,true);return is_array($data)?$data:$_POST;}
     private static function requireMethod(string $method): void{if(($_SERVER['REQUEST_METHOD']??'GET')!==$method)self::json(['error'=>'Method not allowed.'],405);}
-
-    private static function assertSafeguarded(PDO $db,int $conversationId): void
-    {
-        $s=$db->prepare("SELECT cp.user_id,cp.participant_role,u.active,u.account_status FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id");$s->execute(['id'=>$conversationId]);$rows=$s->fetchAll();
-        $students=[];$guardians=[];$staff=false;
-        foreach($rows as $r){if(!(bool)$r['active']||$r['account_status']==='disabled')continue;$roles=Auth::roles($db,(int)$r['user_id']);if(in_array('student',$roles,true))$students[]=(int)$r['user_id'];if($r['participant_role']==='guardian')$guardians[]=(int)$r['user_id'];if(in_array('production_staff',$roles,true)||in_array('administrator',$roles,true))$staff=true;}
-        if(count(array_unique($students))!==1||!$guardians||!$staff)throw new RuntimeException('Messaging is paused because this safeguarded conversation requires review.');
-        $ph=implode(',',array_fill(0,count($guardians),'?'));$q=$db->prepare("SELECT 1 FROM family_relationships WHERE student_user_id=? AND guardian_user_id IN ($ph) AND status='active' LIMIT 1");$q->execute(array_merge([$students[0]],$guardians));if(!$q->fetchColumn())throw new RuntimeException('Messaging is paused because the guardian relationship requires review.');
-    }
 
     private static function json(array $data,int $status=200): never{http_response_code($status);echo json_encode($data,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);exit;}
 }
