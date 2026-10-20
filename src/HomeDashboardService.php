@@ -123,7 +123,7 @@ final class HomeDashboardService
 
     private static function formsForUser(PDO $db,int $userId):array
     {
-        $stmt=$db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE COALESCE(fa.subject_user_id,fa.user_id)=:user AND fa.status<>'completed' ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
+        $stmt=$db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE fa.user_id=:user AND fa.status<>'completed' ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
         $stmt->execute(['user'=>$userId]);return $stmt->fetchAll();
     }
 
