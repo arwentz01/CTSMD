@@ -223,7 +223,10 @@ CREATE TABLE IF NOT EXISTS conversation_participants (
     user_id BIGINT UNSIGNED NOT NULL,
     participant_role ENUM('adult','student','guardian') NOT NULL,
     guardian_required TINYINT(1) NOT NULL DEFAULT 0,
+    access_revoked_at DATETIME NULL,
+    history_through_message_id BIGINT UNSIGNED NULL,
     PRIMARY KEY (conversation_id, user_id),
+    KEY idx_conversation_participant_live (user_id, access_revoked_at, conversation_id),
     CONSTRAINT fk_participant_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
     CONSTRAINT fk_participant_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
