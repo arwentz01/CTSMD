@@ -3,9 +3,9 @@
 Overall readiness:
 
 - **Board demo: 74%**
-- **Limited pilot: 38%**
+- **Limited pilot: 42%**
 - **Board recommendation: CONDITIONAL GO** after the BEFORE BOARD items below are closed and rehearsed.
-- **Pilot recommendation: NO-GO** while the three safety blockers remain open.
+- **Pilot recommendation: NO-GO** until host-side incident response is complete and the two repository safeguarding remediations pass executable database-backed validation.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -33,9 +33,9 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 
 # Must Fix Before Pilot
 
-- **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Rotate credentials, inspect sibling sites/backups/logs, rebuild from reviewed source, and document containment.
-- **BLOCKER:** remove a former guardian from future safeguarded conversation access while preserving historical records. Add revocation regression tests.
-- **BLOCKER:** bring mobile safeguarding and authorization behavior to parity with the web application before real-family use.
+- **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Follow [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md): preserve evidence, rotate credentials, invalidate sessions/tokens, inspect sibling sites/backups/logs, and clean-deploy reviewed source. Repository inspection cannot establish that Bluehost is clean.
+- **BLOCKER pending executable validation:** migration 062 and the shared safeguarding policy now revoke a former guardian from future messages while retaining history through a fixed message ID. The database-backed regression test has been added but could not be executed because no local runner or CI workflow was available.
+- **BLOCKER pending executable validation:** web and mobile message sends now invoke the same transaction-aware safeguarding policy. Role changes, disabled accounts, all-guardian coverage, and Student/Student prohibition are covered by the new database test, but deployment and execution remain required.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
 - **BEFORE PILOT:** close push retry/reclaim/dedupe and audience recheck gaps, then prove receipt on supported devices.
 - **BEFORE PILOT:** test dedicated Moderator-only, Safeguarding-only, Staff-only, Volunteer-only, and least-privilege negative routes.
@@ -68,6 +68,23 @@ Actions actually exercised:
 - opened Guardian form rendering without submitting;
 - opened volunteer approval review and attendance controls without changing records;
 - directly navigated to sensitive routes from non-privileged accounts.
+
+## Security and safeguarding closure evidence
+
+The repository implementation now follows the existing documented rule: every active, available guardian relationship is included in a Staff/Student safeguarded conversation. It no longer relies on only the primary guardian.
+
+Migration `062_safeguarded_conversation_revocation.sql` adds non-destructive participant access state:
+
+- `access_revoked_at` stops live participation;
+- `history_through_message_id` fixes the last message a former guardian may read;
+- family-relationship and account-status triggers synchronize guardian access;
+- existing history and audit rows remain intact.
+
+`SafeguardedConversationPolicy` is now authoritative for both web and mobile sends. It derives current Student roles at send time, upgrades a direct conversation after a Student role is added, requires current CTSMD staff and every active available guardian, rejects Student/Student direct messaging, and rejects disabled or history-only participants.
+
+Message lists, threads, search, attachments, unread counts, and read cursors honor the historical cutoff. New message push creation excludes revoked participants, and push delivery revalidates access so an already-queued message push is suppressed after revocation. No conversation-message email producer or separate in-app message-notification producer exists in the inspected repository; therefore no equivalent queued email or in-app payload was found to revoke. This is not a claim that general delivery queues are production-ready.
+
+These are source and migration findings only until migration 062 and `tests/safeguarded_conversation.php` run successfully against MySQL.
 
 # Known Limitations To Disclose
 
@@ -185,7 +202,7 @@ Existing data can answer future reporting questions without building a reporting
 
 # Recommended Next Builds
 
-1. **BLOCKER:** close hosting incident response, former-guardian conversation revocation, and web/mobile safeguarding parity with regression coverage.
+1. **BLOCKER:** complete the host-side incident response, then deploy migration 062 and execute the safeguarding regression suite. The former-guardian and mobile-parity fixes remain blocked from sign-off only by executable validation.
 2. **BEFORE BOARD:** deploy the contained Student permission/form fixes and create a repeatable current-date rehearsal fixture with a pure Staff account and future volunteer shift.
 3. **BEFORE PILOT:** harden delivery operations with queue retry/recovery, serialized cron monitoring, real inbox/device proof, rate limiting and a tested backup restore.
 
@@ -210,4 +227,4 @@ Authenticated browser evidence completed October 20, 2026:
 - no genuine new-profile HAR was available;
 - no production mutation or outbound communication was performed.
 
-The four new PHP changes were made through the repository connection because the local execution environment was unavailable. PHP lint and automated tests have **not yet been rerun against those four commits**. They must pass before deployment.
+Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. The local execution environment remained unavailable and the branch has no GitHub Actions workflow run, so PHP lint, the repository test suite, the new safeguarding test, schema/migration execution, and git diff --check have **not been run against this closure build**. The prior audit results above do not validate these new commits. Pilot sign-off must remain blocked until those commands pass against MySQL and the migration is runtime-verified.
