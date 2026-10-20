@@ -128,7 +128,7 @@ final class VolunteerExperience
 
     private static function shifts(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare("SELECT vs.id, vs.title, vs.category, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, vs.approval_required, mine.id AS my_signup_id, mine.status AS my_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id = vs.id AND mine.user_id = :user_id WHERE vs.ends_at >= NOW() ORDER BY vs.starts_at ASC");
+        $stmt = $db->prepare("SELECT vs.id, vs.title, vs.category, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, vs.approval_required, mine.id AS my_signup_id, mine.status AS my_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id = vs.id AND mine.user_id = :user_id WHERE vs.ends_at >= NOW() AND (vs.production_id IS NULL OR EXISTS (SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at ASC");
         $stmt->execute(['user_id' => $userId]);
         $rows = $stmt->fetchAll();
         $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,$userId);

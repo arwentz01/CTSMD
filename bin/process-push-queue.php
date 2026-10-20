@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
+
 require_once dirname(__DIR__).'/src/Database.php';
 require_once dirname(__DIR__).'/src/PushService.php';
 require_once dirname(__DIR__).'/src/PushEventBridgeService.php';

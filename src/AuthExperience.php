@@ -16,7 +16,7 @@ final class AuthExperience
     {
         if(PlatformOnboardingExperience::isPublic($route))PlatformOnboardingExperience::render($route,$basePath);
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['auth_csrf']??=bin2hex(random_bytes(24));
-        if($route==='/logout'){if($_SERVER['REQUEST_METHOD']==='POST')self::csrf();Auth::logout();self::redirect($basePath.'/login');}
+        if($route==='/logout'){if($_SERVER['REQUEST_METHOD']!=='POST'){http_response_code(405);header('Allow: POST');exit('Method not allowed.');}self::csrf();Auth::logout();self::redirect($basePath.'/login');}
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath);
         self::page($db,$route,$basePath);
     }

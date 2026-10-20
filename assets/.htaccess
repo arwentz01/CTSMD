@@ -1,0 +1,4 @@
+# Static assets must never execute uploaded or unexpected PHP scripts.
+<FilesMatch "(?i)\.(?:php[0-9]*|phtml|phar)(?:\.|$)">
+    Require all denied
+</FilesMatch>

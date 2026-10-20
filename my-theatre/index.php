@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-$requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
-$basePath = preg_replace('#/my-theatre/?$#', '', rtrim($requestPath, '/')) ?: '';
 $projectRoot = dirname(__DIR__);
-$_ENV['APP_BASE_PATH'] = $basePath;
-$_SERVER['APP_BASE_PATH'] = $basePath;
-putenv('APP_BASE_PATH=' . $basePath);
+$scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+$projectBase = rtrim(dirname(dirname($scriptName)), '/');
+$frontScript = ($projectBase === '' ? '' : $projectBase) . '/front.php';
 
-require_once $projectRoot . '/src/RuntimeSchemaGuard.php';
-RuntimeSchemaGuard::requireCurrentSchema($projectRoot, $basePath);
-require_once $projectRoot . '/src/MyTheatreExperience.php';
-MyTheatreExperience::render($basePath);
+$_SERVER['SCRIPT_NAME'] = $frontScript;
+$_SERVER['PHP_SELF'] = $frontScript;
+$_SERVER['SCRIPT_FILENAME'] = $projectRoot . '/front.php';
+
+require $projectRoot . '/front.php';

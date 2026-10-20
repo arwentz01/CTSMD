@@ -4,7 +4,7 @@ CTSMD Connect is the visual-first community and operations platform prototype fo
 
 **Build principle:** Experience defines the product. Background logic exists to support the approved experience.
 
-The prototype is server-rendered PHP with a lightweight MySQL data layer. It does **not** yet implement production authentication, push notifications, or full compliance verification.
+The prototype is server-rendered PHP with a lightweight MySQL data layer. It includes account authentication/RBAC, queued email, and Web Push delivery code. Deployment verification, safeguarding validation, and delivery acceptance tests are still required before a real-family pilot. See [`docs/BOARD_PILOT_READINESS.md`](docs/BOARD_PILOT_READINESS.md).
 
 ## Canonical product backlog
 

@@ -21,9 +21,8 @@ final class MobileApi
     {
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
-        $db = Database::connect(dirname(__DIR__));
-
         try {
+            $db = Database::connect(dirname(__DIR__));
             if ($route === '/api/mobile/login') self::login($db);
             $user = self::bearerUser($db);
             if (!$user) self::json(['error' => 'Authentication required.'], 401);
@@ -40,6 +39,9 @@ final class MobileApi
                 '/api/mobile/logout' => self::logout($db),
                 default => self::json(['error' => 'Mobile API route not found.'], 404),
             };
+        } catch (PDOException $e) {
+            error_log('Mobile API database error: ' . $e->getMessage());
+            self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
         } catch (RuntimeException $e) {
             self::json(['error' => $e->getMessage()], 400);
         } catch (Throwable $e) {
