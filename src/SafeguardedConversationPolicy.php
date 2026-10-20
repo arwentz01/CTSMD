@@ -36,9 +36,13 @@ final class SafeguardedConversationPolicy
             if (!$conversation) throw new RuntimeException('That conversation no longer exists.');
 
             $participants = self::participants($db,$conversationId,true);
-            $currentStudents = self::currentStudents($db,$participants);
-            if (count($currentStudents) > 1) {
+            $studentRoleIds = self::studentRoleIds($db,$participants);
+            if (count($studentRoleIds) > 1) {
                 throw new RuntimeException('Student-to-student messaging is not available.');
+            }
+            $currentStudents = self::currentStudents($db,$participants);
+            if ($studentRoleIds && !$currentStudents) {
+                throw new RuntimeException('Messaging is paused because the Student account is unavailable.');
             }
 
             if (!$currentStudents) {
@@ -146,10 +150,11 @@ final class SafeguardedConversationPolicy
             || $recipient['account_status']!=='active'
             || $recipient['access_revoked_at']!==null) return false;
 
+        $studentRoleIds = self::studentRoleIds($db,$participants);
         $students = self::currentStudents($db,array_values(array_filter($participants,static fn(array $row):bool=>
             (bool)$row['active'] && $row['account_status']==='active' && $row['access_revoked_at']===null
         )));
-        if ($type === 'direct') return !$students;
+        if ($type === 'direct') return !$studentRoleIds;
         if (count($students)!==1) return false;
 
         $studentId = $students[0];
@@ -170,6 +175,17 @@ final class SafeguardedConversationPolicy
             WHERE cp.conversation_id=:conversation".($lock?' FOR UPDATE':'');
         $stmt=$db->prepare($sql);$stmt->execute(['conversation'=>$conversationId]);
         return $stmt->fetchAll();
+    }
+
+    private static function studentRoleIds(PDO $db,array $participants):array
+    {
+        $students=[];
+        foreach($participants as $participant){
+            if(in_array('student',Auth::roles($db,(int)$participant['user_id']),true))$students[]=(int)$participant['user_id'];
+        }
+        $students=array_values(array_unique($students));
+        sort($students);
+        return $students;
     }
 
     private static function currentStudents(PDO $db,array $participants):array
