@@ -18,6 +18,6 @@ final class MessageAttachmentService
 
     public static function attachmentForParticipant(PDO $db,int $attachmentId,int $userId):?array
     {
-        $s=$db->prepare("SELECT ma.id,ma.message_id,ma.stored_file_id,m.conversation_id,sfv.* FROM message_attachments ma JOIN messages m ON m.id=ma.message_id AND m.hidden_at IS NULL JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:user JOIN stored_files sf ON sf.id=ma.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=ma.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE ma.id=:id LIMIT 1");$s->execute(['user'=>$userId,'id'=>$attachmentId]);return$s->fetch()?:null;
+        $s=$db->prepare("SELECT ma.id,ma.message_id,ma.stored_file_id,m.conversation_id,sfv.* FROM message_attachments ma JOIN messages m ON m.id=ma.message_id AND m.hidden_at IS NULL JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:user AND (cp.history_through_message_id IS NULL OR m.id<=cp.history_through_message_id) JOIN stored_files sf ON sf.id=ma.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=ma.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE ma.id=:id LIMIT 1");$s->execute(['user'=>$userId,'id'=>$attachmentId]);return$s->fetch()?:null;
     }
 }
