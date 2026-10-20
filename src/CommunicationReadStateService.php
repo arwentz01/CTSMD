@@ -42,6 +42,7 @@ final class CommunicationReadStateService
                 AND m.hidden_at IS NULL
                 AND m.id > mine.last_read_message_id
                 AND m.sender_user_id <> mine.user_id
+                AND (mine.history_through_message_id IS NULL OR m.id <= mine.history_through_message_id)
             WHERE mine.user_id = :user");
         $stmt->execute(['user' => $userId]);
         return (int)$stmt->fetchColumn();
@@ -49,8 +50,8 @@ final class CommunicationReadStateService
 
     public static function markConversationRead(PDO $db, int $userId, int $conversationId): void
     {
-        $latest = $db->prepare("SELECT COALESCE(MAX(id),0) FROM messages WHERE conversation_id = :conversation AND hidden_at IS NULL");
-        $latest->execute(['conversation' => $conversationId]);
+        $latest = $db->prepare("SELECT COALESCE(MAX(m.id),0) FROM messages m JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:user WHERE m.conversation_id=:conversation AND m.hidden_at IS NULL AND (cp.history_through_message_id IS NULL OR m.id<=cp.history_through_message_id)");
+        $latest->execute(['conversation' => $conversationId, 'user' => $userId]);
         $messageId = (int)$latest->fetchColumn();
         $stmt = $db->prepare("UPDATE conversation_participants
             SET last_read_message_id = GREATEST(last_read_message_id, :message), last_read_at = CURRENT_TIMESTAMP
