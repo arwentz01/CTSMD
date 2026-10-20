@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__.'/PushService.php';
 require_once __DIR__.'/CommunicationReadStateService.php';
 require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/SafeguardedConversationPolicy.php';
 
 final class PushEventBridgeService
 {
@@ -22,7 +23,7 @@ final class PushEventBridgeService
         $cursor=self::cursor($db,'messages');
         $s=$db->prepare("SELECT m.id,m.conversation_id,m.sender_user_id,c.subject,CONCAT(u.first_name,' ',u.last_name) sender FROM messages m JOIN conversations c ON c.id=m.conversation_id JOIN users u ON u.id=m.sender_user_id WHERE m.id>:cursor AND m.hidden_at IS NULL ORDER BY m.id LIMIT 250");
         $s->execute(['cursor'=>$cursor]);$count=0;$last=$cursor;
-        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$p=$db->prepare("SELECT cp.user_id FROM conversation_participants cp JOIN users recipient ON recipient.id=cp.user_id AND recipient.active=1 AND recipient.account_status='active' WHERE cp.conversation_id=:conversation AND cp.user_id<>:sender");$p->execute(['conversation'=>$row['conversation_id'],'sender'=>$row['sender_user_id']]);foreach($p->fetchAll(PDO::FETCH_COLUMN) as $recipient){$id=PushService::queue($db,(int)$recipient,'messages','New message from '.$row['sender'],(string)($row['subject']?:'CTSMD conversation'),'/messages/thread?id='.(int)$row['conversation_id'],'normal','msg-'.$row['conversation_id']);if($id)$count++;}}
+        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$p=$db->prepare("SELECT cp.user_id FROM conversation_participants cp JOIN users recipient ON recipient.id=cp.user_id AND recipient.active=1 AND recipient.account_status='active' WHERE cp.conversation_id=:conversation AND cp.user_id<>:sender AND cp.access_revoked_at IS NULL");$p->execute(['conversation'=>$row['conversation_id'],'sender'=>$row['sender_user_id']]);foreach($p->fetchAll(PDO::FETCH_COLUMN) as $recipient){if(!SafeguardedConversationPolicy::canReceiveLive($db,(int)$row['conversation_id'],(int)$recipient))continue;$id=PushService::queue($db,(int)$recipient,'messages','New message from '.$row['sender'],(string)($row['subject']?:'CTSMD conversation'),'/messages/thread?id='.(int)$row['conversation_id'],'normal','msg-'.$row['conversation_id']);if($id)$count++;}}
         if($last>$cursor)self::advance($db,'messages',$last);return$count;
     }
 
