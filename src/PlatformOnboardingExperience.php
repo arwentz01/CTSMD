@@ -53,5 +53,6 @@ final class PlatformOnboardingExperience
     private static function publicHead(string $title,string $basePath):void{$u=static fn(string $p):string=>($basePath?:'').$p;header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#181416"><title><?=htmlspecialchars($title,ENT_QUOTES,'UTF-8')?> · CTSMD</title><link rel="stylesheet" href="<?=$u('/assets/css/platform-onboarding.css')?>"></head><body><?php }
     private static function publicFoot():never{?></body></html><?php exit;}
     private static function csrf():void{if(!hash_equals((string)($_SESSION['platform_onboarding_csrf']??''),(string)($_POST['csrf_token']??'')))throw new RuntimeException('Your session expired. Please try again.');}
-    private static function forbidden():never{http_response_code(403);header('Content-Type:text/plain; charset=utf-8');exit('Household management is available to parents and guardians.');}\n    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+    private static function forbidden():never{http_response_code(403);header('Content-Type:text/plain; charset=utf-8');exit('Household management is available to parents and guardians.');}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
 }
