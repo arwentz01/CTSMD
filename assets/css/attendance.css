@@ -14,3 +14,32 @@
 @media(max-width:1050px){.att-person{grid-template-columns:1fr}.att-note{grid-column:1/-1}}
 @media(max-width:760px){.att-status-primary,.att-status-secondary{grid-template-columns:repeat(3,minmax(0,1fr))}.att-status-picker label{min-height:52px}.att-quick-toolbar button{min-height:44px}.att-savebar .button{min-height:48px}}
 @media(max-width:480px){.att-status-primary,.att-status-secondary{grid-template-columns:repeat(3,minmax(0,1fr))}.att-savebar{bottom:0;border-radius:14px 14px 0 0;padding-bottom:max(12px,env(safe-area-inset-bottom))}}
+
+/* Compact check-in roster. Scope overrides to the taking-attendance form. */
+.att-page:has(.att-roster){gap:12px;padding-top:16px}
+.att-page:has(.att-roster) .att-detail-head{padding:16px 20px;border-radius:16px;align-items:center}
+.att-page:has(.att-roster) .att-detail-head h2{font-size:clamp(1.35rem,2.2vw,2rem);margin:3px 0}
+.att-page:has(.att-roster) .att-summary{display:flex;gap:8px;flex-wrap:wrap}
+.att-page:has(.att-roster) .att-summary span{display:flex;align-items:center;gap:7px;border-radius:999px;padding:8px 12px;flex:1 1 auto;justify-content:center}
+.att-page:has(.att-roster) .att-summary b{font-size:1rem;line-height:1.1}
+.att-page:has(.att-roster) .att-summary small{font-size:.8rem}
+.att-roster{gap:0;padding-bottom:100px}
+.att-roster .att-quick-toolbar{margin-bottom:8px;padding:9px 14px}
+.att-roster .att-person{display:grid;grid-template-columns:minmax(180px,1fr) minmax(340px,1.25fr);gap:12px;padding:9px 14px;min-height:64px;border-radius:0;border-bottom:0;align-items:center}
+.att-roster .att-person:first-of-type{border-radius:14px 14px 0 0}
+.att-roster .att-person:has(+ .att-savebar){border-bottom:1px solid #e9e3e6;border-radius:0 0 14px 14px}
+.att-roster .att-person-id>i{width:36px;height:36px;flex-shrink:0}
+.att-roster .att-status-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.att-roster .att-status-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.att-roster .att-status-picker label{min-height:44px;padding:3px 8px}
+.att-roster .att-status-more{position:relative;min-width:88px}
+.att-roster .att-status-more summary{min-height:44px;justify-content:center;padding:0 10px;border:1px solid #ded5d8;border-radius:10px;box-sizing:border-box;white-space:nowrap}
+.att-roster .att-status-more[open]{grid-column:1/-1;display:grid;gap:8px;padding:8px 0}
+.att-roster .att-status-more[open] summary{justify-self:end}
+.att-roster .att-more-note{display:grid;gap:5px;font-size:.8rem}
+.att-roster .att-more-note input{width:100%;box-sizing:border-box;border:1px solid #d9d1d4;border-radius:10px;padding:10px;font:inherit}
+.att-roster .att-report{grid-column:1/-1;grid-row:2}
+.att-roster .att-status-picker:has(input:checked:not([value="unmarked"]))+*{min-width:0}
+.att-roster .att-savebar{margin-top:0}
+@media(max-width:900px){.att-roster .att-person{grid-template-columns:minmax(140px,.75fr) minmax(0,1.5fr)}}
+@media(max-width:650px){.att-page:has(.att-roster){padding:10px;gap:9px}.att-page:has(.att-roster) .att-detail-head{padding:14px}.att-roster .att-person{grid-template-columns:1fr;gap:6px;padding:10px 12px}.att-roster .att-status-picker{grid-template-columns:minmax(0,1fr) auto}.att-roster .att-status-more{min-width:65px}.att-roster .att-status-more summary{padding:0 7px}.att-roster .att-status-picker label{min-height:46px;font-size:.78rem}.att-roster .att-report{grid-row:auto}.att-roster{padding-bottom:150px}.att-roster .att-savebar{bottom:0}}
