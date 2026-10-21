@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/SafeguardedConversationPolicy.php';
+require_once __DIR__.'/CommunicationReadStateService.php';
+require_once __DIR__.'/Auth.php';
 
 final class PushService
 {
@@ -39,6 +41,25 @@ final class PushService
             $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$row['user_id']]);if(!$account->fetchColumn()){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>$row['id']]);$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND status='active'")->execute(['user'=>$row['user_id']]);continue;}
             if(!self::pushAllowed($db,(int)$row['user_id'],(string)$row['category'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Push preference disabled before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
             if((string)$row['category']==='messages'&&preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)&&!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            // A queued Community post may outlive a user's channel membership. Recheck
+            // effective access just before delivery; failed lookups fail closed.
+            if((string)$row['category']==='community'&&preg_match('~^/channels/view\\?id=(\\d+)$~',(string)($row['action_path']??''),$match)){
+                $allowed=false;
+                try{
+                    $sUser=$db->prepare("SELECT id,first_name,last_name,display_role AS role,organization_membership_status,active,account_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");
+                    $sUser->execute(['id'=>(int)$row['user_id']]);
+                    $viewer=$sUser->fetch(PDO::FETCH_ASSOC);
+                    if($viewer){
+                        $viewer['roles']=Auth::roles($db,(int)$row['user_id']);
+                        $viewer['permissions']=Auth::permissions($db,(int)$row['user_id']);
+                        $allowed=CommunicationReadStateService::canAccessChannel($db,$viewer,(int)$match[1]);
+                    }
+                }catch(Throwable $e){error_log('Community push authorization check failed: '.$e->getMessage());}
+                if(!$allowed){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Community access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
             $subs=$db->prepare("SELECT ps.* FROM push_subscriptions ps WHERE ps.user_id=:user AND ps.status='active' AND NOT EXISTS (SELECT 1 FROM push_delivery_log pdl WHERE pdl.queue_id=:queue AND pdl.subscription_id=ps.id AND pdl.result='sent')");$subs->execute(['user'=>$row['user_id'],'queue'=>$row['id']]);$subscriptions=$subs->fetchAll();if(!$subscriptions){$delivered=$db->prepare("SELECT 1 FROM push_delivery_log WHERE queue_id=:queue AND result='sent' LIMIT 1");$delivered->execute(['queue'=>$row['id']]);$status=$delivered->fetchColumn()?'sent':'suppressed';$error=$status==='sent'?null:'No active push-enabled device.';$db->prepare("UPDATE push_queue SET status=:status,completed_at=CURRENT_TIMESTAMP,last_error=:error WHERE id=:id")->execute(['status'=>$status,'error'=>$error,'id'=>$row['id']]);continue;}
             $ok=0;$bad=0;foreach($subscriptions as $sub){try{$result=self::send($sub,$row);$status=(int)$result['status'];$expired=in_array($status,[404,410],true);$success=$status>=200&&$status<300;$log=$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,http_status,result,error_message) VALUES (:queue,:sub,:status,:result,:error)");$log->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'status'=>$status?:null,'result'=>$success?'sent':($expired?'expired':'rejected'),'error'=>$success?null:mb_substr((string)$result['body'],0,1000)]);if($success){$ok++;$db->prepare("UPDATE push_subscriptions SET last_success_at=CURRENT_TIMESTAMP,failure_count=0 WHERE id=:id")->execute(['id'=>$sub['id']]);}else{$bad++;$db->prepare("UPDATE push_subscriptions SET status=:status,last_failure_at=CURRENT_TIMESTAMP,failure_count=failure_count+1 WHERE id=:id")->execute(['status'=>$expired?'expired':'active','id'=>$sub['id']]);}}catch(Throwable $e){$bad++;$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,result,error_message) VALUES (:queue,:sub,'error',:error)")->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'error'=>mb_substr($e->getMessage(),0,1000)]);}}
             $attempts=(int)$row['attempt_count']+1;$retry=$bad>0&&$attempts<3;$status=$retry?'queued':($ok>0?($bad>0?'partial':'sent'):'failed');$available=(new DateTimeImmutable('+'.min(60,$attempts*5).' minutes'))->format('Y-m-d H:i:s');$db->prepare("UPDATE push_queue SET status=:status,available_at=:available,claimed_at=NULL,completed_at=:completed,last_error=:error WHERE id=:id")->execute(['status'=>$status,'available'=>$available,'completed'=>$retry?null:(new DateTimeImmutable())->format('Y-m-d H:i:s'),'error'=>$bad?($retry?'Delivery failed; retry scheduled.':'Delivery failed after final attempt.'):null,'id'=>$row['id']]);$sent+=$ok;$failed+=$bad;
