@@ -36,6 +36,7 @@ final class MobileApi
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/theatre' => self::theatre($db, $user),
+                '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
                 '/api/mobile/notification-read' => self::notificationRead($db, $user),
@@ -104,6 +105,24 @@ final class MobileApi
         self::json(['productions'=>$productions,'events'=>array_slice($events,0,100)]);
     }
 
+    private static function eventDetail(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT);
+        if(!$id||$id<1)self::json(['error'=>'An event ID is required.'],400);
+        // Narrow the existing audience-filtered calendar query to this event's date.
+        // A known event ID alone never gives access to a restricted production event.
+        $s=$db->prepare("SELECT starts_at FROM schedule_items WHERE id=:id LIMIT 1");
+        $s->execute(['id'=>$id]);$start=$s->fetchColumn();
+        if(!$start)self::json(['error'=>'Event not found.'],404);
+        $day=new DateTimeImmutable((string)$start);
+        $events=CalendarService::visibleEvents($db,$user,$day->modify('-1 day'),$day->modify('+1 day'));
+        foreach($events as $event){
+            if((int)$event['id']===$id)self::json(['event'=>$event]);
+        }
+        self::json(['error'=>'Event not found.'],404);
+    }
+
     private static function dailyTasks(PDO $db, array $user): never
     {
         self::requireMethod('GET');
@@ -111,9 +130,11 @@ final class MobileApi
         // Same assignee + active form boundary used by the member Forms page.
         $forms=$db->prepare("SELECT fa.id,fa.status,fa.due_at,f.title,fs.status submission_status FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.user_id=:user ORDER BY fa.due_at,fa.id LIMIT 100");
         $forms->execute(['user'=>$id]);
+        $live=VolunteerCoverageService::isLiveVolunteer($db,$id);
+        $rows=[];
+        if($live){
         $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at,vs.id LIMIT 100");
         $shifts->execute(['mine'=>$id,'request'=>$id]);
-        $live=VolunteerCoverageService::isLiveVolunteer($db,$id);
         $rows=$shifts->fetchAll();
         $missingMap=VolunteerCoverageService::missingRequirementsForShifts($db,$id,array_column($rows,'id'));
         foreach($rows as &$row){
@@ -122,7 +143,8 @@ final class MobileApi
             $row['open_slots']=max(0,(int)$row['required_slots']-VolunteerCoverageService::eligibleLiveSignupCount($db,(int)$row['id']));
         }
         unset($row);
-        self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows]);
+        }
+        self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows,'volunteer_enabled'=>$live]);
     }
 
     private static function notifications(PDO $db,array $user):never
