@@ -8,3 +8,10 @@
 .unified-utilities .unified-inbox-link>span[aria-hidden]{font-size:19px;line-height:1}
 .unified-utilities .unified-inbox-link:focus-visible{outline:3px solid #d5a52f;outline-offset:3px}
 @media(max-width:650px){.unified-utilities .unified-inbox-link>span:not([aria-hidden]){display:none}}
+
+/* Message shortcut: recognizable chat bubble, not an email envelope. */
+.unified-utilities .unified-inbox-link{display:inline-flex;align-items:center;justify-content:center;position:relative;min-width:44px;min-height:44px;padding:8px;border-radius:12px;gap:0}
+.unified-utilities .unified-message-icon{display:block;width:27px;height:27px;flex:none;stroke-width:2}
+.unified-utilities .unified-inbox-link .unified-unread{position:absolute;top:1px;right:0;margin:0;min-width:17px;height:17px;font-size:9px}
+.unified-utilities .unified-inbox-link:hover{background:#f5edef}
+@media(max-width:650px){.unified-utilities .unified-message-icon{width:26px;height:26px}}
