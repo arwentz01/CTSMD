@@ -2,10 +2,10 @@
 
 Overall readiness:
 
-- **Board demo: 82%**
-- **Limited pilot: 50%**
+- **Board demo: 84%**
+- **Limited pilot: 60%**
 - **Board recommendation: CONDITIONAL GO** after the BEFORE BOARD items below are closed and rehearsed.
-- **Pilot recommendation: NO-GO** until host-side incident response is complete, the locally validated guardian-reactivation implementation is deployed and runtime-verified, and the remaining delivery and least-privilege checks are closed.
+- **Pilot recommendation: NO-GO** until host-side incident response is complete and the remaining delivery and least-privilege checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -34,9 +34,9 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 # Must Fix Before Pilot
 
 - **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Follow [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md): preserve evidence, rotate credentials, invalidate sessions/tokens, inspect sibling sites/backups/logs, and clean-deploy reviewed source. Repository inspection cannot establish that Bluehost is clean.
-- An earlier 062-shaped Bluehost schema and the previous 17-check safeguarding suite were observed successfully. The revised migration source implementing the approved reactivation rule has not been deployed and those earlier results do not validate the revision.
-- **BLOCKER pending deployment:** the approved V1 rule is implemented and passed 36 checks on a disposable MySQL 8.0.44 clone: a guardian who becomes inactive retains only the historical conversation content available through their revocation cutoff. Reactivation does not reopen that historical thread or reveal messages sent during the inactive period. Future safeguarded communication uses a current safe conversation.
-- Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed database suite passed role-change, disabled-account, all-guardian, and Student/Student checks. Disposable-token endpoint tests separately confirmed active fake-persona access, disabled-account denial, thread IDOR denial, and mobile send-policy denial without creating a message.
+- **CLOSED October 21:** the approved V1 guardian-revocation rule is deployed and runtime-verified on Bluehost. The existing 062 columns were preserved, only the revised trigger section was applied, the obsolete insert trigger was removed, both synchronization triggers matched the revised no-widening behavior, and the runtime schema guard passed.
+- Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed 36-check database suite passed with its transaction rolled back, covering role changes, disabled accounts, all-guardian participation, Student/Student prohibition, fixed historical cutoffs, attachment/unread boundaries, push eligibility, reactivation into a new safe thread, and repeated revocation.
+- Disposable fake-account bearer-token tests confirmed the old thread returned only the five messages through its cutoff, later content stayed hidden, old-thread sends were rejected, a new safe thread could include the reactivated guardian, and the disabled token received HTTP 401. All four fake users, both test conversations, token rows, state files, and response files were removed; an independent query returned zero remaining `@safeguarding.test` users.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
 - **BEFORE PILOT:** close push retry/reclaim/dedupe and audience recheck gaps, then prove receipt on supported devices.
 - **BEFORE PILOT:** test dedicated Moderator-only, Safeguarding-only, Staff-only, Volunteer-only, and least-privilege negative routes.
@@ -85,7 +85,7 @@ Migration `062_safeguarded_conversation_revocation.sql` adds non-destructive par
 
 Message lists, threads, search, attachments, unread counts, and read cursors honor the historical cutoff. New message push creation excludes revoked participants, and push delivery revalidates access so an already-queued message push is suppressed after revocation. No conversation-message email producer or separate in-app message-notification producer exists in the inspected repository; therefore no equivalent queued email or in-app payload was found to revoke. This is not a claim that general delivery queues are production-ready.
 
-An earlier 062-shaped schema was observed on Bluehost: its runtime schema guard passed and the previous `tests/safeguarded_conversation.php` passed 17 rolled-back checks. The revised migration and expanded reactivation test have not been deployed. They passed 36 rolled-back checks after migration 062 was applied to a disposable clone of the local database on MySQL 8.0.44.
+Bluehost already contained the 062 columns and an older trigger revision, so the non-idempotent column migration was not rerun. After a current compressed database backup was verified, only the revised trigger section was applied. The obsolete insert trigger is absent, the relationship and account synchronization triggers preserve historical cutoffs, the runtime schema guard passed, and the expanded safeguarding suite passed 36 rolled-back checks against the deployed MySQL database.
 
 # Known Limitations To Disclose
 
@@ -95,7 +95,7 @@ An earlier 062-shaped schema was observed on Bluehost: its runtime schema guard 
 - Staff/Admin demo accounts are over-privileged combined-role fixtures.
 - Moderator and Safeguarding navigation is coupled to the Operations experience; dedicated-role navigation remains unproven.
 - Native push has storage/API support but no proven APNs/FCM delivery adapter.
-- No real inbox receipt, device push receipt, Bluehost cron log or backup restore was observed. An earlier 062-shaped schema was runtime-verified, but the revised migration has not been deployed and no migration execution transcript was captured.
+- No real inbox receipt, device push receipt, Bluehost cron log or backup restore was observed. The deployed database also lacks the optional `mobile_push_subscriptions` table, so native subscription cleanup/receipt remains unproven; safeguarding push audience exclusion was verified through the deployed policy/database suite.
 - A page loading is not treated as end-to-end workflow proof.
 
 ## Notification delivery evidence
@@ -203,7 +203,7 @@ Existing data can answer future reporting questions without building a reporting
 
 # Recommended Next Builds
 
-1. **BLOCKER:** complete the host-side incident response, then deploy and runtime-verify the revised migration 062. The approved reactivation rule passed the expanded safeguarding suite on a disposable local MySQL clone; production remains unchanged by this revision.
+1. **BLOCKER:** complete the host-side incident response. The revised migration 062 trigger behavior and guardian reactivation rule are deployed and runtime-verified; this does not establish that the Bluehost account is clean.
 2. **BEFORE BOARD:** deploy the contained Student permission/form fixes and create a repeatable current-date rehearsal fixture with a pure Staff account and future volunteer shift.
 3. **BEFORE PILOT:** harden delivery operations with queue retry/recovery, serialized cron monitoring, real inbox/device proof, rate limiting and a tested backup restore.
 
@@ -221,7 +221,7 @@ Static closure validation executed October 20, 2026 at audited head `f4c7e2b072c
 - local `tests/safeguarded_conversation.php` could not connect to MySQL, but the same deployed test later passed 17 checks against Bluehost MySQL with its transaction rolled back;
 - migration 062 source inspection found no target-table 1093 self-reference: cutoff subqueries read `messages` while updating `conversation_participants`;
 - migration 062 is a one-time migration, not idempotent: rerunning its unguarded `ALTER TABLE ... ADD COLUMN` will fail after first application;
-- the earlier reactivation ambiguity is resolved by product decision: a revoked participant record remains historical permanently, and future communication uses a current-safe conversation. The revised implementation passed disposable-clone MySQL execution and remains undeployed.
+- the earlier reactivation ambiguity is resolved by product decision: a revoked participant record remains historical permanently, and future communication uses a current-safe conversation. The revised implementation passed disposable-clone MySQL execution and was subsequently deployed and runtime-verified on Bluehost.
 - local MySQL 8.0.44 validation cloned the unmigrated `ctsmd` database into a disposable schema, applied revised migration 062, and passed 36 safeguarding checks with test data rolled back; the disposable schema was then removed;
 - the expanded suite covers messages 1-5 before revocation, messages 6-10 during revocation, fixed cutoff preservation, old-thread send denial, new-thread participation, exact-set reuse, attachment and unread boundaries, push eligibility, account re-enable, and revoke/reactivate/revoke repetition;
 - migration inspection found no target-table 1093 self-reference: participant updates read cutoff values only from `messages`; runtime relationship insertion/reactivation and account re-enable no longer widen old conversations; trigger names are dropped before creation, while the migration remains intentionally one-time because its column `ALTER TABLE` is not idempotent;
@@ -253,6 +253,19 @@ Bluehost containment and mobile API validation on October 21, 2026:
 - all five tokens were revoked, a reused token then received HTTP 401, all five temporary token rows were deleted, and plaintext response/token files were removed;
 - no deployed former-guardian row existed for a non-mutating endpoint check. Former-guardian and role-change semantics are covered by the rolled-back database suites, including the revised 36-check local MySQL run; no production relationship, role, cutoff, or reactivation state was altered.
 
+Bluehost migration 062 and guardian-reactivation verification on October 21, 2026:
+
+- focused source commit `921a03d242d86a6a205f7dac292f522ef939d780` records the permanent guardian-revocation boundary implementation;
+- a verified pre-change backup was written outside the document root at `/home1/wentzmdc/ctsmd-db-backups/ctsmd-pre-062-trigger-upgrade-20261020-195122.sql.gz` (45,802 bytes, mode `0600`, SHA-256 `74361217e794a667707599438b07329f35b84f175b4a38d351e3760c95b00b50`);
+- because both 062 columns already existed, the non-idempotent migration was not rerun; only its revised trigger section was applied;
+- `trg_family_conversation_guardian_insert` is absent, while `trg_family_conversation_guardian_update` and `trg_user_disable_operational_cleanup` are present and do not clear or widen historical cutoffs;
+- the deployed runtime schema guard passed, all 126 deployed PHP files linted cleanly, lifecycle passed 21 checks, push-claim passed, and safeguarding passed 36 real-database checks with rollback;
+- fake Guardian A could read the old thread only through message 44, could not see five later messages or send to the historical thread, and retained the same cutoff after reactivation and a second revocation; Guardian B remained active;
+- the reactivated fake guardian could participate in and send fake content to a new safe thread; mobile list/thread/send behavior agreed with the shared web policy;
+- attachment, unread and push-audience boundaries, role-change re-evaluation, disabled Guardian/Student denial, and Student/Student prohibition passed in the deployed 36-check suite;
+- the disabled bearer token returned HTTP 401. Cleanup removed four fake users, two fake conversations and their token rows; an independent database count returned zero remaining `@safeguarding.test` users, and temporary state/response files were removed;
+- the deployed schema has no `mobile_push_subscriptions` table, so no temporary native push subscription was created or required for cleanup. Native push delivery remains outside this safeguarding closure and is still a pilot delivery blocker.
+
 Previously completed on the audit branch:
 
 - PHP 8.3 lint passed for all 124 PHP files.
@@ -272,4 +285,4 @@ Authenticated browser evidence completed October 20, 2026:
 - no genuine new-profile HAR was available;
 - no production mutation or outbound communication was performed.
 
-Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local PHP lint and `git diff --check` passed; lifecycle and push-claim tests passed locally and on Bluehost; an earlier schema guard and 17-check safeguarding suite passed against Bluehost MySQL. The revised reactivation implementation passed 36 checks after migration on a disposable local MySQL 8.0.44 clone. Focused deployed mobile checks passed without creating content. Pilot sign-off remains blocked by the open host incident, deployment/runtime verification of the revision, delivery operations, and the remaining least-privilege/negative test plan.
+Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by the open host incident, delivery operations, and the remaining least-privilege/negative test plan.

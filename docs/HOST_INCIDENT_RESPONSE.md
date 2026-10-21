@@ -4,7 +4,7 @@
 
 **Open security incident. Do not treat the Bluehost account as clean based on repository inspection.**
 
-A PHP web shell named `assets/images/accesson.php` existed in source history. It has been removed from the `audit/board-pilot-readiness` branch and executable PHP is now denied beneath public asset directories. Host-side investigation, credential rotation and a clean deployment are still required before CTSMD Connect can use real family or safeguarding data.
+A PHP web shell named `assets/images/accesson.php` existed in source history and remained on the Bluehost filesystem until it was quarantined on October 21, 2026 UTC. It has been removed from the `audit/board-pilot-readiness` branch, removed from the served filesystem path, and executable PHP is denied beneath public asset directories. Host-side investigation, credential rotation and a clean deployment are still required before CTSMD Connect can use real family or safeguarding data.
 
 ## Known facts
 
@@ -14,6 +14,23 @@ A PHP web shell named `assets/images/accesson.php` existed in source history. It
 - The shell is absent from the current audit branch.
 - The current tree contains no PHP files under `assets/`, `uploads/` or image directories.
 - Repository containment rules deny PHP execution and direct access to sensitive source/storage paths. Deployment verification is still required.
+
+## Bluehost quarantine record
+
+The known shell was quarantined without executing or modifying its contents:
+
+- recorded at: `20261021T013441Z`;
+- original path: `/home1/wentzmdc/public_html/ctsmd/assets/images/accesson.php`;
+- filename: `accesson.php`;
+- size: 212 bytes;
+- original permissions: `0644`;
+- owner/group: `wentzmdc` (`uid 1771`) / `wentzmdc` (`gid 1770`);
+- original modified timestamp: `2026-08-25 06:38:18.246799526 -0600`;
+- original change timestamp: `2026-08-25 09:07:37.503931103 -0600`;
+- SHA-256: `5dd77e8d7d97b876026800b045c80e448fdef19f5549068b65dd4e2178d52a65`;
+- quarantine path: `/home1/wentzmdc/ctsmd-incident-quarantine/20261021T013441Z/accesson.php`.
+
+The quarantine directory is outside `public_html` with mode `0700`; the artifact and its adjacent metadata manifest use mode `0600`. The hash after the move matched the recorded hash. The original filesystem path was verified absent. A request to `https://ctsmd.me/assets/images/accesson.php` returned HTTP 403 with no redirect after quarantine. A deployed-host search under `assets`, `storage`, and `uploads` found no other PHP file. These are containment facts, not proof that the hosting account is clean.
 
 ## Repository compromise sweep
 
