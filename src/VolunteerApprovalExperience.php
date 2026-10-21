@@ -40,7 +40,7 @@ final class VolunteerApprovalExperience
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());self::redirect($basePath.($route==='/volunteer/approvals'?'/volunteer/approvals':'/admin/volunteer-approvals'));}
     }
 
-    private static function requestApproval(PDO $db,array $user,int $shiftId,string $note):void
+    public static function requestApproval(PDO $db,array $user,int $shiftId,string $note):void
     {
         if($shiftId<1)throw new RuntimeException('That volunteer shift could not be found.');if(mb_strlen($note)>500)throw new RuntimeException('Keep the request note under 500 characters.');
         $db->beginTransaction();try{
@@ -55,7 +55,7 @@ final class VolunteerApprovalExperience
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The approval request could not be submitted.');}
     }
 
-    private static function withdrawRequest(PDO $db,array $user,int $requestId):void
+    public static function withdrawRequest(PDO $db,array $user,int $requestId):void
     {
         if($requestId<1)throw new RuntimeException('That request could not be found.');$s=$db->prepare("UPDATE volunteer_shift_approval_requests SET status='withdrawn',updated_at=CURRENT_TIMESTAMP WHERE id=:id AND user_id=:user AND status='pending'");$s->execute(['id'=>$requestId,'user'=>(int)$user['id']]);if($s->rowCount()<1)throw new RuntimeException('That request is no longer pending or does not belong to you.');self::audit($db,(int)$user['id'],'volunteer.approval_withdrawn','volunteer_shift_approval_request',$requestId,'Withdrew volunteer shift approval request.',[]);
     }
