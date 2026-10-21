@@ -41,14 +41,27 @@ final class MailService
         };
     }
 
-    public static function process(PDO $db, string $projectRoot, int $limit = 25): array
+    public static function process(PDO $db, string $projectRoot, int $limit = 25, ?int $queueId = null): array
     {
         $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;$suppressed=0;
-        $db->exec("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+        if($queueId!==null&&$queueId<1)throw new InvalidArgumentException('Queue ID must be a positive integer.');
+        if($queueId===null){
+            $db->exec("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+        }else{
+            $recover=$db->prepare("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE id=:id AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+            $recover->execute(['id'=>$queueId]);
+            $limit=1;
+        }
         for($i=0;$i<$limit;$i++){
             $db->beginTransaction();
             try{
-                $row=$db->query("SELECT * FROM email_queue WHERE status='queued' AND available_at<=NOW() ORDER BY id ASC LIMIT 1 FOR UPDATE")->fetch();
+                if($queueId===null){
+                    $row=$db->query("SELECT * FROM email_queue WHERE status='queued' AND available_at<=NOW() ORDER BY id ASC LIMIT 1 FOR UPDATE")->fetch();
+                }else{
+                    $select=$db->prepare("SELECT * FROM email_queue WHERE id=:id AND status='queued' AND available_at<=NOW() LIMIT 1 FOR UPDATE");
+                    $select->execute(['id'=>$queueId]);
+                    $row=$select->fetch();
+                }
                 if(!$row){$db->commit();break;}
                 $db->prepare("UPDATE email_queue SET status='sending',attempts=attempts+1,last_attempt_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['id'=>(int)$row['id']]);
                 $db->commit();

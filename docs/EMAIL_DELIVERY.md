@@ -16,6 +16,14 @@ Process queued messages manually:
 php bin/process-email-queue.php
 ```
 
+For an explicitly authorized acceptance row, process only that row without touching older queued mail:
+
+```bash
+php bin/process-email-queue.php --queue-id 123
+```
+
+The scoped mode limits both stale-claim recovery and queue selection to that ID and processes at most one row. The normal cron command remains unchanged.
+
 Messages are written to:
 
 ```text
