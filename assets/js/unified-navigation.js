@@ -29,6 +29,12 @@
   const scrim = document.querySelector('[data-nav-scrim]');
   const openButtons = document.querySelectorAll('[data-nav-open]');
   const close = document.querySelector('[data-nav-close]');
+  let navTrigger = null;
+
+  const focusableInSidebar = () => sidebar
+    ? [...sidebar.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+      .filter(element => element.getClientRects().length > 0)
+    : [];
 
   const viewport = document.querySelector('meta[name="viewport"]');
   if (viewport && !viewport.content.includes('viewport-fit=cover')) viewport.content = `${viewport.content},viewport-fit=cover`;
@@ -50,17 +56,53 @@
     });
   }
 
-  const setOpen = (value) => {
+  const setOpen = (value, trigger = null) => {
     if (!sidebar || !scrim) return;
+    if (value && trigger) navTrigger = trigger;
     sidebar.classList.toggle('open', value);
     scrim.classList.toggle('show', value);
     document.body.classList.toggle('mobile-nav-open', value);
     document.body.style.overflow = value ? 'hidden' : '';
+    sidebar.setAttribute('aria-hidden', value || window.innerWidth > 780 ? 'false' : 'true');
+    openButtons.forEach(button => button.setAttribute('aria-expanded', value ? 'true' : 'false'));
+    if (value) {
+      (close || focusableInSidebar()[0])?.focus();
+    } else if (navTrigger) {
+      navTrigger.focus();
+      navTrigger = null;
+    }
   };
-  openButtons.forEach(button => button.addEventListener('click', () => setOpen(true)));
+  openButtons.forEach(button => {
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', () => setOpen(true, button));
+  });
   close?.addEventListener('click', () => setOpen(false));
   scrim?.addEventListener('click', () => setOpen(false));
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') setOpen(false); });
+  setOpen(false);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 780 && sidebar?.classList.contains('open')) setOpen(false);
+    else if (sidebar) sidebar.setAttribute('aria-hidden', window.innerWidth > 780 ? 'false' : 'true');
+  });
+  document.addEventListener('keydown', event => {
+    if (!sidebar?.classList.contains('open')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(false);
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = focusableInSidebar();
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
 
   const hrefPath = anchor => { try { return new URL(anchor.href, window.location.href).pathname.replace(/\/$/, '') || '/'; } catch (_) { return ''; } };
   const links = () => [...document.querySelectorAll('.unified-nav-item[href]')];

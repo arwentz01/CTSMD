@@ -127,7 +127,7 @@ final class AppNavigation
                 <a class="mobile-app-tab<?=$route==='/notifications'?' active':''?>" href="<?=$url('/notifications')?>"><span class="mobile-app-tab-icon">●</span><span class="mobile-app-tab-label">Updates</span></a>
                 <a class="mobile-app-tab<?=$route==='/account'?' active':''?>" href="<?=$url('/account')?>"><span class="mobile-app-tab-icon">◎</span><span class="mobile-app-tab-label">Account</span></a>
             <?php endif;?>
-            <button class="mobile-app-tab mobile-app-more" type="button" data-nav-open aria-label="Open full navigation"><span class="mobile-app-tab-icon">•••</span><span class="mobile-app-tab-label">More</span></button>
+            <button class="mobile-app-tab mobile-app-more" type="button" data-nav-open aria-label="Open full navigation" aria-expanded="false"><span class="mobile-app-tab-icon">•••</span><span class="mobile-app-tab-label">More</span></button>
         </nav>
         <script defer src="<?=$url('/assets/js/mobile-engagement.js')?>"></script>
         <?php
@@ -230,7 +230,7 @@ final class AppNavigation
             }
         } catch (Throwable) {
         }
-        ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a href="<?=$url('/notifications')?>">Notifications<?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread?></strong><?php endif;?></a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
+        ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation" aria-expanded="false">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a href="<?=$url('/notifications')?>">Notifications<?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread?></strong><?php endif;?></a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
     }
 
     private static function notificationUnread(int $userId): int
