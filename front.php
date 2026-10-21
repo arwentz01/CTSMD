@@ -27,6 +27,7 @@ if ($route === '/dev/identity') {
 if ($route === '/navigation' && Auth::localIdentitySwitchEnabled()) {require_once __DIR__ . '/src/NavigationReview.php';$data=require __DIR__.'/src/mock-data.php';NavigationReview::render($detectedBasePath,$data);}
 require_once __DIR__ . '/src/RuntimeSchemaGuard.php';RuntimeSchemaGuard::requireCurrentSchema(__DIR__,$detectedBasePath);
 require_once __DIR__ . '/src/PublicExperience.php';if(PublicExperience::handles($route))PublicExperience::render($route,$detectedBasePath);
+require_once __DIR__ . '/src/PublicCastingExperience.php';if(PublicCastingExperience::handles($route))PublicCastingExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/AuthExperience.php';if(AuthExperience::handles($route))AuthExperience::render($route,$detectedBasePath);
 if($route==='/calendar/feed'){require_once __DIR__.'/src/CalendarExperience.php';CalendarExperience::render($route,$detectedBasePath);}
 if(in_array($route,['/playbill','/playbill/asset'],true)){require_once __DIR__.'/src/Playbill2Experience.php';Playbill2Experience::render($route,$detectedBasePath);}
