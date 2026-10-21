@@ -12,6 +12,7 @@ require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
+require_once __DIR__ . '/CommunicationExperience.php';
 
 final class MobileApi
 {
@@ -41,6 +42,8 @@ final class MobileApi
                 '/api/mobile/messages' => self::messages($db, $user),
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
                 '/api/mobile/message-send' => self::messageSend($db, $user),
+                '/api/mobile/message-recipients' => self::messageRecipients($db, $user),
+                '/api/mobile/message-create' => self::messageCreate($db, $user),
                 '/api/mobile/channels' => self::channels($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
                 '/api/mobile/channel-post' => self::channelPost($db, $user),
@@ -174,6 +177,23 @@ final class MobileApi
         $m->execute(['id'=>$id,'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
         self::json(['conversation'=>$conversation,'participants'=>$p->fetchAll(),'messages'=>$m->fetchAll()]);
+    }
+
+    private static function messageRecipients(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        self::json(['recipients'=>CommunicationExperience::mobileRecipients($db,$user)]);
+    }
+
+    private static function messageCreate(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        $recipientId=(int)($input['recipient_id']??0);
+        $subject=trim((string)($input['subject']??''));
+        $body=trim((string)($input['body']??''));
+        $id=CommunicationExperience::mobileCreateConversation($db,$user,$recipientId,$subject,$body);
+        self::json(['ok'=>true,'conversation_id'=>$id]);
     }
 
     private static function messageSend(PDO $db, array $user): never
