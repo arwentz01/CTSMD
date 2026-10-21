@@ -35,6 +35,7 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 
 - **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Follow [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md): preserve evidence, rotate credentials, invalidate sessions/tokens, inspect sibling sites/backups/logs, and clean-deploy reviewed source. Repository inspection cannot establish that Bluehost is clean.
 - **BLOCKER pending executable validation:** migration 062 and the shared safeguarding policy now revoke a former guardian from future messages while retaining history through a fixed message ID. The database-backed regression test has been added but could not be executed because no local runner or CI workflow was available.
+- **BLOCKER policy decision required:** migration 062 currently clears `access_revoked_at` and `history_through_message_id` when a guardian relationship is reactivated or a disabled guardian account is re-enabled. That would expose messages sent during the revoked period. The intended reactivation history policy is not defined, so deployment validation stopped rather than inventing access semantics.
 - **BLOCKER pending executable validation:** web and mobile message sends now invoke the same transaction-aware safeguarding policy. Role changes, disabled accounts, all-guardian coverage, and Student/Student prohibition are covered by the new database test, but deployment and execution remain required.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
 - **BEFORE PILOT:** close push retry/reclaim/dedupe and audience recheck gaps, then prove receipt on supported devices.
@@ -207,6 +208,29 @@ Existing data can answer future reporting questions without building a reporting
 3. **BEFORE PILOT:** harden delivery operations with queue retry/recovery, serialized cron monitoring, real inbox/device proof, rate limiting and a tested backup restore.
 
 ## Validation Record
+
+Static closure validation executed October 20, 2026 at audited head `f4c7e2b072cb653b03da565caa0e2259001fa181`, followed by two focused syntax repairs:
+
+- changed-file PHP lint passed for the ten PHP files changed since `ce0f3c7d0825274165fe9547ec3a0a376dc63a07`;
+- the first full-repository lint found literal `\\n` source corruption in `FamilyDashboardExperience.php`; fixed in commit `dbc971e`;
+- the second full-repository lint found the same corruption in `PlatformOnboardingExperience.php`; fixed in commit `8a224f1`;
+- the final full-repository lint passed every PHP file, including all three test scripts;
+- `git diff --check` passed with no output;
+- `tests/pilot_lifecycle.php` output: `PASS: 21 lifecycle checks (stubbed database; not SQL integration).`;
+- `tests/pilot_push_claim.php` output: `PASS: losing push claim performs no delivery (stubbed database).`;
+- `tests/safeguarded_conversation.php` did not execute its assertions: `SQLSTATE[HY000] [2002] Connection refused` from `Database::connect()`;
+- migration 062 source inspection found no target-table 1093 self-reference: cutoff subqueries read `messages` while updating `conversation_participants`;
+- migration 062 is a one-time migration, not idempotent: rerunning its unguarded `ALTER TABLE ... ADD COLUMN` will fail after first application;
+- runtime migration, schema/trigger, former-guardian, mobile parity, Student regression, containment, and timeout validation were not executed in this pass;
+- validation stopped because reactivation currently clears the fixed history cutoff, while the intended visibility of messages sent during revocation is unresolved.
+
+Bluehost emergency validation later on October 20, 2026:
+
+- `https://ctsmd.me/login` returned HTTP 500 because the deployed copies of `FamilyDashboardExperience.php` and `PlatformOnboardingExperience.php` contained literal `\\n` tokens from the same source defects fixed in `dbc971e` and `8a224f1`;
+- the two malformed tokens were replaced directly in `/home1/wentzmdc/public_html/ctsmd`; both files then passed `php -l`;
+- a full deployed-folder PHP lint completed with `lint_exit=0 files=127 errors=0`;
+- `https://ctsmd.me/login` was reloaded and rendered the CTSMD Connect login screen successfully;
+- Bluehost deployment does not use Git; copied `.git` metadata is corrupt and was not used or modified as part of the repair.
 
 Previously completed on the audit branch:
 
