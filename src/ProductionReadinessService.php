@@ -19,7 +19,7 @@ final class ProductionReadinessService
         $signals[]=['key'=>'roster','label'=>'Roster & guardians','count'=>$guardiansMissing,'status'=>$guardiansMissing?'attention':'ready','detail'=>$students.' active student'.($students===1?'':'s').($guardiansMissing?' · '.$guardiansMissing.' missing production guardian coverage':' · guardian coverage complete'),'href'=>'/production/people'];
 
         $forms=self::count($db,"SELECT COUNT(*) FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) AND subject.active=1 AND subject.account_status<>'disabled' WHERE fa.production_id=? AND fa.status<>'completed'",[$id]);
-        $signals[]=['key'=>'forms','label'=>'Forms','count'=>$forms,'status'=>$forms?'attention':'ready','detail'=>$forms?$forms.' assignment'.($forms===1?'':'s').' still open':'No open production form assignments','href'=>'/admin/forms/manage'];
+        $signals[]=['key'=>'forms','label'=>'Forms','count'=>$forms,'status'=>$forms?'attention':'ready','detail'=>$forms?$forms.' assignment'.($forms===1?'':'s').' still open':'No open production form assignments','href'=>'/admin/forms?production_id='.$id];
 
         $openSlots=self::openVolunteerSlots($db,$id);
         $signals[]=['key'=>'volunteer','label'=>'Volunteer coverage','count'=>$openSlots,'status'=>$openSlots?'attention':'ready','detail'=>$openSlots?$openSlots.' upcoming volunteer slot'.($openSlots===1?'':'s').' still uncovered':'Upcoming volunteer shifts are covered by currently eligible volunteers','href'=>'/admin/volunteer-shifts'];
