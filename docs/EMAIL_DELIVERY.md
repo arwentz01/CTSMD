@@ -71,7 +71,20 @@ A verified Bluehost setup is:
 7 * * * * /usr/bin/flock -n /home1/wentzmdc/ctsmd-cron-locks/email-reminders.lock /usr/local/bin/php /home1/wentzmdc/public_html/ctsmd/bin/queue-email-reminders.php >> /home1/wentzmdc/ctsmd-cron-logs/email-reminders.log 2>&1
 ```
 
-The lock and log directories are outside `public_html` and use mode `0700`. As of the October 21, 2026 production preflight, both entries are installed in the account crontab as comments and therefore do not run. Production SMTP has host, port, TLS, sender, username and password values configured, but the queue contains seven due rows (`id` 1-7), none addressed to a recognized disposable test domain, and no delivery-log rows. The worker processes the oldest due row and has no queue-ID filter, so it cannot safely deliver a later acceptance row without first touching the live backlog. The jobs must remain disabled until an approved recipient is supplied and a safe isolation procedure is approved. Do not run the worker or enable either cron line merely to test SMTP, and do not enable push scheduling as part of the email test.
+The lock and log directories are outside `public_html` and use mode `0700`. As of October 21, 2026, both normal entries are installed in the account crontab as comments and therefore do not run. Production SMTP has host, port, TLS, sender, username and password values configured. Seven pre-existing due rows (`id` 1-7) remain pending and require an administrator disposition before normal processing is enabled. Do not run the unscoped worker or enable either normal cron line merely to test SMTP, and do not enable push scheduling as part of an email test.
+
+## Production acceptance evidence
+
+Production acceptance on October 21, 2026 used an explicitly authorized inbox and one isolated queue row (`id` 8):
+
+- The optional `--queue-id` worker mode was first verified against a disposable local MySQL row using the log transport. The row was sent once, all pre-existing queue rows retained the same fingerprint, and the disposable row and delivery log were removed.
+- The deployed worker and mail service matched the reviewed source hashes and both passed `php -l`.
+- The production row was accepted by SMTP on its first attempt and recorded one `smtp` / `sent` delivery-log entry. The recipient confirmed receipt in Gmail.
+- A repeat scoped invocation processed zero rows, confirming that the sent row was not duplicated.
+- The seven pre-existing production rows retained the same before-and-after SHA-256 fingerprint (`93948691076080efb20c54b0a8cf4adcf28421da62efc39c1f9193ed23c3a398`).
+- A temporary serialized cron entry, scoped only to the already-sent acceptance row, ran twice and processed zero rows both times. It was then removed. The normal queue and reminder cron entries remain commented.
+
+The acceptance queue and delivery-log records are retained as audit evidence. Normal cron activation remains an operational decision because it would process the seven pre-existing live rows.
 
 The queue worker automatically reclaims a message left in `sending` for more than ten minutes and retries failed deliveries up to three attempts with a delay between attempts.
 
