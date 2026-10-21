@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionGroupChannelAccess.php';
 require_once __DIR__ . '/ModerationService.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/CommunityAttachmentService.php';
@@ -276,10 +277,7 @@ final class CommunityExperience
 
     private static function selectedAccess(PDO $db, int $channelId, int $userId, string $mode): bool
     {
-        $column = $mode === 'post' ? 'can_post' : 'can_read';
-        $stmt = $db->prepare("SELECT $column FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' LIMIT 1");
-        $stmt->execute(['channel' => $channelId, 'user' => $userId]);
-        return (bool)$stmt->fetchColumn();
+        return ProductionGroupChannelAccess::canAccess($db,$channelId,$userId,$mode);
     }
 
     private static function teamAccess(PDO $db, int $channelId, int $userId, string $mode, array $channel): bool
