@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionGroupChannelAccess.php';
 
 final class CommunicationReadStateService
 {
@@ -166,9 +167,7 @@ final class CommunicationReadStateService
 
     private static function selectedAccess(PDO $db, int $channelId, int $userId): bool
     {
-        $stmt = $db->prepare("SELECT can_read FROM channel_members WHERE channel_id=:channel AND user_id=:user AND status='active' LIMIT 1");
-        $stmt->execute(['channel' => $channelId, 'user' => $userId]);
-        return (bool)$stmt->fetchColumn();
+        return ProductionGroupChannelAccess::canAccess($db,$channelId,$userId,'read');
     }
 
     private static function teamAccess(PDO $db, int $channelId, int $userId, array $channel): bool
