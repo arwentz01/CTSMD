@@ -32,6 +32,20 @@ final class CommunicationExperience
         $conversationId=filter_input(INPUT_POST,'conversation_id',FILTER_VALIDATE_INT)?:0;if($action!=='send_message'||$conversationId<1){self::flash('error','That message action could not be completed.');self::redirect($basePath.'/messages');}$body=trim((string)($_POST['body']??''));try{$attached=self::sendMessage($db,$userId,(int)$conversationId,$body,$upload);self::flash('success',$attached?'Message and attachment sent to everyone in this conversation.':'Message sent to everyone in this conversation.');}catch(RuntimeException $e){self::flash('error',$e->getMessage());}self::redirect($basePath.'/messages/thread?id='.(int)$conversationId);
     }
 
+    // Reuse the web experience's safeguarding rules for mobile conversation creation.
+    public static function mobileRecipients(PDO $db,array $user):array
+    {
+        return array_values(array_map(static fn(array $row):array=>[
+            'id'=>(int)$row['id'],'name'=>(string)$row['name'],
+            'role'=>(string)$row['role'],'selectable'=>(bool)$row['selectable']
+        ],self::availableRecipients($db,$user)));
+    }
+
+    public static function mobileCreateConversation(PDO $db,array $user,int $recipientId,string $subject,string $body):int
+    {
+        return self::createConversation($db,$user,$recipientId,$subject,$body,[]);
+    }
+
     private static function createConversation(PDO $db,array $initiator,int $recipientId,string $subject,string $body,array $upload): int
     {
         if($recipientId<1||$recipientId===(int)$initiator['id'])throw new RuntimeException('Choose another available CTSMD member.');
