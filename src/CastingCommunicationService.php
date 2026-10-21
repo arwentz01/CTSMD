@@ -86,6 +86,47 @@ final class CastingCommunicationService
         self::audit($db,$actorId,'casting.'.$type.'_unpublished',$productionId,'Unpublished production '.($type==='callback'?'callback':'cast').' announcement.',['publication_type'=>$type]);
     }
 
+    public static function publicSettings(PDO $db,int $productionId):array
+    {
+        $s=$db->prepare("SELECT casting_public_enabled,casting_public_slug FROM productions WHERE id=:production LIMIT 1");
+        $s->execute(['production'=>$productionId]);$row=$s->fetch();
+        return ['enabled'=>(bool)($row['casting_public_enabled']??false),'slug'=>(string)($row['casting_public_slug']??'')];
+    }
+
+    public static function setPublicPage(PDO $db,int $productionId,int $actorId,bool $enabled):array
+    {
+        $db->beginTransaction();
+        try{
+            $s=$db->prepare("SELECT casting_public_enabled,casting_public_slug,title FROM productions WHERE id=:production FOR UPDATE");
+            $s->execute(['production'=>$productionId]);$production=$s->fetch();
+            if(!$production)throw new RuntimeException('That production could not be found.');
+            $slug=trim((string)($production['casting_public_slug']??''));
+            if($enabled&&$slug===''){
+                for($i=0;$i<5;$i++){
+                    $candidate=bin2hex(random_bytes(8));
+                    $check=$db->prepare("SELECT 1 FROM productions WHERE casting_public_slug=:slug LIMIT 1");
+                    $check->execute(['slug'=>$candidate]);
+                    if(!$check->fetchColumn()){$slug=$candidate;break;}
+                }
+                if($slug==='')throw new RuntimeException('A public casting link could not be generated.');
+            }
+            $u=$db->prepare("UPDATE productions SET casting_public_enabled=:enabled,casting_public_slug=:slug WHERE id=:production");
+            $u->execute(['enabled'=>$enabled?1:0,'slug'=>$slug!==''?$slug:null,'production'=>$productionId]);
+            self::audit($db,$actorId,$enabled?'casting.public_page_enabled':'casting.public_page_disabled',$productionId,$enabled?'Enabled public casting announcements page.':'Disabled public casting announcements page.',['public_slug'=>$slug?:null]);
+            $db->commit();
+            return ['enabled'=>$enabled,'slug'=>$slug];
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The public casting page setting could not be changed.');}
+    }
+
+    public static function publicProductionBySlug(PDO $db,string $slug):?array
+    {
+        $slug=trim($slug);
+        if($slug===''||!preg_match('/^[a-f0-9]{16}$/',$slug))return null;
+        $s=$db->prepare("SELECT id,title,season FROM productions WHERE casting_public_enabled=1 AND casting_public_slug=:slug AND is_active=1 LIMIT 1");
+        $s->execute(['slug'=>$slug]);$row=$s->fetch();
+        return $row?:null;
+    }
+
     public static function publishedForProduction(PDO $db,int $productionId,string $type):?array
     {
         self::assertPublicationType($type);
