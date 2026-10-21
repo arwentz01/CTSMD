@@ -38,7 +38,7 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 - Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed 36-check database suite passed with its transaction rolled back, covering role changes, disabled accounts, all-guardian participation, Student/Student prohibition, fixed historical cutoffs, attachment/unread boundaries, push eligibility, reactivation into a new safe thread, and repeated revocation.
 - Disposable fake-account bearer-token tests confirmed the old thread returned only the five messages through its cutoff, later content stayed hidden, old-thread sends were rejected, a new safe thread could include the reactivated guardian, and the disabled token received HTTP 401. All four fake users, both test conversations, token rows, state files, and response files were removed; an independent query returned zero remaining `@safeguarding.test` users.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
-- **BEFORE PILOT:** close push retry/reclaim/dedupe and audience recheck gaps, then prove receipt on supported devices.
+- **BEFORE PILOT:** push retry/reclaim/dedupe and delivery-time audience/preference rechecks are deployed and regression-tested; prove receipt and deep-link behavior on supported devices.
 - **BEFORE PILOT:** test dedicated Moderator-only, Safeguarding-only, Staff-only, Volunteer-only, and least-privilege negative routes.
 - **BEFORE PILOT:** run database-backed lifecycle tests, restore rehearsal, rate-limit validation, CSRF negative tests, and direct-object authorization tests.
 - **BEFORE PILOT:** complete keyboard focus containment/return and long-table testing on mobile.
@@ -94,8 +94,8 @@ Bluehost already contained the 062 columns and an older trigger revision, so the
 - Volunteer signup, cancellation and approval could not be exercised because there is no future fake shift.
 - Staff/Admin demo accounts are over-privileged combined-role fixtures.
 - Moderator and Safeguarding navigation is coupled to the Operations experience; dedicated-role navigation remains unproven.
-- Native push has storage/API support but no proven APNs/FCM delivery adapter.
-- No real inbox receipt, device push receipt, Bluehost cron log or backup restore was observed. The deployed database also lacks the optional `mobile_push_subscriptions` table, so native subscription cleanup/receipt remains unproven; safeguarding push audience exclusion was verified through the deployed policy/database suite.
+- Native push subscription storage now exists in the deployed schema, but no APNs/FCM delivery adapter was found or proven.
+- No real inbox receipt, device push receipt, Bluehost cron log or isolated backup restore was observed. Safeguarding push audience exclusion was verified through the deployed policy/database suite.
 - A page loading is not treated as end-to-end workflow proof.
 
 ## Notification delivery evidence
@@ -104,7 +104,7 @@ Bluehost already contained the 062 columns and an older trigger revision, so the
 |---|---|---|
 | In-app | Durable notifications, read timestamps, message/channel cursors and unread navigation counts work in browser. | No cron required for reads. Producers vary by workflow. |
 | Email | Application queues durable outbound rows and records attempts/status. Production UI reports SMTP. | bin/process-email-queue.php drains delivery; bin/queue-email-reminders.php generates reminders. Six rows were QUEUED, none attempted. |
-| Web Push | Subscription/preferences and queue/log paths exist. Expired 404/410 endpoints are retired. | bin/process-push-queue.php requires VAPID, OpenSSL and cURL. Failed items are not automatically retried; interrupted processing reclaim is incomplete. |
+| Web Push | Subscription/preferences and queue/log paths exist. Expired 404/410 endpoints are retired. | Retry, stale processing reclaim, event deduplication and delivery-time account/preference/safeguarding revalidation are deployed and regression-tested. Device receipt is still unproven. |
 | Native Push | Mobile subscription data can be stored. | No proven APNs/FCM consumer. Not production-ready. |
 
 # Production Configuration Checklist
@@ -264,7 +264,7 @@ Bluehost migration 062 and guardian-reactivation verification on October 21, 202
 - the reactivated fake guardian could participate in and send fake content to a new safe thread; mobile list/thread/send behavior agreed with the shared web policy;
 - attachment, unread and push-audience boundaries, role-change re-evaluation, disabled Guardian/Student denial, and Student/Student prohibition passed in the deployed 36-check suite;
 - the disabled bearer token returned HTTP 401. Cleanup removed four fake users, two fake conversations and their token rows; an independent database count returned zero remaining `@safeguarding.test` users, and temporary state/response files were removed;
-- the deployed schema has no `mobile_push_subscriptions` table, so no temporary native push subscription was created or required for cleanup. Native push delivery remains outside this safeguarding closure and is still a pilot delivery blocker.
+- no temporary native push subscription was created or required for safeguarding cleanup. The `mobile_push_subscriptions` table was subsequently deployed during operational hardening, but native delivery remains outside this build and is still a pilot delivery blocker.
 
 Previously completed on the audit branch:
 
@@ -286,3 +286,11 @@ Authenticated browser evidence completed October 20, 2026:
 - no production mutation or outbound communication was performed.
 
 Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by the open host incident, delivery operations, and the remaining least-privilege/negative test plan.
+
+### October 21 operational hardening evidence
+
+Commit `601383e53b8d2bad1480ec3af1f968c23fa2d11f` adds durable database-backed authentication throttling for web/mobile login, forgot/reset, join and email verification, plus push retry, stale-claim reclaim, event deduplication and delivery-time recipient/preference revalidation. Migrations 063 and 064 and the existing mobile push-subscription migration were applied after a verified code/database backup. All 12 deployed file hashes matched reviewed source. Deployed validation passed 139-file PHP lint, runtime schema guard, the 21-check lifecycle test, push-claim test, push-recovery test and rate-limit test; root and login returned HTTP 200.
+
+One active mobile bearer token was revoked and zero remain. The account user crontab is empty, so email/reminder/push production scheduling is not accepted. No inbox or device receipt test was performed because no approved test email address or notification subscription was available in this run.
+
+The account-wide incident scan found eight additional copies of the quarantined shell hash across sibling sites. This is stronger evidence that the compromise is account-wide and prevents removal of the hosting blocker. See `docs/HOST_INCIDENT_RESPONSE.md` for paths, hashes and evidence limitations. Board readiness remains **84%** and limited-pilot readiness remains **60% NO-GO**: implementation risk decreased, but incident closure, credential rotation, worker scheduling with receipt proof, device acceptance, isolated restore, and the remaining negative/least-privilege matrix are still open.

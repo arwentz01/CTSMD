@@ -153,3 +153,46 @@ In addition to the staging criteria:
 - all CTSMD pilot blockers in `docs/BOARD_PILOT_READINESS.md` are closed with deployment evidence.
 
 Until those conditions are met, the hosting incident remains a **BLOCKER**.
+
+## October 21 operational hardening deployment
+
+Commit `601383e53b8d2bad1480ec3af1f968c23fa2d11f` was packaged as a 24,145-byte archive and uploaded to Bluehost. The local and deployed archive SHA-256 matched:
+
+`3f13e9b1b06352c7b68c86674a61bbb78b955b1669235ff7433fd7d5052d2d5c`
+
+Before extraction, a matched backup set was created outside `public_html` at `/home1/wentzmdc/ctsmd-backups/20261021-061901`:
+
+- application archive: 2.4 MB, excluding `.env`;
+- MySQL dump: 45 KB compressed, created with `--single-transaction --routines --triggers --no-tablespaces`;
+- the database archive passed `gzip -t` and a non-empty size check.
+
+The 12 deployed hardening files were hashed after extraction. Every deployed hash matched the reviewed local source. Migration 063, migration 064 and the existing mobile push-subscription migration were each absent before deployment and present afterward. The deployment archive was then removed from the served document root.
+
+Deployed validation completed with:
+
+- all 139 PHP files linted with zero errors;
+- runtime schema guard: PASS;
+- lifecycle suite: PASS, 21 checks;
+- push claim suite: PASS;
+- push stale-claim/preference recovery suite: PASS;
+- durable authentication rate-limit suite: PASS;
+- live root and login responses: HTTP 200.
+
+## Account-wide scan finding
+
+The CTSMD `assets`, `public` and `storage` trees contain zero PHP files after quarantine and deployment. The account-level scan nevertheless found eight additional web-accessible copies of `accesson.php` in sibling document roots:
+
+- `/home1/wentzmdc/public_html/bearkitchenmd/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/jeff-subdomain/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/koravik/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/wentzmusic/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/cgi-bin/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/koravik-v2/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/chuckleberry/assets/images/accesson.php`;
+- `/home1/wentzmdc/public_html/thebears/assets/images/accesson.php`.
+
+Each observed file is 212 bytes, mode `0644`, owned by `wentzmdc:wentzmdc`, and has SHA-256 `5dd77e8d7d97b876026800b045c80e448fdef19f5549068b65dd4e2178d52a65`, matching the quarantined CTSMD shell. Most report an August 17, 2026 modification timestamp; the Chuckleberry copy reports August 23, 2026. These sibling files were not executed, modified, deleted or quarantined during this CTSMD-scoped action. Their presence prevents incident closure and requires immediate account-wide containment coordinated with the owner and Bluehost Security.
+
+The account user crontab is empty. This rules out persistence in that one visible cron surface only; cPanel-managed tasks and provider-level scheduling still require review. Shell-name log hits were found in available Bear Kitchen and CTSMD SSL log backups and a Bear Kitchen WordPress error log. Detailed request review and cPanel/FTP/SSH access history remain outstanding because the terminal-visible evidence is not sufficient for forensic attribution.
+
+One active CTSMD mobile bearer token was revoked; zero active mobile tokens remain. Three expired, unused password-reset rows and one expired, unused email-verification row were identified but retained pending a documented data-retention policy. PHP sessions, hosting credentials, database credentials, SMTP credentials, VAPID keys, deployment credentials and application secrets have not yet been rotated.
