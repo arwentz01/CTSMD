@@ -83,7 +83,7 @@ final class OperationsHubExperience
             ['icon'=>'✓','eyebrow'=>'REVIEW','label'=>'Submission review','detail'=>'Review forms that require staff approval and complete the workflow.','href'=>'/admin/forms'],
             ['icon'=>'▤','eyebrow'=>'LIBRARY','label'=>'Forms management','detail'=>'Create form definitions, set scope, assign audiences, and monitor completion.','href'=>'/admin/forms/manage'],
             ['icon'=>'＋','eyebrow'=>'BUILDER','label'=>'Form builder','detail'=>'Add structured questions and fields to existing form definitions.','href'=>'/admin/forms/build'],
-            ['icon'=>'↗','eyebrow'=>'INTAKE','label'=>'Registration operations','detail'=>'Review registration intake and link participants into CTSMD accounts and productions.','href'=>'/admin/registrations'],
+            ['icon'=>'↗','eyebrow'=>'AUDITIONS & SIGNUPS','label'=>'Auditions & Signups','detail'=>'Create public audition and event opportunities, review submissions, and process participant intake.','href'=>'/admin/registrations'],
         ]];
     }
 
