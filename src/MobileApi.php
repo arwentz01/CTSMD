@@ -9,6 +9,7 @@ require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/RateLimiter.php';
+require_once __DIR__ . '/CalendarService.php';
 
 final class MobileApi
 {
@@ -31,6 +32,7 @@ final class MobileApi
 
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
+                '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
                 '/api/mobile/message-send' => self::messageSend($db, $user),
@@ -80,6 +82,18 @@ final class MobileApi
         $db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
         $user = self::loadUser($db, $userId);
         self::json(['token'=>$token,'expires_at'=>$expires,'user'=>self::publicUser($user)]);
+    }
+
+    private static function theatre(PDO $db, array $user): never
+    {
+        self::requireMethod('GET');
+        // Reuse the web platform's audience filters. Never expose an unrestricted
+        // schedule or rely on filtering events in the mobile client.
+        $productions=ProductionContext::activeProductions($db,$user);
+        $events=CalendarService::visibleEvents(
+            $db,$user,new DateTimeImmutable('-1 day'),new DateTimeImmutable('+90 days')
+        );
+        self::json(['productions'=>$productions,'events'=>array_slice($events,0,100)]);
     }
 
     private static function messages(PDO $db, array $user): never
