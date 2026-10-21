@@ -70,7 +70,23 @@ final class CalendarExperience
     }
 
     private static function month(array $events,array $conflicts,DateTimeImmutable $date,Closure $url,Closure $e,bool $staff,string $view,DateTimeImmutable $returnDate,array $filters):void{$first=$date->modify('first day of this month');$grid=$first->modify('monday this week');$end=$date->modify('last day of this month')->modify('sunday this week');$by=[];foreach($events as $ev)$by[substr($ev['starts_at'],0,10)][]=$ev;echo '<div class="cal-weekdays">';foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $d)echo '<b>'.$d.'</b>';echo '</div><div class="cal-month">';for($d=$grid;$d<=$end;$d=$d->modify('+1 day')){$key=$d->format('Y-m-d');echo '<section class="cal-day'.($d->format('m')!==$date->format('m')?' muted':'').'"><span>'.$d->format('j').'</span>';foreach($by[$key]??[] as $ev)self::event($ev,$conflicts,$url,$e,$staff,true,$view,$returnDate,$filters);echo '</section>';}echo '</div>';}
-    private static function agenda(array $events,array $conflicts,Closure $url,Closure $e,bool $staff,string $view,DateTimeImmutable $returnDate,array $filters):void{echo '<div class="cal-agenda">';if(!$events)echo '<section class="cal-empty"><b>No visible events in this '.$e($view).'.</b></section>';foreach($events as $ev)self::event($ev,$conflicts,$url,$e,$staff,false,$view,$returnDate,$filters);echo '</div>';}
+    private static function agenda(array $events,array $conflicts,Closure $url,Closure $e,bool $staff,string $view,DateTimeImmutable $returnDate,array $filters):void
+    {
+        $now=time();$upcoming=[];$past=[];
+        foreach($events as $ev){
+            $ends=strtotime((string)($ev['ends_at']?:$ev['starts_at']));
+            if($ends!==false&&$ends<$now)$past[]=$ev;else $upcoming[]=$ev;
+        }
+        echo '<h3 class="cal-agenda-heading">Upcoming <small>'.count($upcoming).'</small></h3><div class="cal-agenda">';
+        if(!$upcoming)echo '<section class="cal-empty"><b>No upcoming events in this '.$e($view).'.</b></section>';
+        foreach($upcoming as $ev)self::event($ev,$conflicts,$url,$e,$staff,false,$view,$returnDate,$filters);
+        echo '</div>';
+        if($past){
+            echo '<details class="cal-past-section"><summary>Past events <span>'.count($past).'</span></summary><div class="cal-agenda">';
+            foreach(array_reverse($past) as $ev)self::event($ev,$conflicts,$url,$e,$staff,false,$view,$returnDate,$filters);
+            echo '</div></details>';
+        }
+    }
     private static function event(array $ev,array $conflicts,Closure $url,Closure $e,bool $staff,bool $compact,string $view,DateTimeImmutable $returnDate,array $filters):void{$cancel=$ev['status']==='cancelled';$target=$ev['group_names']?implode(' + ',$ev['group_names']):'Whole production';echo '<article class="cal-event'.($compact?' compact':'').($cancel?' cancelled':'').(isset($conflicts[(int)$ev['id']])?' conflict':'').'"><div><small>'.$e(strtoupper($ev['production_title'])).' · '.$e(strtoupper($target)).'</small><h4>'.$e($ev['title']).'</h4><p>'.$e(date('D M j · g:i A',strtotime($ev['starts_at']))).' · '.$e($ev['location']).'</p>';if(isset($conflicts[(int)$ev['id']]))echo '<em>Schedule conflict</em>';if($cancel)echo '<em>Cancelled</em>';echo '</div>';if($staff&&!$compact&&!$cancel){echo '<footer><a href="'.$url('/production/edit?id='.(int)$ev['id']).'">Edit</a><form method="post"><input type="hidden" name="csrf_token" value="'.htmlspecialchars((string)$_SESSION['calendar_csrf'],ENT_QUOTES,'UTF-8').'"><input type="hidden" name="schedule_item_id" value="'.(int)$ev['id'].'"><input type="hidden" name="return_view" value="'.$e($view).'"><input type="hidden" name="return_date" value="'.$e($returnDate->format('Y-m-d')).'">';foreach($filters as $key=>$value)if($value!==null)echo '<input type="hidden" name="return_'.$e((string)$key).'" value="'.$e((string)$value).'">';echo '<button name="action" value="duplicate">Duplicate +7 days</button><button name="action" value="cancel">Cancel event</button></form></footer>';}echo '</article>';}
     private static function familyChildren(PDO $db,int $guardianId):array{$s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$guardianId]);return $s->fetchAll();}
     private static function groupOptions(PDO $db,array $productions):array{if(!$productions)return [];$ids=array_map(static fn(array $p):int=>(int)$p['id'],$productions);$ph=implode(',',array_fill(0,count($ids),'?'));$s=$db->prepare("SELECT pg.id,pg.production_id,pg.name,p.title production_title FROM production_groups pg JOIN productions p ON p.id=pg.production_id WHERE pg.active=1 AND pg.production_id IN ($ph) ORDER BY p.title,pg.sort_order,pg.name");$s->execute($ids);return $s->fetchAll();}
