@@ -2,9 +2,11 @@
 
 ## Status
 
-**Open security incident. Do not treat the Bluehost account as clean based on repository inspection.**
+**CTSMD containment and project cleanup are complete. Broader hosting-account review is deferred and out of scope for this CTSMD workstream.**
 
-A PHP web shell named `assets/images/accesson.php` existed in source history and remained on the Bluehost filesystem until it was quarantined on October 21, 2026 UTC. It has been removed from the `audit/board-pilot-readiness` branch, removed from the served filesystem path, and executable PHP is denied beneath public asset directories. Host-side investigation, credential rotation and a clean deployment are still required before CTSMD Connect can use real family or safeguarding data.
+Unsafe legacy artifact removed from CTSMD. No CTSMD dependency identified. No independent evidence currently establishes CTSMD compromise. Sibling-project cleanup is deferred and out of scope.
+
+A PHP web shell named `assets/images/accesson.php` existed in source history and remained on the Bluehost filesystem until it was quarantined on October 21, 2026 UTC. It is absent from the `audit/board-pilot-readiness` branch and served filesystem path, its public URL is denied, and executable PHP is denied beneath CTSMD public asset directories. This classification is limited to CTSMD and does not make a claim about any sibling project or the entire hosting account.
 
 ## Known facts
 
@@ -13,7 +15,7 @@ A PHP web shell named `assets/images/accesson.php` existed in source history and
 - That commit also added an empty `error_log`, modified routing/authentication files, and contained ordinary application changes. Git history does not identify who or what placed the shell on the host or in the working tree.
 - The shell is absent from the current audit branch.
 - The current tree contains no PHP files under `assets/`, `uploads/` or image directories.
-- Repository containment rules deny PHP execution and direct access to sensitive source/storage paths. Deployment verification is still required.
+- Deployed containment rules deny PHP execution and direct access to sensitive source/storage paths.
 
 ## Bluehost quarantine record
 
@@ -52,7 +54,7 @@ Findings:
 - Localhost URLs in email-development defaults are expected configuration fallbacks.
 - No additional obfuscated or executable file was found in public image/asset directories.
 
-This reduces repository risk but does not prove the host, database, sibling sites, backups or user devices are clean.
+This closes the CTSMD source and deployed-webroot sweep. Sibling sites and user devices were not evaluated in this scoped closure.
 
 ## What Git history cannot determine
 
@@ -178,21 +180,18 @@ Deployed validation completed with:
 - durable authentication rate-limit suite: PASS;
 - live root and login responses: HTTP 200.
 
-## Account-wide scan finding
+## CTSMD-only closure sweep
 
-The CTSMD `assets`, `public` and `storage` trees contain zero PHP files after quarantine and deployment. The account-level scan nevertheless found eight additional web-accessible copies of `accesson.php` in sibling document roots:
+On October 21, 2026, the deployed CTSMD project was checked again after quarantine:
 
-- `/home1/wentzmdc/public_html/bearkitchenmd/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/jeff-subdomain/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/koravik/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/wentzmusic/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/cgi-bin/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/koravik-v2/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/chuckleberry/assets/images/accesson.php`;
-- `/home1/wentzmdc/public_html/thebears/assets/images/accesson.php`.
+- `assets/images/accesson.php` remained absent;
+- `https://ctsmd.me/assets/images/accesson.php` returned HTTP 403;
+- no PHP file existed under the CTSMD `assets`, `public`, or `storage` trees;
+- a CTSMD-scoped filename search found no additional `accesson`, shell, WSO, or `.phtml` artifact;
+- the CTSMD root and asset `.htaccess` rules continued to deny PHP-like execution in public assets.
 
-Each observed file is 212 bytes, mode `0644`, owned by `wentzmdc:wentzmdc`, and has SHA-256 `5dd77e8d7d97b876026800b045c80e448fdef19f5549068b65dd4e2178d52a65`, matching the quarantined CTSMD shell. Most report an August 17, 2026 modification timestamp; the Chuckleberry copy reports August 23, 2026. These sibling files were not executed, modified, deleted or quarantined during this CTSMD-scoped action. Their presence prevents incident closure and requires immediate account-wide containment coordinated with the owner and Bluehost Security.
+Result: **Unsafe legacy artifact removed from CTSMD. No CTSMD dependency identified. No independent evidence currently establishes CTSMD compromise. Sibling-project cleanup is deferred and out of scope.** Sibling-project state is not a CTSMD readiness blocker.
 
-The account user crontab is empty. This rules out persistence in that one visible cron surface only; cPanel-managed tasks and provider-level scheduling still require review. Shell-name log hits were found in available Bear Kitchen and CTSMD SSL log backups and a Bear Kitchen WordPress error log. Detailed request review and cPanel/FTP/SSH access history remain outstanding because the terminal-visible evidence is not sufficient for forensic attribution.
+The CTSMD email cron entries are present only as commented commands pending an approved test recipient. This is an operational delivery blocker, not shell-persistence evidence.
 
 One active CTSMD mobile bearer token was revoked; zero active mobile tokens remain. Three expired, unused password-reset rows and one expired, unused email-verification row were identified but retained pending a documented data-retention policy. PHP sessions, hosting credentials, database credentials, SMTP credentials, VAPID keys, deployment credentials and application secrets have not yet been rotated.

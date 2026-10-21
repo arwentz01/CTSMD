@@ -29,11 +29,11 @@ final class OperationsHubExperience
     private static function definition(string $route,array $user):array
     {
         if($route==='/admin/operations'){
-            if(!AccessPolicy::isStaff($user))return ['Operations','STAFF TOOLS','',[]];
-            $items=[
-                ['icon'=>'◎','eyebrow'=>'TRIAGE','label'=>'Staff Overview','detail'=>'Cross-production attention queues, upcoming calls, intake, staffing gaps and operational signals.','href'=>'/staff'],
-                ['icon'=>'★','eyebrow'=>'SHOWS','label'=>'Production workspace','detail'=>'Choose the Working Production and open casting, schedule, attendance, readiness, Playbill and show operations.','href'=>'/production'],
-            ];
+            $items=[];
+            if(AccessPolicy::isStaff($user)){
+                $items[]=['icon'=>'◎','eyebrow'=>'TRIAGE','label'=>'Staff Overview','detail'=>'Cross-production attention queues, upcoming calls, intake, staffing gaps and operational signals.','href'=>'/staff'];
+                $items[]=['icon'=>'★','eyebrow'=>'SHOWS','label'=>'Production workspace','detail'=>'Choose the Working Production and open casting, schedule, attendance, readiness, Playbill and show operations.','href'=>'/production'];
+            }
             if(AccessPolicy::canManageAccounts($user)){
                 $items[]=['icon'=>'⚿','eyebrow'=>'PEOPLE & ACCESS','label'=>'Account & Access','detail'=>'Membership approvals, accounts, roles, families, readiness and access administration.','href'=>'/admin/accounts'];
             }elseif(AccessPolicy::canManagePeople($user)){
@@ -57,6 +57,7 @@ final class OperationsHubExperience
             if(AccessPolicy::canManageAccounts($user)){
                 $items[]=['icon'=>'✉','eyebrow'=>'DELIVERY','label'=>'Email Operations','detail'=>'Review queued mail, delivery outcomes and failures without crowding everyday navigation.','href'=>'/admin/email'];
             }
+            if(!$items)return ['Operations','STAFF TOOLS','',[]];
             return ['Operations','STAFF & ADMINISTRATION','One place for CTSMD-wide work. Your permissions determine which operational areas appear here.',$items];
         }
 

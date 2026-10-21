@@ -18,6 +18,9 @@ final class AppNavigation
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $staff = AccessPolicy::isStaff($user);
+        $operations = $staff
+            || AccessPolicy::canModerateCommunity($user)
+            || AccessPolicy::canManageSafeguarding($user);
         $approved = Auth::isApprovedMember($user);
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
@@ -98,7 +101,7 @@ final class AppNavigation
                     <a class="unified-nav-item<?=$active('messages')?>" href="<?=$url('/messages')?>"><i>✉</i><span><b>Messages<?php if((int)$unread['messages']>0):?><strong class="unified-unread"><?=(int)$unread['messages']?></strong><?php endif;?></b><small>Your conversations</small></span></a>
                 <?php endif; ?>
 
-                <?php if ($staff): ?>
+                <?php if ($operations): ?>
                     <span class="unified-nav-label">Staff</span>
                     <a class="unified-nav-item<?=$active('operations')?>" href="<?=$url('/admin/operations')?>"><i>◎</i><span><b>Operations</b><small>Queues, people & administration</small></span></a>
                 <?php endif; ?>

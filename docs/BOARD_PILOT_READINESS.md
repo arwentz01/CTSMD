@@ -2,10 +2,10 @@
 
 Overall readiness:
 
-- **Board demo: 84%**
-- **Limited pilot: 60%**
-- **Board recommendation: CONDITIONAL GO** after the BEFORE BOARD items below are closed and rehearsed.
-- **Pilot recommendation: NO-GO** until host-side incident response is complete and the remaining delivery and least-privilege checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
+- **Board demo: 92%**
+- **Limited pilot: 76%**
+- **Board recommendation: CONDITIONAL GO** after the repeatable staging fixture is loaded and rehearsed.
+- **Pilot recommendation: NO-GO** until real email and Web Push receipt, private-file restore evidence, and the remaining mobile/keyboard checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -14,7 +14,7 @@ Authenticated browser testing was completed on October 20, 2026 against https://
 - Emma Carter: Student
 - Alex Morgan: Parent + Volunteer
 
-These are combined-role fixtures, so they prove the listed positive workflows but do not prove least-privilege boundaries for a pure Production Staff or pure Volunteer account. No destructive action, outbound post/message, form submission, attendance save, account change, or volunteer signup was performed. Opening existing conversations and channels updated read cursors for the Guardian and Student accounts.
+Those October 20 browser fixtures used combined roles. The October 21 disposable-environment matrix below separately proves least-privilege boundaries with pure fake personas. No real-user mutation or outbound communication was performed. Opening existing conversations and channels updated read cursors for the Guardian and Student accounts.
 
 The original clean-browser ERR_TIMED_OUT root cause is **not established**. It was not reproduced in the connected authenticated browser. Retained-session navigation was generally 0.2 to 0.6 seconds. Earlier clean anonymous testing did record three requests that exceeded 20 seconds before successful retry. Runtime schema work remains a plausible latency contributor, but evidence is insufficient to call it the cause or solved.
 
@@ -33,14 +33,14 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 
 # Must Fix Before Pilot
 
-- **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Follow [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md): preserve evidence, rotate credentials, invalidate sessions/tokens, inspect sibling sites/backups/logs, and clean-deploy reviewed source. Repository inspection cannot establish that Bluehost is clean.
+- **CLOSED October 21, CTSMD scope:** the unsafe legacy PHP artifact was quarantined outside `public_html`; its original path remains absent and its public URL returns 403. A CTSMD-only sweep found no similar PHP artifact and confirmed PHP execution is denied under public assets. No CTSMD dependency was identified and no independent evidence currently establishes CTSMD compromise. Sibling-project cleanup is deferred, out of scope, and is not a CTSMD blocker.
 - **CLOSED October 21:** the approved V1 guardian-revocation rule is deployed and runtime-verified on Bluehost. The existing 062 columns were preserved, only the revised trigger section was applied, the obsolete insert trigger was removed, both synchronization triggers matched the revised no-widening behavior, and the runtime schema guard passed.
 - Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed 36-check database suite passed with its transaction rolled back, covering role changes, disabled accounts, all-guardian participation, Student/Student prohibition, fixed historical cutoffs, attachment/unread boundaries, push eligibility, reactivation into a new safe thread, and repeated revocation.
 - Disposable fake-account bearer-token tests confirmed the old thread returned only the five messages through its cutoff, later content stayed hidden, old-thread sends were rejected, a new safe thread could include the reactivated guardian, and the disabled token received HTTP 401. All four fake users, both test conversations, token rows, state files, and response files were removed; an independent query returned zero remaining `@safeguarding.test` users.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
 - **BEFORE PILOT:** push retry/reclaim/dedupe and delivery-time audience/preference rechecks are deployed and regression-tested; prove receipt and deep-link behavior on supported devices.
-- **BEFORE PILOT:** test dedicated Moderator-only, Safeguarding-only, Staff-only, Volunteer-only, and least-privilege negative routes.
-- **BEFORE PILOT:** run database-backed lifecycle tests, restore rehearsal, rate-limit validation, CSRF negative tests, and direct-object authorization tests.
+- **CLOSED October 21:** dedicated Staff, Moderator, Safeguarding, Guardian, Student, Volunteer, and Administrator fixtures passed the sensitive-route least-privilege matrix. A navigation defect for pure Moderator/Safeguarding accounts was fixed without broadening route authorization.
+- **CLOSED October 21:** nine CSRF mutation categories left the disposable database fingerprint unchanged; forged-ID POSTs from a Guardian returned 403 on nine sensitive routes. The matched database backup restored and booted on MySQL 8.0.44 in one second. Private-file restore remains unproven because the matched backup contained zero stored-file records and zero private binaries.
 - **BEFORE PILOT:** complete keyboard focus containment/return and long-table testing on mobile.
 
 # Demo-Ready Workflows
@@ -165,12 +165,12 @@ No critical web route remains known to rely only on hidden navigation after the 
 - [x] Guardian: Jamie Carter
 - [x] Student: Emma Carter with login
 - [x] Volunteer: Alex Morgan with readiness, credentials and history
-- [ ] Pure Production Staff account without Admin/Moderator/Safeguarding
+- [x] Pure Production Staff account without Admin/Moderator/Safeguarding
 - [x] Active production: Urinetown with current schedule
 - [x] Linked Guardian/Student household
 - [x] Guardian-completable form assignment
-- [ ] Student-actionable form if the Board needs to demonstrate Student forms
-- [ ] Future fake volunteer opportunity plus approval-gated example
+- [x] Student-actionable form assigned through the fake Guardian/Student household
+- [x] Future fake volunteer opportunity plus approval-gated example
 - [x] Community channels/posts
 - [x] Message conversations
 - [x] Notifications
@@ -178,7 +178,7 @@ No critical web route remains known to rely only on hidden navigation after the 
 - [x] Readiness checklist
 - [x] Archived productions
 
-001_demo.sql remains destructive and must never be imported into production. 003_board_demo_supplement.sql is staging-only and contains no password changes or destructive reset.
+001_demo.sql remains destructive and must never be imported into production. 003_board_demo_supplement.sql is staging-only, repeatable, uses relative dates, and contains no password changes or broad reset. It creates pure fake Guardian, Student, Volunteer, Production Staff, Moderator, Safeguarding, and Administrator personas plus the current demo schedule, shifts, form, published cast/playbill, readiness item, and notification.
 
 # Board Questions / Decisions
 
@@ -206,6 +206,49 @@ Existing data can answer future reporting questions without building a reporting
 1. **BLOCKER:** complete the host-side incident response. The revised migration 062 trigger behavior and guardian reactivation rule are deployed and runtime-verified; this does not establish that the Bluehost account is clean.
 2. **BEFORE BOARD:** deploy the contained Student permission/form fixes and create a repeatable current-date rehearsal fixture with a pure Staff account and future volunteer shift.
 3. **BEFORE PILOT:** harden delivery operations with queue retry/recovery, serialized cron monitoring, real inbox/device proof, rate limiting and a tested backup restore.
+
+## October 21 CTSMD closure evidence
+
+### Email worker and cron
+
+The exact Bluehost queue and reminder commands are documented in `docs/EMAIL_DELIVERY.md` and installed as commented crontab entries. Lock and log directories exist outside `public_html` with mode `0700`. They remain disabled because production has six queued non-test recipients (`fake=0`); no cron log was created and the queue remained at six, proving no accidental run occurred.
+
+On a disposable database containing only fake mail test data:
+
+- a stale `sending` row older than ten minutes was reclaimed, claimed once, delivered through the log transport, marked `sent`, and given a `sent` delivery-log row;
+- the mail log grew by 190 bytes;
+- incomplete SMTP configuration produced three failed attempts, three delivery-log failures, and terminal queue state `failed`;
+- no outbound SMTP message was sent.
+
+Real SMTP acceptance, inbox receipt, duplicate-send observation, and cron enablement remain blocked pending an approved recipient.
+
+### Least-privilege and negative matrix
+
+Pure fake personas were tested through authenticated local HTTP against the restored MySQL copy. Expected positive access returned 200 and every listed negative returned 403:
+
+| Persona | Positive sensitive routes | Denied sensitive routes |
+|---|---|---|
+| Production Staff | people, registrations, channels, moderation, production/people, volunteer shifts | accounts, safeguarding, email |
+| Moderator | moderation | accounts, people, registrations, channels, safeguarding, email, production/people, volunteer shifts |
+| Safeguarding | safeguarding | accounts, people, registrations, channels, moderation, email, production/people, volunteer shifts |
+| Guardian | production member view | all nine management routes |
+| Student | production member view | all nine management routes |
+| Volunteer | production workspace with no selected membership data | all nine management routes |
+| Administrator | all listed sensitive routes | none |
+
+Pure Moderator and Safeguarding navigation now exposes Operations and only their authorized destination. Nine invalid-CSRF attempts covered account, role, family relationship, production membership, schedule, form review, volunteer approval, moderation, and safeguarding mutations; the before/after database fingerprint was identical. A Guardian's forged-ID POSTs to accounts, people, registrations, channels, moderation, safeguarding, email, production people, and volunteer shifts all returned 403.
+
+### Restore rehearsal
+
+- owner: CTSMD technical owner;
+- backup: `/home1/wentzmdc/ctsmd-backups/20261021-061901` (database and code captured October 21, 2026);
+- local isolated target: MySQL 8.0.44 plus `/tmp/ctsmd-restore-rehearsal-20261021-2/app`;
+- procedure: verify hashes, create a new disposable schema, import the gzip SQL dump, extract the code archive to a new isolated directory, replace `.env` with local-only settings, point `STORAGE_PATH` at the isolated tree, boot PHP, and probe representative routes/records;
+- result: 84 base tables, 25 triggers, 16 users, three family relationships, seven productions, 29 production memberships, six forms, and nine assignments restored; root/login returned 200 and protected family, production, form, and resource routes required authentication;
+- actual database/code restore duration: one second on the local target;
+- private-file limitation: zero `stored_files` rows and zero private binaries existed in the matched backup, so resource/private-file content recovery was not demonstrated;
+- RPO: latest verified manual pre-deployment backup; RTO evidence: one-second data/code extraction plus configuration and verification, but no production RTO is accepted until private-file recovery and a hosted rehearsal pass;
+- retention: not yet formally approved; do not delete the matched Bluehost backup until the owner sets policy.
 
 ## Validation Record
 
@@ -245,7 +288,7 @@ Bluehost containment and mobile API validation on October 21, 2026:
 
 - the confirmed 212-byte `accesson.php` web shell was moved unchanged outside `public_html` to `/home1/wentzmdc/ctsmd-incident-quarantine/20261021T013441Z/accesson.php` with an adjacent metadata manifest; its SHA-256 is `5dd77e8d7d97b876026800b045c80e448fdef19f5549068b65dd4e2178d52a65`;
 - the original filesystem path is absent, the quarantine is mode `0700` with files mode `0600`, and the former public URL returns HTTP 403;
-- no other PHP file was found under deployed `assets`, `storage`, or `uploads`; this does not close the account-wide incident;
+- no other PHP file was found under deployed CTSMD `assets`, `public`, or `storage`; CTSMD cleanup is closed and sibling scope is deferred;
 - five one-hour disposable bearer tokens were created for fake active personas and an inactive/pending fake fixture;
 - `/api/mobile/me`, `/messages`, `/message-thread`, `/channels`, and `/channel` returned expected data for active fake accounts; the inactive fixture received HTTP 401;
 - safeguarded thread access succeeded for the fake Staff, Student, and Guardian participants; unrelated fake Volunteer access received HTTP 404; direct adult thread access succeeded for its fake adult participants;
@@ -285,12 +328,10 @@ Authenticated browser evidence completed October 20, 2026:
 - no genuine new-profile HAR was available;
 - no production mutation or outbound communication was performed.
 
-Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by the open host incident, delivery operations, and the remaining least-privilege/negative test plan.
+Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by delivery receipt, private-file recovery evidence, and remaining device/mobile usability acceptance.
 
 ### October 21 operational hardening evidence
 
 Commit `601383e53b8d2bad1480ec3af1f968c23fa2d11f` adds durable database-backed authentication throttling for web/mobile login, forgot/reset, join and email verification, plus push retry, stale-claim reclaim, event deduplication and delivery-time recipient/preference revalidation. Migrations 063 and 064 and the existing mobile push-subscription migration were applied after a verified code/database backup. All 12 deployed file hashes matched reviewed source. Deployed validation passed 139-file PHP lint, runtime schema guard, the 21-check lifecycle test, push-claim test, push-recovery test and rate-limit test; root and login returned HTTP 200.
 
-One active mobile bearer token was revoked and zero remain. The account user crontab is empty, so email/reminder/push production scheduling is not accepted. No inbox or device receipt test was performed because no approved test email address or notification subscription was available in this run.
-
-The account-wide incident scan found eight additional copies of the quarantined shell hash across sibling sites. This is stronger evidence that the compromise is account-wide and prevents removal of the hosting blocker. See `docs/HOST_INCIDENT_RESPONSE.md` for paths, hashes and evidence limitations. Board readiness remains **84%** and limited-pilot readiness remains **60% NO-GO**: implementation risk decreased, but incident closure, credential rotation, worker scheduling with receipt proof, device acceptance, isolated restore, and the remaining negative/least-privilege matrix are still open.
+One active mobile bearer token was revoked and zero remain. Exact email/reminder cron commands are now installed as comments and intentionally disabled because no approved recipient is available. No inbox or device receipt test was performed. Board readiness is **92%** and limited-pilot readiness is **76% NO-GO**: CTSMD shell cleanup, the database restore, negative matrix, pure-persona matrix, and repeatable demo fixture are closed; real email receipt, Web Push receipt/deep-link/unsubscribe, private-file recovery, and remaining mobile/keyboard acceptance stay open.
