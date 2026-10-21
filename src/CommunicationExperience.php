@@ -69,13 +69,22 @@ final class CommunicationExperience
 
         $db->beginTransaction();
         try{
-            $insertConversation=$db->prepare('INSERT INTO conversations (subject,conversation_type,created_at) VALUES (:subject,:type,CURRENT_TIMESTAMP)');
-            $insertConversation->execute(['subject'=>$subject,'type'=>$type]);$conversationId=(int)$db->lastInsertId();
-            $insertParticipant=$db->prepare('INSERT INTO conversation_participants (conversation_id,user_id,participant_role,guardian_required) VALUES (:conversation,:user,:role,:guardian)');
-            $seen=[];
-            foreach($participants as $participant){
-                if(isset($seen[$participant['user_id']]))continue;$seen[$participant['user_id']]=true;
-                $insertParticipant->execute(['conversation'=>$conversationId,'user'=>$participant['user_id'],'role'=>$participant['participant_role'],'guardian'=>$participant['guardian_required']]);
+            $conversationId=0;
+            if($type==='safeguarded'){
+                $guardianIds=array_values(array_map(static fn(array $row):int=>(int)$row['user_id'],array_filter($participants,static fn(array $row):bool=>$row['participant_role']==='guardian')));
+                $studentId=(int)array_values(array_filter($participants,static fn(array $row):bool=>$row['participant_role']==='student'))[0]['user_id'];
+                $staffId=(int)array_values(array_filter($participants,static fn(array $row):bool=>$row['participant_role']==='adult'))[0]['user_id'];
+                $conversationId=SafeguardedConversationPolicy::findReusableConversation($db,$studentId,$staffId,$guardianIds)??0;
+            }
+            if($conversationId<1){
+                $insertConversation=$db->prepare('INSERT INTO conversations (subject,conversation_type,created_at) VALUES (:subject,:type,CURRENT_TIMESTAMP)');
+                $insertConversation->execute(['subject'=>$subject,'type'=>$type]);$conversationId=(int)$db->lastInsertId();
+                $insertParticipant=$db->prepare('INSERT INTO conversation_participants (conversation_id,user_id,participant_role,guardian_required) VALUES (:conversation,:user,:role,:guardian)');
+                $seen=[];
+                foreach($participants as $participant){
+                    if(isset($seen[$participant['user_id']]))continue;$seen[$participant['user_id']]=true;
+                    $insertParticipant->execute(['conversation'=>$conversationId,'user'=>$participant['user_id'],'role'=>$participant['participant_role'],'guardian'=>$participant['guardian_required']]);
+                }
             }
             $insertMessage=$db->prepare('INSERT INTO messages (conversation_id,sender_user_id,body,created_at) VALUES (:conversation,:sender,:body,CURRENT_TIMESTAMP)');
             $insertMessage->execute(['conversation'=>$conversationId,'sender'=>(int)$initiator['id'],'body'=>$body]);$messageId=(int)$db->lastInsertId();

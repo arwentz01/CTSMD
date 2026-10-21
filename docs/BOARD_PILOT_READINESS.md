@@ -2,10 +2,10 @@
 
 Overall readiness:
 
-- **Board demo: 74%**
-- **Limited pilot: 42%**
+- **Board demo: 82%**
+- **Limited pilot: 50%**
 - **Board recommendation: CONDITIONAL GO** after the BEFORE BOARD items below are closed and rehearsed.
-- **Pilot recommendation: NO-GO** until host-side incident response is complete and the two repository safeguarding remediations pass executable database-backed validation.
+- **Pilot recommendation: NO-GO** until host-side incident response is complete, the locally validated guardian-reactivation implementation is deployed and runtime-verified, and the remaining delivery and least-privilege checks are closed.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -22,7 +22,7 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 
 | Priority | Item | Closure |
 |---|---|---|
-| BEFORE BOARD | Deploy and runtime-verify the Student household authorization fix. Student access to /family-hub and /family/manage was a confirmed server-side permission leak. | Repository fix added on audit branch; production deployment and Student negative test still required. |
+| BEFORE BOARD | Deploy and runtime-verify the Student household authorization fix. Student access to /family-hub and /family/manage was a confirmed server-side permission leak. | CLOSED October 20: deployed direct-route checks denied fake Student Emma at both routes. |
 | BEFORE BOARD | Deploy and verify the dashboard form-count fix. Emma's home advertised a Guardian-completed form that her /forms page correctly did not expose. | Repository query aligned to the actionable assignee; deployment verification required. |
 | BEFORE BOARD | Rehearse one current production, not Matilda's expired August data. | Urinetown has an Oct. 21 rehearsal and a working attendance path. Select Urinetown before the Board demo. |
 | BEFORE BOARD | Add one future fake volunteer shift with eligibility and approval examples. | Alex has complete readiness/history but no live opportunity, so signup/cancel/approval remains DATA/SEED ISSUE. |
@@ -34,9 +34,9 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 # Must Fix Before Pilot
 
 - **BLOCKER:** complete hosting incident response for the confirmed PHP web shell formerly found at assets/images/accesson.php. Follow [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md): preserve evidence, rotate credentials, invalidate sessions/tokens, inspect sibling sites/backups/logs, and clean-deploy reviewed source. Repository inspection cannot establish that Bluehost is clean.
-- **BLOCKER pending executable validation:** migration 062 and the shared safeguarding policy now revoke a former guardian from future messages while retaining history through a fixed message ID. The database-backed regression test has been added but could not be executed because no local runner or CI workflow was available.
-- **BLOCKER policy decision required:** migration 062 currently clears `access_revoked_at` and `history_through_message_id` when a guardian relationship is reactivated or a disabled guardian account is re-enabled. That would expose messages sent during the revoked period. The intended reactivation history policy is not defined, so deployment validation stopped rather than inventing access semantics.
-- **BLOCKER pending executable validation:** web and mobile message sends now invoke the same transaction-aware safeguarding policy. Role changes, disabled accounts, all-guardian coverage, and Student/Student prohibition are covered by the new database test, but deployment and execution remain required.
+- An earlier 062-shaped Bluehost schema and the previous 17-check safeguarding suite were observed successfully. The revised migration source implementing the approved reactivation rule has not been deployed and those earlier results do not validate the revision.
+- **BLOCKER pending deployment:** the approved V1 rule is implemented and passed 36 checks on a disposable MySQL 8.0.44 clone: a guardian who becomes inactive retains only the historical conversation content available through their revocation cutoff. Reactivation does not reopen that historical thread or reveal messages sent during the inactive period. Future safeguarded communication uses a current safe conversation.
+- Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed database suite passed role-change, disabled-account, all-guardian, and Student/Student checks. Disposable-token endpoint tests separately confirmed active fake-persona access, disabled-account denial, thread IDOR denial, and mobile send-policy denial without creating a message.
 - **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
 - **BEFORE PILOT:** close push retry/reclaim/dedupe and audience recheck gaps, then prove receipt on supported devices.
 - **BEFORE PILOT:** test dedicated Moderator-only, Safeguarding-only, Staff-only, Volunteer-only, and least-privilege negative routes.
@@ -48,7 +48,7 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 | Persona / workflow | Classification | Authenticated evidence |
 |---|---|---|
 | Guardian: login, home, Family Hub, linked child, family calendar, assigned form, notifications | READY WITH POLISH ISSUE | Jamie showed Emma, two active productions, an assigned Seussical form, calendar, resources, messages and notifications. Form rendering was opened without submission. No distinct linked-child profile link is presented from Family Hub. |
-| Student: home, My Theatre, calendar, cast, Theatre History, resources, Community, messages | READY WITH POLISH ISSUE | Emma showed published cast, two verified credits, acting résumé, schedule, attendance, Community and safeguarded messages. Household permission and misleading form count are fixed on the audit branch but not yet deployed. |
+| Student: home, My Theatre, calendar, cast, Theatre History, resources, Community, messages | READY WITH POLISH ISSUE | Emma showed published cast, two verified credits, acting résumé, schedule, attendance, Community and safeguarded messages. Deployed direct-route checks deny Student access to both household routes. Dashboard form-count deployment verification remains open. |
 | Volunteer: readiness, credentials, training, service history | READY | Alex showed 4/4 current readiness, verified training, active verification and 12.5 verified hours. |
 | Volunteer: opportunity, signup/cancel, approval | DATA/SEED ISSUE | No current opportunity or approval-gated shift exists. Seeded shifts ended in August. |
 | Production Staff: working production, workspace, schedule, Production Day, attendance, groups, casting, readiness, notices | READY WITH POLISH ISSUE | Combined-role staff accounts loaded all routes. Urinetown Oct. 21 shows one rehearsal, one expected attendee and a working Take attendance route. No attendance save was made. |
@@ -85,7 +85,7 @@ Migration `062_safeguarded_conversation_revocation.sql` adds non-destructive par
 
 Message lists, threads, search, attachments, unread counts, and read cursors honor the historical cutoff. New message push creation excludes revoked participants, and push delivery revalidates access so an already-queued message push is suppressed after revocation. No conversation-message email producer or separate in-app message-notification producer exists in the inspected repository; therefore no equivalent queued email or in-app payload was found to revoke. This is not a claim that general delivery queues are production-ready.
 
-These are source and migration findings only until migration 062 and `tests/safeguarded_conversation.php` run successfully against MySQL.
+An earlier 062-shaped schema was observed on Bluehost: its runtime schema guard passed and the previous `tests/safeguarded_conversation.php` passed 17 rolled-back checks. The revised migration and expanded reactivation test have not been deployed. They passed 36 rolled-back checks after migration 062 was applied to a disposable clone of the local database on MySQL 8.0.44.
 
 # Known Limitations To Disclose
 
@@ -95,7 +95,7 @@ These are source and migration findings only until migration 062 and `tests/safe
 - Staff/Admin demo accounts are over-privileged combined-role fixtures.
 - Moderator and Safeguarding navigation is coupled to the Operations experience; dedicated-role navigation remains unproven.
 - Native push has storage/API support but no proven APNs/FCM delivery adapter.
-- No real inbox receipt, device push receipt, Bluehost cron log, backup restore or database migration run was observed.
+- No real inbox receipt, device push receipt, Bluehost cron log or backup restore was observed. An earlier 062-shaped schema was runtime-verified, but the revised migration has not been deployed and no migration execution transcript was captured.
 - A page loading is not treated as end-to-end workflow proof.
 
 ## Notification delivery evidence
@@ -122,7 +122,7 @@ These are source and migration findings only until migration 062 and `tests/safe
 - [ ] Install serialized Bluehost cron jobs for email queue, reminders and, only after gaps close, push.
 - [ ] Monitor oldest queued age, failed/stuck rows, worker exits and actual receipt.
 - [ ] Test encrypted database/file backup and restore with documented RPO/RTO and owners.
-- [ ] Validate CSRF failures, rate limits, unauthorized POSTs, direct IDs and mobile bearer endpoints.
+- [ ] Validate CSRF failures, rate limits and broader direct-object authorization. Core mobile bearer endpoints received focused fake-account coverage on October 21.
 
 Recommended cron cadence, using verified absolute Bluehost paths:
 
@@ -157,7 +157,7 @@ Y = confirmed positive runtime access. D = confirmed direct-url denial. C = cond
 
 Representative server-side denials were verified for Guardian, Student and Parent+Volunteer accounts at /admin/accounts, /people, /admin/registrations, /admin/channels, /admin/moderation/terms, /safeguarding, /admin/email, /production/people and /production/day. These returned Restricted/403-style responses rather than merely hiding navigation.
 
-No critical web route remains known to rely only on hidden navigation after the Student household fix. Direct PHP endpoints and the mobile API still need independent IDOR tests.
+No critical web route remains known to rely only on hidden navigation after the Student household fix. Focused mobile testing confirmed denial for a fake user requesting an unrelated safeguarded thread; broader direct PHP and mobile IDOR coverage remains required.
 
 # Demo Data Checklist
 
@@ -203,7 +203,7 @@ Existing data can answer future reporting questions without building a reporting
 
 # Recommended Next Builds
 
-1. **BLOCKER:** complete the host-side incident response, then deploy migration 062 and execute the safeguarding regression suite. The former-guardian and mobile-parity fixes remain blocked from sign-off only by executable validation.
+1. **BLOCKER:** complete the host-side incident response, then deploy and runtime-verify the revised migration 062. The approved reactivation rule passed the expanded safeguarding suite on a disposable local MySQL clone; production remains unchanged by this revision.
 2. **BEFORE BOARD:** deploy the contained Student permission/form fixes and create a repeatable current-date rehearsal fixture with a pure Staff account and future volunteer shift.
 3. **BEFORE PILOT:** harden delivery operations with queue retry/recovery, serialized cron monitoring, real inbox/device proof, rate limiting and a tested backup restore.
 
@@ -218,11 +218,14 @@ Static closure validation executed October 20, 2026 at audited head `f4c7e2b072c
 - `git diff --check` passed with no output;
 - `tests/pilot_lifecycle.php` output: `PASS: 21 lifecycle checks (stubbed database; not SQL integration).`;
 - `tests/pilot_push_claim.php` output: `PASS: losing push claim performs no delivery (stubbed database).`;
-- `tests/safeguarded_conversation.php` did not execute its assertions: `SQLSTATE[HY000] [2002] Connection refused` from `Database::connect()`;
+- local `tests/safeguarded_conversation.php` could not connect to MySQL, but the same deployed test later passed 17 checks against Bluehost MySQL with its transaction rolled back;
 - migration 062 source inspection found no target-table 1093 self-reference: cutoff subqueries read `messages` while updating `conversation_participants`;
 - migration 062 is a one-time migration, not idempotent: rerunning its unguarded `ALTER TABLE ... ADD COLUMN` will fail after first application;
-- runtime migration, schema/trigger, former-guardian, mobile parity, Student regression, containment, and timeout validation were not executed in this pass;
-- validation stopped because reactivation currently clears the fixed history cutoff, while the intended visibility of messages sent during revocation is unresolved.
+- the earlier reactivation ambiguity is resolved by product decision: a revoked participant record remains historical permanently, and future communication uses a current-safe conversation. The revised implementation passed disposable-clone MySQL execution and remains undeployed.
+- local MySQL 8.0.44 validation cloned the unmigrated `ctsmd` database into a disposable schema, applied revised migration 062, and passed 36 safeguarding checks with test data rolled back; the disposable schema was then removed;
+- the expanded suite covers messages 1-5 before revocation, messages 6-10 during revocation, fixed cutoff preservation, old-thread send denial, new-thread participation, exact-set reuse, attachment and unread boundaries, push eligibility, account re-enable, and revoke/reactivate/revoke repetition;
+- migration inspection found no target-table 1093 self-reference: participant updates read cutoff values only from `messages`; runtime relationship insertion/reactivation and account re-enable no longer widen old conversations; trigger names are dropped before creation, while the migration remains intentionally one-time because its column `ALTER TABLE` is not idempotent;
+- MySQL validation also found and fixed an unrelated MySQL 8 `DISTINCT`/`ORDER BY` incompatibility in `eligibleGuardians()`; the family relationship uniqueness constraint makes `DISTINCT` unnecessary.
 
 Bluehost emergency validation later on October 20, 2026:
 
@@ -231,6 +234,24 @@ Bluehost emergency validation later on October 20, 2026:
 - a full deployed-folder PHP lint completed with `lint_exit=0 files=127 errors=0`;
 - `https://ctsmd.me/login` was reloaded and rendered the CTSMD Connect login screen successfully;
 - Bluehost deployment does not use Git; copied `.git` metadata is corrupt and was not used or modified as part of the repair.
+- migration 062 columns and both synchronization triggers were present; the runtime schema guard passed;
+- `tests/safeguarded_conversation.php` passed 17 real-database checks with the transaction rolled back;
+- `tests/pilot_lifecycle.php` passed 21 stubbed lifecycle checks and `tests/pilot_push_claim.php` passed;
+- deployed Student direct-route checks denied fake Student Emma access to `/family-hub` and `/family/manage`;
+- clean anonymous timing probes completed without timeout: `/login` in 0.246 seconds, authenticated-entry redirects in 0.324-0.406 seconds, and one cold `/` request in 3.943 seconds;
+- sensitive source, environment, log, bin, test, and documentation URL probes returned HTTP 403; `/health` returned only the expected minimal JSON.
+
+Bluehost containment and mobile API validation on October 21, 2026:
+
+- the confirmed 212-byte `accesson.php` web shell was moved unchanged outside `public_html` to `/home1/wentzmdc/ctsmd-incident-quarantine/20261021T013441Z/accesson.php` with an adjacent metadata manifest; its SHA-256 is `5dd77e8d7d97b876026800b045c80e448fdef19f5549068b65dd4e2178d52a65`;
+- the original filesystem path is absent, the quarantine is mode `0700` with files mode `0600`, and the former public URL returns HTTP 403;
+- no other PHP file was found under deployed `assets`, `storage`, or `uploads`; this does not close the account-wide incident;
+- five one-hour disposable bearer tokens were created for fake active personas and an inactive/pending fake fixture;
+- `/api/mobile/me`, `/messages`, `/message-thread`, `/channels`, and `/channel` returned expected data for active fake accounts; the inactive fixture received HTTP 401;
+- safeguarded thread access succeeded for the fake Staff, Student, and Guardian participants; unrelated fake Volunteer access received HTTP 404; direct adult thread access succeeded for its fake adult participants;
+- `/api/mobile/message-send` rejected an unauthorized safeguarded send and rejected an empty request with HTTP 400. No message or push subscription was created;
+- all five tokens were revoked, a reused token then received HTTP 401, all five temporary token rows were deleted, and plaintext response/token files were removed;
+- no deployed former-guardian row existed for a non-mutating endpoint check. Former-guardian and role-change semantics are covered by the rolled-back database suites, including the revised 36-check local MySQL run; no production relationship, role, cutoff, or reactivation state was altered.
 
 Previously completed on the audit branch:
 
@@ -251,4 +272,4 @@ Authenticated browser evidence completed October 20, 2026:
 - no genuine new-profile HAR was available;
 - no production mutation or outbound communication was performed.
 
-Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. The local execution environment remained unavailable and the branch has no GitHub Actions workflow run, so PHP lint, the repository test suite, the new safeguarding test, schema/migration execution, and git diff --check have **not been run against this closure build**. The prior audit results above do not validate these new commits. Pilot sign-off must remain blocked until those commands pass against MySQL and the migration is runtime-verified.
+Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local PHP lint and `git diff --check` passed; lifecycle and push-claim tests passed locally and on Bluehost; an earlier schema guard and 17-check safeguarding suite passed against Bluehost MySQL. The revised reactivation implementation passed 36 checks after migration on a disposable local MySQL 8.0.44 clone. Focused deployed mobile checks passed without creating content. Pilot sign-off remains blocked by the open host incident, deployment/runtime verification of the revision, delivery operations, and the remaining least-privilege/negative test plan.

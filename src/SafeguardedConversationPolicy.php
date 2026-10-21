@@ -8,7 +8,7 @@ final class SafeguardedConversationPolicy
 {
     public static function eligibleGuardians(PDO $db, int $studentId): array
     {
-        $stmt = $db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role
+        $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role
             FROM family_relationships fr
             JOIN users u ON u.id=fr.guardian_user_id
                 AND u.active=1
@@ -18,6 +18,55 @@ final class SafeguardedConversationPolicy
             ORDER BY fr.is_primary DESC,fr.id,u.id");
         $stmt->execute(['student'=>$studentId]);
         return $stmt->fetchAll();
+    }
+
+    public static function findReusableConversation(PDO $db, int $studentId, int $staffId, array $guardianIds): ?int
+    {
+        $guardianIds = array_values(array_unique(array_map('intval',$guardianIds)));
+        sort($guardianIds);
+        if ($studentId < 1 || $staffId < 1 || !$guardianIds) return null;
+
+        $candidateStmt = $db->prepare("SELECT DISTINCT c.id
+            FROM conversations c
+            JOIN conversation_participants student_cp
+              ON student_cp.conversation_id=c.id
+             AND student_cp.user_id=:student
+             AND student_cp.participant_role='student'
+             AND student_cp.access_revoked_at IS NULL
+            JOIN conversation_participants staff_cp
+              ON staff_cp.conversation_id=c.id
+             AND staff_cp.user_id=:staff
+             AND staff_cp.participant_role='adult'
+             AND staff_cp.access_revoked_at IS NULL
+            WHERE c.conversation_type='safeguarded'
+            ORDER BY c.id DESC");
+        $candidateStmt->execute(['student'=>$studentId,'staff'=>$staffId]);
+        $expectedIds = array_merge([$studentId,$staffId],$guardianIds);
+        sort($expectedIds);
+
+        foreach ($candidateStmt->fetchAll(PDO::FETCH_COLUMN) as $candidateId) {
+            $participants = self::participants($db,(int)$candidateId,false);
+            $liveIds = [];
+            $candidateGuardians = [];
+            $valid = true;
+            foreach ($participants as $participant) {
+                if (!(bool)$participant['active']
+                    || $participant['account_status'] !== 'active'
+                    || $participant['access_revoked_at'] !== null) {
+                    $valid = false;
+                    break;
+                }
+                $userId = (int)$participant['user_id'];
+                $liveIds[] = $userId;
+                if ($participant['participant_role'] === 'guardian') $candidateGuardians[] = $userId;
+            }
+            sort($liveIds);
+            sort($candidateGuardians);
+            if ($valid && $liveIds === $expectedIds && $candidateGuardians === $guardianIds) {
+                return (int)$candidateId;
+            }
+        }
+        return null;
     }
 
     public static function enforceForSend(PDO $db, int $conversationId, int $senderId): array
@@ -59,7 +108,7 @@ final class SafeguardedConversationPolicy
             if (!$studentParticipants) throw new RuntimeException('The current Student is not a conversation participant.');
 
             $db->prepare("UPDATE conversations SET conversation_type='safeguarded' WHERE id=:id")->execute(['id'=>$conversationId]);
-            $db->prepare("UPDATE conversation_participants SET participant_role='student',guardian_required=0,access_revoked_at=NULL,history_through_message_id=NULL WHERE conversation_id=:conversation AND user_id=:student")
+            $db->prepare("UPDATE conversation_participants SET participant_role='student',guardian_required=0 WHERE conversation_id=:conversation AND user_id=:student AND access_revoked_at IS NULL")
                 ->execute(['conversation'=>$conversationId,'student'=>$studentId]);
 
             $guardians = self::eligibleGuardians($db,$studentId);
@@ -70,7 +119,7 @@ final class SafeguardedConversationPolicy
             $insert = $db->prepare("INSERT INTO conversation_participants
                 (conversation_id,user_id,participant_role,guardian_required,access_revoked_at,history_through_message_id)
                 VALUES (:conversation,:user,'guardian',1,NULL,NULL)
-                ON DUPLICATE KEY UPDATE participant_role='guardian',guardian_required=1,access_revoked_at=NULL,history_through_message_id=NULL");
+                ON DUPLICATE KEY UPDATE participant_role='guardian',guardian_required=1");
             foreach ($guardianIds as $guardianId) {
                 if ($guardianId === $studentId) continue;
                 $insert->execute(['conversation'=>$conversationId,'user'=>$guardianId]);

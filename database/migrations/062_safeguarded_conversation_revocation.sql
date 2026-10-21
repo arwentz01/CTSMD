@@ -23,9 +23,7 @@ JOIN users guardian
 WHERE c.conversation_type='safeguarded'
 ON DUPLICATE KEY UPDATE
     participant_role='guardian',
-    guardian_required=1,
-    access_revoked_at=NULL,
-    history_through_message_id=NULL;
+    guardian_required=1;
 
 -- Preserve old messages while cutting off future visibility for no-longer-eligible guardians.
 UPDATE conversation_participants guardian_cp
@@ -57,31 +55,6 @@ DROP TRIGGER IF EXISTS trg_user_disable_operational_cleanup;
 
 DELIMITER $$
 
-CREATE TRIGGER trg_family_conversation_guardian_insert
-AFTER INSERT ON family_relationships
-FOR EACH ROW
-BEGIN
-    IF NEW.status='active' THEN
-        INSERT INTO conversation_participants
-            (conversation_id,user_id,participant_role,guardian_required,access_revoked_at,history_through_message_id)
-        SELECT DISTINCT c.id,NEW.guardian_user_id,'guardian',1,NULL,NULL
-        FROM conversations c
-        JOIN conversation_participants student_cp
-          ON student_cp.conversation_id=c.id
-         AND student_cp.user_id=NEW.student_user_id
-        JOIN users guardian
-          ON guardian.id=NEW.guardian_user_id
-         AND guardian.active=1
-         AND guardian.account_status='active'
-        WHERE c.conversation_type='safeguarded'
-        ON DUPLICATE KEY UPDATE
-            participant_role='guardian',
-            guardian_required=1,
-            access_revoked_at=NULL,
-            history_through_message_id=NULL;
-    END IF;
-END$$
-
 CREATE TRIGGER trg_family_conversation_guardian_update
 AFTER UPDATE ON family_relationships
 FOR EACH ROW
@@ -103,25 +76,8 @@ BEGIN
           AND guardian_cp.participant_role='guardian';
     END IF;
 
-    IF OLD.status<>'active' AND NEW.status='active' THEN
-        INSERT INTO conversation_participants
-            (conversation_id,user_id,participant_role,guardian_required,access_revoked_at,history_through_message_id)
-        SELECT DISTINCT c.id,NEW.guardian_user_id,'guardian',1,NULL,NULL
-        FROM conversations c
-        JOIN conversation_participants student_cp
-          ON student_cp.conversation_id=c.id
-         AND student_cp.user_id=NEW.student_user_id
-        JOIN users guardian
-          ON guardian.id=NEW.guardian_user_id
-         AND guardian.active=1
-         AND guardian.account_status='active'
-        WHERE c.conversation_type='safeguarded'
-        ON DUPLICATE KEY UPDATE
-            participant_role='guardian',
-            guardian_required=1,
-            access_revoked_at=NULL,
-            history_through_message_id=NULL;
-    END IF;
+    -- Reactivation never reopens an existing historical participant record.
+    -- A current-safe participant set belongs in a new safeguarded conversation.
 END$$
 
 CREATE TRIGGER trg_user_disable_operational_cleanup
@@ -156,24 +112,7 @@ BEGIN
           AND cp.participant_role='guardian';
     END IF;
 
-    IF NEW.account_status='active' AND OLD.account_status='disabled' THEN
-        UPDATE conversation_participants cp
-        JOIN conversations c
-          ON c.id=cp.conversation_id
-         AND c.conversation_type='safeguarded'
-        JOIN conversation_participants student_cp
-          ON student_cp.conversation_id=c.id
-         AND student_cp.participant_role='student'
-        JOIN family_relationships fr
-          ON fr.student_user_id=student_cp.user_id
-         AND fr.guardian_user_id=NEW.id
-         AND fr.status='active'
-        SET cp.access_revoked_at=NULL,
-            cp.history_through_message_id=NULL,
-            cp.participant_role='guardian',
-            cp.guardian_required=1
-        WHERE cp.user_id=NEW.id;
-    END IF;
+    -- Re-enabling an account does not broaden access in historical threads.
 END$$
 
 DELIMITER ;
