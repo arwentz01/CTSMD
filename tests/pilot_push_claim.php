@@ -14,6 +14,11 @@ final class ClaimDatabase extends PDO
 {
     public int $queries=0;
     public function __construct() {}
+    public function exec(string $statement): int|false
+    {
+        if(str_starts_with($statement,"UPDATE push_queue SET status='queued'"))return 0;
+        throw new RuntimeException('Unexpected recovery query.');
+    }
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
         $this->queries++;

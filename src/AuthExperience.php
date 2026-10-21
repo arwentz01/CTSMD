@@ -6,6 +6,7 @@ require_once __DIR__.'/Database.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/MailService.php';
 require_once __DIR__.'/PlatformOnboardingExperience.php';
+require_once __DIR__.'/RateLimiter.php';
 
 final class AuthExperience
 {
@@ -26,21 +27,23 @@ final class AuthExperience
         self::csrf();
         try{
             if($route==='/login'){
-                Auth::login($db,(string)($_POST['email']??''),(string)($_POST['password']??''));
+                $email=(string)($_POST['email']??'');$subject=RateLimiter::requestSubject($email);RateLimiter::enforce($db,'web-login',$subject,8,900,900);
+                Auth::login($db,$email,(string)($_POST['password']??''));RateLimiter::clear($db,'web-login',$subject);
                 self::redirect(self::safeReturn($basePath,(string)($_POST['return_to']??'')));
             }
             if($route==='/activate'){
                 $token=(string)($_POST['token']??'');$password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');$userId=Auth::acceptInvitation($db,$token,$password);Auth::establishSession($db,$userId);self::redirect($basePath.'/app');
             }
             if($route==='/forgot-password'){
-                $email=mb_strtolower(trim((string)($_POST['email']??'')));$token=Auth::createPasswordReset($db,$email);
+                $email=mb_strtolower(trim((string)($_POST['email']??'')));RateLimiter::enforce($db,'forgot-password',RateLimiter::requestSubject($email),5,3600,3600);$token=Auth::createPasswordReset($db,$email);
                 if($token){$s=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email FROM users WHERE LOWER(email)=:email AND active=1 LIMIT 1");$s->execute(['email'=>$email]);$user=$s->fetch();if($user){$link=self::absoluteUrl($basePath.'/reset-password?token='.$token);$body="Hi {$user['name']},\n\nA password reset was requested for your CTSMD Connect account. Use this private link within 2 hours:\n{$link}\n\nIf you did not request this, you can ignore this email.\n\n— Children’s Theatre of Southern Maryland";MailService::queue($db,(int)$user['id'],(string)$user['email'],(string)$user['name'],'account_security','Reset your CTSMD Connect password',$body,null,'password-reset-'.hash('sha256',$token));if(Auth::localIdentitySwitchEnabled())$_SESSION['auth_local_reset']=$link;}}
                 self::flash('success','If an active account matches that email, reset instructions have been queued for delivery.');
                 self::redirect($basePath.'/forgot-password');
             }
             if($route==='/reset-password'){
-                $password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');Auth::resetPassword($db,(string)($_POST['token']??''),$password);self::flash('success','Password updated. You can sign in now.');self::redirect($basePath.'/login');
+                $token=(string)($_POST['token']??'');$subject=RateLimiter::requestSubject(hash('sha256',$token));RateLimiter::enforce($db,'reset-password',$subject,10,3600,3600);$password=(string)($_POST['password']??'');$confirm=(string)($_POST['password_confirm']??'');if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');Auth::resetPassword($db,$token,$password);RateLimiter::clear($db,'reset-password',$subject);self::flash('success','Password updated. You can sign in now.');self::redirect($basePath.'/login');
             }
+        }catch(RateLimitExceeded $e){http_response_code(429);header('Retry-After: '.$e->retryAfter);header('Content-Type: text/plain; charset=utf-8');exit($e->getMessage());
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());$suffix='';if(in_array($route,['/activate','/reset-password'],true))$suffix='?token='.rawurlencode((string)($_POST['token']??''));self::redirect($basePath.$route.$suffix);}
         self::redirect($basePath.'/login');
     }

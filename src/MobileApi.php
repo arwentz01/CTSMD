@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/RateLimiter.php';
 
 final class MobileApi
 {
@@ -43,6 +44,8 @@ final class MobileApi
         } catch (PDOException $e) {
             error_log('Mobile API database error: ' . $e->getMessage());
             self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
+        } catch (RateLimitExceeded $e) {
+            header('Retry-After: '.$e->retryAfter);self::json(['error'=>$e->getMessage(),'retry_after'=>$e->retryAfter],429);
         } catch (RuntimeException $e) {
             self::json(['error' => $e->getMessage()], 400);
         } catch (Throwable $e) {
@@ -58,6 +61,7 @@ final class MobileApi
         $email = mb_strtolower(trim((string)($input['email'] ?? '')));
         $password = (string)($input['password'] ?? '');
         if ($email === '' || $password === '') throw new RuntimeException('Enter your email and password.');
+        $rateSubject=RateLimiter::requestSubject($email);RateLimiter::enforce($db,'mobile-login',$rateSubject,8,900,900);
 
         $stmt = $db->prepare("SELECT id,password_hash,active,account_status FROM users WHERE LOWER(email)=:email LIMIT 1");
         $stmt->execute(['email' => $email]);
@@ -67,6 +71,7 @@ final class MobileApi
         }
 
         $userId = (int)$row['id'];
+        RateLimiter::clear($db,'mobile-login',$rateSubject);
         $token = bin2hex(random_bytes(32));
         $hash = hash('sha256', $token);
         $expires = (new DateTimeImmutable('+' . self::TOKEN_TTL_DAYS . ' days'))->format('Y-m-d H:i:s');

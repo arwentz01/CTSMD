@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/PlatformRegistrationService.php';
+require_once __DIR__ . '/RateLimiter.php';
 
 final class PlatformOnboardingExperience
 {
@@ -21,14 +22,15 @@ final class PlatformOnboardingExperience
     private static function handlePost(PDO $db,string $route,string $basePath,?array $user):never
     {
         self::csrf();try{
-            if($route==='/join'){PlatformRegistrationService::registerAdult($db,$_POST,$basePath);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Check your email for a verification link.'];self::redirect($basePath.'/join?sent=1');}
-            if($route==='/verify-email'){$userId=PlatformRegistrationService::verify($db,(string)($_POST['token']??''));Auth::establishSession($db,$userId);self::redirect($basePath.'/onboarding');}
+            if($route==='/join'){RateLimiter::enforce($db,'join',RateLimiter::requestSubject((string)($_POST['email']??'')),5,3600,3600);PlatformRegistrationService::registerAdult($db,$_POST,$basePath);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Check your email for a verification link.'];self::redirect($basePath.'/join?sent=1');}
+            if($route==='/verify-email'){$token=(string)($_POST['token']??'');$subject=RateLimiter::requestSubject(hash('sha256',$token));RateLimiter::enforce($db,'verify-email',$subject,10,3600,3600);$userId=PlatformRegistrationService::verify($db,$token);RateLimiter::clear($db,'verify-email',$subject);Auth::establishSession($db,$userId);self::redirect($basePath.'/onboarding');}
             if($route==='/onboarding'||$route==='/family/manage'){
                 if(!$user)throw new RuntimeException('Sign in to manage your household.');$action=(string)($_POST['action']??'');
                 if($action==='add_child'){PlatformRegistrationService::addManagedChild($db,$user,$_POST);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Child profile added. CTSMD staff can connect that student to the appropriate production when ready.'];self::redirect($basePath.'/family/manage');}
                 if($action==='complete_onboarding'){PlatformRegistrationService::completeOnboarding($db,(int)$user['id']);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Household setup saved. Your CTSMD membership is pending staff approval.'];self::redirect($basePath.'/family/manage');}
             }
             throw new RuntimeException('Choose a valid account action.');
+        }catch(RateLimitExceeded $e){http_response_code(429);header('Retry-After: '.$e->retryAfter);header('Content-Type: text/plain; charset=utf-8');exit($e->getMessage());
         }catch(RuntimeException $e){$_SESSION['platform_onboarding_flash']=['type'=>'error','message'=>$e->getMessage()];self::redirect($basePath.$route);}
     }
 
