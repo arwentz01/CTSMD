@@ -10,6 +10,7 @@ require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
+require_once __DIR__ . '/VolunteerCoverageService.php';
 
 final class MobileApi
 {
@@ -33,6 +34,7 @@ final class MobileApi
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/theatre' => self::theatre($db, $user),
+                '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
                 '/api/mobile/message-send' => self::messageSend($db, $user),
@@ -94,6 +96,27 @@ final class MobileApi
             $db,$user,new DateTimeImmutable('-1 day'),new DateTimeImmutable('+90 days')
         );
         self::json(['productions'=>$productions,'events'=>array_slice($events,0,100)]);
+    }
+
+    private static function dailyTasks(PDO $db, array $user): never
+    {
+        self::requireMethod('GET');
+        $id=(int)$user['id'];
+        // Same assignee + active form boundary used by the member Forms page.
+        $forms=$db->prepare("SELECT fa.id,fa.status,fa.due_at,f.title,fs.status submission_status FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.user_id=:user ORDER BY fa.due_at,fa.id LIMIT 100");
+        $forms->execute(['user'=>$id]);
+        $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at,vs.id LIMIT 100");
+        $shifts->execute(['mine'=>$id,'request'=>$id]);
+        $live=VolunteerCoverageService::isLiveVolunteer($db,$id);
+        $rows=$shifts->fetchAll();
+        $missingMap=VolunteerCoverageService::missingRequirementsForShifts($db,$id,array_column($rows,'id'));
+        foreach($rows as &$row){
+            $row['missing_requirements']=$missingMap[(int)$row['id']]??[];
+            $row['eligible']=$live && !$row['missing_requirements'];
+            $row['open_slots']=max(0,(int)$row['required_slots']-VolunteerCoverageService::eligibleLiveSignupCount($db,(int)$row['id']));
+        }
+        unset($row);
+        self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows]);
     }
 
     private static function messages(PDO $db, array $user): never
