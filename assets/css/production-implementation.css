@@ -19,3 +19,9 @@
 .prod-schedule-drafts a,.prod-edit-flash a{font-weight:800;color:#981b30;text-decoration:underline;text-underline-offset:3px}
 .prod-edit-flash a{display:inline-block;margin-left:12px}
 @media(max-width:680px){.prod-schedule-list article{grid-template-columns:48px minmax(0,1fr) auto;gap:10px;padding:12px}.prod-schedule-list .prod-date span{font-size:1.25rem}.prod-schedule-list .prod-edit-link{font-size:.8rem}.prod-schedule-drafts{align-items:flex-start;flex-direction:column}.prod-edit-flash a{display:block;margin:7px 0 0}}
+
+/* Production schedule toolbar */
+.prod-schedule-header-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.prod-schedule-header-actions .prod-import-button{background:#fff;color:#a6192e;border:1px solid #a6192e;box-shadow:none}
+.prod-schedule-header-actions .prod-import-button:hover{background:#fff5f5}
+@media(max-width:640px){.prod-schedule-header-actions{width:100%;justify-content:stretch}.prod-schedule-header-actions>a{flex:1 1 150px;text-align:center}}
