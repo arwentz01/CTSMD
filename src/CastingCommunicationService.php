@@ -7,11 +7,12 @@ require_once __DIR__.'/ProductionContext.php';
 
 final class CastingCommunicationService
 {
-    public static function publication(PDO $db,int $productionId):array
+    public static function publication(PDO $db,int $productionId,string $type='cast'):array
     {
-        $s=$db->prepare("SELECT pcp.*,CONCAT(u.first_name,' ',u.last_name) publisher_name FROM production_cast_publications pcp LEFT JOIN users u ON u.id=pcp.published_by_user_id WHERE pcp.production_id=:production LIMIT 1");
-        $s->execute(['production'=>$productionId]);
-        return $s->fetch() ?: ['production_id'=>$productionId,'status'=>'draft','headline'=>null,'member_note'=>null,'cast_snapshot_json'=>null,'published_at'=>null,'publisher_name'=>null];
+        self::assertPublicationType($type);
+        $s=$db->prepare("SELECT pcp.*,CONCAT(u.first_name,' ',u.last_name) publisher_name FROM production_cast_publications pcp LEFT JOIN users u ON u.id=pcp.published_by_user_id WHERE pcp.production_id=:production AND pcp.publication_type=:type LIMIT 1");
+        $s->execute(['production'=>$productionId,'type'=>$type]);
+        return $s->fetch() ?: ['production_id'=>$productionId,'publication_type'=>$type,'status'=>'draft','headline'=>null,'member_note'=>null,'cast_snapshot_json'=>null,'published_at'=>null,'publisher_name'=>null];
     }
 
     public static function sendResult(PDO $db,int $productionId,int $actorId,int $recordId,string $baseUrl):int
@@ -57,29 +58,45 @@ final class CastingCommunicationService
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The casting result could not be queued.');}
     }
 
-    public static function savePublication(PDO $db,int $productionId,int $actorId,string $headline,string $note,bool $publish):void
+    public static function savePublication(PDO $db,int $productionId,int $actorId,string $type,string $headline,string $note,bool $publish):void
     {
+        self::assertPublicationType($type);
         $headline=trim($headline);$note=trim($note);
-        if(mb_strlen($headline)>190||mb_strlen($note)>2000)throw new RuntimeException('The cast publication text is too long.');
-        if(!$publish){$existing=self::publication($db,$productionId);if(($existing['status']??'draft')==='published')throw new RuntimeException('The cast is already published. Private casting edits remain private; use Publish cast again when you are ready to release an updated snapshot.');}
-        $snapshot=null;$count=self::publishableCount($db,$productionId);
-        if($publish){if($count<1)throw new RuntimeException('Finalize at least one available cast member to the roster before publishing the cast.');$snapshot=json_encode(self::currentPublishableCast($db,$productionId),JSON_THROW_ON_ERROR);}
+        $label=$type==='callback'?'callback':'cast';
+        if(mb_strlen($headline)>190||mb_strlen($note)>2000)throw new RuntimeException('The '.$label.' publication text is too long.');
+        if(!$publish){$existing=self::publication($db,$productionId,$type);if(($existing['status']??'draft')==='published')throw new RuntimeException('The '.$label.' list is already published. Private casting edits remain private; publish again when you are ready to release an updated snapshot.');}
+        $snapshot=null;$count=self::publishableCount($db,$productionId,$type);
+        if($publish){
+            if($count<1)throw new RuntimeException($type==='callback'?'Mark at least one available student Callback before publishing callbacks.':'Finalize at least one available cast member to the roster before publishing the cast.');
+            $snapshot=json_encode($type==='callback'?self::currentPublishableCallbacks($db,$productionId):self::currentPublishableCast($db,$productionId),JSON_THROW_ON_ERROR);
+        }
         $status=$publish?'published':'draft';
-        $s=$db->prepare("INSERT INTO production_cast_publications (production_id,status,headline,member_note,cast_snapshot_json,published_by_user_id,published_at) VALUES (:production,:status,:headline,:note,:snapshot,:actor,".($publish?'CURRENT_TIMESTAMP':'NULL').") ON DUPLICATE KEY UPDATE status=VALUES(status),headline=VALUES(headline),member_note=VALUES(member_note),cast_snapshot_json=".($publish?'VALUES(cast_snapshot_json)':'cast_snapshot_json').",published_by_user_id=".($publish?'VALUES(published_by_user_id)':'published_by_user_id').",published_at=".($publish?'CURRENT_TIMESTAMP':'NULL').",updated_at=CURRENT_TIMESTAMP");
-        $s->execute(['production'=>$productionId,'status'=>$status,'headline'=>$headline!==''?$headline:null,'note'=>$note!==''?$note:null,'snapshot'=>$snapshot,'actor'=>$actorId]);
-        self::audit($db,$actorId,$publish?'casting.cast_published':'casting.cast_publication_saved',$productionId,$publish?'Published production cast snapshot to members.':'Saved cast publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count]);
+        $s=$db->prepare("INSERT INTO production_cast_publications (production_id,publication_type,status,headline,member_note,cast_snapshot_json,published_by_user_id,published_at) VALUES (:production,:type,:status,:headline,:note,:snapshot,:actor,".($publish?'CURRENT_TIMESTAMP':'NULL').") ON DUPLICATE KEY UPDATE status=VALUES(status),headline=VALUES(headline),member_note=VALUES(member_note),cast_snapshot_json=".($publish?'VALUES(cast_snapshot_json)':'cast_snapshot_json').",published_by_user_id=".($publish?'VALUES(published_by_user_id)':'published_by_user_id').",published_at=".($publish?'CURRENT_TIMESTAMP':'NULL').",updated_at=CURRENT_TIMESTAMP");
+        $s->execute(['production'=>$productionId,'type'=>$type,'status'=>$status,'headline'=>$headline!==''?$headline:null,'note'=>$note!==''?$note:null,'snapshot'=>$snapshot,'actor'=>$actorId]);
+        self::audit($db,$actorId,$publish?'casting.'.$type.'_published':'casting.'.$type.'_publication_saved',$productionId,$publish?'Published production '.$label.' snapshot to members.':'Saved '.$label.' publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count,'publication_type'=>$type]);
+    }
+
+    public static function publishedForProduction(PDO $db,int $productionId,string $type):?array
+    {
+        self::assertPublicationType($type);
+        $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.publication_type,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.production_id=:production AND pcp.publication_type=:type AND pcp.status='published' LIMIT 1");
+        $s->execute(['production'=>$productionId,'type'=>$type]);$production=$s->fetch();
+        if(!$production)return null;
+        $raw=$production['cast_snapshot_json']??null;
+        $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
+        $production['cast']=is_array($decoded)?$decoded:($type==='callback'?self::currentPublishableCallbacks($db,$productionId):self::currentPublishableCast($db,$productionId));
+        unset($production['cast_snapshot_json']);
+        return $production;
     }
 
     public static function publishedCastForProduction(PDO $db,int $productionId):?array
     {
-        $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.production_id=:production AND pcp.status='published' LIMIT 1");
-        $s->execute(['production'=>$productionId]);$production=$s->fetch();
-        if(!$production)return null;
-        $raw=$production['cast_snapshot_json']??null;
-        $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
-        $production['cast']=is_array($decoded)?$decoded:self::currentPublishableCast($db,$productionId);
-        unset($production['cast_snapshot_json']);
-        return $production;
+        return self::publishedForProduction($db,$productionId,'cast');
+    }
+
+    public static function publishedCallbacksForProduction(PDO $db,int $productionId):?array
+    {
+        return self::publishedForProduction($db,$productionId,'callback');
     }
 
     public static function publishedCastsForUser(PDO $db,int $userId):array
@@ -95,6 +112,8 @@ final class CastingCommunicationService
     }
 
     private static function currentPublishableCast(PDO $db,int $productionId):array{$s=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,pm.participation_role role,cr.participation_track FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' JOIN production_memberships pm ON pm.id=cr.production_membership_id AND pm.status='active' WHERE cr.production_id=:production AND cr.casting_status='cast' AND cr.rostered_at IS NOT NULL ORDER BY COALESCE(cr.participation_track,''),COALESCE(pm.participation_role,''),u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return$s->fetchAll();}
-    private static function publishableCount(PDO $db,int $productionId):int{$s=$db->prepare("SELECT COUNT(*) FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' JOIN production_memberships pm ON pm.id=cr.production_membership_id AND pm.status='active' WHERE cr.production_id=:production AND cr.casting_status='cast' AND cr.rostered_at IS NOT NULL");$s->execute(['production'=>$productionId]);return(int)$s->fetchColumn();}
+    private static function currentPublishableCallbacks(PDO $db,int $productionId):array{$s=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,cr.role_title role,cr.participation_track FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE cr.production_id=:production AND cr.casting_status='callback' ORDER BY COALESCE(cr.participation_track,''),u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return$s->fetchAll();}
+    private static function publishableCount(PDO $db,int $productionId,string $type):int{if($type==='callback'){$s=$db->prepare("SELECT COUNT(*) FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE cr.production_id=:production AND cr.casting_status='callback'");}else{$s=$db->prepare("SELECT COUNT(*) FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' JOIN production_memberships pm ON pm.id=cr.production_membership_id AND pm.status='active' WHERE cr.production_id=:production AND cr.casting_status='cast' AND cr.rostered_at IS NOT NULL");}$s->execute(['production'=>$productionId]);return(int)$s->fetchColumn();}
+    private static function assertPublicationType(string $type):void{if(!in_array($type,['callback','cast'],true))throw new RuntimeException('Choose a valid casting publication type.');}
     private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'casting',:id,:summary,:meta)");$s->execute(['actor'=>$actor,'event'=>$event,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
 }
