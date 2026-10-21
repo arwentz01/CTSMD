@@ -35,6 +35,8 @@ final class MobileApi
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/notifications' => self::notifications($db, $user),
+                '/api/mobile/notification-read' => self::notificationRead($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
                 '/api/mobile/message-send' => self::messageSend($db, $user),
@@ -117,6 +119,34 @@ final class MobileApi
         }
         unset($row);
         self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows]);
+    }
+
+    private static function notifications(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $s=$db->prepare("SELECT id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC,id DESC LIMIT 75");
+        $s->execute(['user'=>(int)$user['id']]);
+        $items=$s->fetchAll();
+        // Navigation is a hint only: target pages still enforce their own authorization.
+        // Never let stored notification paths navigate outside the CTSMD site.
+        foreach($items as &$item){
+            $path=(string)($item['action_path']??'');
+            if(!preg_match('~^/(?!/)[a-zA-Z0-9/_?=&%-]*$~D',$path))$item['action_path']=null;
+        }
+        unset($item);
+        $count=$db->prepare("SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL");
+        $count->execute(['user'=>(int)$user['id']]);
+        self::json(['notifications'=>$items,'unread_count'=>(int)$count->fetchColumn()]);
+    }
+
+    private static function notificationRead(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();$id=(int)($input['notification_id']??0);
+        if($id<1)throw new RuntimeException('A notification is required.');
+        $s=$db->prepare("UPDATE app_notifications SET read_at=COALESCE(read_at,CURRENT_TIMESTAMP) WHERE id=:id AND recipient_user_id=:user");
+        $s->execute(['id'=>$id,'user'=>(int)$user['id']]);
+        self::json(['ok'=>true]);
     }
 
     private static function messages(PDO $db, array $user): never
