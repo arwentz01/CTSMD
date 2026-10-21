@@ -3,9 +3,9 @@
 Overall readiness:
 
 - **Board demo: 92%**
-- **Limited pilot: 82%** (latest owner-reported acceptance assessment, October 21; remaining evidence listed below).
+- **Limited pilot: 86%** (latest owner-reported acceptance assessment, October 21; remaining evidence listed below).
 - **Board recommendation: CONDITIONAL GO** after the repeatable staging fixture is loaded and rehearsed.
-- **Pilot recommendation: NO-GO** until OS-presented Web Push and notification-click deep linking, private-file restore evidence, and the remaining mobile/keyboard checks are closed. Isolated email delivery and cron execution are accepted; normal cron activation still requires an administrator decision on the seven pre-existing live queue rows. The guardian-reactivation safeguard is deployed and runtime-verified.
+- **Pilot recommendation: NO-GO** until OS-presented Web Push and notification-click deep linking and the remaining mobile/keyboard checks are closed. Isolated email delivery/cron execution and private-file recovery are technically accepted. Normal email cron activation and production backup ownership, retention, RPO and RTO still require explicit operational decisions. The guardian-reactivation safeguard is deployed and runtime-verified.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -20,7 +20,7 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 
 ## October 21, 2026: Web Push acceptance and latest readiness (owner-reported)
 
-**Latest decision baseline:** Board preview **92% CONDITIONAL GO**; limited pilot **82% NO-GO**. These are readiness assessments, not calculated test coverage. This subsection supersedes older percentages as the current pilot decision and preserves earlier sections as chronological evidence.
+**Latest decision baseline:** Board preview **92% CONDITIONAL GO**; limited pilot **86% NO-GO**. These are readiness assessments, not calculated test coverage. This subsection supersedes older percentages as the current pilot decision and preserves earlier sections as chronological evidence.
 
 Owner reports completing isolated Web Push transport acceptance and cleanup:
 
@@ -35,15 +35,13 @@ Owner reports completing isolated Web Push transport acceptance and cleanup:
 ### Remaining mandatory pilot acceptance gates
 
 1. **Web Push user experience:** On supported devices, capture visible OS notification receipt, foreground/background behavior, notification-click deep link to the right authorized destination, and unsubscribe/permission-revocation behavior. Verify delivery-time authorization and preference controls remain effective. Provider acceptance alone is insufficient.
-2. **Private-file recovery:** Use disposable harmless files and a matched database plus private-storage snapshot. Restore outside production, verify hashes and content, and recheck access control for unrelated users, including attachment/Student boundaries. Document realistic restore time and the responsible owner.
-3. **Mobile/keyboard acceptance:** Exercise keyboard-only navigation, modal focus containment/return, long tables, small-screen wrapping, form completion, and essential Guardian/Student/Volunteer/Staff interactions. Record device/browser versions and evidence of defects and repairs.
-4. **Operational launch gate:** Define incident owner/escalation, production secrets/credential rotation status, safe backup retention, queue monitoring thresholds, and a supported pilot cohort. Decide how to disposition the seven pre-existing live email rows before enabling normal queue/reminder cron. A web-first pilot may explicitly exclude native push; native APNs/FCM delivery is **not proven** and must not be marketed as ready.
+2. **Mobile/keyboard acceptance:** Exercise keyboard-only navigation, modal focus containment/return, long tables, small-screen wrapping, form completion, and essential Guardian/Student/Volunteer/Staff interactions. Record device/browser versions and evidence of defects and repairs.
+3. **Operational launch gate:** Define incident owner/escalation, production secrets/credential rotation status, safe backup ownership/retention/RPO/RTO, queue monitoring thresholds, and a supported pilot cohort. Decide how to disposition the seven pre-existing live email rows before enabling normal queue/reminder cron. A web-first pilot may explicitly exclude native push; native APNs/FCM delivery is **not proven** and must not be marketed as ready.
 
 ### Next execution order and stop conditions
 
 - **First:** OS Web Push display and deep-link acceptance, with real-device evidence.
-- **Second:** isolated private-file restore and authorization verification.
-- **Third:** device, keyboard and long-table acceptance; resolve release-blocking defects only.
+- **Second:** device, keyboard and long-table acceptance; resolve release-blocking defects only.
 - **Finally:** one evidence review, owner sign-off, and updated readiness assessment. **No pilot GO without each in-scope release gate being closed with repeatable evidence.**
 
 **Scope discipline:** Security, safeguarding, delivery operations and release acceptance only. No feature additions, reporting, or discretionary UI overhaul. Preserve historical/audit records and production queues. Every test account or artifact must have a documented cleanup and post-cleanup verification. Never print tokens, credentials, private content or real family data into public logs or this document.
@@ -73,6 +71,7 @@ Owner reports completing isolated Web Push transport acceptance and cleanup:
 - **PARTIAL October 21:** push retry/reclaim/dedupe and delivery-time audience/preference rechecks are deployed and regression-tested. A disposable browser subscription accepted an isolated remote push through FCM with HTTP 201 and recorded `last_success_at`; observable OS presentation and notification-click deep-link behavior remain to be proven on a supported device.
 - **CLOSED October 21:** dedicated Staff, Moderator, Safeguarding, Guardian, Student, Volunteer, and Administrator fixtures passed the sensitive-route least-privilege matrix. A navigation defect for pure Moderator/Safeguarding accounts was fixed without broadening route authorization.
 - **CLOSED October 21:** nine CSRF mutation categories left the disposable database fingerprint unchanged; forged-ID POSTs from a Guardian returned 403 on nine sensitive routes. The matched database backup restored and booted on MySQL 8.0.44 in one second. Private-file restore remains unproven because the matched backup contained zero stored-file records and zero private binaries.
+- **CLOSED October 21, technical recovery:** a harmless 61-byte text attachment and its database metadata were captured as matched logical-database and private-storage snapshots, then restored into a second disposable MySQL schema and private path. The source, restored file and database metadata shared SHA-256 `df6aebcf962e7d20f81ad16864d8e6dc69024b712b15c839b94576566102894e`; byte size matched; Student and current Guardian attachment access passed; an unrelated adult was denied. Restore execution took six seconds on the local target. Both schemas and the temporary storage tree created by this run were removed and verified absent. Production backup ownership, retention and accepted RPO/RTO remain policy decisions.
 - **BEFORE PILOT:** complete keyboard focus containment/return and long-table testing on mobile.
 
 # Demo-Ready Workflows
@@ -360,7 +359,7 @@ Authenticated browser evidence completed October 20, 2026:
 - no genuine new-profile HAR was available;
 - no production mutation or outbound communication was performed.
 
-Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by delivery receipt, private-file recovery evidence, and remaining device/mobile usability acceptance.
+Security/safeguarding closure work added a shared policy, migration 062, web/mobile access filtering, push recipient revalidation, a real database integration test, and the host incident runbook. Full local and deployed PHP lint passed; lifecycle and push-claim tests passed locally and on Bluehost; the revised reactivation implementation passed 36 checks on both a disposable MySQL 8.0.44 clone and the deployed Bluehost database. Focused deployed mobile tests confirmed cutoff enforcement, historical-thread send denial, new-safe-thread operation, disabled-token denial, and complete fake-data cleanup. The code-level safeguarding runtime blocker is closed. Pilot sign-off remains blocked by observable Web Push presentation/deep-link acceptance, remaining device/mobile usability acceptance, and unresolved operational ownership decisions.
 
 ### October 21 operational hardening evidence
 
@@ -370,4 +369,4 @@ One active mobile bearer token was revoked and zero remain. Exact email/reminder
 
 Web Push acceptance used disposable account `push.acceptance@example.test` only. The browser granted permission, registered an active FCM subscription, and the deployed encryption/delivery implementation sent isolated queue item 248 without claiming any of the 47 pre-existing queued rows. FCM returned HTTP 201, the delivery log recorded `sent`, and the subscription recorded `last_success_at`. The browser's service-worker diagnostic separately confirmed that Chrome could retain an active notification, but the remote notification's macOS banner and notification-click deep link could not be independently observed. During cleanup, a reopened automation tab used the Administrator browser profile rather than the disposable session and revoked that profile's browser subscription; it was immediately resubscribed and the UI again showed permission granted, active subscription, active service worker, and `fcm.googleapis.com`. The disposable account was disabled and its Web Push subscriptions, queue/delivery rows, native push subscriptions, and mobile bearer tokens were removed; all four disposable credential/queue counts returned zero. The original browser-side disposable subscription could not be revisited after its tab closed, but server-side removal prevents further CTSMD delivery to it.
 
-Board readiness is **92%** and limited-pilot readiness is **82% NO-GO**: CTSMD shell cleanup, database restore, negative matrix, pure-persona matrix, repeatable demo fixture, isolated production email/cron acceptance, and remote FCM acceptance are closed; observable Web Push presentation/deep-link acceptance, private-file recovery, and remaining mobile/keyboard acceptance stay open. Normal email cron activation also awaits administrator disposition of seven pre-existing live rows.
+Board readiness is **92%** and limited-pilot readiness is **86% NO-GO**: CTSMD shell cleanup, matched database/private-file restore, negative matrix, pure-persona matrix, repeatable demo fixture, isolated production email/cron acceptance, and remote FCM acceptance are closed. Observable Web Push presentation/deep-link acceptance and remaining mobile/keyboard acceptance stay open. Normal email cron activation awaits administrator disposition of seven pre-existing live rows; production backup ownership, retention and accepted RPO/RTO also remain undecided.
