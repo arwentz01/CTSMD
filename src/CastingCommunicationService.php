@@ -76,6 +76,16 @@ final class CastingCommunicationService
         self::audit($db,$actorId,$publish?'casting.'.$type.'_published':'casting.'.$type.'_publication_saved',$productionId,$publish?'Published production '.$label.' snapshot to members.':'Saved '.$label.' publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count,'publication_type'=>$type]);
     }
 
+    public static function unpublishPublication(PDO $db,int $productionId,int $actorId,string $type):void
+    {
+        self::assertPublicationType($type);
+        $current=self::publication($db,$productionId,$type);
+        if(($current['status']??'draft')!=='published')throw new RuntimeException('That '.($type==='callback'?'callback':'cast').' list is not currently published.');
+        $s=$db->prepare("UPDATE production_cast_publications SET status='draft',published_at=NULL,updated_at=CURRENT_TIMESTAMP WHERE production_id=:production AND publication_type=:type");
+        $s->execute(['production'=>$productionId,'type'=>$type]);
+        self::audit($db,$actorId,'casting.'.$type.'_unpublished',$productionId,'Unpublished production '.($type==='callback'?'callback':'cast').' announcement.',['publication_type'=>$type]);
+    }
+
     public static function publishedForProduction(PDO $db,int $productionId,string $type):?array
     {
         self::assertPublicationType($type);
