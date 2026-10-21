@@ -23,7 +23,8 @@ final class FamilyDashboardExperience
         Auth::startSession();
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
-        if (!$user) self::redirect($basePath . '/login');\n        if (Auth::hasRole($user, 'student')) self::forbidden();
+        if (!$user) self::redirect($basePath . '/login');
+        if (Auth::hasRole($user, 'student')) self::forbidden();
 
         $data = FamilyDashboardService::build($db, $user);
         self::page($route, $basePath, $user, $data);
@@ -165,7 +166,14 @@ final class FamilyDashboardExperience
         exit;
     }
 
-    private static function forbidden(): never\n    {\n        http_response_code(403);\n        header('Content-Type: text/plain; charset=utf-8');\n        exit('Family Hub is available to parents and guardians.');\n    }\n\n    private static function redirect(string $url): never
+    private static function forbidden(): never
+    {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('Family Hub is available to parents and guardians.');
+    }
+
+    private static function redirect(string $url): never
     {
         header('Location: '.$url,true,303);
         exit;
