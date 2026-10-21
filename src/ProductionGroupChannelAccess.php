@@ -33,8 +33,8 @@ final class ProductionGroupChannelAccess
                       JOIN production_memberships gpm ON gpm.user_id=fr.guardian_user_id AND gpm.audience_type='guardian' AND gpm.status='active'
                       JOIN production_memberships spm ON spm.production_id=gpm.production_id AND spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
                       JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
-                      JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.production_membership_id=spm.id AND pgm.status='active'
-                      WHERE fr.guardian_user_id=:user_guardian AND fr.status='active' AND gpm.production_id=c.production_id
+                      JOIN production_group_members pgm ON pgm.production_membership_id=spm.id AND pgm.status='active'
+                      WHERE fr.guardian_user_id=:user_guardian AND fr.status='active' AND gpm.production_id=c.production_id AND pgm.group_id=pg.id
                   )
               )
             LIMIT 1");
