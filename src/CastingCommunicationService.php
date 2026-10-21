@@ -70,16 +70,26 @@ final class CastingCommunicationService
         self::audit($db,$actorId,$publish?'casting.cast_published':'casting.cast_publication_saved',$productionId,$publish?'Published production cast snapshot to members.':'Saved cast publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count]);
     }
 
+    public static function publishedCastForProduction(PDO $db,int $productionId):?array
+    {
+        $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.production_id=:production AND pcp.status='published' LIMIT 1");
+        $s->execute(['production'=>$productionId]);$production=$s->fetch();
+        if(!$production)return null;
+        $raw=$production['cast_snapshot_json']??null;
+        $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
+        $production['cast']=is_array($decoded)?$decoded:self::currentPublishableCast($db,$productionId);
+        unset($production['cast_snapshot_json']);
+        return $production;
+    }
+
     public static function publishedCastsForUser(PDO $db,int $userId):array
     {
-        $s=$db->prepare("SELECT p.id production_id,p.title,p.season,pcp.headline,pcp.member_note,pcp.cast_snapshot_json,pcp.published_at FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 WHERE pcp.status='published' AND EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:user AND pm.status='active') ORDER BY pcp.published_at DESC,p.title");
+        $s=$db->prepare("SELECT DISTINCT p.id FROM production_cast_publications pcp JOIN productions p ON p.id=pcp.production_id AND p.is_active=1 JOIN production_memberships pm ON pm.production_id=p.id AND pm.user_id=:user AND pm.status='active' WHERE pcp.status='published' ORDER BY p.id");
         $s->execute(['user'=>$userId]);$out=[];
-        foreach($s->fetchAll() as $production){
-            if(!ProductionContext::isActiveMember($db,$userId,(int)$production['production_id']))continue;
-            $raw=$production['cast_snapshot_json']??null;
-            $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
-            $production['cast']=is_array($decoded)?$decoded:self::currentPublishableCast($db,(int)$production['production_id']);
-            unset($production['cast_snapshot_json']);$out[]=$production;
+        foreach($s->fetchAll(PDO::FETCH_COLUMN) as $productionId){
+            if(!ProductionContext::isActiveMember($db,$userId,(int)$productionId))continue;
+            $publication=self::publishedCastForProduction($db,(int)$productionId);
+            if($publication)$out[]=$publication;
         }
         return $out;
     }
