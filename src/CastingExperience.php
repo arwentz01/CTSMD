@@ -21,9 +21,9 @@ final class CastingExperience
         if(!$user||!AccessPolicy::canManageProduction($user))self::forbidden();
         $_SESSION['casting_csrf']??=bin2hex(random_bytes(24));
         $production=ProductionContext::selected($db,$user);
-        if(!$production)self::page($basePath,$user,null,[],[],[],[],[],null);
+        if(!$production)self::page($basePath,$user,null,[],[],[],[],[],[],null);
         if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$user,(int)$production['id'],$basePath);
-        self::page($basePath,$user,$production,CastingService::board($db,(int)$production['id']),CastingService::intakeCandidates($db,(int)$production['id']),CastingService::peopleCandidates($db,(int)$production['id']),CastingService::groups($db,(int)$production['id']),['callback'=>CastingCommunicationService::publication($db,(int)$production['id'],'callback'),'cast'=>CastingCommunicationService::publication($db,(int)$production['id'],'cast')],$_SESSION['casting_flash']??null);
+        self::page($basePath,$user,$production,CastingService::board($db,(int)$production['id']),CastingService::intakeCandidates($db,(int)$production['id']),CastingService::peopleCandidates($db,(int)$production['id']),CastingService::groups($db,(int)$production['id']),['callback'=>CastingCommunicationService::publication($db,(int)$production['id'],'callback'),'cast'=>CastingCommunicationService::publication($db,(int)$production['id'],'cast')],CastingCommunicationService::publicSettings($db,(int)$production['id']),$_SESSION['casting_flash']??null);
     }
 
     private static function post(PDO $db,array $user,int $productionId,string $basePath):never
@@ -52,17 +52,22 @@ final class CastingExperience
                 CastingCommunicationService::unpublishPublication($db,$productionId,(int)$user['id'],$type);
                 self::flash('success',$type==='callback'?'Callbacks unpublished.':'Cast unpublished.');
             }
+            elseif($action==='toggle_public_page'){
+                $enabled=(string)($_POST['public_enabled']??'0')==='1';
+                CastingCommunicationService::setPublicPage($db,$productionId,(int)$user['id'],$enabled);
+                self::flash('success',$enabled?'Public website casting page enabled.':'Public website casting page disabled.');
+            }
             else throw new RuntimeException('Choose a valid casting action.');
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());}
         self::redirect($basePath.self::ROUTE);
     }
 
-    private static function page(string $basePath,array $user,?array $production,array $board,array $intake,array $people,array $groups,array $publication,?array $flash):never
+    private static function page(string $basePath,array $user,?array $production,array $board,array $intake,array $people,array $groups,array $publication,array $publicSettings,?array $flash):never
     {
         unset($_SESSION['casting_flash']);$u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');
         $counts=['under_review'=>0,'callback'=>0,'offered'=>0,'cast'=>0,'not_cast'=>0,'withdrawn'=>0];foreach($board as $r)if(isset($counts[$r['casting_status']]))$counts[$r['casting_status']]++;
         $sub=AppNavigation::productionSubnav(self::ROUTE,$user);
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Casting · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/casting.css?v=20261021-3')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production','Casting',$basePath,$sub);?><div class="cast-page">
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Casting · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/casting.css?v=20261021-4')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production','Casting',$basePath,$sub);?><div class="cast-page">
         <?php if(!$production):?><section class="cast-empty"><h2>Select an active production first.</h2><p>Casting is a Working-Production operation.</p><a class="button" href="<?=$u('/production')?>">Choose production</a></section>
         <?php else:?><section class="cast-hero"><div><small>CASTING BOARD</small><h2><?=$e((string)$production['title'])?></h2><p>Decisions stay private until staff explicitly sends a result or publishes the cast. Finalizing roster access still does not communicate a result automatically.</p></div><a href="<?=$u('/production/people')?>">Production roster →</a></section>
         <?php if($flash):?><div class="cast-flash <?=$e((string)$flash['type'])?>"><?=$e((string)$flash['message'])?></div><?php endif;?>
@@ -74,6 +79,11 @@ final class CastingExperience
                 <form method="post" class="cast-release-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="publication_type" value="<?=$e($publicationType)?>"><label>Headline<input name="headline" maxlength="190" value="<?=$e((string)($release['headline']??''))?>" placeholder="<?=$publicationType==='callback'?'Callbacks for ':'Meet the cast of '?><?=$e((string)$production['title'])?>"></label><label>Member note<textarea name="member_note" rows="2" maxlength="2000" placeholder="<?=$publicationType==='callback'?'Callback instructions, timing, or a short note…':'A short note from the production team…'?>"><?=$e((string)($release['member_note']??''))?></textarea></label><div><button name="action" value="save_publication" type="submit">Save draft</button><button class="button" name="action" value="publish_publication" type="submit"><?=$publicationType==='callback'?'Publish callbacks':'Publish cast'?></button><?php if($isPublished):?><button class="cast-unpublish" name="action" value="unpublish_publication" type="submit">Unpublish</button><?php endif;?></div></form>
             </details>
             <?php endforeach;?>
+        </section>
+        <section class="cast-public-link">
+            <div><small>PUBLIC WEBSITE</small><b>Embeddable casting announcement</b><span><?=$publicSettings['enabled']?'Live · first name + last initial':'Off · members only'?></span></div>
+            <?php if($publicSettings['enabled']&&!empty($publicSettings['slug'])):?><code><?=$e('https://ctsmd.me/public/casting?slug='.(string)$publicSettings['slug'])?></code><?php endif;?>
+            <form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="toggle_public_page"><input type="hidden" name="public_enabled" value="<?=$publicSettings['enabled']?'0':'1'?>"><button type="submit"><?=$publicSettings['enabled']?'Disable public page':'Enable public page'?></button></form>
         </section>
         <section class="cast-summary"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast'] as $key=>$label):?><article><b><?=(int)$counts[$key]?></b><span><?=$e($label)?></span></article><?php endforeach;?></section>
         <div class="cast-intake-grid"><section class="cast-panel"><header><small>AUDITION INTAKE</small><h3>Reviewed registrations</h3></header><?php if(!$intake):?><p>No linked audition registrations are waiting to be added.</p><?php endif;?><?php foreach($intake as $row):?><form class="cast-candidate" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_intake"><input type="hidden" name="user_id" value="<?=(int)$row['user_id']?>"><input type="hidden" name="submission_id" value="<?=(int)$row['submission_id']?>"><span><b><?=$e((string)$row['person_name'])?></b><small><?=$e((string)$row['opportunity_title'])?> · <?=ucwords(str_replace('_',' ',(string)$row['registration_status']))?></small></span><button type="submit">Add to casting</button></form><?php endforeach;?></section>
