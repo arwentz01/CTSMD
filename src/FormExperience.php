@@ -267,11 +267,11 @@ final class FormExperience
 
     private static function reviewQueue(PDO $db, int $productionId = 0, int $formId = 0): array
     {
-        $sql="SELECT fs.id, fs.assignment_id, fs.submitted_at, f.title, f.form_type, CONCAT(u.first_name, ' ', u.last_name) AS assignee, u.initials FROM form_submissions fs JOIN form_assignments fa ON fa.id = fs.assignment_id JOIN forms f ON f.id = fs.form_id JOIN users u ON u.id = fs.submitted_by_user_id WHERE fs.status = 'submitted' AND f.review_required = 1";
+        $sql="SELECT fs.id, fa.id AS assignment_id, fs.submitted_at, fs.status AS submission_status, f.id AS form_id, f.review_required, f.title, f.form_type, CONCAT(subject.first_name, ' ', subject.last_name) AS assignee, subject.initials, CONCAT(submitter.first_name, ' ', submitter.last_name) AS submitted_by FROM form_assignments fa JOIN forms f ON f.id = fa.form_id AND f.active=1 JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id) LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id WHERE fa.status='requires_review'";
         $params=[];
         if($productionId>0){$sql.=" AND fa.production_id = :production";$params['production']=$productionId;}
         if($formId>0){$sql.=" AND f.id = :form";$params['form']=$formId;}
-        $stmt=$db->prepare($sql." ORDER BY fs.submitted_at ASC, fs.id ASC");
+        $stmt=$db->prepare($sql." ORDER BY fs.submitted_at ASC, fa.id ASC");
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
@@ -367,7 +367,7 @@ final class FormExperience
 
 <?php elseif ($route === '/admin/forms'): ?>
 <section class="forms-hero staff"><div><small>STAFF OPERATIONS</small><h2>Forms review queue</h2><p><?= $productionFilter || $formFilter ? 'Showing the matching submissions. ' : '' ?>Only submissions explicitly configured for review appear here. Approval is a recorded decision, not an inferred status.</p></div><b><?= count($queue) ?></b></section>
-<?php if($productionFilter || $formFilter):?><p><a href="<?= $url('/admin/forms') ?>">← Show all pending reviews</a></p><?php endif; ?><div class="forms-review-list"><?php if (!$queue): ?><section class="forms-empty"><b>Queue clear.</b><p>No submitted forms are waiting for staff review.</p></section><?php else: foreach ($queue as $item): ?><a href="<?= $url('/admin/forms/review?id=' . (int)$item['id']) ?>"><i><?= $esc($item['initials']) ?></i><div><small><?= $esc(strtoupper(str_replace('_', ' ', $item['form_type']))) ?></small><h3><?= $esc($item['title']) ?></h3><p><?= $esc($item['assignee']) ?> · Submitted <?= $esc(date('M j · g:i A', strtotime($item['submitted_at']))) ?></p></div><span>Review →</span></a><?php endforeach; endif; ?></div>
+<?php if($productionFilter || $formFilter):?><p><a href="<?= $url('/admin/forms') ?>">← Show all pending reviews</a></p><?php endif; ?><div class="forms-review-list"><?php if (!$queue): ?><section class="forms-empty"><b>Queue clear.</b><p>No form assignments in this view are awaiting staff review.</p></section><?php else: foreach ($queue as $item): $reviewable=(int)$item['id']>0 && $item['submission_status']==='submitted' && (bool)$item['review_required']; ?><a href="<?= $url($reviewable?'/admin/forms/review?id='.(int)$item['id']:'/admin/forms/manage/assign?id='.(int)$item['form_id']) ?>"><i><?= $esc((string)$item['initials']) ?></i><div><small><?= $esc(strtoupper(str_replace('_', ' ', $item['form_type']))) ?></small><h3><?= $esc($item['title']) ?></h3><p><?= $esc($item['assignee']) ?><?php if($item['submitted_by']):?> · Submitted by <?= $esc($item['submitted_by']) ?><?php endif; ?><?php if($item['submitted_at']):?> · Submitted <?= $esc(date('M j · g:i A', strtotime($item['submitted_at']))) ?><?php endif; ?></p><?php if(!$reviewable):?><p>Review status needs reconciliation. Submission is unavailable or no longer eligible for approval.</p><?php endif; ?></div><span><?= $reviewable?'Review →':'Inspect assignment →' ?></span></a><?php endforeach; endif; ?></div>
 
 <?php else: ?>
 <?php if (!$review): ?><section class="forms-empty"><b>Submission not found.</b><a class="button" href="<?= $url('/admin/forms') ?>">Back to queue</a></section><?php else: ?>
