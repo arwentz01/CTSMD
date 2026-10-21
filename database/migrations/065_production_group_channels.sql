@@ -26,27 +26,42 @@ BEGIN
      LIMIT 1;
 
     IF channel_mode='selected' AND channel_group_id IS NOT NULL THEN
-        SELECT COUNT(DISTINCT pm.user_id),
-               COUNT(DISTINCT CASE WHEN EXISTS (
-                   SELECT 1
-                     FROM auth_user_roles sur
-                     JOIN auth_roles sr ON sr.id=sur.role_id AND sr.active=1 AND sr.code='student'
-                    WHERE sur.user_id=pm.user_id
-               ) THEN pm.user_id END),
-               COUNT(DISTINCT CASE WHEN EXISTS (
-                   SELECT 1
-                     FROM auth_user_roles aur
-                     JOIN auth_roles ar ON ar.id=aur.role_id AND ar.active=1 AND ar.code IN ('administrator','production_staff')
-                    WHERE aur.user_id=pm.user_id
-               ) THEN pm.user_id END)
+        SELECT COUNT(DISTINCT participant_id),
+               COUNT(DISTINCT CASE WHEN is_student=1 THEN participant_id END),
+               COUNT(DISTINCT CASE WHEN is_staff=1 THEN participant_id END)
           INTO live_members,live_students,live_staff
-          FROM channels c
-          JOIN productions p ON p.id=c.production_id AND p.is_active=1
-          JOIN production_groups pg ON pg.id=c.production_group_id AND pg.production_id=c.production_id AND pg.active=1
-          JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
-          JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=c.production_id AND pm.status='active'
-          JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
-         WHERE c.id=NEW.channel_id;
+          FROM (
+              SELECT pm.user_id participant_id,
+                     EXISTS(
+                         SELECT 1 FROM auth_user_roles sur
+                         JOIN auth_roles sr ON sr.id=sur.role_id AND sr.active=1 AND sr.code='student'
+                         WHERE sur.user_id=pm.user_id
+                     ) is_student,
+                     EXISTS(
+                         SELECT 1 FROM auth_user_roles aur
+                         JOIN auth_roles ar ON ar.id=aur.role_id AND ar.active=1 AND ar.code IN ('administrator','production_staff')
+                         WHERE aur.user_id=pm.user_id
+                     ) is_staff
+                FROM channels c
+                JOIN productions p ON p.id=c.production_id AND p.is_active=1
+                JOIN production_groups pg ON pg.id=c.production_group_id AND pg.production_id=c.production_id AND pg.active=1
+                JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
+                JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=c.production_id AND pm.status='active'
+                JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
+               WHERE c.id=NEW.channel_id
+              UNION
+              SELECT gpm.user_id participant_id,0 is_student,0 is_staff
+                FROM channels c
+                JOIN productions p ON p.id=c.production_id AND p.is_active=1
+                JOIN production_groups pg ON pg.id=c.production_group_id AND pg.production_id=c.production_id AND pg.active=1
+                JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
+                JOIN production_memberships spm ON spm.id=pgm.production_membership_id AND spm.production_id=c.production_id AND spm.audience_type='student' AND spm.status='active'
+                JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
+                JOIN family_relationships fr ON fr.student_user_id=spm.user_id AND fr.status='active'
+                JOIN production_memberships gpm ON gpm.production_id=c.production_id AND gpm.user_id=fr.guardian_user_id AND gpm.audience_type='guardian' AND gpm.status='active'
+                JOIN users guardian ON guardian.id=gpm.user_id AND guardian.active=1 AND guardian.account_status<>'disabled'
+               WHERE c.id=NEW.channel_id
+          ) live_group;
     ELSEIF channel_mode='selected' THEN
         SELECT COUNT(DISTINCT cm.user_id),
                COUNT(DISTINCT CASE WHEN EXISTS (
