@@ -265,9 +265,15 @@ final class FormExperience
         return $stmt->fetch() ?: null;
     }
 
-    private static function reviewQueue(PDO $db): array
+    private static function reviewQueue(PDO $db, int $productionId = 0, int $formId = 0): array
     {
-        return $db->query("SELECT fs.id, fs.assignment_id, fs.submitted_at, f.title, f.form_type, CONCAT(u.first_name, ' ', u.last_name) AS assignee, u.initials FROM form_submissions fs JOIN form_assignments fa ON fa.id = fs.assignment_id JOIN forms f ON f.id = fs.form_id JOIN users u ON u.id = fs.submitted_by_user_id WHERE fs.status = 'submitted' AND f.review_required = 1 ORDER BY fs.submitted_at ASC, fs.id ASC")->fetchAll();
+        $sql="SELECT fs.id, fs.assignment_id, fs.submitted_at, f.title, f.form_type, CONCAT(u.first_name, ' ', u.last_name) AS assignee, u.initials FROM form_submissions fs JOIN form_assignments fa ON fa.id = fs.assignment_id JOIN forms f ON f.id = fs.form_id JOIN users u ON u.id = fs.submitted_by_user_id WHERE fs.status = 'submitted' AND f.review_required = 1";
+        $params=[];
+        if($productionId>0){$sql.=" AND fa.production_id = :production";$params['production']=$productionId;}
+        if($formId>0){$sql.=" AND f.id = :form";$params['form']=$formId;}
+        $stmt=$db->prepare($sql." ORDER BY fs.submitted_at ASC, fs.id ASC");
+        $stmt->execute($params);
+        return $stmt->fetchAll();
     }
 
     private static function reviewItem(PDO $db, int $submissionId): ?array
@@ -325,7 +331,9 @@ final class FormExperience
         unset($_SESSION['forms_flash']);
         $staff = AccessPolicy::isStaff($user);
         $myAssignments = self::assignments($db, (int)$user['id']);
-        $queue = $staff ? self::reviewQueue($db) : [];
+        $productionFilter = $route === '/admin/forms' ? (filter_input(INPUT_GET, 'production_id', FILTER_VALIDATE_INT) ?: 0) : 0;
+        $formFilter = $route === '/admin/forms' ? (filter_input(INPUT_GET, 'form_id', FILTER_VALIDATE_INT) ?: 0) : 0;
+        $queue = $staff ? self::reviewQueue($db, (int)$productionFilter, (int)$formFilter) : [];
 
         $title = match ($route) {
             '/forms' => 'My forms',
@@ -358,8 +366,8 @@ final class FormExperience
 <?php endif; ?>
 
 <?php elseif ($route === '/admin/forms'): ?>
-<section class="forms-hero staff"><div><small>STAFF OPERATIONS</small><h2>Forms review queue</h2><p>Only submissions explicitly configured for review appear here. Approval is a recorded decision, not an inferred status.</p></div><b><?= count($queue) ?></b></section>
-<div class="forms-review-list"><?php if (!$queue): ?><section class="forms-empty"><b>Queue clear.</b><p>No submitted forms are waiting for staff review.</p></section><?php else: foreach ($queue as $item): ?><a href="<?= $url('/admin/forms/review?id=' . (int)$item['id']) ?>"><i><?= $esc($item['initials']) ?></i><div><small><?= $esc(strtoupper(str_replace('_', ' ', $item['form_type']))) ?></small><h3><?= $esc($item['title']) ?></h3><p><?= $esc($item['assignee']) ?> · Submitted <?= $esc(date('M j · g:i A', strtotime($item['submitted_at']))) ?></p></div><span>Review →</span></a><?php endforeach; endif; ?></div>
+<section class="forms-hero staff"><div><small>STAFF OPERATIONS</small><h2>Forms review queue</h2><p><?= $productionFilter || $formFilter ? 'Showing the matching submissions. ' : '' ?>Only submissions explicitly configured for review appear here. Approval is a recorded decision, not an inferred status.</p></div><b><?= count($queue) ?></b></section>
+<?php if($productionFilter || $formFilter):?><p><a href="<?= $url('/admin/forms') ?>">← Show all pending reviews</a></p><?php endif; ?><div class="forms-review-list"><?php if (!$queue): ?><section class="forms-empty"><b>Queue clear.</b><p>No submitted forms are waiting for staff review.</p></section><?php else: foreach ($queue as $item): ?><a href="<?= $url('/admin/forms/review?id=' . (int)$item['id']) ?>"><i><?= $esc($item['initials']) ?></i><div><small><?= $esc(strtoupper(str_replace('_', ' ', $item['form_type']))) ?></small><h3><?= $esc($item['title']) ?></h3><p><?= $esc($item['assignee']) ?> · Submitted <?= $esc(date('M j · g:i A', strtotime($item['submitted_at']))) ?></p></div><span>Review →</span></a><?php endforeach; endif; ?></div>
 
 <?php else: ?>
 <?php if (!$review): ?><section class="forms-empty"><b>Submission not found.</b><a class="button" href="<?= $url('/admin/forms') ?>">Back to queue</a></section><?php else: ?>
