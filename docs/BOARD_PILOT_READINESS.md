@@ -3,9 +3,9 @@
 Overall readiness:
 
 - **Board demo: 92%**
-- **Limited pilot: 78%**
+- **Limited pilot: 78%** (latest owner-reported acceptance assessment, October 21; remaining evidence listed below).
 - **Board recommendation: CONDITIONAL GO** after the repeatable staging fixture is loaded and rehearsed.
-- **Pilot recommendation: NO-GO** until real email receipt, observable Web Push presentation/deep-link behavior, private-file restore evidence, and the remaining mobile/keyboard checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
+- **Pilot recommendation: NO-GO** until real email receipt and cron execution, OS-presented Web Push and notification-click deep linking, private-file restore evidence, and the remaining mobile/keyboard checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -17,6 +17,40 @@ Authenticated browser testing was completed on October 20, 2026 against https://
 Those October 20 browser fixtures used combined roles. The October 21 disposable-environment matrix below separately proves least-privilege boundaries with pure fake personas. No real-user mutation or outbound communication was performed. Opening existing conversations and channels updated read cursors for the Guardian and Student accounts.
 
 The original clean-browser ERR_TIMED_OUT root cause is **not established**. It was not reproduced in the connected authenticated browser. Retained-session navigation was generally 0.2 to 0.6 seconds. Earlier clean anonymous testing did record three requests that exceeded 20 seconds before successful retry. Runtime schema work remains a plausible latency contributor, but evidence is insufficient to call it the cause or solved.
+
+## October 21, 2026: Web Push acceptance and latest readiness (owner-reported)
+
+**Latest decision baseline:** Board preview **92% CONDITIONAL GO**; limited pilot **78% NO-GO**. These are readiness assessments, not calculated test coverage. This subsection supersedes older 76% percentages as the current pilot decision and preserves earlier sections as chronological evidence.
+
+Owner reports completing isolated Web Push transport acceptance and cleanup:
+
+- Disposable fake push request returned **FCM HTTP 201** (provider accepted request). The application's delivery record was **sent** and `last_success_at` was recorded. **This does not prove OS notification display or user navigation on click.**
+- All **47 existing production queue entries** were left untouched.
+- Fake test account was disabled; fake Web Push subscriptions, push queue/delivery rows, mobile tokens and native push subscriptions were deleted. Cleanup query returned zero remaining fake records.
+- The administrator's unintentionally revoked browser subscription was restored and verified active.
+- Community loaded successfully after testing. The previously observed `pg.id` error was historical, not an active runtime failure.
+- Owner reports `git diff --check` passed, relevant PHP lint passed, and **no commit was created** for the local acceptance work.
+- This evidence was conveyed from the local working copy. GitHub cannot independently corroborate the local evidence artifacts until their contents are synchronized; do not claim OS delivery or pilot approval.
+
+### Remaining mandatory pilot acceptance gates
+
+1. **Real email delivery and cron:** Obtain explicit authorization for a test inbox; prove SMTP acceptance, real inbox receipt, and delivery auditing. Enable serialized Bluehost queue/reminder cron only after preflight and safe queue handling. **Do not inadvertently drain, modify, or contact the 47 existing production queue entries.** Record queue counts before and after, cron exit status, idempotent repeat runs, and failure/alert behavior. The older report of six queued emails was a historical snapshot and should not be treated as the current queue size.
+2. **Web Push user experience:** On supported devices, capture visible OS notification receipt, foreground/background behavior, notification-click deep link to the right authorized destination, and unsubscribe/permission-revocation behavior. Verify delivery-time authorization and preference controls remain effective. Provider acceptance alone is insufficient.
+3. **Private-file recovery:** Use disposable harmless files and a matched database plus private-storage snapshot. Restore outside production, verify hashes and content, and recheck access control for unrelated users, including attachment/Student boundaries. Document realistic restore time and the responsible owner.
+4. **Mobile/keyboard acceptance:** Exercise keyboard-only navigation, modal focus containment/return, long tables, small-screen wrapping, form completion, and essential Guardian/Student/Volunteer/Staff interactions. Record device/browser versions and evidence of defects and repairs.
+5. **Operational launch gate:** Define incident owner/escalation, production secrets/credential rotation status, safe backup retention, queue monitoring thresholds, and a supported pilot cohort. A web-first pilot may explicitly exclude native push; native APNs/FCM delivery is **not proven** and must not be marketed as ready.
+
+### Next execution order and stop conditions
+
+- **First:** real email delivery, safe cron preflight and controlled activation. If test recipient authorization or queue isolation is missing, stop short of sending and log the blocker; do not silently bypass it.
+- **Second:** OS Web Push display and deep-link acceptance, with real-device evidence.
+- **Third:** isolated private-file restore and authorization verification.
+- **Fourth:** device, keyboard and long-table acceptance; resolve release-blocking defects only.
+- **Finally:** one evidence review, owner sign-off, and updated readiness assessment. **No pilot GO without each in-scope release gate being closed with repeatable evidence.**
+
+**Scope discipline:** Security, safeguarding, delivery operations and release acceptance only. No feature additions, reporting, or discretionary UI overhaul. Preserve historical/audit records and production queues. Every test account or artifact must have a documented cleanup and post-cleanup verification. Never print tokens, credentials, private content or real family data into public logs or this document.
+
+---
 
 # Must Fix Before Board Demo
 
