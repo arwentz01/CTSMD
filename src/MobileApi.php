@@ -228,7 +228,22 @@ final class MobileApi
 
     private static function logout(PDO $db): never
     {
-        self::requireMethod('POST');$token=self::bearerToken();if($token){$db->prepare('UPDATE auth_mobile_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=:hash')->execute(['hash'=>hash('sha256',$token)]);}self::json(['ok'=>true]);
+        self::requireMethod('POST');
+        $token=self::bearerToken();
+        $input=self::input();
+        $identity=trim((string)($input['push_identity']??''));
+        if($token){
+            // Only remove the calling device's registered push identity; other devices remain signed in.
+            if($identity!==''&&strlen($identity)<=2048){
+                $user=self::bearerUser($db);
+                if($user){
+                    $db->prepare('DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity')->execute(['user'=>(int)$user['id'],'identity'=>$identity]);
+                    if(str_starts_with($identity,'https://'))PushService::unsubscribe($db,(int)$user['id'],$identity);
+                }
+            }
+            $db->prepare('UPDATE auth_mobile_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=:hash')->execute(['hash'=>hash('sha256',$token)]);
+        }
+        self::json(['ok'=>true]);
     }
 
     private static function pushSubscription(PDO $db,array $user): never
