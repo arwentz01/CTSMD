@@ -43,3 +43,14 @@
 .att-roster .att-savebar{margin-top:0}
 @media(max-width:900px){.att-roster .att-person{grid-template-columns:minmax(140px,.75fr) minmax(0,1.5fr)}}
 @media(max-width:650px){.att-page:has(.att-roster){padding:10px;gap:9px}.att-page:has(.att-roster) .att-detail-head{padding:14px}.att-roster .att-person{grid-template-columns:1fr;gap:6px;padding:10px 12px}.att-roster .att-status-picker{grid-template-columns:minmax(0,1fr) auto}.att-roster .att-status-more{min-width:65px}.att-roster .att-status-more summary{padding:0 7px}.att-roster .att-status-picker label{min-height:46px;font-size:.78rem}.att-roster .att-report{grid-row:auto}.att-roster{padding-bottom:150px}.att-roster .att-savebar{bottom:0}}
+
+/* Visual-only attendance sections; all attendees remain in one POST roster. */
+.att-roster-section{display:grid;gap:0;margin-bottom:12px;min-width:0}
+.att-roster-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:#f4eff1;border:1px solid #e5dce0;border-bottom:0;border-radius:14px 14px 0 0}
+.att-roster-section-head h3{margin:0;font-size:1rem;color:#292127}
+.att-roster-section-head span{font-size:.78rem;font-weight:800;color:#75656d;white-space:nowrap}
+.att-roster-section-list{min-width:0}
+.att-roster .att-roster-section-list .att-person:first-child{border-radius:0}
+.att-roster .att-roster-section-list .att-person:last-child{border-bottom:1px solid #e9e3e6;border-radius:0 0 14px 14px}
+.att-roster .att-roster-section-list .att-person:has(+ .att-savebar){border-radius:0}
+@media(max-width:650px){.att-roster-section-head{padding:10px 12px}.att-roster-section{margin-bottom:10px}}
