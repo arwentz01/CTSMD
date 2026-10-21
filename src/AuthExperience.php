@@ -24,8 +24,8 @@ final class AuthExperience
 
     private static function handlePost(PDO $db,string $route,string $basePath):never
     {
-        self::csrf();
         try{
+            self::csrf();
             if($route==='/login'){
                 $email=(string)($_POST['email']??'');$subject=RateLimiter::requestSubject($email);RateLimiter::enforce($db,'web-login',$subject,8,900,900);
                 Auth::login($db,$email,(string)($_POST['password']??''));RateLimiter::clear($db,'web-login',$subject);
