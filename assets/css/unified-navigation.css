@@ -2,3 +2,9 @@
 /* Keep keyboard focus visible on light surfaces and the dark navigation. */
 :where(a,button,input,select,textarea):focus-visible{outline:3px solid #a6192e;outline-offset:3px}
 .unified-sidebar :where(a,button,select):focus-visible{outline-color:#f4bd3f}
+
+/* Always-visible message inbox shortcut; count comes from authorized unread navigation service. */
+.unified-utilities .unified-inbox-link{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;text-decoration:none}
+.unified-utilities .unified-inbox-link>span[aria-hidden]{font-size:19px;line-height:1}
+.unified-utilities .unified-inbox-link:focus-visible{outline:3px solid #d5a52f;outline-offset:3px}
+@media(max-width:650px){.unified-utilities .unified-inbox-link>span:not([aria-hidden]){display:none}}
