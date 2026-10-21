@@ -11,6 +11,7 @@ require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
+require_once __DIR__ . '/PushService.php';
 
 final class MobileApi
 {
@@ -232,14 +233,46 @@ final class MobileApi
 
     private static function pushSubscription(PDO $db,array $user): never
     {
-        if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
-            $input=self::input();$sub=$input['subscription']??null;if(!is_array($sub))throw new RuntimeException('Push subscription is required.');
-            $identity=(string)($sub['endpoint']??$sub['fcmToken']??$sub['apnsToken']??'');if($identity==='')throw new RuntimeException('Push subscription identity is missing.');
-            $previous=trim((string)($input['previous_identity']??''));if($previous!==''&&$previous!==$identity){$d=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity");$d->execute(['user'=>(int)$user['id'],'identity'=>$previous]);}
-            $json=json_encode($sub,JSON_UNESCAPED_SLASHES);$s=$db->prepare("INSERT INTO mobile_push_subscriptions (user_id,identity,subscription_json,created_at,updated_at) VALUES (:user,:identity,:json,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),subscription_json=VALUES(subscription_json),updated_at=CURRENT_TIMESTAMP");$s->execute(['user'=>(int)$user['id'],'identity'=>$identity,'json'=>$json]);self::json(['ok'=>true]);
+        $userId=(int)$user['id'];
+        $method=$_SERVER['REQUEST_METHOD']??'GET';
+        if($method==='POST'){
+            $input=self::input();
+            $sub=$input['subscription']??null;
+            if(!is_array($sub))throw new RuntimeException('Push subscription is required.');
+            $identity=trim((string)($sub['endpoint']??$sub['fcmToken']??$sub['apnsToken']??''));
+            if($identity==='')throw new RuntimeException('Push subscription identity is missing.');
+            $previous=trim((string)($input['previous_identity']??''));
+            // A standards-based browser Web Push subscription has endpoint + encryption keys.
+            // Native APNs/FCM tokens are NOT Web Push endpoints and need a distinct sender.
+            $isWeb=isset($sub['endpoint']);
+            if($isWeb){
+                PushService::subscribe($db,$userId,$sub,(string)($_SERVER['HTTP_USER_AGENT']??''));
+            }elseif(!isset($sub['fcmToken'])&&!isset($sub['apnsToken'])){
+                throw new RuntimeException('Unsupported push subscription type.');
+            }
+            if($previous!==''&&$previous!==$identity){
+                $db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity")->execute(['user'=>$userId,'identity'=>$previous]);
+                if(str_starts_with($previous,'https://'))PushService::unsubscribe($db,$userId,$previous);
+            }
+            $json=json_encode($sub,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+            $stmt=$db->prepare("INSERT INTO mobile_push_subscriptions (user_id,identity,subscription_json,created_at,updated_at) VALUES (:user,:identity,:json,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),subscription_json=VALUES(subscription_json),updated_at=CURRENT_TIMESTAMP");
+            $stmt->execute(['user'=>$userId,'identity'=>$identity,'json'=>$json]);
+            self::json(['ok'=>true,'delivery_type'=>$isWeb?'web_push':'native_pending']);
         }
-        if(($_SERVER['REQUEST_METHOD']??'GET')==='DELETE'){
-            $identity=trim((string)($_GET['identity']??''));if($identity!==''){$s=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity");$s->execute(['user'=>(int)$user['id'],'identity'=>$identity]);}else{$s=$db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user");$s->execute(['user'=>(int)$user['id']]);}self::json(['ok'=>true]);
+        if($method==='DELETE'){
+            $identity=trim((string)($_GET['identity']??''));
+            if($identity!==''){
+                $db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user AND identity=:identity")->execute(['user'=>$userId,'identity'=>$identity]);
+                if(str_starts_with($identity,'https://'))PushService::unsubscribe($db,$userId,$identity);
+            }else{
+                $stmt=$db->prepare("SELECT identity FROM mobile_push_subscriptions WHERE user_id=:user");
+                $stmt->execute(['user'=>$userId]);
+                foreach($stmt->fetchAll(PDO::FETCH_COLUMN) as $old){
+                    if(str_starts_with((string)$old,'https://'))PushService::unsubscribe($db,$userId,(string)$old);
+                }
+                $db->prepare("DELETE FROM mobile_push_subscriptions WHERE user_id=:user")->execute(['user'=>$userId]);
+            }
+            self::json(['ok'=>true]);
         }
         self::json(['error'=>'Method not allowed.'],405);
     }
