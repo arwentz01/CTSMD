@@ -49,7 +49,8 @@ final class OperationsHubExperience
                 $items[]=['icon'=>'♡','eyebrow'=>'VOLUNTEERS','label'=>'Volunteer Operations','detail'=>'Create shifts, review approvals, manage requirements, training and verification.','href'=>'/admin/volunteer-shifts'];
             }
             if(AccessPolicy::canManageForms($user)){
-                $items[]=['icon'=>'✓','eyebrow'=>'FORMS & INTAKE','label'=>'Forms & Registration','detail'=>'Build forms, assign requirements, review submissions and process registration intake.','href'=>'/admin/operations/forms'];
+                $items[]=['icon'=>'✓','eyebrow'=>'FORMS','label'=>'Forms Management','detail'=>'Build forms, assign requirements, and review form submissions.','href'=>'/admin/operations/forms'];
+                $items[]=['icon'=>'↗','eyebrow'=>'REGISTRATION','label'=>'Auditions & Signups','detail'=>'Create audition and event opportunities, manage registrations, and review participant intake.','href'=>'/admin/registrations'];
             }
             if(AccessPolicy::canManageSafeguarding($user)){
                 $items[]=['icon'=>'●','eyebrow'=>'RESTRICTED','label'=>'Safeguarding','detail'=>'Review safeguarded messaging, relationship concerns and restricted cases.','href'=>'/safeguarding'];
