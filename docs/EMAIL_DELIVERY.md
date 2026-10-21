@@ -63,7 +63,7 @@ A verified Bluehost setup is:
 7 * * * * /usr/bin/flock -n /home1/wentzmdc/ctsmd-cron-locks/email-reminders.lock /usr/local/bin/php /home1/wentzmdc/public_html/ctsmd/bin/queue-email-reminders.php >> /home1/wentzmdc/ctsmd-cron-logs/email-reminders.log 2>&1
 ```
 
-The lock and log directories are outside `public_html` and use mode `0700`. As of October 21, 2026, both entries are installed in the account crontab as comments and therefore do not run. Production contains six queued non-test recipients, so the jobs must remain disabled until an approved recipient is supplied, a harmless fake-account message is queued, and receipt is observed. Enable only the two command lines above; do not enable push scheduling as part of the email test.
+The lock and log directories are outside `public_html` and use mode `0700`. As of the October 21, 2026 production preflight, both entries are installed in the account crontab as comments and therefore do not run. Production SMTP has host, port, TLS, sender, username and password values configured, but the queue contains seven due rows (`id` 1-7), none addressed to a recognized disposable test domain, and no delivery-log rows. The worker processes the oldest due row and has no queue-ID filter, so it cannot safely deliver a later acceptance row without first touching the live backlog. The jobs must remain disabled until an approved recipient is supplied and a safe isolation procedure is approved. Do not run the worker or enable either cron line merely to test SMTP, and do not enable push scheduling as part of the email test.
 
 The queue worker automatically reclaims a message left in `sending` for more than ten minutes and retries failed deliveries up to three attempts with a delay between attempts.
 

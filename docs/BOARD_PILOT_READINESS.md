@@ -3,9 +3,9 @@
 Overall readiness:
 
 - **Board demo: 92%**
-- **Limited pilot: 76%**
+- **Limited pilot: 78%**
 - **Board recommendation: CONDITIONAL GO** after the repeatable staging fixture is loaded and rehearsed.
-- **Pilot recommendation: NO-GO** until real email and Web Push receipt, private-file restore evidence, and the remaining mobile/keyboard checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
+- **Pilot recommendation: NO-GO** until real email receipt, observable Web Push presentation/deep-link behavior, private-file restore evidence, and the remaining mobile/keyboard checks are closed. The guardian-reactivation safeguard is deployed and runtime-verified.
 
 Authenticated browser testing was completed on October 20, 2026 against https://ctsmd.me using fake demo accounts. The exercised personas were:
 
@@ -37,8 +37,8 @@ The original clean-browser ERR_TIMED_OUT root cause is **not established**. It w
 - **CLOSED October 21:** the approved V1 guardian-revocation rule is deployed and runtime-verified on Bluehost. The existing 062 columns were preserved, only the revised trigger section was applied, the obsolete insert trigger was removed, both synchronization triggers matched the revised no-widening behavior, and the runtime schema guard passed.
 - Web and mobile sends invoke the same transaction-aware safeguarding policy. The deployed 36-check database suite passed with its transaction rolled back, covering role changes, disabled accounts, all-guardian participation, Student/Student prohibition, fixed historical cutoffs, attachment/unread boundaries, push eligibility, reactivation into a new safe thread, and repeated revocation.
 - Disposable fake-account bearer-token tests confirmed the old thread returned only the five messages through its cutoff, later content stayed hidden, old-thread sends were rejected, a new safe thread could include the reactivated guardian, and the disabled token received HTTP 401. All four fake users, both test conversations, token rows, state files, and response files were removed; an independent query returned zero remaining `@safeguarding.test` users.
-- **BEFORE PILOT:** prove email cron processing and real inbox receipt; six messages are currently queued with no attempts.
-- **BEFORE PILOT:** push retry/reclaim/dedupe and delivery-time audience/preference rechecks are deployed and regression-tested; prove receipt and deep-link behavior on supported devices.
+- **BLOCKED October 21:** prove email cron processing and real inbox receipt. Read-only production preflight found seven due queued rows (`id` 1-7), zero recognized test recipients, zero delivery-log rows, configured SMTP/TLS credentials, commented cron entries, empty cron logs, and no stale `sending` rows. The current worker claims the oldest due row and has no queue-ID filter, so acceptance cannot proceed without touching live recipients. An explicitly authorized inbox and approved isolation procedure are required before any send or cron enablement.
+- **PARTIAL October 21:** push retry/reclaim/dedupe and delivery-time audience/preference rechecks are deployed and regression-tested. A disposable browser subscription accepted an isolated remote push through FCM with HTTP 201 and recorded `last_success_at`; observable OS presentation and notification-click deep-link behavior remain to be proven on a supported device.
 - **CLOSED October 21:** dedicated Staff, Moderator, Safeguarding, Guardian, Student, Volunteer, and Administrator fixtures passed the sensitive-route least-privilege matrix. A navigation defect for pure Moderator/Safeguarding accounts was fixed without broadening route authorization.
 - **CLOSED October 21:** nine CSRF mutation categories left the disposable database fingerprint unchanged; forged-ID POSTs from a Guardian returned 403 on nine sensitive routes. The matched database backup restored and booted on MySQL 8.0.44 in one second. Private-file restore remains unproven because the matched backup contained zero stored-file records and zero private binaries.
 - **BEFORE PILOT:** complete keyboard focus containment/return and long-table testing on mobile.
@@ -95,7 +95,7 @@ Bluehost already contained the 062 columns and an older trigger revision, so the
 - Staff/Admin demo accounts are over-privileged combined-role fixtures.
 - Moderator and Safeguarding navigation is coupled to the Operations experience; dedicated-role navigation remains unproven.
 - Native push subscription storage now exists in the deployed schema, but no APNs/FCM delivery adapter was found or proven.
-- No real inbox receipt, device push receipt, Bluehost cron log or isolated backup restore was observed. Safeguarding push audience exclusion was verified through the deployed policy/database suite.
+- No real inbox receipt, observable device push presentation, notification-click deep link, or Bluehost cron log was observed. FCM accepted one isolated fake-account Web Push with HTTP 201, and safeguarding push audience exclusion was verified through the deployed policy/database suite.
 - A page loading is not treated as end-to-end workflow proof.
 
 ## Notification delivery evidence
@@ -103,8 +103,8 @@ Bluehost already contained the 062 columns and an older trigger revision, so the
 | Channel | Synchronous behavior | Scheduled/configuration requirement |
 |---|---|---|
 | In-app | Durable notifications, read timestamps, message/channel cursors and unread navigation counts work in browser. | No cron required for reads. Producers vary by workflow. |
-| Email | Application queues durable outbound rows and records attempts/status. Production UI reports SMTP. | bin/process-email-queue.php drains delivery; bin/queue-email-reminders.php generates reminders. Six rows were QUEUED, none attempted. |
-| Web Push | Subscription/preferences and queue/log paths exist. Expired 404/410 endpoints are retired. | Retry, stale processing reclaim, event deduplication and delivery-time account/preference/safeguarding revalidation are deployed and regression-tested. Device receipt is still unproven. |
+| Email | Application queues durable outbound rows and records attempts/status. Production UI reports SMTP. | bin/process-email-queue.php drains delivery; bin/queue-email-reminders.php generates reminders. Seven due rows are queued, none attempted. |
+| Web Push | Subscription/preferences and queue/log paths exist. Expired 404/410 endpoints are retired. A disposable fake-account delivery was accepted by FCM with HTTP 201 and recorded as sent. | Retry, stale processing reclaim, event deduplication and delivery-time account/preference/safeguarding revalidation are deployed and regression-tested. OS presentation and notification-click deep linking remain unproven. |
 | Native Push | Mobile subscription data can be stored. | No proven APNs/FCM consumer. Not production-ready. |
 
 # Production Configuration Checklist
@@ -334,4 +334,8 @@ Security/safeguarding closure work added a shared policy, migration 062, web/mob
 
 Commit `601383e53b8d2bad1480ec3af1f968c23fa2d11f` adds durable database-backed authentication throttling for web/mobile login, forgot/reset, join and email verification, plus push retry, stale-claim reclaim, event deduplication and delivery-time recipient/preference revalidation. Migrations 063 and 064 and the existing mobile push-subscription migration were applied after a verified code/database backup. All 12 deployed file hashes matched reviewed source. Deployed validation passed 139-file PHP lint, runtime schema guard, the 21-check lifecycle test, push-claim test, push-recovery test and rate-limit test; root and login returned HTTP 200.
 
-One active mobile bearer token was revoked and zero remain. Exact email/reminder cron commands are now installed as comments and intentionally disabled because no approved recipient is available. No inbox or device receipt test was performed. Board readiness is **92%** and limited-pilot readiness is **76% NO-GO**: CTSMD shell cleanup, the database restore, negative matrix, pure-persona matrix, and repeatable demo fixture are closed; real email receipt, Web Push receipt/deep-link/unsubscribe, private-file recovery, and remaining mobile/keyboard acceptance stay open.
+One active mobile bearer token was revoked and zero remain. Exact email/reminder cron commands are installed as comments and intentionally disabled. A fresh read-only preflight found seven due queued rows (`id` 1-7), no recognized test recipient, no delivery history, no stale claim, and complete SMTP/TLS configuration. Because the worker has no per-row selection and would claim the oldest live row, no inbox receipt or cron execution test was performed. Email acceptance remains blocked on an explicitly authorized inbox and an approved isolation procedure.
+
+Web Push acceptance used disposable account `push.acceptance@example.test` only. The browser granted permission, registered an active FCM subscription, and the deployed encryption/delivery implementation sent isolated queue item 248 without claiming any of the 47 pre-existing queued rows. FCM returned HTTP 201, the delivery log recorded `sent`, and the subscription recorded `last_success_at`. The browser's service-worker diagnostic separately confirmed that Chrome could retain an active notification, but the remote notification's macOS banner and notification-click deep link could not be independently observed. During cleanup, a reopened automation tab used the Administrator browser profile rather than the disposable session and revoked that profile's browser subscription; it was immediately resubscribed and the UI again showed permission granted, active subscription, active service worker, and `fcm.googleapis.com`. The disposable account was disabled and its Web Push subscriptions, queue/delivery rows, native push subscriptions, and mobile bearer tokens were removed; all four disposable credential/queue counts returned zero. The original browser-side disposable subscription could not be revisited after its tab closed, but server-side removal prevents further CTSMD delivery to it.
+
+Board readiness is **92%** and limited-pilot readiness is **78% NO-GO**: CTSMD shell cleanup, database restore, negative matrix, pure-persona matrix, repeatable demo fixture, and remote FCM acceptance are closed; real email receipt, observable Web Push presentation/deep-link acceptance, private-file recovery, and remaining mobile/keyboard acceptance stay open.
