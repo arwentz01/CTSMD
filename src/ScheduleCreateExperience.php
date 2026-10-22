@@ -60,6 +60,8 @@ final class ScheduleCreateExperience
 
         $title = trim((string)($input['title'] ?? ''));
         $location = trim((string)($input['location'] ?? ''));
+        $notes = trim((string)($input['notes'] ?? ''));
+        if(mb_strlen($notes)>5000)throw new RuntimeException('Event notes cannot exceed 5,000 characters.');
         $itemType = trim((string)($input['item_type'] ?? 'rehearsal'));
         $visibility = (string)($input['visibility'] ?? 'all');
         $audienceMode = (string)($input['audience_mode'] ?? 'production');
@@ -82,7 +84,7 @@ final class ScheduleCreateExperience
 
         $db->beginTransaction();
         try {
-            $insert = $db->prepare('INSERT INTO schedule_items (production_id,title,starts_at,ends_at,family_call_at,location,visibility,audience_mode,item_type) VALUES (:production_id,:title,:starts_at,:ends_at,:family_call_at,:location,:visibility,:audience_mode,:item_type)');
+            $insert = $db->prepare('INSERT INTO schedule_items (production_id,title,starts_at,ends_at,family_call_at,location,notes,visibility,audience_mode,item_type) VALUES (:production_id,:title,:starts_at,:ends_at,:family_call_at,:location,:notes,:visibility,:audience_mode,:item_type)');
             $insert->execute([
                 'production_id'=>(int)$production['id'],'title'=>$title,'starts_at'=>$startsAt->format('Y-m-d H:i:s'),'ends_at'=>$endsAt?->format('Y-m-d H:i:s'),'family_call_at'=>$familyCallAt?->format('Y-m-d H:i:s'),'location'=>$location,'visibility'=>$visibility,'audience_mode'=>$audienceMode,'item_type'=>$itemType,
             ]);
@@ -145,7 +147,7 @@ final class ScheduleCreateExperience
 <div class="sc-pair"><label>Activity type<select name="item_type"><option value="rehearsal">Rehearsal</option><option value="performance">Performance</option><option value="meeting">Meeting</option><option value="orientation">Orientation</option><option value="volunteer">Volunteer activity</option><option value="call">Call / check-in</option><option value="other">Other</option></select></label><label>People included<select name="visibility"><option value="all">Participants + staff/guardians as targeted</option><option value="family">Students + their guardians</option><option value="staff">Staff only</option></select></label></div>
 <fieldset class="sc-target"><legend>Who is this for?</legend><label class="sc-radio"><input type="radio" name="audience_mode" value="production" checked><span><b>Whole production</b><small>Uses the broad audience choice above.</small></span></label><label class="sc-radio"><input type="radio" name="audience_mode" value="groups"><span><b>Specific production groups</b><small>Only members of the selected groups are called. Student guardians inherit family-facing calls.</small></span></label><div class="sc-groups"><?php if($groups):foreach($groups as $group):?><label><input type="checkbox" name="group_ids[]" value="<?= (int)$group['id'] ?>"><span><b><?= $esc($group['name']) ?></b><small><?= (int)$group['member_count'] ?> active members · <?= $esc(ucfirst($group['group_type'])) ?></small></span></label><?php endforeach;else:?><p>No groups exist yet. <a href="<?= $url('/production/groups') ?>">Create production groups →</a></p><?php endif;?></div></fieldset>
 <div class="sc-pair"><label>Start<input type="datetime-local" name="starts_at" required value="<?= $esc($defaultStart) ?>"></label><label>End<input type="datetime-local" name="ends_at" value="<?= $esc($defaultEnd) ?>"></label></div><div class="sc-pair"><label>Family call <span>optional</span><input type="datetime-local" name="family_call_at"></label><label>Location<input name="location" maxlength="190" required placeholder="Main Stage"></label></div>
-<label class="sc-check"><input type="checkbox" name="prepare_notice" value="1" checked><span><b>Prepare a communication draft</b><small>The draft uses the same resolved production/group audience. Nothing is sent automatically.</small></span></label><footer><a href="<?= $url('/schedule') ?>">Cancel</a><button class="button" type="submit">Create schedule item</button></footer></form>
+<label>Event notes / instructions <span>optional</span><textarea name="notes" maxlength="5000" rows="4" placeholder="What to bring, arrival instructions, parking, or rehearsal details"></textarea></label><label class="sc-check"><input type="checkbox" name="prepare_notice" value="1" checked><span><b>Prepare a communication draft</b><small>The draft uses the same resolved production/group audience. Nothing is sent automatically.</small></span></label><footer><a href="<?= $url('/schedule') ?>">Cancel</a><button class="button" type="submit">Create schedule item</button></footer></form>
 <aside class="sc-side"><small>TARGETED CALLS</small><h3>One schedule, less noise.</h3><ol><li>Create reusable groups like Full Cast, Ensemble, Principals or Tech Crew.</li><li>Choose one or several groups for a rehearsal.</li><li>Students see their group calls; their active guardians inherit family-facing calls.</li><li>Communication drafts resolve from that same audience.</li></ol></aside></div><?php endif;?>
 </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
     }
