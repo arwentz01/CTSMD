@@ -129,3 +129,18 @@ Leave the seven pre-existing pending email rows untouched.
 notification, or ambiguous active service-worker version stops the acceptance run.
 Native Floot/APNs/FCM delivery is a separate unproven track and must not be signed off
 on the basis of browser Web Push.
+
+## Additional delivery-time safety checks (repository changes, pending deployment)
+
+- Queue processor suppresses Message-category items unless their destination is an expected
+  `/messages/thread?id=N` path **and** the recipient retains live conversation access.
+- Queue processor suppresses Community-category items unless their destination is an expected
+  `/channels/view?id=N` path **and** the recipient retains effective channel access.
+- Service-worker subscription rotation no longer silently registers an unassociated endpoint.
+  The notification-settings client displays a refresh prompt if an open CTSMD tab receives
+  a subscription-change signal. A closed browser may require the user to revisit settings.
+
+Acceptance: execute the normal isolated queue fixture, add one malformed-message and one
+malformed-community action-path case, prove both are suppressed without sending, and verify
+valid authorized destinations still deliver. Record a before/after fingerprint of existing
+queue items; do not run the queue processor against unrelated production rows.
