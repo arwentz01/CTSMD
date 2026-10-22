@@ -89,3 +89,43 @@ Community push content identifies the Channel and author without exposing the po
 ## Future native apps
 
 The application queues CTSMD notification intent independently from browser subscriptions. Future native clients can add APNs and FCM device-token adapters behind the same notification domain without changing the member-facing event model.
+
+## Pilot acceptance: OS presentation and authorized deep links (October 2026)
+
+**Status: NOT YET VERIFIED on device.** FCM HTTP 201 is transport-provider acceptance only.
+Do not enable unrestricted production queue processing for these tests. Use the existing
+isolated fake-account queue workflow described in BOARD_PILOT_READINESS.md.
+Leave the seven pre-existing pending email rows untouched.
+
+1. Deploy `service-worker.js` from the pilot branch; confirm the served file matches that commit.
+   Open the browser's service-worker panel, update the worker, and verify it is **active**
+   under the CTSMD origin. A file existing on disk is not proof an older worker stopped controlling the app.
+2. Use a supported device, a dedicated test browser profile, and a disposable fake
+   CTSMD account with known permissions. Record device OS/browser versions and the
+   exact timestamp. Enable site/system notification permission and subscribe.
+3. From `/push-settings`, use the browser notification test and the isolated queued
+   push test. Verify an OS-visible banner or Notification Center entry in the
+   background, then when the application is not in the foreground. Record separate
+   results for foreground, background, and app/browser closed states.
+4. Tap an isolated notification pointing to `/notifications`. Verify the exact
+   CTSMD destination opens with authentication enforced. If signed out, the login
+   flow must not leak private content.
+5. Send a fake-account Message to an authorized recipient. Process only the
+   isolated push item and tap it: verify the correct thread opens. Repeat for an
+   authorized Community channel.
+6. Remove the recipient's access **before delivery** and confirm no push to
+   that recipient. Also remove access **after an already-delivered notification**:
+   tapping the old notification must not expose the revoked conversation or channel.
+7. Revoke notification permission or unsubscribe; verify subsequent push delivery is
+   suppressed and no new subscription remains active for that device.
+8. Record OS-displayed evidence, destination, pass/fail, and failure logs without
+   message bodies, tokens, private child information, or real-user identifiers.
+   Clean up every fake user, subscription, isolated queue row and associated state.
+9. Run `node tests/web_push_click.js` locally to verify notification-click routing.
+   This checks navigation mechanics; it does **not** replace real-device presentation
+   or authorization acceptance.
+
+**Stop condition:** Any unexpected unauthorized content, unexpected real-user
+notification, or ambiguous active service-worker version stops the acceptance run.
+Native Floot/APNs/FCM delivery is a separate unproven track and must not be signed off
+on the basis of browser Web Push.
