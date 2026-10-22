@@ -28,14 +28,32 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || '/app', self.location.origin).href;
+  // Never navigate a CTSMD notification to a cross-origin or non-HTTP destination.
+  let target;
+  try {
+    const requested = new URL(event.notification.data?.url || '/notifications', self.location.origin);
+    target = requested.origin === self.location.origin &&
+      (requested.protocol === 'https:' || requested.protocol === 'http:')
+      ? requested.href
+      : new URL('/notifications', self.location.origin).href;
+  } catch (_) {
+    target = new URL('/notifications', self.location.origin).href;
+  }
   event.waitUntil((async () => {
     const windows = await clients.matchAll({type:'window', includeUncontrolled:true});
+    // Prefer the CTSMD tab that already displays the requested destination.
+    const destination = windows.find(client => {
+      try { return new URL(client.url).href === target; } catch (_) { return false; }
+    });
+    if (destination && 'focus' in destination) return destination.focus();
+    // Only reuse tabs within this installation's origin; leave unrelated tabs alone.
     for (const client of windows) {
-      if ('focus' in client) {
-        try { await client.navigate(target); } catch (_) {}
-        return client.focus();
-      }
+      try {
+        if (new URL(client.url).origin !== self.location.origin ||
+            !('navigate' in client) || !('focus' in client)) continue;
+        const navigated = await client.navigate(target);
+        if (navigated) return navigated.focus();
+      } catch (_) { /* Try another CTSMD tab or open a new one. */ }
     }
     return clients.openWindow(target);
   })());
