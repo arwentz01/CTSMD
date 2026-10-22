@@ -14,6 +14,7 @@ require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
 require_once __DIR__ . '/FormExperience.php';
+require_once __DIR__ . '/VolunteerExperience.php';
 
 final class MobileApi
 {
@@ -39,6 +40,7 @@ final class MobileApi
                 '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
                 '/api/mobile/form-detail' => self::formDetail($db, $user),
                 '/api/mobile/form-submit' => self::formSubmit($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
@@ -124,6 +126,18 @@ final class MobileApi
             if((int)$event['id']===$id)self::json(['event'=>$event]);
         }
         self::json(['error'=>'Event not found.'],404);
+    }
+
+    private static function volunteerSignup(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        $shift=filter_var($input['shift_id']??null,FILTER_VALIDATE_INT);
+        if(!$shift||$shift<1)self::json(['error'=>'A valid volunteer shift is required.'],400);
+        // Reuse the web signup transaction: requirements, active volunteer status,
+        // approval gate, shift start, live capacity and duplicate signup checks.
+        VolunteerExperience::signup($db,(int)$user['id'],(int)$shift);
+        self::json(['ok'=>true]);
     }
 
     private static function formSubmit(PDO $db,array $user):never
