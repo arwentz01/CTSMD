@@ -379,3 +379,15 @@ The latest mobile source fix is not counted as deployed acceptance. The cPanel u
 The Playbill management and public digital-publication source is implemented on the audit branch with migration 068. It adds reusable Student profile media, production-specific approved cast snapshots, sponsor tiers/artwork/placement, edition snapshots, explicit publish/archive/unpublish state, stable unauthenticated public URLs, policy-checked public assets, SVG QR downloads, printable QR signage, responsive section navigation, sharing metadata, and configured-only audience actions. Public pages default to `noindex` pending an explicit Student-biography indexing policy.
 
 This work is not deployed and does not change the Board or limited-pilot percentages. Migration 068, fresh-session public-route acceptance, consent withdrawal checks, QR/print checks, and production upload-limit verification remain required before this feature is accepted for production use.
+
+## October 21 mobile integration regression coverage — source only
+
+The Floot native app now has authenticated adapters for form detail/submission and volunteer signup, coordinator approval requests/withdrawal, and pre-start signup cancellation. The CTSMD backend branch uses the same guarded web service methods for these operations. CTSMD's volunteer cancellation was tightened to lock the shift/signup and reject after-start, checked-in, completed, nonexistent and wrong-user cancellations.
+
+- Added `tests/pilot_volunteer_cancellation.php`, an isolated PDO-double test covering permitted cancellation, started shifts, checked-in/completed states, wrong user, absent signup/shift, invalid ID, transaction commit and rollback. **Written but not executed against the PHP repository in this session.**
+- Floot mock-based form, signup, approval and cancellation tests passed in its test environment in preceding build sessions. Those tests do **not** establish live CTSMD deployment, real database triggers, workflow completion or device behavior.
+- Mandatory next steps: run the PHP isolated test, PHP lint, and a migrated staging transaction-backed acceptance suite; verify form audit/review paths, signup capacity/eligibility/race behavior, approval workflow and cancellation rollback; then separately complete authenticated end-to-end app tests on iOS/Android.
+- `src/MobileApi.php`, `src/FormExperience.php`, `src/VolunteerExperience.php` (and any related changed backend files) must be deployed as a coherent tested release before exercising the new mobile APIs. Production records and notification queues must remain untouched in test runs.
+
+**Pilot remains NO-GO.** This coverage does not change the existing OS push, keyboard/device or operational closure gates.
+
