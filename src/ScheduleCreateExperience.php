@@ -86,7 +86,7 @@ final class ScheduleCreateExperience
         try {
             $insert = $db->prepare('INSERT INTO schedule_items (production_id,title,starts_at,ends_at,family_call_at,location,notes,visibility,audience_mode,item_type) VALUES (:production_id,:title,:starts_at,:ends_at,:family_call_at,:location,:notes,:visibility,:audience_mode,:item_type)');
             $insert->execute([
-                'production_id'=>(int)$production['id'],'title'=>$title,'starts_at'=>$startsAt->format('Y-m-d H:i:s'),'ends_at'=>$endsAt?->format('Y-m-d H:i:s'),'family_call_at'=>$familyCallAt?->format('Y-m-d H:i:s'),'location'=>$location,'visibility'=>$visibility,'audience_mode'=>$audienceMode,'item_type'=>$itemType,
+                'production_id'=>(int)$production['id'],'title'=>$title,'starts_at'=>$startsAt->format('Y-m-d H:i:s'),'ends_at'=>$endsAt?->format('Y-m-d H:i:s'),'family_call_at'=>$familyCallAt?->format('Y-m-d H:i:s'),'location'=>$location,'notes'=>$notes,'visibility'=>$visibility,'audience_mode'=>$audienceMode,'item_type'=>$itemType,
             ]);
             $itemId=(int)$db->lastInsertId();
             ScheduleAudience::replaceItemGroups($db,$itemId,(int)$production['id'],$audienceMode,$validatedGroups);
