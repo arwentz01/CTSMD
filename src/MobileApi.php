@@ -13,6 +13,7 @@ require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
+require_once __DIR__ . '/FormExperience.php';
 
 final class MobileApi
 {
@@ -39,6 +40,7 @@ final class MobileApi
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/form-detail' => self::formDetail($db, $user),
+                '/api/mobile/form-submit' => self::formSubmit($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
                 '/api/mobile/notification-read' => self::notificationRead($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
@@ -122,6 +124,22 @@ final class MobileApi
             if((int)$event['id']===$id)self::json(['event'=>$event]);
         }
         self::json(['error'=>'Event not found.'],404);
+    }
+
+    private static function formSubmit(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        $id=filter_var($input['assignment_id']??null,FILTER_VALIDATE_INT);
+        if(!$id||$id<1)self::json(['error'=>'A valid form assignment is required.'],400);
+        // The web and mobile entry points use the exact same transaction,
+        // assignee check, completion rules, review workflow and audit trail.
+        $payload=[];
+        if(($input['acknowledgment']??false)===true)$payload['acknowledgment']='1';
+        $payload['typed_signature']=is_string($input['typed_signature']??null)?$input['typed_signature']:'';
+        $payload['response_text']=is_string($input['response_text']??null)?$input['response_text']:'';
+        FormExperience::submit($db,$user,(int)$id,$payload);
+        self::json(['ok'=>true]);
     }
 
     private static function formDetail(PDO $db, array $user): never
