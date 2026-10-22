@@ -15,6 +15,7 @@ require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
 require_once __DIR__ . '/FormExperience.php';
 require_once __DIR__ . '/VolunteerExperience.php';
+require_once __DIR__ . '/VolunteerApprovalExperience.php';
 
 final class MobileApi
 {
@@ -41,6 +42,7 @@ final class MobileApi
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
+                '/api/mobile/volunteer-approval' => self::volunteerApproval($db, $user),
                 '/api/mobile/form-detail' => self::formDetail($db, $user),
                 '/api/mobile/form-submit' => self::formSubmit($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
@@ -128,6 +130,25 @@ final class MobileApi
         self::json(['error'=>'Event not found.'],404);
     }
 
+    private static function volunteerApproval(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        $action=(string)($input['action']??'');
+        if($action==='request'){
+            $id=filter_var($input['shift_id']??null,FILTER_VALIDATE_INT);
+            if(!$id||$id<1)self::json(['error'=>'A valid volunteer shift is required.'],400);
+            $note=$input['note']??'';
+            if(!is_string($note))self::json(['error'=>'Invalid request note.'],400);
+            VolunteerApprovalExperience::requestApproval($db,$user,(int)$id,trim($note));
+        }elseif($action==='withdraw'){
+            $id=filter_var($input['request_id']??null,FILTER_VALIDATE_INT);
+            if(!$id||$id<1)self::json(['error'=>'A valid approval request is required.'],400);
+            VolunteerApprovalExperience::withdrawRequest($db,$user,(int)$id);
+        }else self::json(['error'=>'Unsupported approval action.'],400);
+        self::json(['ok'=>true]);
+    }
+
     private static function volunteerSignup(PDO $db,array $user):never
     {
         self::requireMethod('POST');
@@ -180,7 +201,7 @@ final class MobileApi
         $live=VolunteerCoverageService::isLiveVolunteer($db,$id);
         $rows=[];
         if($live){
-        $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at,vs.id LIMIT 100");
+        $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.id my_request_id,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at,vs.id LIMIT 100");
         $shifts->execute(['mine'=>$id,'request'=>$id]);
         $rows=$shifts->fetchAll();
         $missingMap=VolunteerCoverageService::missingRequirementsForShifts($db,$id,array_column($rows,'id'));
