@@ -30,7 +30,7 @@ require_once __DIR__ . '/src/PublicExperience.php';if(PublicExperience::handles(
 require_once __DIR__ . '/src/PublicCastingExperience.php';if(PublicCastingExperience::handles($route))PublicCastingExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/AuthExperience.php';if(AuthExperience::handles($route))AuthExperience::render($route,$detectedBasePath);
 if($route==='/calendar/feed'){require_once __DIR__.'/src/CalendarExperience.php';CalendarExperience::render($route,$detectedBasePath);}
-if(in_array($route,['/playbill','/playbill/asset'],true)){require_once __DIR__.'/src/Playbill2Experience.php';Playbill2Experience::render($route,$detectedBasePath);}
+if(in_array($route,['/playbill','/playbill/asset','/playbill/qr','/playbill/sign'],true)){require_once __DIR__.'/src/Playbill2Experience.php';Playbill2Experience::render($route,$detectedBasePath);}
 if($route==='/health'){require __DIR__.'/index.php';exit;}
 if(!Auth::check()){$returnTo='?return_to='.rawurlencode($route.(!empty($_SERVER['QUERY_STRING'])?'?'.$_SERVER['QUERY_STRING']:''));header('Location: '.($detectedBasePath?:'').'/login'.$returnTo,true,303);exit;}
 $dbForAuth=Database::connect(__DIR__);$currentAuthUser=Auth::currentUser($dbForAuth);if(!$currentAuthUser){header('Location: '.($detectedBasePath?:'').'/login',true,303);exit;}
@@ -89,7 +89,7 @@ $experienceRoutes=[
     ['ScheduleNoticeExperience',['/production/notices','/production/notice'],'route'],
     ['ProductionFileExperience',['/files','/files/view','/files/download','/admin/files','/admin/files/edit'],'route'],
     ['ResourceExperience',['/resources','/resources/view','/admin/resources','/admin/resources/edit'],'route'],
-    ['Playbill2Experience',['/playbill','/playbill/asset','/admin/playbill/media'],'route'],
+    ['Playbill2Experience',['/playbill','/playbill/asset','/playbill/qr','/playbill/sign','/admin/playbill/media'],'route'],
     ['PlaybillExperience',['/playbills','/admin/playbill'],'route'],
     ['ProductionExperience',['/production','/schedule','/production/day','/production/edit','/resources','/playbills'],'route'],
     ['CommunicationExperience',['/messages','/messages/new','/messages/thread','/messages/attachment'],'route'],
