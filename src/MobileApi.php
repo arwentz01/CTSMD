@@ -42,6 +42,7 @@ final class MobileApi
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
+                '/api/mobile/volunteer-cancel' => self::volunteerCancel($db, $user),
                 '/api/mobile/volunteer-approval' => self::volunteerApproval($db, $user),
                 '/api/mobile/form-detail' => self::formDetail($db, $user),
                 '/api/mobile/form-submit' => self::formSubmit($db, $user),
@@ -146,6 +147,18 @@ final class MobileApi
             if(!$id||$id<1)self::json(['error'=>'A valid approval request is required.'],400);
             VolunteerApprovalExperience::withdrawRequest($db,$user,(int)$id);
         }else self::json(['error'=>'Unsupported approval action.'],400);
+        self::json(['ok'=>true]);
+    }
+
+    private static function volunteerCancel(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        $shift=filter_var($input['shift_id']??null,FILTER_VALIDATE_INT);
+        if(!$shift||$shift<1)self::json(['error'=>'A valid volunteer shift is required.'],400);
+        // Shared web cancellation guard rejects started shifts, checked-in
+        // attendance, completed service and other users' commitments.
+        VolunteerExperience::cancelSignup($db,(int)$user['id'],(int)$shift);
         self::json(['ok'=>true]);
     }
 
