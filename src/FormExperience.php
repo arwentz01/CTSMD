@@ -68,7 +68,7 @@ final class FormExperience
         self::redirect($basePath . '/forms');
     }
 
-    private static function submit(PDO $db, array $user, int $assignmentId, array $input): void
+    public static function submit(PDO $db, array $user, int $assignmentId, array $input): void
     {
         if ($assignmentId < 1) {
             throw new RuntimeException('That form assignment could not be found.');
