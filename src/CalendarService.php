@@ -20,7 +20,7 @@ final class CalendarService
         $where=["si.production_id IN ($ph)"];
         if($from){$where[]='si.starts_at>=?';$params[]=$from->format('Y-m-d H:i:s');}
         if($to){$where[]='si.starts_at<?';$params[]=$to->format('Y-m-d H:i:s');}
-        $sql="SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.family_call_at,si.location,si.visibility,si.audience_mode,si.item_type,si.status,p.title production_title,p.season FROM schedule_items si JOIN productions p ON p.id=si.production_id WHERE ".implode(' AND ',$where)." ORDER BY si.starts_at,si.id";
+        $sql="SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.family_call_at,si.location,si.notes,si.visibility,si.audience_mode,si.item_type,si.status,p.title production_title,p.season FROM schedule_items si JOIN productions p ON p.id=si.production_id WHERE ".implode(' AND ',$where)." ORDER BY si.starts_at,si.id";
         $stmt=$db->prepare($sql);$stmt->execute($params);$events=[];
         foreach($stmt->fetchAll() as $row){
             if(!ScheduleAudience::userCanViewItem($db,$user,$row))continue;
