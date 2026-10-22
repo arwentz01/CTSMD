@@ -46,3 +46,20 @@ html,body.pb2-public{width:auto!important;background:#fff!important;margin:0!imp
 .pb2-public .pb2-engage{min-height:0;padding:.2in!important}
 a{color:inherit}
 }
+
+/* Reader state must win over legacy public CSS, including its default display rules. */
+.pb2-reader-controls[hidden]{display:none!important}
+@media screen{
+.pb2-public.pb2-reader-active .pb2-public-main > [data-reader-page]{display:none!important}
+.pb2-public.pb2-reader-active .pb2-public-main > [data-reader-page].is-current:not([hidden]){display:block!important}
+.pb2-public.pb2-reader-active .pb2-public-main > .pb2-cover.is-current:not([hidden]){display:grid!important}
+.pb2-public.pb2-reader-active .pb2-public-main > .pb2-engage.is-current:not([hidden]){display:flex!important}
+.pb2-public .pb2-public-main > [data-reader-page][hidden]{display:none!important}
+}
+@media print{
+.pb2-public .pb2-public-main > [data-reader-page][hidden],.pb2-public.pb2-reader-active .pb2-public-main > [data-reader-page][hidden]{display:block!important}
+.pb2-public.pb2-reader-active .pb2-public-main > .pb2-cover,.pb2-public .pb2-public-main > .pb2-cover{display:grid!important}
+.pb2-public .pb2-public-main > [data-reader-page]{break-after:page;page-break-after:always}
+.pb2-public .pb2-public-main > [data-reader-page]:last-child{break-after:auto;page-break-after:auto}
+.pb2-public .pb2-public-main > .pb2-engage{display:none!important}
+}
