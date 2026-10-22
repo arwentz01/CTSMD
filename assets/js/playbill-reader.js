@@ -9,12 +9,13 @@ for(const section of original){
  const count=sizeFor(section);if(!count)continue;
  const container=section.querySelector('.pb2-cast,.pb2-team,.pb2-sponsors');
  const items=Array.from(container.children);if(items.length<=count)continue;
+ let insertAfter=section;
  for(let offset=count;offset<items.length;offset+=count){
   const extra=section.cloneNode(false);extra.removeAttribute('id');extra.classList.add('pb2-continuation');
   const label=section.querySelector(':scope > small');const heading=section.querySelector(':scope > h2');
   if(label)extra.append(label.cloneNode(true));if(heading){const h=heading.cloneNode(true);h.textContent+=' · continued';extra.append(h)}
   const wrap=container.cloneNode(false);items.slice(offset,offset+count).forEach(item=>wrap.append(item));extra.append(wrap);
-  section.parentNode.insertBefore(extra,section.nextSibling);
+  insertAfter.parentNode.insertBefore(extra,insertAfter.nextSibling);insertAfter=extra;
  }
 }
 const pages=Array.from(main.querySelectorAll(':scope > [data-reader-page]'));
