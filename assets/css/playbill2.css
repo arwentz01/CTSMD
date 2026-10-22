@@ -74,3 +74,11 @@
 .pb2-public .pb2-section{background:#fff!important}
 .pb2-public .pb2-cast article{break-inside:avoid;box-shadow:none}
 }
+
+/* Cover media mode control */
+.pb2-cover-mode-form{margin-top:22px;padding-top:18px;border-top:1px solid #e5dce0}
+.pb2-cover-mode-form fieldset{border:0;margin:0;padding:0;display:grid;gap:10px}
+.pb2-cover-mode-form legend{font-weight:750;font-size:14px;margin-bottom:10px}
+.pb2-cover-mode-form label.pb2-radio-option{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:13px;font-weight:550;line-height:1.45}
+.pb2-cover-mode-form .pb2-radio-option input{width:auto;flex:0 0 auto;accent-color:#9c1931}
+.pb2-cover-mode-form small{display:block;font-size:12px;color:#6c6163;line-height:1.5}
