@@ -1,0 +1,41 @@
+name: CTSMD pilot PHP safety checks
+on:
+  push:
+    branches:
+      - audit/board-pilot-readiness
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/pilot-php-safety.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/pilot-php-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+          tools: none
+      - name: Lint backend PHP
+        run: |
+          set -euo pipefail
+          find src tests -name '*.php' -type f -print0 | xargs -0 -n1 php -l
+      - name: Isolated pilot regressions (no database/network)
+        run: |
+          set -euo pipefail
+          php tests/pilot_lifecycle.php
+          php tests/pilot_rate_limit.php
+          php tests/pilot_volunteer_cancellation.php
