@@ -1,0 +1,48 @@
+/* Printed-program reader. Public Playbill only. Existing publication visibility rules stay server-side. */
+.pb2-public{background:#1c191b}
+.pb2-public .pb2-public-main{max-width:840px;margin:32px auto 72px;background:transparent;box-shadow:none}
+.pb2-public .pb2-cover,.pb2-public .pb2-section,.pb2-public .pb2-engage{position:relative;margin:0 auto 22px;box-shadow:0 16px 44px rgba(0,0,0,.26);width:100%;max-width:840px}
+.pb2-public .pb2-cover{min-height:900px}
+.pb2-public .pb2-section{min-height:900px;border:0;padding:64px 64px 90px}
+.pb2-public .pb2-section:after{content:"CTSMD  •  DIGITAL PROGRAM";position:absolute;bottom:26px;left:64px;color:#927f6c;font:700 10px/1.3 Arial,sans-serif;letter-spacing:.16em}
+.pb2-public .pb2-section .pb2-cast{grid-template-columns:1fr 1fr}
+.pb2-public .pb2-section.copy{overflow-wrap:anywhere}
+.pb2-public .pb2-engage{min-height:140px}
+.pb2-reader-controls{display:flex;align-items:center;justify-content:center;gap:14px;position:sticky;top:65px;z-index:4;background:#282124;color:#fff;padding:11px 16px;border-bottom:1px solid #524147}
+.pb2-reader-controls button{font:700 13px Arial,sans-serif;border-radius:999px;border:1px solid #806b62;color:#fff;background:transparent;padding:9px 18px;cursor:pointer}
+.pb2-reader-controls button:disabled{opacity:.35;cursor:default}
+.pb2-reader-controls span{font:700 12px Arial,sans-serif;min-width:100px;text-align:center}
+.pb2-public.pb2-reader-active .pb2-public-main>.pb2-cover,.pb2-public.pb2-reader-active .pb2-public-main>.pb2-section,.pb2-public.pb2-reader-active .pb2-public-main>.pb2-engage{display:none}
+.pb2-public.pb2-reader-active .pb2-public-main>[data-reader-page].is-current{display:block}
+.pb2-public.pb2-reader-active .pb2-public-main>.pb2-cover.is-current{display:grid}
+.pb2-public.pb2-reader-active .pb2-public-main>.pb2-engage.is-current{display:flex}
+.pb2-public.pb2-reader-active .pb2-toc{display:none!important}
+.pb2-public.pb2-reader-active .pb2-public-main{margin-top:22px}
+.pb2-public .pb2-cover{height:auto}
+@media(max-width:760px){
+.pb2-public .pb2-public-main{margin:0 auto 30px}
+.pb2-public .pb2-cover,.pb2-public .pb2-section,.pb2-public .pb2-engage{margin-bottom:12px;box-shadow:none}
+.pb2-public .pb2-cover{min-height:560px}
+.pb2-public .pb2-section{min-height:620px;padding:38px 22px 76px}
+.pb2-public .pb2-section:after{left:22px;bottom:18px}
+.pb2-public .pb2-section .pb2-cast{grid-template-columns:1fr}
+.pb2-reader-controls{top:60px}
+}
+@media print{
+@page{size:letter;margin:0.5in}
+html,body.pb2-public{width:auto!important;background:#fff!important;margin:0!important;padding:0!important;color:#111!important}
+.pb2-top,.pb2-toc,.pb2-reader-controls,.pb2-footer{display:none!important}
+.pb2-public .pb2-public-main{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;background:#fff!important}
+.pb2-public .pb2-public-main>[data-reader-page],.pb2-public.pb2-reader-active .pb2-public-main>[data-reader-page],.pb2-public.pb2-reader-active .pb2-public-main>[data-reader-page].is-current{display:block!important;visibility:visible!important;margin:0!important;max-width:none!important;width:100%!important;min-height:0!important;height:auto!important;box-shadow:none!important;border:0!important;break-before:page;page-break-before:always}
+.pb2-public .pb2-public-main>[data-reader-page]:first-child{break-before:auto;page-break-before:auto}
+.pb2-public .pb2-cover{min-height:9in!important;display:grid!important;grid-template-columns:1fr!important;background:#21191d!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pb2-public .pb2-cover>img{max-height:4in;min-height:0;object-fit:contain}
+.pb2-public .pb2-cover>div{padding:.45in!important}
+.pb2-public .pb2-cover h1{font-size:44pt!important}
+.pb2-public .pb2-section{padding:.25in .12in .55in!important;background:#fff!important;color:#111!important}
+.pb2-public .pb2-section h2{font-size:27pt!important}
+.pb2-public .pb2-section:after{bottom:.12in;left:.12in}
+.pb2-public .pb2-cast article,.pb2-public .pb2-team div,.pb2-public .pb2-sponsors article{break-inside:avoid;page-break-inside:avoid;box-shadow:none!important}
+.pb2-public .pb2-engage{min-height:0;padding:.2in!important}
+a{color:inherit}
+}
