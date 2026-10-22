@@ -38,6 +38,7 @@ final class MobileApi
                 '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/form-detail' => self::formDetail($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
                 '/api/mobile/notification-read' => self::notificationRead($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
@@ -121,6 +122,20 @@ final class MobileApi
             if((int)$event['id']===$id)self::json(['event'=>$event]);
         }
         self::json(['error'=>'Event not found.'],404);
+    }
+
+    private static function formDetail(PDO $db, array $user): never
+    {
+        self::requireMethod('GET');
+        $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT);
+        if(!$id||$id<1) self::json(['error'=>'A form assignment ID is required.'],400);
+        // Match the web Forms page: only the authenticated assignee can read
+        // an active assignment. Do not expose arbitrary form definitions.
+        $s=$db->prepare("SELECT fa.id,fa.status,fa.due_at,fa.completed_at,f.title,f.form_type,f.instructions,f.completion_mode,f.review_required,fs.status AS submission_status,fs.submitted_at,fs.reviewed_at,fs.reviewer_note FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.id=:id AND fa.user_id=:user LIMIT 1");
+        $s->execute(['id'=>$id,'user'=>(int)$user['id']]);
+        $assignment=$s->fetch(PDO::FETCH_ASSOC);
+        if(!$assignment) self::json(['error'=>'This form is not available to your account.'],404);
+        self::json(['form'=>$assignment]);
     }
 
     private static function dailyTasks(PDO $db, array $user): never
