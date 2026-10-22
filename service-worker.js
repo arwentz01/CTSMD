@@ -59,6 +59,17 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
+// Do not silently replace a browser push subscription here. A new endpoint
+// would not be registered to the signed-in CTSMD account and could leave the
+// server delivering to the stale endpoint. Registration must occur through
+// the authenticated /push-settings workflow.
 self.addEventListener('pushsubscriptionchange', event => {
-  event.waitUntil(self.registration.pushManager.subscribe(event.oldSubscription?.options || {userVisibleOnly:true}).then(() => undefined).catch(() => undefined));
+  event.waitUntil((async () => {
+    const windows = await clients.matchAll({type:'window', includeUncontrolled:true});
+    for (const client of windows) {
+      try { if (new URL(client.url).origin === self.location.origin) {
+        client.postMessage({type:'ctsmd-push-subscription-changed'});
+      }} catch (_) {}
+    }
+  })());
 });
