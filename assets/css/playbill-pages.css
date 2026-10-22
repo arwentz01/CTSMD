@@ -36,3 +36,9 @@
 .pbr-editorial{font:12pt/1.5 Georgia,serif!important;column-count:1!important}
 .pbr-sponsors{grid-template-columns:1fr!important}
 }
+
+/* Facing-page spreads share a single top baseline; never vertically center pages independently. */
+@media screen and (min-width:1250px){
+.pbr-body .pbr-spread,.pbr-body .pbr-spread[data-facing="true"]{align-items:flex-start!important}
+.pbr-body .pbr-spread>.pbr-page{align-self:flex-start!important;margin-top:0!important;margin-bottom:0!important;position:relative;top:0!important;transform:none!important;flex:0 0 min(560px,calc((100vw - 72px)/2));width:min(560px,calc((100vw - 72px)/2));height:auto;aspect-ratio:8.5/11}
+}
