@@ -121,10 +121,29 @@ final class VolunteerExperience
         }
     }
 
-    private static function cancelSignup(PDO $db, int $userId, int $shiftId): void
+    public static function cancelSignup(PDO $db, int $userId, int $shiftId): void
     {
-        $stmt = $db->prepare("UPDATE volunteer_shift_signups SET status = 'cancelled' WHERE shift_id = :shift_id AND user_id = :user_id AND status = 'signed_up'");
-        $stmt->execute(['shift_id' => $shiftId, 'user_id' => $userId]);
+        if ($shiftId < 1) throw new RuntimeException('A valid volunteer shift is required.');
+        $db->beginTransaction();
+        try {
+            // Lock the shift before its signup to serialize against attendance
+            // changes and prevent after-start cancellation of live coverage.
+            $shiftStmt = $db->prepare('SELECT starts_at FROM volunteer_shifts WHERE id=:id FOR UPDATE');
+            $shiftStmt->execute(['id'=>$shiftId]);
+            $start = $shiftStmt->fetchColumn();
+            if ($start === false) throw new RuntimeException('That volunteer shift no longer exists.');
+            if (strtotime((string)$start) <= time()) throw new RuntimeException('This shift has started. Contact a coordinator about your attendance.');
+            $signup = $db->prepare("SELECT id,status FROM volunteer_shift_signups WHERE shift_id=:shift AND user_id=:user FOR UPDATE");
+            $signup->execute(['shift'=>$shiftId,'user'=>$userId]);
+            $row=$signup->fetch(PDO::FETCH_ASSOC);
+            if (!$row || $row['status'] !== 'signed_up') throw new RuntimeException('You do not have a cancellable signup for this shift.');
+            $db->prepare("UPDATE volunteer_shift_signups SET status='cancelled' WHERE id=:id AND status='signed_up'")->execute(['id'=>$row['id']]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            if ($e instanceof RuntimeException) throw $e;
+            throw new RuntimeException('We could not cancel that signup. Please try again.');
+        }
     }
 
     private static function credentials(PDO $db, int $userId): array
