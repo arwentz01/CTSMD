@@ -135,5 +135,12 @@
     }catch(error){status.textContent='Could not disable notifications';detail.textContent=error.message||String(error);}finally{disable.disabled=false;}
   });
 
+  navigator.serviceWorker?.addEventListener?.('message',event=>{
+    if(event.data?.type!=='ctsmd-push-subscription-changed')return;
+    if(status)status.textContent='Notification subscription changed';
+    if(detail)detail.textContent='Your browser changed its push subscription. Reopen notification settings and enable notifications again if they are off.';
+    refresh().catch(()=>{});
+  });
+
   refresh().catch(error=>{status.textContent='Notification setup unavailable';detail.textContent=error.message||String(error);diagnostics().catch(()=>{});});
 })();
