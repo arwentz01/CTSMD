@@ -40,16 +40,17 @@ final class PushService
         foreach($q->fetchAll() as $row){$claim=$db->prepare("UPDATE push_queue SET status='processing',claimed_at=CURRENT_TIMESTAMP,attempt_count=attempt_count+1 WHERE id=:id AND status='queued'");$claim->execute(['id'=>$row['id']]);if($claim->rowCount()!==1)continue;
             $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$row['user_id']]);if(!$account->fetchColumn()){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>$row['id']]);$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND status='active'")->execute(['user'=>$row['user_id']]);continue;}
             if(!self::pushAllowed($db,(int)$row['user_id'],(string)$row['category'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Push preference disabled before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
-            if((string)$row['category']==='messages'&&preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)&&!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            if((string)$row['category']==='messages'&&(!preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)||!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id']))){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
             // A queued Community post may outlive a user's channel membership. Recheck
             // effective access just before delivery; failed lookups fail closed.
-            if((string)$row['category']==='community'&&preg_match('~^/channels/view\\?id=(\\d+)$~',(string)($row['action_path']??''),$match)){
+            if((string)$row['category']==='community'){
+                $validPath=preg_match('~^/channels/view\\?id=(\\d+)$~',(string)($row['action_path']??''),$match)===1;
                 $allowed=false;
                 try{
                     $sUser=$db->prepare("SELECT id,first_name,last_name,display_role AS role,organization_membership_status,active,account_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");
                     $sUser->execute(['id'=>(int)$row['user_id']]);
                     $viewer=$sUser->fetch(PDO::FETCH_ASSOC);
-                    if($viewer){
+                    if($validPath&&$viewer){
                         $viewer['roles']=Auth::roles($db,(int)$row['user_id']);
                         $viewer['permissions']=Auth::permissions($db,(int)$row['user_id']);
                         $allowed=CommunicationReadStateService::canAccessChannel($db,$viewer,(int)$match[1]);
