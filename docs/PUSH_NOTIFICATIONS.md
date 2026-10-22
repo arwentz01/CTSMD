@@ -144,3 +144,11 @@ Acceptance: execute the normal isolated queue fixture, add one malformed-message
 malformed-community action-path case, prove both are suppressed without sending, and verify
 valid authorized destinations still deliver. Record a before/after fingerprint of existing
 queue items; do not run the queue processor against unrelated production rows.
+
+### Isolated PHP regression (no outbound pushes)
+
+Run `php tests/pilot_push_destination_guard.php`. The PDO test double permits
+account and preference lookups but deliberately rejects unexpected SQL, avoiding
+any real database or network connection. Four malformed Message/Community paths
+must be suppressed before subscription or delivery lookup. This is a code-level
+regression check, not evidence of OS notification delivery or live authorization.
