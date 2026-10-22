@@ -80,7 +80,7 @@ final class VolunteerExperience
         self::redirect($basePath . '/volunteer/shift?id=' . (int)$shiftId);
     }
 
-    private static function signup(PDO $db, int $userId, int $shiftId): void
+    public static function signup(PDO $db, int $userId, int $shiftId): void
     {
         $db->beginTransaction();
         try {
