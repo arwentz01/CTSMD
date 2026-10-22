@@ -78,7 +78,18 @@ INSERT INTO playbill_cast_profiles
     (playbill_id,user_id,display_name,role_title,biography,headshot_stored_file_id,photographer_credit,display_order,visible,approval_status,updated_by_user_id)
 SELECT pb.id,pm.user_id,COALESCE(NULLIF(sp.preferred_name,''),CONCAT(u.first_name,' ',u.last_name)),pm.participation_role,
        sp.short_bio,sp.headshot_stored_file_id,sp.photographer_credit,
-       ROW_NUMBER() OVER (PARTITION BY pb.id ORDER BY pm.participation_role,u.last_name,u.first_name) * 10,
+       (
+           SELECT COUNT(*)
+           FROM production_memberships pm2
+           JOIN users u2 ON u2.id=pm2.user_id AND u2.active=1 AND u2.account_status<>'disabled'
+           WHERE pm2.production_id=pb.production_id AND pm2.status='active' AND pm2.audience_type='student'
+             AND (
+                 pm2.participation_role < pm.participation_role
+                 OR (pm2.participation_role = pm.participation_role AND u2.last_name < u.last_name)
+                 OR (pm2.participation_role = pm.participation_role AND u2.last_name = u.last_name AND u2.first_name < u.first_name)
+                 OR (pm2.participation_role = pm.participation_role AND u2.last_name = u.last_name AND u2.first_name = u.first_name AND pm2.user_id <= pm.user_id)
+             )
+       ) * 10,
        0,'draft',COALESCE(pb.created_by_user_id,pm.user_id)
 FROM playbills pb
 JOIN production_memberships pm ON pm.production_id=pb.production_id AND pm.status='active' AND pm.audience_type='student'
