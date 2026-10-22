@@ -373,3 +373,9 @@ Web Push acceptance used disposable account `push.acceptance@example.test` only.
 Board readiness is **92%** and limited-pilot readiness is **86% NO-GO**: CTSMD shell cleanup, matched database/private-file restore, negative matrix, pure-persona matrix, repeatable demo fixture, isolated production email/cron acceptance, and remote FCM acceptance are closed. Observable Web Push presentation/deep-link acceptance and remaining mobile/keyboard acceptance stay open. Normal email cron activation awaits administrator disposition of seven pre-existing live rows; production backup ownership, retention and accepted RPO/RTO also remain undecided.
 
 The latest mobile source fix is not counted as deployed acceptance. The cPanel uploader could not read local files because the connected Chrome extension lacks file-URL access, and the local browser database is missing migrations 062-067 plus the mobile token tables. Production deployment and a repeat keyboard pass are therefore required before closing the mobile gate.
+
+### Playbill publication source status
+
+The Playbill management and public digital-publication source is implemented on the audit branch with migration 068. It adds reusable Student profile media, production-specific approved cast snapshots, sponsor tiers/artwork/placement, edition snapshots, explicit publish/archive/unpublish state, stable unauthenticated public URLs, policy-checked public assets, SVG QR downloads, printable QR signage, responsive section navigation, sharing metadata, and configured-only audience actions. Public pages default to `noindex` pending an explicit Student-biography indexing policy.
+
+This work is not deployed and does not change the Board or limited-pilot percentages. Migration 068, fresh-session public-route acceptance, consent withdrawal checks, QR/print checks, and production upload-limit verification remain required before this feature is accepted for production use.

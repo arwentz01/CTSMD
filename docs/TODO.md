@@ -257,6 +257,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 
 ## Reporting/admin backlog
 
+- Playbill publication source is implemented in migration 068. Before production use, deploy migration 068, complete fake-data consent/public-route/QR runtime acceptance, and decide whether any published Student biography content may be search-indexed. Public pages default to `noindex`.
+
 - Organization-wide audit explorer.
 - Volunteer, form, production-participation and attendance reports.
 - Data exports and system settings.
