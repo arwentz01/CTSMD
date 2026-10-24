@@ -25,7 +25,7 @@ function External({title,url}:{title:string;url:string}){
  const open=async()=>{try{const supported=await Linking.canOpenURL(url);if(!supported)throw Error('This link cannot be opened on your device.');await Linking.openURL(url)}catch(e){Alert.alert('Unable to open link',e instanceof Error?e.message:'Please try again.')}};
  return <Pressable accessibilityRole="link" onPress={()=>void open()} style={s.item}><Text style={s.itemText}>{title}</Text><Ionicons name="open-outline" size={17} color={colors.muted}/></Pressable>;
 }
-function Local({title,detail,icon,path}:{title:string;detail:string;icon:'document-text-outline'|'hand-left-outline';path:'/(tabs)/forms'|'/(tabs)/volunteer'}){
+function Local({title,detail,icon,path}:{title:string;detail:string;icon:'document-text-outline'|'hand-left-outline'|'people-outline';path:'/(tabs)/forms'|'/(tabs)/volunteer'|'/family'}){
  return <Pressable accessibilityRole="button" onPress={()=>router.push(path)} style={s.item}><Ionicons name={icon} size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>{title}</Text><Text style={s.muted}>{detail}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>;
 }
 export default function More(){
@@ -33,6 +33,7 @@ export default function More(){
  return <Screen title="More">
   <Pressable accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push("/account")} style={s.profile}><View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View><View style={{flex:1,gap:5}}><Text style={s.name}>{user?.name||'My CTSMD'}</Text><Text style={s.muted}>{user?.email||''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>My CTSMD</Text>
+  <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
   <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
   <Local title="Volunteer" detail="Shifts, signups and approvals" icon="hand-left-outline" path="/(tabs)/volunteer"/>
   <Text style={s.heading}>Tickets & resources</Text>
