@@ -24,7 +24,20 @@ export const channel=(id:number)=>api<ChannelFeed>('channel?id='+id);
 export type CommunityReply={id:number;post_id:number;body:string;created_at:string;author_user_id:number;initials:string;author:string};
 export const channelReplies=(post_id:number)=>api<{replies:CommunityReply[]}>('channel-replies?post_id='+encodeURIComponent(String(post_id)));
 export const createChannelReply=(post_id:number,body:string)=>api<{ok:boolean;status:string;reply_id:number}>('channel-replies',{method:'POST',body:{post_id,body}});
-export const createChannelPost=(channel_id:number,body:string)=>api<{ok:boolean;post_id:number;status:string}>('channel-post',{method:'POST',body:{channel_id,body}});
+export type NativePhoto={uri:string;fileName?:string|null;mimeType?:string|null};
+export async function createChannelPost(channel_id:number,body:string,photo?:NativePhoto){
+ if(!photo)return api<{ok:boolean;post_id:number;status:string}>('channel-post',{method:'POST',body:{channel_id,body}});
+ const token=await readToken();
+ const form=new FormData();
+ form.append('channel_id',String(channel_id));
+ form.append('body',body);
+ const mime=photo.mimeType&&['image/jpeg','image/png','image/webp'].includes(photo.mimeType)?photo.mimeType:'image/jpeg';
+ form.append('attachment',{uri:photo.uri,name:photo.fileName||'community-photo.jpg',type:mime} as unknown as Blob);
+ const response=await fetch(BASE+'/api/mobile/channel-post',{method:'POST',headers:{'Accept':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:form});
+ let result:any;try{result=await response.json()}catch{throw new ApiError('CTSMD returned an unreadable response.',response.status)}
+ if(!response.ok)throw new ApiError(String(result?.error||'Photo upload failed.'),response.status);
+ return result as {ok:boolean;post_id:number;status:string};
+}
 export const sendMessage=(id:number,body:string)=>api<unknown>('message-send',{method:'POST',body:{conversation_id:id,body}});
 export type FormDetail={id:number;status:string;due_at:string|null;title:string;instructions:string|null;completion_mode:string;review_required:number;submission_status:string|null;reviewer_note:string|null};
 export const formDetail=(id:number)=>api<{form:FormDetail}>('form-detail?id='+encodeURIComponent(String(id)));

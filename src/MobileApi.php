@@ -360,7 +360,8 @@ final class MobileApi
         self::requireMethod('POST');$input=self::input();$id=(int)($input['channel_id']??0);$body=trim((string)($input['body']??''));
         if($id<1||$body===''||mb_strlen($body)>5000)throw new RuntimeException('Choose a channel and write a post up to 5,000 characters.');
         if(!CommunicationReadStateService::canAccessChannel($db,$user,$id))self::json(['error'=>'Channel not found.'],404);
-        $result=CommunityExperience::mobileCreatePost($db,$user,$id,$body);
+        $upload=$_FILES['attachment']??[];
+        $result=CommunityExperience::mobileCreatePost($db,$user,$id,$body,$upload);
         self::json(['ok'=>true,'post_id'=>(int)$result['post_id'],'status'=>(string)$result['status']]);
     }
 

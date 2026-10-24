@@ -109,9 +109,9 @@ final class CommunityExperience
         self::redirect($basePath . '/channels/view?id=' . (int)$channelId);
     }
 
-    public static function mobileCreatePost(PDO $db,array $user,int $channelId,string $body): array
+    public static function mobileCreatePost(PDO $db,array $user,int $channelId,string $body,array $upload=[]): array
     {
-        return self::createPost($db,$user,$channelId,$body,[]);
+        return self::createPost($db,$user,$channelId,$body,$upload);
     }
 
     public static function mobileCanPost(PDO $db,array $user,int $channelId): bool
