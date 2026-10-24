@@ -1,5 +1,5 @@
 import {clearToken,readToken} from '../auth/session';
-import type {MeResult,MessagesResult,ChannelsResult,TheatreResult,TasksResult,Thread,ChannelFeed} from '../types/ctsmd';
+import type {MeResult,MessagesResult,ChannelsResult,TheatreResult,TasksResult,Thread,ChannelFeed,CommunityAttachment} from '../types/ctsmd';
 const configured=process.env.EXPO_PUBLIC_CTSMD_API_BASE_URL||'https://ctsmd.me';
 if(!/^https:\/\//i.test(configured))throw new Error('CTSMD API must use HTTPS.');
 const BASE=configured.replace(/\/$/,'');
@@ -15,7 +15,7 @@ export async function login(email:string,password:string){return api<{token:stri
 export const me=()=>api<MeResult>('me');
 export const conversations=()=>api<MessagesResult>('messages');
 export const channels=()=>api<ChannelsResult>('channels');
-export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string};
+export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[]};
 export const communityFeed=()=>api<{posts:CommunityFeedPost[]}>('community-feed');
 export const theatre=()=>api<TheatreResult>('theatre');
 export const tasks=()=>api<TasksResult>('daily-tasks');
@@ -24,6 +24,7 @@ export const channel=(id:number)=>api<ChannelFeed>('channel?id='+id);
 export type CommunityReply={id:number;post_id:number;body:string;created_at:string;author_user_id:number;initials:string;author:string};
 export const channelReplies=(post_id:number)=>api<{replies:CommunityReply[]}>('channel-replies?post_id='+encodeURIComponent(String(post_id)));
 export const createChannelReply=(post_id:number,body:string)=>api<{ok:boolean;status:string;reply_id:number}>('channel-replies',{method:'POST',body:{post_id,body}});
+export const communityPhotoUrl=(id:number)=>BASE+'/api/mobile/community-photo?id='+encodeURIComponent(String(id));
 export type NativePhoto={uri:string;fileName?:string|null;mimeType?:string|null};
 export async function createChannelPost(channel_id:number,body:string,photo?:NativePhoto){
  if(!photo)return api<{ok:boolean;post_id:number;status:string}>('channel-post',{method:'POST',body:{channel_id,body}});
