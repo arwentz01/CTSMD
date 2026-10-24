@@ -2,6 +2,7 @@ import React,{useCallback,useState} from 'react';
 import {Alert,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Screen} from '../../../src/components/Screen';
+import {CommunityPhotos} from '../../../src/components/CommunityPhotos';
 import {LoadState,useScreenData} from '../../../src/components/LoadState';
 import {channel,channelReplies,createChannelReply} from '../../../src/api/client';
 import {colors} from '../../../src/theme/colors';
@@ -22,7 +23,7 @@ export default function CommunityPost(){
   <Pressable accessibilityRole="button" onPress={()=>router.back()}><Text style={s.link}>‹ Back to Community</Text></Pressable>
   <LoadState loading={loading} error={error}/>
   {data&&<>
-   <View style={s.card}><Text style={s.muted}>{data.channel.name}</Text><Text style={s.name}>{data.post.author}</Text><Text style={s.body}>{data.post.body}</Text><Text style={s.muted}>{data.post.created_at}</Text></View>
+   <View style={s.card}><Text style={s.muted}>{data.channel.name}</Text><Text style={s.name}>{data.post.author}</Text><Text style={s.body}>{data.post.body}</Text><CommunityPhotos attachments={data.post.attachments}/><Text style={s.muted}>{data.post.created_at}</Text></View>
    <Text style={s.heading}>Replies</Text>
    {data.replies.length===0&&<Text style={s.muted}>No replies yet.</Text>}
    {data.replies.map(r=><View key={r.id} style={s.card}><Text style={s.name}>{r.initials} · {r.author}</Text><Text style={s.body}>{r.body}</Text><Text style={s.muted}>{r.created_at}</Text></View>)}
