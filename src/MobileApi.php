@@ -261,7 +261,7 @@ final class MobileApi
         self::requireMethod('GET');
         $stmt = $db->prepare("SELECT c.id,c.subject,c.conversation_type,MAX(m.created_at) latest_at,COUNT(DISTINCT m.id) message_count,COUNT(DISTINCT cp.user_id) participant_count,(SELECT COUNT(*) FROM messages um WHERE um.conversation_id=c.id AND um.hidden_at IS NULL AND um.id>mine.last_read_message_id AND um.sender_user_id<>mine.user_id AND (mine.history_through_message_id IS NULL OR um.id<=mine.history_through_message_id)) unread_count,(SELECT sm.body FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR sm.id<=mine.history_through_message_id) ORDER BY sm.id DESC LIMIT 1) preview FROM conversations c JOIN conversation_participants mine ON mine.conversation_id=c.id AND mine.user_id=:user JOIN conversation_participants cp ON cp.conversation_id=c.id LEFT JOIN messages m ON m.conversation_id=c.id AND m.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR m.id<=mine.history_through_message_id) GROUP BY c.id,c.subject,c.conversation_type,mine.last_read_message_id,mine.user_id,mine.history_through_message_id ORDER BY latest_at DESC,c.id DESC");
         $stmt->execute(['user'=>(int)$user['id']]);
-        self::json(['conversations'=>$stmt->fetchAll()]);
+        $rows=$stmt->fetchAll();$names=$db->prepare("SELECT cp.user_id,cp.participant_role,CONCAT(u.first_name,' ',u.last_name) name FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id");foreach($rows as &$row){$names->execute(['id'=>$row['id']]);$people=$names->fetchAll();$visible=array_values(array_map(static fn(array $p):string=>(string)$p['name'],array_filter($people,static fn(array $p):bool=>(int)$p['user_id']!==(int)$user['id']&&$p['participant_role']!=='guardian')));$row['display_name']=$row['conversation_type']==='group'?($row['subject']?:'Group conversation'):(implode(', ',$visible)?:$row['subject']);}unset($row);self::json(['conversations'=>$rows]);
     }
 
     private static function messageThread(PDO $db, array $user): never
@@ -279,7 +279,7 @@ final class MobileApi
         $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
         $m->execute(['id'=>$id,'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
-        self::json(['conversation'=>$conversation,'participants'=>$p->fetchAll(),'messages'=>$m->fetchAll()]);
+        $people=$p->fetchAll();$visible=array_values(array_map(static fn(array $person):string=>(string)$person['name'],array_filter($people,static fn(array $person):bool=>(int)$person['user_id']!==(int)$user['id']&&$person['participant_role']!=='guardian')));$conversation['display_name']=$conversation['conversation_type']==='group'?($conversation['subject']?:'Group conversation'):(implode(', ',$visible)?:$conversation['subject']);self::json(['conversation'=>$conversation,'participants'=>$people,'messages'=>$m->fetchAll()]);
     }
 
     private static function messageRecipients(PDO $db,array $user):never
