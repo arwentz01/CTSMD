@@ -1,0 +1,35 @@
+name: CTSMD Expo mobile checks
+on:
+  push:
+    branches:
+      - audit/board-pilot-readiness
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-expo.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-expo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expo-typescript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Expo app dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate Expo TypeScript
+        run: npm run typecheck
+      - name: Check Expo dependency compatibility
+        run: npx expo install --check
