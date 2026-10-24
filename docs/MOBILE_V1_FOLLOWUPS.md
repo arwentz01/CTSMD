@@ -12,7 +12,8 @@
 - [x] Channel-level Include in Community Feed setting (migration 071; deploy migration before PHP code).
 - [x] Initial native post detail route and moderated replies (migration 072; not yet tested or deployed).
 - [x] Initial native single-photo selection and multipart upload via existing CTSMD storage (caption required; not tested).
-- [ ] Authenticated inline photo retrieval and galleries; reply moderation review and post pagination.
+- [x] Initial authenticated inline photo retrieval and small grids in Feed, Channels, and post detail (not device-tested).
+- [ ] Full-screen image viewer, gallery optimization, reply moderation review, and post pagination.
 - [ ] Install SDK 58 image picker and regenerate mobile lockfile (`cd mobile && npx expo install expo-image-picker`), then test Android/iOS uploads.
 - [ ] Full Expo/Android and PHP lint/test pass.
 
