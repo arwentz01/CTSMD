@@ -15,6 +15,8 @@ export async function login(email:string,password:string){return api<{token:stri
 export const me=()=>api<MeResult>('me');
 export const conversations=()=>api<MessagesResult>('messages');
 export const channels=()=>api<ChannelsResult>('channels');
+export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string};
+export const communityFeed=()=>api<{posts:CommunityFeedPost[]}>('community-feed');
 export const theatre=()=>api<TheatreResult>('theatre');
 export const tasks=()=>api<TasksResult>('daily-tasks');
 export const thread=(id:number)=>api<Thread>('message-thread?id='+id);
