@@ -13,6 +13,7 @@ require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
+require_once __DIR__ . '/CommunityExperience.php';
 require_once __DIR__ . '/FormExperience.php';
 require_once __DIR__ . '/VolunteerExperience.php';
 require_once __DIR__ . '/VolunteerApprovalExperience.php';
