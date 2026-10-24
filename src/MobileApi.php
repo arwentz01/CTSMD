@@ -39,6 +39,7 @@ final class MobileApi
 
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
+                '/api/mobile/my-family' => self::myFamily($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
@@ -76,6 +77,24 @@ final class MobileApi
             error_log('Mobile API error: ' . $e->getMessage());
             self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
         }
+    }
+
+    private static function myFamily(PDO $db,array $user): never
+    {
+        self::requireMethod('GET');
+        $id=(int)$user['id'];
+        // Only current, active family relationships. No organization-wide roster exposure.
+        $students=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,fr.is_primary
+          FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status='active'
+          WHERE fr.guardian_user_id=:id AND fr.status='active'
+          ORDER BY u.first_name,u.last_name,u.id");
+        $students->execute(['id'=>$id]);
+        $guardians=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,fr.is_primary
+          FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active'
+          WHERE fr.student_user_id=:id AND fr.status='active'
+          ORDER BY fr.is_primary DESC,u.first_name,u.last_name,u.id");
+        $guardians->execute(['id'=>$id]);
+        self::json(['students'=>$students->fetchAll(),'guardians'=>$guardians->fetchAll()]);
     }
 
     private static function login(PDO $db): never
