@@ -333,7 +333,7 @@ final class MobileApi
     private static function communityFeed(PDO $db,array $user): never
     {
         self::requireMethod('GET');
-        $channels=$db->query("SELECT id FROM channels WHERE archived_at IS NULL")->fetchAll(PDO::FETCH_COLUMN);
+        $channels=$db->query("SELECT id FROM channels WHERE archived_at IS NULL AND include_in_feed=1")->fetchAll(PDO::FETCH_COLUMN);
         $allowed=[];
         foreach($channels as $id){if(CommunicationReadStateService::canAccessChannel($db,$user,(int)$id))$allowed[]=(int)$id;}
         if(!$allowed){self::json(['posts'=>[]]);}
