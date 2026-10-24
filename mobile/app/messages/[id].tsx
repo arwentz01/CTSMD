@@ -7,7 +7,6 @@ import {thread,sendMessage} from '../../src/api/client';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
-const formatTime=(input:string)=>{const value=new Date(input.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):input;};
 export default function ThreadScreen(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {user}=useAuth();
@@ -31,7 +30,7 @@ export default function ThreadScreen(){
     return <View style={[styles.messageRow,mine&&styles.mineRow]}>
      {!mine&&<View style={styles.initials}><Text style={styles.initialText}>{m.initials||'?'}</Text></View>}
      <View style={[styles.bubble,mine&&styles.mineBubble]}>
-      <View style={styles.bubbleLine}><Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text><Text style={[styles.timestamp,mine&&styles.mineTime]}>{formatTime(m.created_at)}</Text>{mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color="#e9f3ff"/>}</View>
+      <View style={styles.bubbleLine}><Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>{mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color="#e9f3ff"/>}</View>
      </View>
     </View>;
    }} ListEmptyComponent={!loading&&!error?<Text style={styles.empty}>No messages yet.</Text>:undefined}/>
