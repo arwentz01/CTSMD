@@ -5,6 +5,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {Alert,Image,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {CommunityPhotos} from '../../src/components/CommunityPhotos';
+import {CommunityHeart} from '../../src/components/CommunityHeart';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {channel,createChannelPost} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
@@ -25,7 +26,7 @@ export default function Channel(){
   {post_id&&data?.posts.some(p=>String(p.id)===String(post_id))&&<Text style={s.muted}>Selected post is highlighted below.</Text>}
   {data?.posts.slice().sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.created_at.localeCompare(a.created_at)||b.id-a.id).map(p=><View style={[s.post,String(p.id)===String(post_id)&&s.highlight]} key={p.id}><Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(id)}})}>
     <View style={s.authorRow}><View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View><View style={s.authorMeta}><Text style={s.author}>{p.author}</Text><Text style={s.muted}>{p.created_at}</Text></View>{!!p.pinned&&<Ionicons name="pin" color={colors.primary} size={18}/>}</View>
-    <Text style={s.body}>{p.body}</Text></Pressable><CommunityPhotos attachments={p.attachments}/>
+    <Text style={s.body}>{p.body}</Text></Pressable><CommunityPhotos attachments={p.attachments}/><CommunityHeart postId={p.id} count={p.heart_count} hearted={p.hearted}/>
    </View>)}
  </Screen>;
 }
