@@ -54,6 +54,7 @@ final class MobileApi
                 '/api/mobile/message-recipients' => self::messageRecipients($db, $user),
                 '/api/mobile/message-create' => self::messageCreate($db, $user),
                 '/api/mobile/channels' => self::channels($db, $user),
+                '/api/mobile/community-feed' => self::communityFeed($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
                 '/api/mobile/channel-post' => self::channelPost($db, $user),
                 '/api/mobile/push-subscription' => self::pushSubscription($db, $user),
@@ -326,6 +327,20 @@ final class MobileApi
         $unread=CommunicationReadStateService::communityUnread($db,$user);$visible=[];
         foreach($rows as $row){if(!CommunicationReadStateService::canAccessChannel($db,$user,(int)$row['id']))continue;$row['unread_count']=(int)($unread['channels'][(int)$row['id']]??0);$visible[]=$row;}
         self::json(['channels'=>$visible]);
+    }
+
+    private static function communityFeed(PDO $db,array $user): never
+    {
+        self::requireMethod('GET');
+        $channels=$db->query("SELECT id FROM channels WHERE archived_at IS NULL")->fetchAll(PDO::FETCH_COLUMN);
+        $allowed=[];
+        foreach($channels as $id){if(CommunicationReadStateService::canAccessChannel($db,$user,(int)$id))$allowed[]=(int)$id;}
+        if(!$allowed){self::json(['posts'=>[]]);}
+        $placeholders=implode(',',array_fill(0,count($allowed),'?'));
+        // Feed browsing must not call markChannelRead; unread state belongs to each channel.
+        $stmt=$db->prepare("SELECT cp.id,cp.channel_id,c.name channel_name,c.production_id,p.title production_title,cp.body,cp.created_at,cp.pinned,cp.author_user_id,u.initials,CONCAT(u.first_name,' ',u.last_name) author FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id IN ($placeholders) AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at DESC,cp.id DESC LIMIT 60");
+        $stmt->execute($allowed);
+        self::json(['posts'=>$stmt->fetchAll()]);
     }
 
     private static function channel(PDO $db,array $user): never
