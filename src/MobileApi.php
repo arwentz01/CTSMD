@@ -58,6 +58,7 @@ final class MobileApi
                 '/api/mobile/community-feed' => self::communityFeed($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
                 '/api/mobile/channel-post' => self::channelPost($db, $user),
+                '/api/mobile/channel-replies' => self::channelReplies($db, $user),
                 '/api/mobile/push-subscription' => self::pushSubscription($db, $user),
                 '/api/mobile/logout' => self::logout($db),
                 default => self::json(['error' => 'Mobile API route not found.'], 404),
@@ -361,6 +362,31 @@ final class MobileApi
         if(!CommunicationReadStateService::canAccessChannel($db,$user,$id))self::json(['error'=>'Channel not found.'],404);
         $result=CommunityExperience::mobileCreatePost($db,$user,$id,$body);
         self::json(['ok'=>true,'post_id'=>(int)$result['post_id'],'status'=>(string)$result['status']]);
+    }
+
+    private static function channelReplies(PDO $db,array $user): never
+    {
+        $postId=(int)($_GET['post_id']??0);
+        $input=[];
+        if($_SERVER['REQUEST_METHOD']==='POST'){$input=self::input();$postId=(int)($input['post_id']??0);}
+        if($postId<1)self::json(['error'=>'Post not found.'],404);
+        $postQuery=$db->prepare("SELECT cp.id,cp.channel_id FROM channel_posts cp WHERE cp.id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL LIMIT 1");
+        $postQuery->execute(['id'=>$postId]);$post=$postQuery->fetch();
+        if(!$post||!CommunicationReadStateService::canAccessChannel($db,$user,(int)$post['channel_id']))self::json(['error'=>'Post not found.'],404);
+        if($_SERVER['REQUEST_METHOD']==='POST'){
+            if(!CommunityExperience::mobileCanPost($db,$user,(int)$post['channel_id']))self::json(['error'=>'Posting is not allowed in this channel.'],403);
+            $body=trim((string)($input['body']??''));
+            if($body===''||mb_strlen($body)>4000)throw new RuntimeException('Write a reply up to 4,000 characters.');
+            $decision=ModerationService::evaluate($db,$body);
+            $status=(string)($decision['status']??'');
+            if(!in_array($status,['published','pending','rejected'],true))throw new RuntimeException('Reply moderation unavailable.');
+            $s=$db->prepare("INSERT INTO channel_post_replies (post_id,author_user_id,body,moderation_status) VALUES (:post,:author,:body,:status)");
+            $s->execute(['post'=>$postId,'author'=>(int)$user['id'],'body'=>$body,'status'=>$status]);
+            self::json(['ok'=>true,'status'=>$status,'reply_id'=>(int)$db->lastInsertId()]);
+        }
+        self::requireMethod('GET');
+        $stmt=$db->prepare("SELECT r.id,r.post_id,r.body,r.created_at,r.author_user_id,u.initials,CONCAT(u.first_name,' ',u.last_name) author FROM channel_post_replies r JOIN users u ON u.id=r.author_user_id WHERE r.post_id=:post AND r.moderation_status='published' AND r.deleted_at IS NULL ORDER BY r.created_at ASC,r.id ASC LIMIT 200");
+        $stmt->execute(['post'=>$postId]);self::json(['replies'=>$stmt->fetchAll()]);
     }
 
     private static function logout(PDO $db): never
