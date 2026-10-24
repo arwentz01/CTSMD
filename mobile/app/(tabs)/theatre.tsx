@@ -31,7 +31,7 @@ export default function Theatre(){
    <Text style={s.sectionTitle}>Explore Theatre</Text>
    <View style={s.grid}>
     <Pressable accessibilityRole="link" style={s.tile} onPress={()=>void Linking.openURL('https://ctsmd.ludus.com/index.php')}><Ionicons name="ticket-outline" color={colors.primary} size={23}/><Text style={s.title}>Tickets</Text><Text style={s.subtitle}>Shows and seats</Text></Pressable>
-    <Pressable accessibilityRole="button" style={s.tile} onPress={()=>router.push('/(tabs)/community')}><Ionicons name="people-outline" color={colors.primary} size={23}/><Text style={s.title}>Cast & Crew</Text><Text style={s.subtitle}>Production channels and members</Text></Pressable>
+    <Pressable accessibilityRole="button" style={s.tile} onPress={()=>router.push('/(tabs)/community')}><Ionicons name="people-outline" color={colors.primary} size={23}/><Text style={s.title}>Channels</Text><Text style={s.subtitle}>Production discussions</Text></Pressable>
    </View>
   </>}
  </Screen>;
