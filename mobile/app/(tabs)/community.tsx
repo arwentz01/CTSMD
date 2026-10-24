@@ -3,6 +3,7 @@ import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen,Item} from '../../src/components/Screen';
+import {CommunityPhotos} from '../../src/components/CommunityPhotos';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {channels,communityFeed} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
@@ -28,7 +29,7 @@ export default function Community(){
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
     {posts.map(p=><Pressable accessibilityRole="button" key={p.id} style={s.post} onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(p.channel_id)}})}>
       <View style={s.authorRow}><View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View><View style={{flex:1,gap:3}}><Text style={s.author}>{p.author}</Text><Text style={s.muted}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text></View><Ionicons name="chevron-forward" color={colors.muted} size={18}/></View>
-      <Text style={s.body}>{p.body}</Text><Text style={s.muted}>{p.created_at}</Text>
+      <Text style={s.body}>{p.body}</Text><CommunityPhotos attachments={p.attachments}/><Text style={s.muted}>{p.created_at}</Text>
     </Pressable>)}
   </>}
   {data&&view==='Channels'&&<>
