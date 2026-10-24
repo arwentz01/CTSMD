@@ -13,6 +13,8 @@ export async function api<T>(path:string,opts:{method?:'GET'|'POST';body?:object
 }
 export async function login(email:string,password:string){return api<{token:string;user:MeResult['user']}>('login',{method:'POST',body:{email,password},token:null})}
 export const me=()=>api<MeResult>('me');
+export type FamilyMember={id:number;name:string;is_primary:number};
+export const myFamily=()=>api<{students:FamilyMember[];guardians:FamilyMember[]}>('my-family');
 export const conversations=()=>api<MessagesResult>('messages');
 export const channels=()=>api<ChannelsResult>('channels');
 export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean};
