@@ -59,6 +59,7 @@ final class MobileApi
                 '/api/mobile/channel' => self::channel($db, $user),
                 '/api/mobile/channel-post' => self::channelPost($db, $user),
                 '/api/mobile/channel-replies' => self::channelReplies($db, $user),
+                '/api/mobile/channel-reaction' => self::channelReaction($db, $user),
                 '/api/mobile/community-photo' => self::communityPhoto($db, $user),
                 '/api/mobile/push-subscription' => self::pushSubscription($db, $user),
                 '/api/mobile/logout' => self::logout($db),
@@ -343,7 +344,17 @@ final class MobileApi
         // Feed browsing must not call markChannelRead; unread state belongs to each channel.
         $stmt=$db->prepare("SELECT cp.id,cp.channel_id,c.name channel_name,c.production_id,p.title production_title,cp.body,cp.created_at,cp.pinned,cp.author_user_id,u.initials,CONCAT(u.first_name,' ',u.last_name) author FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id IN ($placeholders) AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at DESC,cp.id DESC LIMIT 60");
         $stmt->execute($allowed);
-        $posts=$stmt->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $p):int=>(int)$p['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::json(['posts'=>$posts]);
+        $posts=$stmt->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $p):int=>(int)$p['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['posts'=>$posts]);
+    }
+
+    private static function addHeartCounts(PDO $db,array &$posts,int $viewerId): void
+    {
+        if(!$posts)return;
+        $ids=array_map(static fn(array $p):int=>(int)$p['id'],$posts);$placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $s=$db->prepare("SELECT post_id,COUNT(*) heart_count,MAX(CASE WHEN user_id=? THEN 1 ELSE 0 END) hearted FROM channel_post_reactions WHERE reaction='heart' AND post_id IN ($placeholders) GROUP BY post_id");
+        $s->execute(array_merge([$viewerId],$ids));$totals=[];
+        foreach($s->fetchAll() as $row)$totals[(int)$row['post_id']]=$row;
+        foreach($posts as &$post){$row=$totals[(int)$post['id']]??[];$post['heart_count']=(int)($row['heart_count']??0);$post['hearted']=(bool)($row['hearted']??false);}unset($post);
     }
 
     private static function channel(PDO $db,array $user): never
@@ -353,7 +364,7 @@ final class MobileApi
         $c=$db->prepare("SELECT c.id,c.name,c.description,c.channel_type,c.production_id,c.post_scope,p.title production_title FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");$c->execute(['id'=>$id]);$channel=$c->fetch();$channel['can_post']=CommunityExperience::mobileCanPost($db,$user,$id);
         $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.pinned DESC,cp.created_at,cp.id");$p->execute(['id'=>$id]);
         CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);
-        $posts=$p->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::json(['channel'=>$channel,'posts'=>$posts]);
+        $posts=$p->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['channel'=>$channel,'posts'=>$posts]);
     }
 
     private static function communityPhoto(PDO $db,array $user): never
@@ -377,6 +388,25 @@ final class MobileApi
         $upload=$_FILES['attachment']??[];
         $result=CommunityExperience::mobileCreatePost($db,$user,$id,$body,$upload);
         self::json(['ok'=>true,'post_id'=>(int)$result['post_id'],'status'=>(string)$result['status']]);
+    }
+
+    private static function channelReaction(PDO $db,array $user): never
+    {
+        self::requireMethod('POST');$input=self::input();$postId=(int)($input['post_id']??0);
+        $stmt=$db->prepare("SELECT channel_id FROM channel_posts WHERE id=:id AND moderation_status='published' AND hidden_at IS NULL AND deleted_at IS NULL LIMIT 1");
+        $stmt->execute(['id'=>$postId]);$channelId=(int)($stmt->fetchColumn()?:0);
+        if(!$channelId||!CommunicationReadStateService::canAccessChannel($db,$user,$channelId))self::json(['error'=>'Post not found.'],404);
+        $db->beginTransaction();
+        try{
+            $check=$db->prepare("SELECT 1 FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart' FOR UPDATE");
+            $check->execute(['post'=>$postId,'user'=>(int)$user['id']]);
+            $liked=(bool)$check->fetchColumn();
+            if($liked){$update=$db->prepare("DELETE FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart'");}
+            else{$update=$db->prepare("INSERT INTO channel_post_reactions (post_id,user_id,reaction) VALUES (:post,:user,'heart')");}
+            $update->execute(['post'=>$postId,'user'=>(int)$user['id']]);
+            $db->commit();
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+        self::json(['ok'=>true,'hearted'=>!$liked]);
     }
 
     private static function channelReplies(PDO $db,array $user): never
