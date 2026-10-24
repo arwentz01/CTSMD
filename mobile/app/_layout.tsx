@@ -1,3 +1,3 @@
-import React from 'react';import {Stack} from 'expo-router';import {AuthProvider,useAuth} from '../src/auth/AuthProvider';
+import React from 'react';import {Stack} from 'expo-router';import {StatusBar} from 'expo-status-bar';import {AuthProvider,useAuth} from '../src/auth/AuthProvider';
 function Navigator(){const {user,busy}=useAuth();return <Stack screenOptions={{headerShown:false}}><Stack.Protected guard={!user&&!busy}><Stack.Screen name="login"/></Stack.Protected><Stack.Protected guard={!!user&&!busy}><Stack.Screen name="(tabs)"/><Stack.Screen name="messages/[id]"/><Stack.Screen name="messages/new"/><Stack.Screen name="community/[id]"/><Stack.Screen name="theatre/[id]"/><Stack.Screen name="forms/[id]"/></Stack.Protected></Stack>}
-export default function RootLayout(){return <AuthProvider><Navigator/></AuthProvider>}
+export default function RootLayout(){return <AuthProvider><StatusBar style="dark" backgroundColor="#f7f8fa"/><Navigator/></AuthProvider>}
