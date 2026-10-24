@@ -28,4 +28,4 @@ export const cancelVolunteer=(shift_id:number)=>api<{ok:boolean}>('volunteer-can
 export const approvalVolunteer=(input:{action:'request';shift_id:number;note:string}|{action:'withdraw';request_id:number})=>api<{ok:boolean}>('volunteer-approval',{method:'POST',body:input});
 export type Recipient={id:number;name:string;role:string;selectable:boolean};
 export const recipients=()=>api<{recipients:Recipient[]}>('message-recipients');
-export const createConversation=(recipient_id:number,subject:string,body:string)=>api<{conversation_id:number}>('message-create',{method:'POST',body:{recipient_id,subject,body}});
+export const createConversation=(recipient_id:number,body:string)=>api<{conversation_id:number}>('message-create',{method:'POST',body:{recipient_id,body}});
