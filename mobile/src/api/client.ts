@@ -21,6 +21,7 @@ export const theatre=()=>api<TheatreResult>('theatre');
 export const tasks=()=>api<TasksResult>('daily-tasks');
 export const thread=(id:number)=>api<Thread>('message-thread?id='+id);
 export const channel=(id:number)=>api<ChannelFeed>('channel?id='+id);
+export const createChannelPost=(channel_id:number,body:string)=>api<{ok:boolean;post_id:number;status:string}>('channel-post',{method:'POST',body:{channel_id,body}});
 export const sendMessage=(id:number,body:string)=>api<unknown>('message-send',{method:'POST',body:{conversation_id:id,body}});
 export type FormDetail={id:number;status:string;due_at:string|null;title:string;instructions:string|null;completion_mode:string;review_required:number;submission_status:string|null;reviewer_note:string|null};
 export const formDetail=(id:number)=>api<{form:FormDetail}>('form-detail?id='+encodeURIComponent(String(id)));
