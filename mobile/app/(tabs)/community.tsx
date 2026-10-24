@@ -26,7 +26,7 @@ export default function Community(){
   <LoadState loading={loading} error={error}/>
   {data&&view==='Feed'&&<>
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
-    {posts.map(p=><Pressable accessibilityRole="button" key={p.id} style={s.post} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(p.channel_id)}})}>
+    {posts.map(p=><Pressable accessibilityRole="button" key={p.id} style={s.post} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(p.channel_id),post_id:String(p.id)}})}>
       <View style={s.authorRow}><View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View><View style={{flex:1,gap:3}}><Text style={s.author}>{p.author}</Text><Text style={s.muted}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text></View><Ionicons name="chevron-forward" color={colors.muted} size={18}/></View>
       <Text style={s.body}>{p.body}</Text><Text style={s.muted}>{p.created_at}</Text>
     </Pressable>)}
