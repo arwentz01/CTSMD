@@ -347,7 +347,7 @@ final class MobileApi
     {
         self::requireMethod('GET');$id=(int)($_GET['id']??0);
         if($id<1||!CommunicationReadStateService::canAccessChannel($db,$user,$id))self::json(['error'=>'Channel not found.'],404);
-        $c=$db->prepare("SELECT c.id,c.name,c.description,c.channel_type,c.production_id,c.post_scope,p.title production_title FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");$c->execute(['id'=>$id]);$channel=$c->fetch();
+        $c=$db->prepare("SELECT c.id,c.name,c.description,c.channel_type,c.production_id,c.post_scope,p.title production_title FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");$c->execute(['id'=>$id]);$channel=$c->fetch();$channel['can_post']=CommunityExperience::mobileCanPost($db,$user,$id);
         $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.pinned DESC,cp.created_at,cp.id");$p->execute(['id'=>$id]);
         CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);
         self::json(['channel'=>$channel,'posts'=>$p->fetchAll()]);
@@ -358,10 +358,8 @@ final class MobileApi
         self::requireMethod('POST');$input=self::input();$id=(int)($input['channel_id']??0);$body=trim((string)($input['body']??''));
         if($id<1||$body===''||mb_strlen($body)>5000)throw new RuntimeException('Choose a channel and write a post up to 5,000 characters.');
         if(!CommunicationReadStateService::canAccessChannel($db,$user,$id))self::json(['error'=>'Channel not found.'],404);
-        // Mobile v1 deliberately restricts posting to staff. The existing web Community path remains authoritative for nuanced audience/moderation rules.
-        if(!AccessPolicy::isStaff($user))self::json(['error'=>'Posting from the mobile app is not enabled for this account yet.'],403);
-        $db->prepare("INSERT INTO channel_posts (channel_id,author_user_id,body,moderation_status,created_at) VALUES (:channel,:author,:body,'published',CURRENT_TIMESTAMP)")->execute(['channel'=>$id,'author'=>(int)$user['id'],'body'=>$body]);
-        self::json(['ok'=>true,'post_id'=>(int)$db->lastInsertId()]);
+        $result=CommunityExperience::mobileCreatePost($db,$user,$id,$body);
+        self::json(['ok'=>true,'post_id'=>(int)$result['post_id'],'status'=>(string)$result['status']]);
     }
 
     private static function logout(PDO $db): never
