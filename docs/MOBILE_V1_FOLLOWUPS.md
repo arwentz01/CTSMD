@@ -15,7 +15,8 @@
 - [x] Initial authenticated inline photo retrieval and small grids in Feed, Channels, and post detail (not device-tested).
 - [x] Full-screen authenticated image viewer with previous/next controls (source implementation, not device verified).
 - [x] Initial per-user mobile heart reactions with channel ACL checks (migration 073; not deployed or tested).
-- [ ] Expose and toggle same heart reactions on web Community pages; verify concurrent toggles and audit policy.
+- [x] Expose and toggle shared heart reactions on web Community pages (source committed; not validated).
+- [ ] Verify concurrent toggles, CSRF, read-only channels, and audit policy in migrated staging.
 - [ ] Reply moderation review and post pagination.
 - [ ] Verify photo tap inside Feed post card opens viewer without triggering parent post navigation.
 - [ ] Install SDK 58 image picker and regenerate mobile lockfile (`cd mobile && npx expo install expo-image-picker`), then test Android/iOS uploads.
