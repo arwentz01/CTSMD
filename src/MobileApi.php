@@ -293,7 +293,7 @@ final class MobileApi
         self::requireMethod('POST');
         $input=self::input();
         $recipientId=(int)($input['recipient_id']??0);
-        $subject=trim((string)($input['subject']??''));
+        $subject=''; // Direct messages are identified by participants, not a user-entered subject.
         $body=trim((string)($input['body']??''));
         $id=CommunicationExperience::mobileCreateConversation($db,$user,$recipientId,$subject,$body);
         self::json(['ok'=>true,'conversation_id'=>$id]);
