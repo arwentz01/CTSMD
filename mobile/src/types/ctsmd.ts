@@ -1,0 +1,12 @@
+export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[]};
+export type MeResult={user:CtsmdUser};
+export type Conversation={id:number;subject:string;conversation_type:string;latest_at:string|null;message_count:number;participant_count:number;unread_count:number;preview:string|null};export type MessagesResult={conversations:Conversation[]};
+export type Channel={id:number;name:string;description:string|null;channel_type:string;production_id:number|null;production_title:string|null;unread_count:number};export type ChannelsResult={channels:Channel[]};
+export type Production={id:number;title:string;season:string|null;status:string;is_active:number};
+export type TheatreEvent={id:number;production_id:number;title:string;starts_at:string;ends_at:string|null;location:string|null;production_title:string;item_type:string;status:string;family_call_at:string|null};
+export type TheatreResult={productions:Production[];events:TheatreEvent[]};
+export type AssignedForm={id:number;status:string;due_at:string|null;title:string;submission_status:string|null};
+export type VolunteerShift={id:number;title:string;category:string;starts_at:string;ends_at:string;location:string|null;required_slots:number;approval_required:number;my_status:string|null;my_request_id:number|null;my_request_status:string|null;missing_requirements:string[];eligible:boolean;open_slots:number};
+export type TasksResult={forms:AssignedForm[];shifts:VolunteerShift[];volunteer_enabled:boolean};
+export type Thread={conversation:{id:number;subject:string;conversation_type:string};participants:Array<{user_id:number;participant_role:string;guardian_required:number;name:string;role:string;initials:string}>;messages:Array<{id:number;body:string;created_at:string;sender_user_id:number;sender:string;sender_role:string;initials:string}>};
+export type ChannelFeed={channel:{id:number;name:string;description:string|null;channel_type:string;production_id:number|null;post_scope:string};posts:Array<{id:number;body:string;created_at:string;author_user_id:number;pinned:number;author:string;author_role:string;initials:string}>};
