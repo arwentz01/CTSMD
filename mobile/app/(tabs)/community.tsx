@@ -1,26 +1,41 @@
-import React,{useCallback} from 'react';
-import {Pressable,Text,View} from 'react-native';
+import React,{useCallback,useState} from 'react';
+import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
+import {Ionicons} from '@expo/vector-icons';
 import {Screen,Item} from '../../src/components/Screen';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
-import {channels} from '../../src/api/client';
+import {channels,communityFeed} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
+
 export default function Community(){
+ const [view,setView]=useState<'Feed'|'Channels'>('Feed');
  const {production_id}=useLocalSearchParams<{production_id?:string}>();
  const id=Number(production_id);
  const filtered=!!production_id&&Number.isSafeInteger(id)&&id>0;
- const load=useCallback(()=>channels(),[]);
+ const load=useCallback(async()=>{const [directory,feed]=await Promise.all([channels(),communityFeed()]);return {directory,feed}},[]);
  const {data,error,loading}=useScreenData(load);
- const visible=(data?.channels||[]).filter(c=>!filtered||c.production_id===id);
+ const visible=(data?.directory.channels||[]).filter(c=>!filtered||c.production_id===id);
+ const posts=(data?.feed.posts||[]).filter(p=>!filtered||p.production_id===id);
  const general=visible.filter(c=>c.production_id===null);
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
  const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button"><Item title={c.name} subtitle={(c.description||'Community channel')+(c.unread_count>0?' · '+c.unread_count+' unread':'')}/></Pressable>;
  return <Screen title="Community">
-  {filtered&&<View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{color:colors.muted}}>Production channels</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={{color:colors.primary,fontWeight:'700'}}>View all</Text></Pressable></View>}
+  {filtered&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
+  <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="button" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error}/>
-  {data&&visible.length===0&&<Text style={{color:colors.muted}}>No channels available.</Text>}
-  {general.length>0&&<><Text style={{fontSize:18,fontWeight:'800',color:colors.navy}}>General</Text>{general.map(renderChannel)}</>}
-  {Array.from(groups.entries()).map(([id,group])=><View key={id} style={{gap:10}}><Text style={{fontSize:18,fontWeight:'800',color:colors.navy}}>{group.title}</Text>{group.items.map(renderChannel)}</View>)}
+  {data&&view==='Feed'&&<>
+    {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
+    {posts.map(p=><Pressable accessibilityRole="button" key={p.id} style={s.post} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(p.channel_id)}})}>
+      <View style={s.authorRow}><View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View><View style={{flex:1,gap:3}}><Text style={s.author}>{p.author}</Text><Text style={s.muted}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text></View><Ionicons name="chevron-forward" color={colors.muted} size={18}/></View>
+      <Text style={s.body}>{p.body}</Text><Text style={s.muted}>{p.created_at}</Text>
+    </Pressable>)}
+  </>}
+  {data&&view==='Channels'&&<>
+   {visible.length===0&&<Text style={s.muted}>No channels available.</Text>}
+   {general.length>0&&<><Text style={s.section}>General</Text>{general.map(renderChannel)}</>}
+   {Array.from(groups.entries()).map(([key,group])=><View key={key} style={{gap:10}}><Text style={s.section}>{group.title}</Text>{group.items.map(renderChannel)}</View>)}
+  </>}
  </Screen>;
 }
+const s=StyleSheet.create({filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},muted:{color:colors.muted,fontSize:12},link:{color:colors.primary,fontWeight:'700'},switch:{flexDirection:'row',borderRadius:12,backgroundColor:'#e8edf3',padding:4},tab:{flex:1,paddingVertical:10,alignItems:'center',borderRadius:9},selected:{backgroundColor:colors.card},tabText:{fontSize:14,fontWeight:'700',color:colors.muted},selectedText:{color:colors.navy},section:{fontSize:18,fontWeight:'800',color:colors.navy},post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:14,padding:14,gap:12},authorRow:{flexDirection:'row',gap:10,alignItems:'center'},avatar:{height:36,width:36,borderRadius:18,alignItems:'center',justifyContent:'center',backgroundColor:'#e8edf3'},avatarText:{fontSize:12,fontWeight:'700',color:colors.navy},author:{color:colors.text,fontWeight:'700',fontSize:14},body:{color:colors.text,fontSize:15,lineHeight:22}});
