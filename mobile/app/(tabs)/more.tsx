@@ -40,6 +40,9 @@ export default function More(){
   <External title="Tickets" url={resources[0][1]}/>
   <Pressable accessibilityRole="button" accessibilityState={{expanded}} onPress={()=>setExpanded(v=>!v)} style={s.item}><Ionicons name="library-outline" color={colors.primary} size={22}/><Text style={[s.itemText,{flex:1}]}>CTSMD forms, policies & resources</Text><Ionicons name={expanded?'chevron-up':'chevron-down'} color={colors.muted} size={19}/></Pressable>
   {expanded&&<View style={{gap:7,paddingLeft:12}}>{resources.slice(1).map(([title,url])=><External key={url} title={title} url={url}/>)}</View>}
+  <Text style={s.heading}>Settings & support</Text>
+  <Pressable accessibilityRole="button" onPress={()=>router.push('/settings')} style={s.item}><Ionicons name="settings-outline" size={22} color={colors.primary}/><Text style={[s.itemText,{flex:1}]}>Settings</Text><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+  <Pressable accessibilityRole="button" onPress={()=>router.push('/help')} style={s.item}><Ionicons name="help-circle-outline" size={22} color={colors.primary}/><Text style={[s.itemText,{flex:1}]}>Help & Support</Text><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>Account</Text>
   <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Sign out','Sign out of CTSMD Connect on this device?',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])} style={[s.item,{borderColor:colors.primary}]}><Ionicons name="log-out-outline" color={colors.primary} size={21}/><Text style={[s.itemText,{color:colors.primary}]}>Sign out</Text></Pressable>
  </Screen>;
