@@ -7,6 +7,7 @@ import {thread,sendMessage} from '../../src/api/client';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
+const formatTime=(input:string)=>{const value=new Date(input.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):input;};
 export default function ThreadScreen(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {user}=useAuth();
@@ -29,8 +30,14 @@ export default function ThreadScreen(){
     const read=mine&&intended.length>0&&intended.every(p=>Number(p.last_read_message_id)>=m.id);
     return <View style={[styles.messageRow,mine&&styles.mineRow]}>
      {!mine&&<View style={styles.initials}><Text style={styles.initialText}>{m.initials||'?'}</Text></View>}
-     <View style={[styles.bubble,mine&&styles.mineBubble]}>
-      <View style={styles.bubbleLine}><Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>{mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color="#e9f3ff"/>}</View>
+     <View style={styles.messageContent}>
+      <View style={[styles.bubble,mine&&styles.mineBubble]}>
+       <Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>
+      </View>
+      <View style={[styles.messageMeta,mine&&styles.mineMeta]}>
+       <Text style={styles.timestamp}>{formatTime(m.created_at)}</Text>
+       {mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color={colors.muted}/>}
+      </View>
      </View>
     </View>;
    }} ListEmptyComponent={!loading&&!error?<Text style={styles.empty}>No messages yet.</Text>:undefined}/>
@@ -43,6 +50,6 @@ export default function ThreadScreen(){
 }
 const styles=StyleSheet.create({
  screen:{flex:1,backgroundColor:colors.background},flex:{flex:1},header:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:1},name:{fontSize:18,fontWeight:'700',color:colors.navy},safeguarded:{fontSize:12,color:colors.muted},
- messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:10,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},bubbleLine:{flexDirection:'row',alignItems:'flex-end',flexWrap:'wrap',columnGap:7,rowGap:3},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:10,color:colors.muted,marginLeft:'auto'},mineTime:{color:'#d5e0f2'},empty:{color:colors.muted,textAlign:'center',padding:18},
+ messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:10,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,alignItems:'flex-start',gap:3},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:10,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
  composer:{flexDirection:'row',alignItems:'flex-end',gap:8,paddingHorizontal:12,paddingTop:10,backgroundColor:colors.card,borderTopWidth:1,borderTopColor:colors.border},input:{flex:1,maxHeight:120,minHeight:42,borderRadius:21,borderWidth:1,borderColor:colors.border,paddingHorizontal:15,paddingVertical:10,fontSize:15,color:colors.text},send:{height:42,width:42,borderRadius:21,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},disabled:{opacity:0.45}
 });
