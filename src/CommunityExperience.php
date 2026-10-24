@@ -109,6 +109,18 @@ final class CommunityExperience
         self::redirect($basePath . '/channels/view?id=' . (int)$channelId);
     }
 
+    public static function mobileCreatePost(PDO $db,array $user,int $channelId,string $body): array
+    {
+        return self::createPost($db,$user,$channelId,$body,[]);
+    }
+
+    public static function mobileCanPost(PDO $db,array $user,int $channelId): bool
+    {
+        $stmt=$db->prepare("SELECT c.id,c.production_id,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id LIMIT 1");
+        $stmt->execute(['id'=>$channelId]);$channel=$stmt->fetch();
+        return $channel&&$channel['archived_at']===null&&self::canRead($db,$user,$channel)&&self::canPost($db,$user,$channel);
+    }
+
     private static function createPost(PDO $db, array $user, int $channelId, string $body, array $upload): array
     {
         if ($channelId < 1) throw new RuntimeException('That channel could not be found.');
