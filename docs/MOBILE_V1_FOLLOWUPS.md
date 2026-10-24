@@ -10,8 +10,9 @@
 - [x] Feed / Channels switch and production filter.
 - [x] Feed read-state isolation.
 - [x] Channel-level Include in Community Feed setting (migration 071; deploy migration before PHP code).
-- [ ] Replies, photo attachments, and post deep links.
+- [x] Initial native post detail route and moderated replies (migration 072; not yet tested or deployed).
+- [ ] Photo attachments, reply moderation review, and post pagination.
 - [ ] Full Expo/Android and PHP lint/test pass.
 
 ## Release note
-The branch is not deployed or device-verified. Run migration 071 before deploying code reading channels.include_in_feed; verify historic announcements, explicit opt-in for discussion channels, channel ACLs, and no unintended read-state changes.
+The branch is not deployed or device-verified. Run migrations 071 and 072 before deploying code reading channels.include_in_feed or channel_post_replies; verify historic announcements, explicit opt-in for discussion channels, channel ACLs, and no unintended read-state changes.
