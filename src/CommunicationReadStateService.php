@@ -210,13 +210,23 @@ final class CommunicationReadStateService
                 'production_members' => $activeProductionMember,
                 'production_adults' => $activeProductionMember && $isAdult,
                 'production_students' => $activeProductionMember && $audienceType === 'student',
-                'production_guardians' => $activeProductionMember && $audienceType === 'guardian',
+                'production_guardians' => $activeProductionMember && $audienceType === 'guardian' && self::activeProductionGuardian($db,$userId,$productionId),
                 'production_staff' => $activeProductionMember && $audienceType === 'staff',
                 default => false,
             };
             if ($ok) return true;
         }
         return false;
+    }
+
+    private static function activeProductionGuardian(PDO $db,int $guardianId,int $productionId): bool
+    {
+        $stmt=$db->prepare("SELECT 1 FROM family_relationships fr
+          JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
+          JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' AND pm.status='active'
+          WHERE fr.guardian_user_id=:guardian AND fr.status='active' LIMIT 1");
+        $stmt->execute(['guardian'=>$guardianId,'production'=>$productionId]);
+        return (bool)$stmt->fetchColumn();
     }
 
     private static function activeVolunteer(PDO $db, int $userId): bool
