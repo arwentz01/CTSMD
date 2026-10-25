@@ -3,6 +3,7 @@ import {Alert,Linking,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../../src/components/Screen';
+import {StageBackdrop} from '../../src/components/StageBackdrop';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
 
@@ -31,7 +32,7 @@ function Local({title,detail,icon,path}:{title:string;detail:string;icon:'docume
 export default function More(){
  const {user,signOut}=useAuth();const [expanded,setExpanded]=useState(false);
  return <Screen title="More">
-  <Pressable accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push("/account")} style={s.profile}><View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View><View style={{flex:1,gap:5}}><Text style={s.name}>{user?.name||'My CTSMD'}</Text><Text style={s.profileEmail}>{user?.email||''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+  <Pressable accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push("/account")} style={s.profile}><StageBackdrop/><View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View><View style={{flex:1,gap:5}}><Text style={s.name}>{user?.name||'My CTSMD'}</Text><Text style={s.profileEmail}>{user?.email||''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>My CTSMD</Text>
   <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
   <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
