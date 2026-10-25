@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
@@ -83,6 +85,7 @@ final class ProductionFileExperience
 
     private static function save(PDO $db,array $actor,int $productionId,int $productionFileId,array $input,array $upload): int
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $title = trim((string)($input['title'] ?? ''));
         $category = trim((string)($input['category'] ?? ''));
         $description = trim((string)($input['description'] ?? ''));
