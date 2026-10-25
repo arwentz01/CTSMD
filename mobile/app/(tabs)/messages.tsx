@@ -3,6 +3,7 @@ import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../../src/components/Screen';
+import {StageBackdrop} from '../../src/components/StageBackdrop';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {conversations} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
@@ -10,7 +11,7 @@ export default function Messages(){
  const load=useCallback(()=>conversations(),[]);const {data,error,loading}=useScreenData(load);
  return <Screen title="Messages">
   <Text style={s.intro}>Stay connected with your theatre community.</Text>
-  <Pressable accessibilityRole="button" onPress={()=>router.push('/messages/new')} style={s.create}><Ionicons name="add" color={colors.gold} size={27}/><Text style={s.createText}>New conversation</Text><Ionicons name="chatbubbles-outline" size={23} color={colors.gold}/></Pressable>
+  <Pressable accessibilityRole="button" onPress={()=>router.push('/messages/new')} style={s.create}><StageBackdrop/><Ionicons name="add" color={colors.gold} size={27}/><Text style={s.createText}>New conversation</Text><Ionicons name="chatbubbles-outline" size={23} color={colors.gold}/></Pressable>
   <LoadState loading={loading} error={error}/>
   {data?.conversations.map(c=><Pressable key={c.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/messages/[id]',params:{id:String(c.id)}})} style={s.card}>
    <View style={s.avatar}><Text style={s.initials}>{(c.display_name||'C').split(' ').slice(0,2).map(x=>x[0]||'').join('').toUpperCase()}</Text></View>
