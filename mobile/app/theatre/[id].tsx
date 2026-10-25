@@ -25,7 +25,7 @@ export default function ProductionPage(){
     {data&&valid&&!production&&<Text style={s.secondary}>This production isn't available to your account.</Text>}
     {production&&<>
      <ProductionHero production={production}/>
-     {production.status==='planning'&&<View style={s.notice}><Ionicons name="information-circle-outline" size={16} color={colors.burgundy}/><Text style={s.noticeText}>Planning: private preparation is not published to the wider community.</Text></View>}
+     {(production.lifecycle_stage||production.status)==='planning'&&<View style={s.notice}><Ionicons name="information-circle-outline" size={16} color={colors.burgundy}/><Text style={s.noticeText}>Planning: private preparation is not published to the wider community.</Text></View>}
      {(['callbacks','cast'] as const).map(type=>{const published=data.casting[type];return published?<View key={type} style={s.card}><Text style={s.heading}>{type==='cast'?'Published Cast':'Published Callbacks'}</Text>{!!published.headline&&<Text style={s.tileTitle}>{published.headline}</Text>}{!!published.member_note&&<Text style={s.secondary}>{published.member_note}</Text>}{published.cast.map((person,i)=><Text key={i} style={s.castEntry}>{person.name}{person.role?' · '+person.role:''}</Text>)}</View>:null})}
      <Text style={s.heading}>Production Hub</Text>
      <View style={s.tiles}>
