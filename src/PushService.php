@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__.'/SafeguardedConversationPolicy.php';
 require_once __DIR__.'/CommunicationReadStateService.php';
 require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/ProductionContext.php';
 
 final class PushService
 {
@@ -24,12 +25,12 @@ final class PushService
 
     public static function unsubscribe(PDO $db,int $userId,string $endpoint):void{$s=$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND endpoint_hash=:hash");$s->execute(['user'=>$userId,'hash'=>hash('sha256',$endpoint)]);}
 
-    public static function queue(PDO $db,int $userId,string $category,string $title,string $body,?string $actionPath=null,string $urgency='normal',?string $tag=null,?string $dedupeKey=null):int
+    public static function queue(PDO $db,int $userId,string $category,string $title,string $body,?string $actionPath=null,string $urgency='normal',?string $tag=null,?string $dedupeKey=null,?int $productionId=null):int
     {
         $category=in_array($category,['schedule','forms','volunteer','community','messages','general'],true)?$category:'general';$urgency=in_array($urgency,['very-low','low','normal','high'],true)?$urgency:'normal';
         if(!self::pushAllowed($db,$userId,$category))return 0;
-        $s=$db->prepare("INSERT INTO push_queue (user_id,category,title,body,action_path,tag,dedupe_key,urgency) VALUES (:user,:category,:title,:body,:path,:tag,:dedupe,:urgency)");
-        try{$s->execute(['user'=>$userId,'category'=>$category,'title'=>mb_substr($title,0,190),'body'=>mb_substr($body,0,1000),'path'=>$actionPath,'tag'=>$tag?mb_substr($tag,0,64):null,'dedupe'=>$dedupeKey?mb_substr($dedupeKey,0,190):null,'urgency'=>$urgency]);return(int)$db->lastInsertId();}catch(PDOException $e){if($dedupeKey&&str_contains($e->getMessage(),'Duplicate'))return 0;throw$e;}
+        $s=$db->prepare("INSERT INTO push_queue (user_id,category,title,body,action_path,tag,dedupe_key,urgency,production_id) VALUES (:user,:category,:title,:body,:path,:tag,:dedupe,:urgency,:production)");
+        try{$s->execute(['user'=>$userId,'category'=>$category,'title'=>mb_substr($title,0,190),'body'=>mb_substr($body,0,1000),'path'=>$actionPath,'tag'=>$tag?mb_substr($tag,0,64):null,'dedupe'=>$dedupeKey?mb_substr($dedupeKey,0,190):null,'urgency'=>$urgency,'production'=>$productionId]);return(int)$db->lastInsertId();}catch(PDOException $e){if($dedupeKey&&str_contains($e->getMessage(),'Duplicate'))return 0;throw$e;}
     }
 
     public static function processQueue(PDO $db,int $limit=25):array
@@ -40,6 +41,18 @@ final class PushService
         foreach($q->fetchAll() as $row){$claim=$db->prepare("UPDATE push_queue SET status='processing',claimed_at=CURRENT_TIMESTAMP,attempt_count=attempt_count+1 WHERE id=:id AND status='queued'");$claim->execute(['id'=>$row['id']]);if($claim->rowCount()!==1)continue;
             $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$row['user_id']]);if(!$account->fetchColumn()){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>$row['id']]);$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND status='active'")->execute(['user'=>$row['user_id']]);continue;}
             if(!self::pushAllowed($db,(int)$row['user_id'],(string)$row['category'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Push preference disabled before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            // Production-scoped push must be reauthorized after dequeue, immediately
+            // before resolving devices. This covers former guardians and stage changes.
+            if($row['production_id']!==null){
+                $productionId=(int)$row['production_id'];
+                $allowed=false;
+                try{$allowed=ProductionContext::isActiveMember($db,(int)$row['user_id'],$productionId);}
+                catch(Throwable $e){error_log('Production push authorization error: '.$e->getMessage());}
+                if(!$allowed){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Production access revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
             if((string)$row['category']==='messages'&&(!preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)||!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id']))){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
             // A queued Community post may outlive a user's channel membership. Recheck
             // effective access just before delivery; failed lookups fail closed.
