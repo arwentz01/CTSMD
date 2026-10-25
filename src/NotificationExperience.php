@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 
@@ -72,9 +73,9 @@ final class NotificationExperience
 
     private static function notifications(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare('SELECT id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id = :user_id ORDER BY created_at DESC,id DESC LIMIT 30');
+        $stmt = $db->prepare('SELECT id,source_type,source_id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id = :user_id ORDER BY created_at DESC,id DESC LIMIT 100');
         $stmt->execute(['user_id'=>$userId]);
-        return $stmt->fetchAll();
+        return array_slice(ProductionNotificationAccess::filter($db,$userId,$stmt->fetchAll()),0,30);
     }
 
     private static function openForms(PDO $db, int $userId): array
