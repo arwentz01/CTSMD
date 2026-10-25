@@ -126,6 +126,14 @@ final class ProductionContext
         return (bool)$stmt->fetchColumn();
     }
 
+    public static function isLiveProductionStage(PDO $db,int $productionId):bool
+    {
+        if($productionId<1)return false;
+        $q=$db->prepare("SELECT 1 FROM productions WHERE id=:id AND is_active=1 AND lifecycle_stage IN ('in_production','performing') LIMIT 1");
+        $q->execute(['id'=>$productionId]);
+        return (bool)$q->fetchColumn();
+    }
+
     public static function isActiveMember(PDO $db, int $userId, int $productionId): bool
     {
         if ($productionId < 1) return false;
