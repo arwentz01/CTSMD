@@ -84,6 +84,27 @@ final class ProductionLifecycleExperience
         }
     }
 
+    private static function saveArtwork(PDO $db,array $actor,int $id,string $action,string $role,array $upload):void
+    {
+        if(!in_array($role,['poster','banner','thumbnail'],true)||!self::production($db,$id))throw new RuntimeException('Invalid production artwork.');
+        if($action==='artwork_remove'){
+            $s=$db->prepare('DELETE FROM production_artwork WHERE production_id=:id AND role=:role');
+            $s->execute(['id'=>$id,'role'=>$role]);
+        }else{
+            if(($upload['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK)throw new RuntimeException('Choose an image.');
+            $mime=(new finfo(FILEINFO_MIME_TYPE))->file((string)$upload['tmp_name']);
+            if(!in_array($mime,['image/jpeg','image/png','image/webp'],true))throw new RuntimeException('Only JPG, PNG and WebP images are supported.');
+            $db->beginTransaction();
+            try{
+                $stored=StorageService::store($db,dirname(__DIR__),(int)$actor['id'],$upload);
+                $stmt=$db->prepare('INSERT INTO production_artwork (production_id,role,stored_file_id,updated_by_user_id) VALUES (:id,:role,:file,:actor) ON DUPLICATE KEY UPDATE stored_file_id=VALUES(stored_file_id),updated_by_user_id=VALUES(updated_by_user_id)');
+                $stmt->execute(['id'=>$id,'role'=>$role,'file'=>$stored['stored_file_id'],'actor'=>$actor['id']]);
+                $db->commit();
+            }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+        }
+        self::audit($db,(int)$actor['id'],'production.artwork_changed',$id,'Production artwork updated.',['role'=>$role,'action'=>$action]);
+    }
+
     private static function createProduction(PDO $db, array $actor, array $input): int
     {
         [$title, $season] = self::validateDetails($input);
