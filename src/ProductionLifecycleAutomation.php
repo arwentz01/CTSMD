@@ -15,9 +15,10 @@ final class ProductionLifecycleAutomation
         $counts=['performing'=>0,'completed'=>0,'archived'=>0];
         $db->beginTransaction();
         try {
-            $rows=$db->query("SELECT id,lifecycle_stage,performance_starts_at,performance_ends_at,archive_after_at
+            $rows=$db->query("SELECT id,lifecycle_stage,performance_starts_at,performance_ends_at,archive_after_at,lifecycle_automation_paused
               FROM productions WHERE lifecycle_stage IN ('in_production','performing','completed') FOR UPDATE")->fetchAll();
             foreach($rows as $p){
+                if((int)$p['lifecycle_automation_paused']===1)continue;
                 $stage=(string)$p['lifecycle_stage'];
                 $target=null;
                 // Performance dates are entered as calendar dates. The last day
