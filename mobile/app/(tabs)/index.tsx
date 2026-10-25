@@ -1,7 +1,7 @@
 import React,{useCallback} from 'react';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {ImageBackground,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
@@ -13,7 +13,7 @@ const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
 function EventRow({event,featured=false}:{event:TheatreEvent;featured?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push('/(tabs)/theatre')} style={featured?styles.hero:styles.event}>
-    {featured&&<ImageBackground source={require('../../assets/images/theatre-stage.png')} resizeMode="cover" style={styles.heroArtwork} imageStyle={styles.heroArtworkImage}/>}{featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
+    {featured&&<Image source={require('../../assets/images/theatre-stage.png')} resizeMode="cover" style={styles.heroArtwork}/>}{featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
     <Text style={featured?styles.heroTitle:styles.rowTitle} numberOfLines={2}>{event.title}</Text>
     <Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.production_title}</Text>
     <Text style={featured?styles.heroText:styles.sub}>{readable(event.starts_at)}</Text>
@@ -54,7 +54,7 @@ const styles=StyleSheet.create({
   sectionTitle:{fontFamily:'serif',fontSize:21,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
   hero:{backgroundColor:colors.stage,paddingHorizontal:16,paddingVertical:16,paddingRight:68,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,gap:5,minHeight:166,overflow:'hidden'},
-  heroArtwork:{...StyleSheet.absoluteFillObject},heroArtworkImage:{borderRadius:16},
+  heroArtwork:{...StyleSheet.absoluteFillObject,width:'100%',height:'100%',borderRadius:16},
   heroHeader:{flexDirection:'row',alignItems:'center',gap:8},heroArrow:{position:'absolute',right:13,bottom:13,width:31,height:31,borderRadius:16,backgroundColor:colors.gold,alignItems:'center',justifyContent:'center'},
   heroEyebrow:{fontSize:10,fontWeight:'800',color:colors.gold,letterSpacing:2},
   heroTitle:{fontFamily:'serif',fontSize:23,fontWeight:'700',color:'#fff'},
