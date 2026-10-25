@@ -15,7 +15,7 @@ final class ProductionGroupChannelAccess
 
         $group=$db->prepare("SELECT 1
             FROM channels c
-            JOIN productions p ON p.id=c.production_id AND p.is_active=1
+            JOIN productions p ON p.id=c.production_id AND p.is_active=1 AND p.lifecycle_stage IN ('in_production','performing')
             JOIN production_groups pg ON pg.id=c.production_group_id AND pg.production_id=c.production_id AND pg.active=1
             WHERE c.id=:channel
               AND (

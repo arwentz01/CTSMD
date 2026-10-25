@@ -5,6 +5,15 @@ declare(strict_types=1);
 /** Server-side guard for writes to operational production resources. */
 final class ProductionLifecycleGuard
 {
+    public static function assertScheduleItemWritable(PDO $db,int $scheduleItemId):void
+    {
+        $q=$db->prepare('SELECT production_id FROM schedule_items WHERE id=:id LIMIT 1');
+        $q->execute(['id'=>$scheduleItemId]);
+        $productionId=$q->fetchColumn();
+        if($productionId===false)throw new RuntimeException('Schedule item not found.');
+        self::assertWritable($db,(int)$productionId);
+    }
+
     public static function assertWritable(PDO $db,int $productionId):void
     {
         if($productionId<1)throw new RuntimeException('Select a production before making changes.');
@@ -14,5 +23,9 @@ final class ProductionLifecycleGuard
         if($stage===false)throw new RuntimeException('Production not found.');
         if(in_array((string)$stage,['completed','archived'],true))
             throw new RuntimeException('This production is completed or archived. Operational changes are closed; historical records are retained.');
+        // Missing, malformed, or unsupported stages must never default to writable.
+        // During migration a null stage is an authorization configuration error.
+        if(!in_array((string)$stage,['upcoming','planning','in_production','performing'],true))
+            throw new RuntimeException('Production lifecycle stage is unavailable. Operational changes are blocked.');
     }
 }

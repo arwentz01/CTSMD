@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AccessPolicy.php';
@@ -28,6 +30,7 @@ final class ScheduleImportExperience
         $production = ProductionContext::selected($db, $user);
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') self::handlePost($db, $user, $production, $basePath);
 
+        ProductionLifecycleGuard::assertWritable($db,(int)$production['id']);
         $preview = $_SESSION[self::SESSION_KEY] ?? null;
         if ($preview && (!$production || (int)($preview['production_id'] ?? 0) !== (int)$production['id'])) {
             unset($_SESSION[self::SESSION_KEY]);
@@ -103,6 +106,7 @@ final class ScheduleImportExperience
 
     private static function importSelected(PDO $db, array $user, array $production, array $input): void
     {
+        ProductionLifecycleGuard::assertWritable($db,(int)$production['id']);
         $preview = $_SESSION[self::SESSION_KEY] ?? null;
         if (!is_array($preview) || (int)($preview['production_id'] ?? 0) !== (int)$production['id']) throw new RuntimeException('Upload and preview the calendar again before importing.');
         $selected = array_values(array_unique(array_map('strval', (array)($input['event_keys'] ?? []))));

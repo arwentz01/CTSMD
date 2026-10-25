@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
@@ -133,6 +135,7 @@ final class CommunityExperience
             $stmt = $db->prepare("SELECT c.id,c.production_id,c.name,c.read_scope,c.post_scope,c.read_audiences_json,c.post_audiences_json,c.access_mode,c.archived_at,p.is_active production_active FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id FOR UPDATE");
             $stmt->execute(['id' => $channelId]);
             $channel = $stmt->fetch();
+            if ($channel && $channel['production_id'] !== null) ProductionLifecycleGuard::assertWritable($db,(int)$channel['production_id']);
             if (!$channel || $channel['archived_at'] !== null) throw new RuntimeException('That channel is no longer available.');
             if (!self::canRead($db, $user, $channel)) throw new RuntimeException('You do not have access to that channel.');
             if (!self::canPost($db, $user, $channel)) throw new RuntimeException('This channel is read-only for your account.');

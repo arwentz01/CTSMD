@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
@@ -69,6 +71,7 @@ final class ProductionFileExperience
             }
             if ($action === 'archive') {
                 $id = filter_input(INPUT_POST,'production_file_id',FILTER_VALIDATE_INT) ?: 0;
+                ProductionLifecycleGuard::assertWritable($db,(int)$production['id']);
                 self::toggleArchive($db,$user,(int)$production['id'],(int)$id);
                 self::flash('success','File availability updated.');
                 self::redirect($basePath . '/admin/files');
@@ -83,6 +86,7 @@ final class ProductionFileExperience
 
     private static function save(PDO $db,array $actor,int $productionId,int $productionFileId,array $input,array $upload): int
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $title = trim((string)($input['title'] ?? ''));
         $category = trim((string)($input['category'] ?? ''));
         $description = trim((string)($input['description'] ?? ''));

@@ -100,3 +100,35 @@
 - Staff lifecycle-stage updates, approved announcement basics, historical reads and administrative record retention are not blocked by this operational guard.
 - This is a targeted first pass, NOT a comprehensive guarantee: direct schedule/calendar edits, channels, forms, attendance, and other write endpoints must be audited and guarded individually.
 - Do not deploy or schedule automation until regression tests verify that legacy routes do not bypass these checks.
+
+## Phase 11: Closed production schedule and attendance safeguards
+- ScheduleCreateExperience refuses new schedule items for Completed/Archived productions.
+- ScheduleImportExperience refuses actual ICS imports for Completed/Archived productions.
+- CalendarExperience refuses duplicates and cancellations on Completed/Archived production items.
+- AttendanceService checks the owning production before roster changes or new absence reports. A new ProductionLifecycleGuard::assertScheduleItemWritable resolves the item's production and checks stage.
+- Existing historical schedule and attendance records remain readable. Staff may still edit the lifecycle stage in production management, but operational writes require a writable stage.
+- Incomplete: audit direct schedule edit endpoint (`/production/edit`), channel messages/posts, forms, shift signups, file changes, and attendance routes outside AttendanceService. A complete read-only guarantee is not yet established.
+- Staging PHP lint and regression tests are mandatory before deployment; these commits have not been locally executed.
+
+## Phase 12: Direct schedule editing and day-brief write closure
+- ProductionExperience::saveScheduleChange now checks the owning schedule item's lifecycle before updating it, blocking Completed/Archived direct edits via /production/edit.
+- ProductionDayService::saveBrief now rejects changes to production-day briefs after completion or archival.
+- These are targeted service-level protections; remaining channel, form, volunteer, file, and other operational writes require independent audits.
+- No automated tests or production deployment were performed as part of this commit series.
+
+## Phase 13: Community posting and production file closure
+- CommunityExperience::createPost now rejects new posts and native mobile posts for production-linked channels where the lifecycle is Completed or Archived. Organization-wide channels without a production association are unaffected. Historical channel reading remains separate.
+- ProductionFileExperience::save and its archive/unarchive operation now reject changes when a production is Completed or Archived. Historical file reads remain available under existing permissions.
+- Existing moderation actions (hide/delete/pin/reactions), channel-administration writes, other Community endpoints, forms and volunteer scheduling have NOT all been lifecycle-guarded. Moderation may need to remain possible after archival; model that exception explicitly.
+- This pass is code-only. No PHP lint or database/device integration tests were run. Do not claim lifecycle write parity or pilot readiness from these fixes alone.
+
+## Phase 14: Unknown lifecycle stage fails closed (October 25)
+- `ProductionLifecycleGuard::assertWritable` now permits operational writes only for the four explicitly writable stages: Upcoming, Planning, In Production, and Performing. Completed and Archived retain their existing closed-operation error. Null, malformed, or future unknown stages now raise an error instead of silently permitting writes.
+- This reduces accidental authorization bypass from inconsistent migrations or unexpected lifecycle values. It does not supersede staff authorization, guardian checks, or resource-specific safeguards.
+- Repository change committed via GitHub connector. PHP lint, automated tests, migration checks, deployment, and runtime verification have **not** been executed for this change; pilot readiness remains unchanged.
+- Still open: inventory direct write routes for forms, volunteer shifts, channels, reactions and moderation; remove contradictory legacy `is_active` semantics only after audited cutover; verify timezone/automatic archive behavior and mobile parity; test former-guardian access and all notification sources.
+
+## Phase 15: Production-group channel fallback stage gate (October 25)
+- `ProductionGroupChannelAccess::canAccess` now requires In Production or Performing for its group-inherited access query, in addition to legacy active state, active group membership, and existing guardian relationship checks. A group-inherited channel grant can no longer survive merely because legacy `is_active` remained set after completion.
+- **Important remaining gap:** the earlier explicit `channel_members` shortcut in the same function still returns a grant without checking production lifecycle, current production membership, or former-guardian relationship. This separate authorization path needs policy-aware remediation and adversarial tests before pilot. Direct channel permissions must not become a bypass for removed production members or former guardians. Archived historical reads should be handled separately from live group permissions.
+- Change has not been PHP-linted, integration-tested or deployed. No readiness percentage change is justified.

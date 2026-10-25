@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
@@ -58,6 +60,7 @@ final class ScheduleCreateExperience
         $selected = ProductionContext::selected($db, $user);
         if (!$selected || (int)$selected['id'] !== (int)$production['id']) throw new RuntimeException('The working production changed before this item was saved. Review the production selector and try again.');
 
+        ProductionLifecycleGuard::assertWritable($db,(int)$production['id']);
         $title = trim((string)($input['title'] ?? ''));
         $location = trim((string)($input['location'] ?? ''));
         $notes = trim((string)($input['notes'] ?? ''));
