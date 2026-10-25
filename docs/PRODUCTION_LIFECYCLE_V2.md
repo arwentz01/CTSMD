@@ -42,3 +42,12 @@
 - No public artwork streaming route is provided yet. Public casting remains separate and first-name/last-initial only. Full names remain in deliberately published, authenticated member views.
 - Requires migrations 075 and 076 deployed before enabling routes. Do not run the date worker until staging validation passes.
 - Pending: web authenticated member/preview parity, public-approved description and artwork, audition signup association, per-stage permission cutover, push delivery verification, archival operational behavior and test coverage.
+
+## Phase 4: Staff automation override and authenticated date parity
+- Migration 077 adds `lifecycle_automation_paused` (default false).
+- Authorized production managers can pause automatic stage transitions and record a note. The CLI lifecycle worker skips paused productions; unpausing makes eligible date transitions possible at the next worker run.
+- Authenticated web production workspace now displays the lifecycle stage and configured audition/performance dates instead of only the legacy Active badge.
+- Authorized production-context queries now provide audition/performance windows, not only announcement previews. The mobile production page shows the date card for assigned members as well as announcement-only viewers.
+- No automatic worker is scheduled. Do not schedule it until migrations 075–077, timezone policy, and lifecycle integration tests are validated.
+- CAUTION: These changes do NOT remove the legacy `is_active` authorization gate or prove all pages safe when stage is Upcoming/Planning. The new lifecycle stage remains informational for some existing routes; staff must not assume it is a privacy enforcement control.
+- Verify date edge cases, archived read-only policies, and former-guardian revocation before rollout. Backfill intentionally retains existing members' access.
