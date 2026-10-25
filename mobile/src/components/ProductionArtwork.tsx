@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {Image,StyleSheet} from 'react-native';
+import {Image,StyleSheet,View} from 'react-native';
 import {readToken} from '../auth/session';
 
 const base=(process.env.EXPO_PUBLIC_CTSMD_API_BASE_URL||'https://ctsmd.me').replace(/\/$/,'');
@@ -21,6 +21,6 @@ export function ProductionArtwork({productionId,style,enabled=true}:{productionI
   })().catch(e=>console.warn('Production image load failed',productionId,String(e)));
   return()=>{active=false};
  },[productionId,enabled]);
- return <Image source={dataUrl?{uri:dataUrl}:require('../../assets/images/theatre-stage.png')} style={[s.fill,style]} resizeMode="cover"/>;
+ return <View pointerEvents="none" style={[s.frame,style]}><Image source={dataUrl?{uri:dataUrl}:require('../../assets/images/theatre-stage.png')} style={s.image} resizeMode="cover"/></View>;
 }
-const s=StyleSheet.create({fill:{position:'absolute',top:0,bottom:0,left:0,right:0,width:'100%',height:'100%'}});
+const s=StyleSheet.create({frame:{...StyleSheet.absoluteFillObject,overflow:'hidden'},image:{width:'100%',height:'100%'}});
