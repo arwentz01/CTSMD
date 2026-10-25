@@ -91,3 +91,12 @@
 - Archive reads are historical only; these changes do not implement comprehensive write-blocking on all Completed/Archived operations.
 - IMPORTANT: This change requires migration 075 and coordinated rollout; audit every archive-linked endpoint and run revoked-guardian regression tests before deployment.
 - The push producer audit remains incomplete: only explicit production-scoped push jobs receive the new delivery-time production check. Do not declare notification safety parity complete.
+
+## Phase 10: Closed-production operational write guard
+- Shared ProductionLifecycleGuard::assertWritable checks the production lifecycle stage before accepting operational mutations; Completed and Archived fail closed.
+- CastingService add/update/finalizeRoster now enforce it at the service boundary, not only in staff web forms.
+- CastingCommunicationService result messaging, publication creation/update/unpublish and public casting-page settings also enforce it. Deliberately published historical snapshots remain readable.
+- ScheduleNoticeExperience rejects publishing new schedule-update communications for Completed/Archived productions.
+- Staff lifecycle-stage updates, approved announcement basics, historical reads and administrative record retention are not blocked by this operational guard.
+- This is a targeted first pass, NOT a comprehensive guarantee: direct schedule/calendar edits, channels, forms, attendance, and other write endpoints must be audited and guarded individually.
+- Do not deploy or schedule automation until regression tests verify that legacy routes do not bypass these checks.
