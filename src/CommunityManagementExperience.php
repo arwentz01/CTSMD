@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
@@ -82,6 +83,14 @@ final class CommunityManagementExperience
         if($needsProduction&&!$productionId) throw new RuntimeException('Production-specific audiences require a production.');
         if($productionId){ $s=$db->prepare('SELECT id FROM productions WHERE id=:id LIMIT 1'); $s->execute(['id'=>$productionId]); if(!$s->fetchColumn()) throw new RuntimeException('That production no longer exists.'); }
 
+        // Validate both scopes before a channel can be moved out of a closed production.
+        if($id){
+            $existing=self::channel($db,$id);
+            if(!$existing)throw new RuntimeException('That channel no longer exists.');
+            if((int)($existing['production_id']??0)>0)ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
+        }
+        if($productionId)ProductionLifecycleGuard::assertWritable($db,(int)$productionId);
+
         $legacyRead=self::legacyScope($read); $legacyPost=self::legacyScope($post);
         $db->beginTransaction();
         try{
@@ -118,6 +127,11 @@ final class CommunityManagementExperience
     private static function archive(PDO $db,array $user,int $id,bool $archive): void
     {
         if($id<1) throw new RuntimeException('That channel could not be found.');
+        $existing=self::channel($db,$id);
+        if(!$existing)throw new RuntimeException('That channel no longer exists.');
+        // Archiving remains possible as a safeguarding action; restoration is operational.
+        if(!$archive&&(int)($existing['production_id']??0)>0)
+            ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
         $stmt=$db->prepare('UPDATE channels SET archived_at=:at WHERE id=:id'); $stmt->execute(['at'=>$archive?date('Y-m-d H:i:s'):null,'id'=>$id]);
         self::audit($db,(int)$user['id'],$archive?'community.channel_archived':'community.channel_restored',$id,$archive?'Archived community channel.':'Restored community channel.',[]);
     }
