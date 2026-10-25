@@ -81,7 +81,7 @@ $experienceRoutes=[
     ['CastingExperience',['/production/casting'],'base'],
     ['ProductionReadinessExperience',['/production/readiness'],'base'],
     ['ProductionDayExperience',['/production/day'],'route'],
-    ['ProductionWorkspaceExperience',['/production'],'base'],
+    ['ProductionWorkspaceExperience',['/production','/production/artwork-image'],'base'],
     ['ProductionGroupExperience',['/production/groups','/production/groups/view'],'route'],
     ['ProductionPeopleExperience',['/production/people'],'route'],
     ['AttendanceExperience',['/attendance','/attendance/take','/attendance/report'],'route'],
