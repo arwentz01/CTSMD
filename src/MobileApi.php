@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
@@ -311,9 +312,9 @@ final class MobileApi
     private static function notifications(PDO $db,array $user):never
     {
         self::requireMethod('GET');
-        $s=$db->prepare("SELECT id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC,id DESC LIMIT 75");
+        $s=$db->prepare("SELECT id,source_type,source_id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC,id DESC LIMIT 250");
         $s->execute(['user'=>(int)$user['id']]);
-        $items=$s->fetchAll();
+        $items=array_slice(ProductionNotificationAccess::filter($db,(int)$user['id'],$s->fetchAll()),0,75);
         // Navigation is a hint only: target pages still enforce their own authorization.
         // Never let stored notification paths navigate outside the CTSMD site.
         foreach($items as &$item){
@@ -321,9 +322,7 @@ final class MobileApi
             if(!preg_match('~^/(?!/)[a-zA-Z0-9/_?=&%-]*$~D',$path))$item['action_path']=null;
         }
         unset($item);
-        $count=$db->prepare("SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL");
-        $count->execute(['user'=>(int)$user['id']]);
-        self::json(['notifications'=>$items,'unread_count'=>(int)$count->fetchColumn()]);
+        self::json(['notifications'=>$items,'unread_count'=>count(array_filter($items,static fn(array $n):bool=>empty($n['read_at'])))]);
     }
 
     private static function notificationRead(PDO $db,array $user):never
