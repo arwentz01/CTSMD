@@ -8,7 +8,8 @@ final class PlaybillPublicationBuilder
     {
         $pages=[['type'=>'cover','title'=>(string)($playbill['display_title']?:$playbill['production_title']),'toc'=>false]];
         $content=[];
-        foreach(array_chunk($cast,24) as $i=>$chunk)$content[]=['type'=>'cast-credits','title'=>$i?'Cast & characters · continued':'Cast & characters','toc'=>$i===0,'items'=>$chunk];
+        $performers=array_values(array_filter($cast,static fn(array $person):bool=>($person['participant_type']??'cast')==='cast'));
+        foreach(array_chunk($performers,24) as $i=>$chunk)$content[]=['type'=>'cast-credits','title'=>$i?'Cast & characters · continued':'Cast & characters','toc'=>$i===0,'items'=>$chunk];
         foreach(self::chunkBios($cast) as $i=>$chunk)$content[]=['type'=>'cast-bios','title'=>$i?'Meet the company · continued':'Meet the company','toc'=>$i===0,'items'=>$chunk];
         foreach(array_chunk($staff,20) as $i=>$chunk)$content[]=['type'=>'team','title'=>$i?'Production team · continued':'Production team','toc'=>$i===0,'items'=>$chunk];
         foreach($sections as $section){$chunks=self::chunkText((string)$section['body']);foreach($chunks as $i=>$body)$content[]=['type'=>'editorial','title'=>(string)$section['heading'].($i?' · continued':''),'toc'=>$i===0,'section_type'=>(string)$section['section_type'],'body'=>$body,'anchor'=>'section-'.(int)$section['id']];}

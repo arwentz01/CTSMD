@@ -391,3 +391,9 @@ The Floot native app now has authenticated adapters for form detail/submission a
 
 **Pilot remains NO-GO.** This coverage does not change the existing OS push, keyboard/device or operational closure gates.
 
+## October 25 manual production participants — source only
+
+Migration 069 and the associated source add no-login cast, crew, creative, and other production participants without creating `users`, roles, family relationships, memberships, bearer tokens, or notification recipients. Reusable person profiles are separated from production credits, private notes are excluded from published queries, and name/biography/headshot each have explicit publication approval boundaries. Approved data now participates in casting snapshots shared by web/mobile, production directories, and Playbill company pages. Staff may selectively transfer approved fields to an existing active Student; the manual credit is retired but retained for audit.
+
+Local PHP lint, the manual identity-boundary test, Playbill publication tests, and pagination tests pass. Migration 069 and transactional MySQL acceptance have not been run against a deployed or disposable database. This source work does not change Board or pilot percentages and does not close any existing operational blocker.
+

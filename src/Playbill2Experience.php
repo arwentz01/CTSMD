@@ -46,7 +46,7 @@ final class Playbill2Experience
                 $stmt->execute(['mode'=>$mode,'id'=>$pid]);
             }
             elseif($action==='artwork')PlaybillEnhancementService::saveArtwork($db,dirname(__DIR__),$pid,$actor,$_FILES['artwork']??[]);
-            elseif($action==='save_cast')PlaybillEnhancementService::saveCastProfile($db,dirname(__DIR__),$pid,(int)($_POST['user_id']??0),$actor,$_POST,$_FILES['headshot']??[]);
+            elseif($action==='save_cast'){$identity=(int)($_POST['user_id']??0);if($identity<0)PlaybillEnhancementService::saveManualCastProfile($db,$pid,-$identity,$actor,$_POST);else PlaybillEnhancementService::saveCastProfile($db,dirname(__DIR__),$pid,$identity,$actor,$_POST,$_FILES['headshot']??[]);}
             elseif($action==='save_sponsor'){$id=PlaybillEnhancementService::saveSponsor($db,dirname(__DIR__),$actor,$_POST,$_FILES['logo']??[],$_FILES['advertisement']??[]);PlaybillEnhancementService::attachSponsor($db,$pid,$id,(string)($_POST['placement_label']??''),(int)($_POST['sort_order']??0),$actor,(string)($_POST['placement_format']??'card'));}
             elseif($action==='attach_sponsor')PlaybillEnhancementService::attachSponsor($db,$pid,(int)($_POST['sponsor_id']??0),(string)($_POST['placement_label']??''),(int)($_POST['sort_order']??0),$actor,(string)($_POST['placement_format']??'card'));
             elseif($action==='remove_sponsor')PlaybillEnhancementService::removeSponsor($db,$pid,(int)($_POST['sponsor_id']??0),$actor);
@@ -78,8 +78,8 @@ final class Playbill2Experience
     private static function publicPage(PDO $db,string $basePath):never
     {
         $pb=self::publicPlaybill($db,trim((string)($_GET['slug']??'')));if(!$pb)PlaybillPublicRenderer::render($basePath,null,[],[],[],[]);
-        $sections=self::sections($db,(int)$pb['id']);$cast=PlaybillEnhancementService::publicCastProfiles($db,(int)$pb['id']);$staff=self::staff($db,(int)$pb['production_id']);$sponsors=array_values(array_filter(PlaybillEnhancementService::sponsors($db,(int)$pb['id']),static fn(array $s):bool=>(int)$s['attachment_active']===1&&$s['status']==='active'));
-        PlaybillPublicRenderer::render($basePath,$pb,$sections,$cast,$staff,$sponsors);
+        $sections=self::sections($db,(int)$pb['id']);$company=PlaybillEnhancementService::publicCastProfiles($db,(int)$pb['id']);$cast=array_values(array_filter($company,static fn(array $p):bool=>($p['participant_type']??'cast')==='cast'));$staff=self::staff($db,(int)$pb['production_id']);foreach($company as $person)if(($person['participant_type']??'cast')!=='cast')$staff[]=['name'=>$person['display_name'],'participation_role'=>$person['role_title']?:ucfirst((string)$person['participant_type'])];$sponsors=array_values(array_filter(PlaybillEnhancementService::sponsors($db,(int)$pb['id']),static fn(array $s):bool=>(int)$s['attachment_active']===1&&$s['status']==='active'));
+        PlaybillPublicRenderer::render($basePath,$pb,$sections,$company,$staff,$sponsors);
     }
 
     private static function qr(PDO $db,string $basePath):never{$slug=trim((string)($_GET['slug']??''));if(!self::publicPlaybill($db,$slug)){http_response_code(404);exit('Playbill unavailable.');}$url=self::absoluteUrl($basePath.'/playbill?slug='.rawurlencode($slug));header('Content-Type:image/svg+xml; charset=utf-8');header('Cache-Control:public, max-age=3600');if(!empty($_GET['download']))header('Content-Disposition:attachment; filename="ctsmd-playbill-'.$slug.'-qr.svg"');echo PlaybillQrService::svg($url,($_GET['background']??'')==='transparent',16);exit;}

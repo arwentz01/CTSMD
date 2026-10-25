@@ -9,6 +9,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/IdentityRolePolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/TheatreHistoryService.php';
+require_once __DIR__ . '/ManualParticipantService.php';
 
 final class ProductionPeopleExperience
 {
@@ -32,7 +33,7 @@ final class ProductionPeopleExperience
         $_SESSION['production_people_csrf'] ??= bin2hex(random_bytes(24));
         $production = ProductionContext::selected($db, $user);
         if (!$production) {
-            self::page($basePath, $user, null, [], [], []);
+            self::page($basePath, $user, null, [], [], [], []);
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -42,7 +43,7 @@ final class ProductionPeopleExperience
         $members = self::members($db, (int)$production['id']);
         $candidates = self::candidates($db, (int)$production['id']);
         $coverage = self::guardianCoverage($db, (int)$production['id']);
-        self::page($basePath, $user, $production, $members, $candidates, $coverage);
+        self::page($basePath, $user, $production, $members, $candidates, $coverage, ManualParticipantService::forProduction($db,(int)$production['id']));
     }
 
     private static function handlePost(PDO $db, array $user, int $productionId, string $basePath): never
@@ -268,7 +269,7 @@ final class ProductionPeopleExperience
         ]);
     }
 
-    private static function page(string $basePath, array $user, ?array $production, array $members, array $candidates, array $coverage): never
+    private static function page(string $basePath, array $user, ?array $production, array $members, array $candidates, array $coverage, array $manual): never
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -293,6 +294,8 @@ final class ProductionPeopleExperience
         </section>
 
         <aside class="production-people-panel add"><header><div><small>ADD TO <?= $esc(strtoupper($production['title'])) ?></small><h3>Assign a person</h3></div></header><form method="post" class="production-people-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="add"><label>Person<select name="user_id" required><option value="">Choose a person</option><?php foreach ($candidates as $candidate): ?><option value="<?= (int)$candidate['id'] ?>"><?= $esc($candidate['name']) ?> · <?= $esc($candidate['role']) ?><?= (bool)$candidate['already_active'] ? ' · already active' : '' ?></option><?php endforeach; ?></select></label><label>Production audience<select name="audience_type" required><option value="student">Student / cast</option><option value="guardian">Guardian</option><option value="staff">Staff</option></select></label><label>Participation role<input name="participation_role" maxlength="120" required placeholder="e.g. Matilda, Parent / Guardian, Director"></label><button class="button full" type="submit">Add to <?= $esc($production['title']) ?></button></form><div class="production-people-rule"><b>Guardian safety is automatic.</b><p>Students cannot be added without an available active guardian relationship. Their active guardians are added to this production audience automatically.</p></div></aside></div>
+
+        <?php if($manual):?><section class="production-people-panel coverage"><header><div><small>MANUAL PARTICIPANTS</small><h3>Cast, crew &amp; creative</h3></div><span class="badge badge-count"><?=count($manual)?> no-login records</span></header><?php foreach($manual as $person):?><article><span><b><?=$esc((string)$person["person_name"])?></b><small><?=$esc(ucfirst((string)$person["participant_type"])." · ".((string)($person["role_title"]?:"Role not set")))?></small></span><em><?=$person["approve_public_name"]?"Publication approved":"Private"?></em></article><?php endforeach;?></section><?php endif;?>
 
         <section class="production-people-panel coverage"><header><div><small>SAFEGUARDING CHECK</small><h3>Student guardian coverage</h3></div></header><?php if (!$coverage): ?><p class="production-people-muted">No live students are assigned.</p><?php else: foreach ($coverage as $row): ?><article><span><b><?= $esc($row['student_name']) ?></b><small>Active production student</small></span><em class="<?= (int)$row['guardian_count'] > 0 ? 'good' : 'danger' ?>"><?= (int)$row['guardian_count'] ?> guardian<?= (int)$row['guardian_count'] === 1 ? '' : 's' ?></em></article><?php endforeach; endif; ?></section>
         <?php endif; ?>

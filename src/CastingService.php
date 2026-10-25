@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__.'/ManualParticipantService.php';
 
 require_once __DIR__.'/ScheduleAudience.php';
 require_once __DIR__.'/TheatreHistoryService.php';
@@ -14,7 +15,8 @@ final class CastingService
         $records=$db->prepare("SELECT cr.*,CONCAT(u.first_name,' ',u.last_name) person_name,u.display_role account_role,rs.participant_age_group,ro.title opportunity_title,pm.status membership_status FROM production_casting_records cr JOIN users u ON u.id=cr.user_id LEFT JOIN registration_submissions rs ON rs.id=cr.registration_submission_id LEFT JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN production_memberships pm ON pm.id=cr.production_membership_id WHERE cr.production_id=:production ORDER BY FIELD(cr.casting_status,'offered','cast','callback','under_review','not_cast','withdrawn'),u.last_name,u.first_name");
         $records->execute(['production'=>$productionId]);
         $rows=$records->fetchAll();
-        foreach($rows as &$row)$row['groups']=self::groupsForMembership($db,(int)($row['production_membership_id']??0));unset($row);
+        foreach($rows as &$row){$row['groups']=self::groupsForMembership($db,(int)($row['production_membership_id']??0));$row['identity_type']='registered';}unset($row);
+        foreach(ManualParticipantService::forProduction($db,$productionId) as $manual){$manual['identity_type']='manual';$manual['id']=(int)$manual['id'];$manual['account_role']='Manual '.ucfirst((string)$manual['participant_type']);$manual['opportunity_title']=null;$manual['production_membership_id']=null;$manual['result_communicated_at']=null;$manual['groups']=[];$rows[]=$manual;}
         return $rows;
     }
 

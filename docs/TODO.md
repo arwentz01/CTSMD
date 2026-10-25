@@ -317,3 +317,8 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - When a production becomes inactive/archived, production-owned active experiences should leave current member navigation while their historical records remain preserved in read-only/archive experiences as appropriate.
 - Historical records should normally be deactivated/archived rather than hard-deleted.
 - Domain/demo records belong in the database/seed, never hardcoded into PHP views.
+# Manual participants deployment acceptance
+
+- Apply migration 069 to a disposable MySQL 8 database and validate create/edit/archive, multi-production credits, selective Student transfer, and lifecycle write denial.
+- Verify manual participant publication withdrawal across member casting, mobile casting, Playbill HTML/assets, and archived edition behavior.
+- Run authenticated desktop/mobile UI acceptance for the Casting and Playbill editors before deployment.
