@@ -154,6 +154,15 @@ final class MobileApi
         $events=CalendarService::visibleEvents(
             $db,$user,new DateTimeImmutable('-1 day'),new DateTimeImmutable('+90 days')
         );
+        if($productions){
+            $ids=array_map(static fn(array $p):int=>(int)$p['id'],$productions);
+            $placeholders=implode(',',array_fill(0,count($ids),'?'));
+            $q=$db->prepare("SELECT production_id,role FROM production_artwork WHERE production_id IN ($placeholders)");
+            $q->execute($ids);$art=[];
+            foreach($q->fetchAll() as $row)$art[(int)$row['production_id']][(string)$row['role']]=true;
+            foreach($productions as &$p)$p['has_artwork']=!empty($art[(int)$p['id']]['banner'])||!empty($art[(int)$p['id']]['poster']);
+            unset($p);
+        }
         self::json(['productions'=>$productions,'events'=>array_slice($events,0,100)]);
     }
 
