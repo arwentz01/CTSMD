@@ -61,3 +61,10 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [x] Changed shared header icon to twin theatre-mask symbolism. This remains a placeholder until the official CTSMD brand logo is shipped as an approved asset.
 - [ ] Validate clipping, overlay touch behavior, accessibility scaling, typecheck, and real Android/iOS rendering.
 - [ ] Add organization-approved images and production artwork for a closer match to conceptual mockups.
+
+## October 25 Android visual-feedback correction
+- [x] Tightened shared app header, page title, and screen vertical spacing after reviewing Android screenshot.
+- [x] Reduced Home hero height, event card padding and typography scale.
+- [x] Increased contrast of pure-native curtain artwork; it remains illustrative rather than a real photographic asset.
+- [ ] Confirm layout visually on Android after pulling; check text scaling, narrow devices and app tab bar.
+- [ ] Integrate approved photographic stage image and authentic CTSMD logo when source assets are ready.
