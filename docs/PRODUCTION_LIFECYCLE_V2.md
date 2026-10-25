@@ -51,3 +51,13 @@
 - No automatic worker is scheduled. Do not schedule it until migrations 075–077, timezone policy, and lifecycle integration tests are validated.
 - CAUTION: These changes do NOT remove the legacy `is_active` authorization gate or prove all pages safe when stage is Upcoming/Planning. The new lifecycle stage remains informational for some existing routes; staff must not assume it is a privacy enforcement control.
 - Verify date edge cases, archived read-only policies, and former-guardian revocation before rollout. Backfill intentionally retains existing members' access.
+
+## Phase 5: Lifecycle enforcement at ProductionContext boundary
+- Nonstaff production member queries (`activeProductions`, `userHasActiveProduction`, `isActiveMember`, `audienceType`) now require BOTH legacy `is_active=1` AND lifecycle stage `in_production` or `performing`. Guardian/family relationship checks remain required.
+- Authorized platform staff's production selection can include Upcoming/Planning workspaces even if legacy `is_active=0`; this allows staff preparation without opening family schedules.
+- Published public production summaries remain a separate read-only discovery path with an explicit staff publish control.
+- Transition to Completed immediately removes ordinary active-member production-context access. Historical/archive readers still require separate review. This is not a comprehensive read-only archive implementation.
+- Remaining risk: Audit all direct production_memberships, schedule, channel and notification SQL codepaths that bypass ProductionContext. Do NOT claim broad authorization parity yet.
+- Legacy activation remains necessary as a second permission check; no retirement yet. Test active stage transitions and former guardian revocation before deployment.
+- Earlier migration backfill moves previously active legacy Planning shows into In Production to avoid surprise lockouts. Stage editing back to Planning now intentionally restricts nonstaff access.
+- Do not deploy these stage enforcement changes before all migration 075–077 SQL changes and production-member access regression tests are completed.
