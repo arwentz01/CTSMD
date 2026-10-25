@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__.'/ScheduleAudience.php';
 require_once __DIR__.'/TheatreHistoryService.php';
 
@@ -32,6 +34,7 @@ final class CastingService
 
     public static function add(PDO $db,int $productionId,int $actorId,int $userId,?int $submissionId=null):int
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         if($productionId<1||$userId<1)throw new RuntimeException('Choose a valid person.');
         $db->beginTransaction();
         try{
@@ -47,6 +50,7 @@ final class CastingService
 
     public static function update(PDO $db,int $productionId,int $actorId,int $recordId,array $input):void
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $status=(string)($input['casting_status']??'under_review');$role=trim((string)($input['role_title']??''));$track=trim((string)($input['participation_track']??''));$notes=trim((string)($input['staff_notes']??''));
         if(!in_array($status,['under_review','callback','offered','cast','not_cast','withdrawn'],true))throw new RuntimeException('Choose a valid casting status.');
         if(mb_strlen($role)>190||mb_strlen($track)>100||mb_strlen($notes)>2000)throw new RuntimeException('One or more casting fields are too long.');
@@ -61,6 +65,7 @@ final class CastingService
 
     public static function finalizeRoster(PDO $db,int $productionId,int $actorId,int $recordId,array $groupIds):void
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $groupIds=ScheduleAudience::validateGroupIds($db,$productionId,$groupIds);
         $db->beginTransaction();try{
             $s=$db->prepare("SELECT cr.*,CONCAT(u.first_name,' ',u.last_name) person_name,u.active user_active,u.account_status user_account_status FROM production_casting_records cr JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");$s->execute(['id'=>$recordId,'production'=>$productionId]);$record=$s->fetch();if(!$record)throw new RuntimeException('That casting record no longer exists.');if((int)$record['user_active']!==1||$record['user_account_status']==='disabled')throw new RuntimeException('That student is no longer available for an active production roster.');if($record['casting_status']!=='cast')throw new RuntimeException('Mark the casting decision Cast before finalizing production access.');
