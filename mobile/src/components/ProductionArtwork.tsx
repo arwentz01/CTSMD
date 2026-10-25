@@ -23,4 +23,4 @@ export function ProductionArtwork({productionId,style,enabled=true}:{productionI
  },[productionId,enabled]);
  return <View pointerEvents="none" style={[s.frame,style]}><Image source={dataUrl?{uri:dataUrl}:require('../../assets/images/theatre-stage.png')} style={s.image} resizeMode="cover"/></View>;
 }
-const s=StyleSheet.create({frame:{...StyleSheet.absoluteFillObject,overflow:'hidden'},image:{width:'100%',height:'100%'}});
+const s=StyleSheet.create({frame:{position:'absolute',top:0,right:0,bottom:0,left:0,overflow:'hidden'},image:{position:'absolute',top:0,right:0,bottom:0,left:0}});
