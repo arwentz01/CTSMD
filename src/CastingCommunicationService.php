@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/MailService.php';
 require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/PushService.php';
 
 final class CastingCommunicationService
 {
@@ -94,6 +95,7 @@ final class CastingCommunicationService
             foreach($audience->fetchAll(PDO::FETCH_COLUMN) as $recipientId){
                 if(!ProductionContext::isActiveMember($db,(int)$recipientId,$productionId))continue;
                 $notice->execute(['recipient'=>(int)$recipientId,'production'=>$productionId,'title'=>$noticeTitle,'body'=>'A new '.$label.' announcement is available in your CTSMD production.']);
+                PushService::queue($db,(int)$recipientId,'general',$noticeTitle,'A production announcement is available.','/production','normal','casting-'.$type.'-'.$productionId,'casting-release-'.$type.'-'.$productionId.'-'.hash('sha256',(string)$snapshot),$productionId);
             }
         }
 
