@@ -24,3 +24,12 @@
 
 ## Release note
 The branch is not deployed or device-verified. Run migrations 071, 072, and 073 before deploying code reading channels.include_in_feed or channel_post_replies; verify historic announcements, explicit opt-in for discussion channels, channel ACLs, and no unintended read-state changes.
+
+## October 24 source functional review
+- [x] Serialized web and mobile heart changes by locking the parent published post inside each transaction; confirm via concurrent database integration tests.
+- [x] Volunteer action success triggers an immediate shift-list reload instead of instructing members to navigate away.
+- [ ] Run mobile `npm run typecheck` and PHP lint after these commits; not performed in the connected GitHub source-edit environment.
+- [ ] Validate My Family returned results against inactive relationships, blocked accounts, guardian revocation and student login.
+- [ ] Verify Community image authorization on expired/revoked tokens and archived/private channels.
+- [ ] Run `npm audit` and triage vulnerabilities without forced breaking upgrades.
+- [ ] Full Android and iOS navigation/device acceptance checks remain required.
