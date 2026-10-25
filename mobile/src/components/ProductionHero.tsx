@@ -8,8 +8,7 @@ import type {Production} from '../types/ctsmd';
 /** Shared stage fallback until production-specific approved artwork is exposed by the API. */
 export function ProductionHero({production,onPress}:{production:Production;onPress?:()=>void}){
  const content=<>
-  <Image source={require('../../assets/images/theatre-stage.png')} resizeMode="cover" style={s.image}/>
-  {production.has_artwork&&<ProductionArtwork productionId={production.id}/>}
+  <ProductionArtwork productionId={production.id} enabled={!!production.has_artwork}/>
   <View pointerEvents="none" style={s.scrim}/>
   <View style={s.content}><Text style={s.title} numberOfLines={2}>{production.title}</Text><Text style={s.meta} numberOfLines={1}>{[production.season,production.status].filter(Boolean).join(' · ')}</Text></View>
   {onPress&&<View style={s.arrow}><Ionicons name="chevron-forward" color={colors.stage} size={21}/></View>}
