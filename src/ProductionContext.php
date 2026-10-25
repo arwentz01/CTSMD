@@ -15,11 +15,11 @@ final class ProductionContext
         if(isset(self::$activeProductionCache[$cacheKey]))return self::$activeProductionCache[$cacheKey];
 
         if (AccessPolicy::isStaff($user)) {
-            $stmt = $db->query("SELECT id, title, season, status, lifecycle_stage, is_active FROM productions WHERE is_active = 1 ORDER BY title, id");
+            $stmt = $db->query("SELECT id, title, season, status, lifecycle_stage, audition_starts_at, audition_ends_at, performance_starts_at, performance_ends_at, is_active FROM productions WHERE is_active = 1 ORDER BY title, id");
             return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
         }
 
-        $stmt = $db->prepare("SELECT DISTINCT p.id, p.title, p.season, p.status, p.lifecycle_stage, p.is_active
+        $stmt = $db->prepare("SELECT DISTINCT p.id, p.title, p.season, p.status, p.lifecycle_stage, p.audition_starts_at, p.audition_ends_at, p.performance_starts_at, p.performance_ends_at, p.is_active
             FROM productions p
             JOIN production_memberships pm ON pm.production_id = p.id
             JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
