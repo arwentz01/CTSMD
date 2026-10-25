@@ -8,7 +8,7 @@ import {StageBackdrop} from './StageBackdrop';
 function AppHeader(){
  const pathname=usePathname();const onMessages=pathname==='/messages';const onMore=pathname==='/more';
  return <View style={styles.header}><StageBackdrop/>
-  <View style={styles.brandMark}><View style={{flexDirection:"row",alignItems:"center"}}><Ionicons name="happy-outline" size={15} color={colors.gold}/><Ionicons name="sad-outline" size={18} color={colors.gold}/></View></View>
+  <Image source={require("../../assets/images/ctsmd-logo.png")} style={styles.brandMark} resizeMode="contain" onError={(e)=>console.warn("CTSMD logo image failed:",e.nativeEvent.error)}/>
   <View style={styles.brand}><Text style={styles.brandName}>CTSMD <Text style={styles.brandGold}>Connect</Text></Text><Text style={styles.brandSubtitle}>CHILDREN'S THEATRE OF SOUTHERN MARYLAND</Text></View>
   <View style={styles.actions}>
    {!onMessages&&<Pressable accessibilityRole="button" accessibilityLabel="Open messages" hitSlop={8} style={styles.headerButton} onPress={()=>router.navigate('/(tabs)/messages')}><Ionicons name="chatbubble-outline" size={21} color={colors.ivory}/></Pressable>}
