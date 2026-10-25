@@ -24,6 +24,7 @@ final class ProductionContext
             JOIN production_memberships pm ON pm.production_id = p.id
             JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
             WHERE p.is_active = 1
+              AND p.lifecycle_stage IN ('in_production','performing')
               AND pm.user_id = :user_id
               AND pm.status = 'active'
               AND (
@@ -101,6 +102,7 @@ final class ProductionContext
             WHERE pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND p.lifecycle_stage IN ('in_production','performing')
               AND (
                   pm.audience_type <> 'guardian'
                   OR EXISTS (
@@ -135,6 +137,7 @@ final class ProductionContext
               AND pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND p.lifecycle_stage IN ('in_production','performing')
               AND (
                   pm.audience_type <> 'guardian'
                   OR EXISTS (
@@ -169,6 +172,7 @@ final class ProductionContext
               AND pm.user_id = :user_id
               AND pm.status = 'active'
               AND p.is_active = 1
+              AND p.lifecycle_stage IN ('in_production','performing')
               AND (
                   pm.audience_type <> 'guardian'
                   OR EXISTS (
