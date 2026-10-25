@@ -39,3 +39,9 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [x] Add cache-control, no-sniff, and Authorization variance response headers.
 - [ ] Confirm revoked-token, archived-channel, removed audience, and inactive guardian cases return no image bytes using integration tests.
 - [ ] Confirm CDN and proxy configuration respects no-store for authenticated media.
+
+## October 24 former-guardian authorization hardening
+- [x] Both mobile Community read-state policy and website Community policy now require an active family relationship with an active student enrolled in the same production for the `production_guardians` audience. A stale guardian production membership alone no longer suffices for that audience.
+- [ ] Run PHP lint and transaction-backed tests for: active primary guardian, active secondary guardian, relationship removed, inactive student, student removed from production, guardian of a different production, and simultaneous guardian relationships.
+- [ ] Review explicit selected-channel membership and broader `production_members`/`production_adults` audiences separately; these may independently grant access by design and must not be misrepresented as revoked by this change.
+- [ ] Confirm no former guardian receives new student-related messages in safeguarded conversations; channel authorization does not replace message revocation enforcement.
