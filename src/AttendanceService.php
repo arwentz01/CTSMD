@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/AccessPolicy.php';
 
@@ -42,6 +44,7 @@ final class AttendanceService
 
     public static function saveRoster(PDO $db,int $scheduleItemId,int $actorUserId,array $statuses,array $notes):void
     {
+        ProductionLifecycleGuard::assertScheduleItemWritable($db,$scheduleItemId);
         $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Attendance cannot be changed for a cancelled schedule item.');
         $expected=self::expectedMembers($db,$scheduleItemId);
         $allowed=[];foreach($expected as $member)$allowed[(int)$member['id']]=true;
@@ -52,6 +55,7 @@ final class AttendanceService
 
     public static function reportableStudents(PDO $db,array $user,int $scheduleItemId):array
     {
+        ProductionLifecycleGuard::assertScheduleItemWritable($db,$scheduleItemId);
         $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())return [];
         $expected=self::expectedMembers($db,$scheduleItemId);$expectedStudents=[];foreach($expected as $member)if(($member['audience_type']??'')==='student')$expectedStudents[(int)$member['id']]=$member;
         if(!$expectedStudents)return [];
@@ -61,6 +65,7 @@ final class AttendanceService
 
     public static function submitAbsenceReport(PDO $db,int $scheduleItemId,int $studentUserId,int $reporterUserId,string $reason):int
     {
+        ProductionLifecycleGuard::assertScheduleItemWritable($db,$scheduleItemId);
         $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Absence reports cannot be submitted for a cancelled schedule item.');
         $reason=trim($reason);if($reason===''||mb_strlen($reason)>1500)throw new RuntimeException('Enter a brief absence reason up to 1,500 characters.');
 
