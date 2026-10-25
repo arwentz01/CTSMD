@@ -185,7 +185,7 @@ final class MobileApi
             $q=$db->prepare("SELECT production_id,role FROM production_artwork WHERE production_id IN ($placeholders)");
             $q->execute($ids);$art=[];
             foreach($q->fetchAll() as $row)$art[(int)$row['production_id']][(string)$row['role']]=true;
-            foreach($productions as &$p)$p['has_artwork']=!empty($art[(int)$p['id']]['banner'])||!empty($art[(int)$p['id']]['poster']);
+            foreach($productions as &$p)$p['has_artwork']=empty($p['is_public_preview'])&&(!empty($art[(int)$p['id']]['banner'])||!empty($art[(int)$p['id']]['poster']));
             unset($p);
         }
         self::json(['productions'=>$productions,'events'=>array_slice($events,0,100)]);
