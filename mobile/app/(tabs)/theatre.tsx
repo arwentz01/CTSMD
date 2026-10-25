@@ -24,7 +24,7 @@ export default function Theatre(){
   <View style={s.filters}>{(['Current','Upcoming','Past'] as Filter[]).map(filter=><Pressable key={filter} accessibilityRole="button" accessibilityState={{selected:filter===selected}} style={[s.filter,filter===selected&&s.activeFilter]} onPress={()=>setSelected(filter)}><Text style={[s.filterLabel,filter===selected&&s.activeLabel]}>{filter}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error}/>
   {data&&<>
-   {productions.length===0?<View style={s.card}><Text style={s.subtitle}>No {selected.toLowerCase()} productions available to your account.</Text></View>:productions.map(p=><ProductionHero key={p.id} production={p} onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(p.id)}})}/>)
+   {productions.length===0?<View style={s.card}><Text style={s.subtitle}>No {selected.toLowerCase()} productions available to your account.</Text></View>:productions.map(p=><ProductionHero key={p.id} production={p} onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(p.id)}})}/>)}
    <View style={s.sectionHeading}><Text style={s.sectionTitle}>My Theatre Schedule</Text><Text style={s.subtitle}>Upcoming</Text></View>
    {upcoming.length===0?<View style={s.card}><Text style={s.subtitle}>No upcoming events are visible.</Text></View>:upcoming.slice(0,5).map(e=><Pressable key={e.id} accessibilityRole="button" style={s.card} onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(e.production_id)}})}><Text style={s.title}>{e.title}</Text><Text style={s.subtitle}>{e.production_title} · {formatDate(e.starts_at)}</Text>{!!e.location&&<Text style={s.subtitle}>{e.location}</Text>}</Pressable>)}
    <Text style={s.sectionTitle}>Explore Theatre</Text>
