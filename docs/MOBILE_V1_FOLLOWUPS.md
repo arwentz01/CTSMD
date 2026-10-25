@@ -74,3 +74,12 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [x] Use ProductionHero for filtered Theatre lists and individual production hubs.
 - [ ] Expose authorized production-specific artwork through API and substitute it for stage fallback. Do not hardcode assumed show posters or publicly expose private images.
 - [ ] Validate on-device image crop, title truncation and Expo typecheck.
+
+## Production artwork delivery (October 25)
+- [x] Migration 074 stores per-production poster, banner, and thumbnail file references using existing private file storage.
+- [x] Production management view includes role-specific upload/replace/remove controls, CSRF check, file MIME validation, permissions and audit events.
+- [x] Authenticated mobile image endpoint validates active production access and streams images inline; banner falls back to poster.
+- [x] Theatre landing and detail use shared ProductionHero with authorized remote artwork and bundled stage fallback.
+- [ ] Apply migration 074 before deploying updated PHP, then test upload, replacement, removal, non-image rejection, unauthorized access, suspended guardians and deactivated production.
+- [ ] Add staff-facing artwork thumbnail previews and image dimension guidance; validate PHP lint and Expo typecheck.
+- [ ] Decide whether public website use should require a separately approved/published artwork variant.
