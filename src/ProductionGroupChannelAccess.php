@@ -2,12 +2,25 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionContext.php';
+
 final class ProductionGroupChannelAccess
 {
     public static function canAccess(PDO $db,int $channelId,int $userId,string $mode='read'):bool
     {
         if($channelId<1||$userId<1)return false;
         $column=$mode==='post'?'can_post':'can_read';
+
+        // A direct channel grant must not outlive the production membership or
+        // the active guardian/student relationship that originally allowed it.
+        $scope=$db->prepare('SELECT production_id,production_group_id FROM channels WHERE id=:id LIMIT 1');
+        $scope->execute(['id'=>$channelId]);
+        $channel=$scope->fetch(PDO::FETCH_ASSOC);
+        if(!$channel)return false;
+        if((int)($channel['production_group_id']??0)>0){
+            $productionId=(int)($channel['production_id']??0);
+            if(!ProductionContext::isActiveMember($db,$userId,$productionId))return false;
+        }
 
         $selected=$db->prepare("SELECT cm.$column FROM channel_members cm JOIN users u ON u.id=cm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE cm.channel_id=:channel AND cm.user_id=:user AND cm.status='active' LIMIT 1");
         $selected->execute(['channel'=>$channelId,'user'=>$userId]);
