@@ -74,6 +74,28 @@ final class CastingCommunicationService
         $s=$db->prepare("INSERT INTO production_cast_publications (production_id,publication_type,status,headline,member_note,cast_snapshot_json,published_by_user_id,published_at) VALUES (:production,:type,:status,:headline,:note,:snapshot,:actor,".($publish?'CURRENT_TIMESTAMP':'NULL').") ON DUPLICATE KEY UPDATE status=VALUES(status),headline=VALUES(headline),member_note=VALUES(member_note),cast_snapshot_json=".($publish?'VALUES(cast_snapshot_json)':'cast_snapshot_json').",published_by_user_id=".($publish?'VALUES(published_by_user_id)':'published_by_user_id').",published_at=".($publish?'CURRENT_TIMESTAMP':'NULL').",updated_at=CURRENT_TIMESTAMP");
         $s->execute(['production'=>$productionId,'type'=>$type,'status'=>$status,'headline'=>$headline!==''?$headline:null,'note'=>$note!==''?$note:null,'snapshot'=>$snapshot,'actor'=>$actorId]);
         self::audit($db,$actorId,$publish?'casting.'.$type.'_published':'casting.'.$type.'_publication_saved',$productionId,$publish?'Published production '.$label.' snapshot to members.':'Saved '.$label.' publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count,'publication_type'=>$type]);
+        if($publish){
+            // The notification contains no child names or roles. Members view the
+            // published snapshot only after authenticating and passing production access.
+            $audience=$db->prepare("SELECT DISTINCT pm.user_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status='active'
+                WHERE pm.production_id=:production AND pm.status='active' AND (
+                  pm.audience_type<>'guardian' OR EXISTS (
+                    SELECT 1 FROM family_relationships fr
+                    JOIN production_memberships spm ON spm.user_id=fr.student_user_id
+                      AND spm.production_id=pm.production_id AND spm.audience_type='student' AND spm.status='active'
+                    JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
+                    WHERE fr.guardian_user_id=pm.user_id AND fr.status='active'
+                  )
+                )");
+            $audience->execute(['production'=>$productionId]);
+            $notice=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at)
+                VALUES (:recipient,'casting_release',:production,:title,:body,'/production',CURRENT_TIMESTAMP)");
+            $noticeTitle=$type==='callback'?'Callbacks published':'Cast list published';
+            foreach($audience->fetchAll(PDO::FETCH_COLUMN) as $recipientId){
+                $notice->execute(['recipient'=>(int)$recipientId,'production'=>$productionId,'title'=>$noticeTitle,'body'=>'A new '.$label.' announcement is available in your CTSMD production.']);
+            }
+        }
+
     }
 
     public static function unpublishPublication(PDO $db,int $productionId,int $actorId,string $type):void
