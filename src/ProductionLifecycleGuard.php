@@ -23,5 +23,9 @@ final class ProductionLifecycleGuard
         if($stage===false)throw new RuntimeException('Production not found.');
         if(in_array((string)$stage,['completed','archived'],true))
             throw new RuntimeException('This production is completed or archived. Operational changes are closed; historical records are retained.');
+        // Missing, malformed, or unsupported stages must never default to writable.
+        // During migration a null stage is an authorization configuration error.
+        if(!in_array((string)$stage,['upcoming','planning','in_production','performing'],true))
+            throw new RuntimeException('Production lifecycle stage is unavailable. Operational changes are blocked.');
     }
 }
