@@ -2,7 +2,7 @@ export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;
 export type MeResult={user:CtsmdUser};
 export type Conversation={id:number;subject:string;display_name:string;conversation_type:string;latest_at:string|null;message_count:number;participant_count:number;unread_count:number;preview:string|null};export type MessagesResult={conversations:Conversation[]};
 export type Channel={id:number;name:string;description:string|null;channel_type:string;production_id:number|null;production_title:string|null;unread_count:number};export type ChannelsResult={channels:Channel[]};
-export type Production={id:number;title:string;season:string|null;status:string;lifecycle_stage?:'upcoming'|'planning'|'in_production'|'performing'|'completed'|'archived';is_active:number;has_artwork?:boolean;is_public_preview?:boolean};
+export type Production={id:number;title:string;season:string|null;status:string;lifecycle_stage?:'upcoming'|'planning'|'in_production'|'performing'|'completed'|'archived';is_active:number;has_artwork?:boolean;is_public_preview?:boolean;audition_starts_at?:string|null;audition_ends_at?:string|null;performance_starts_at?:string|null;performance_ends_at?:string|null};
 export type TheatreEvent={id:number;production_id:number;title:string;starts_at:string;ends_at:string|null;location:string|null;production_title:string;item_type:string;status:string;family_call_at:string|null};
 export type TheatreResult={productions:Production[];events:TheatreEvent[]};
 export type AssignedForm={id:number;status:string;due_at:string|null;title:string;submission_status:string|null};
