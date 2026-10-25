@@ -249,6 +249,10 @@ final class CommunityExperience
         $params=['post'=>$postId,'user'=>(int)$user['id']];
         $db->beginTransaction();
         try{
+            // Lock the parent post to serialize reactions even when no reaction row exists yet.
+            $lock=$db->prepare("SELECT id FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' AND hidden_at IS NULL AND deleted_at IS NULL FOR UPDATE");
+            $lock->execute(['post'=>$postId,'channel'=>$channelId]);
+            if(!$lock->fetchColumn())throw new RuntimeException('Post unavailable.');
             $check=$db->prepare("SELECT 1 FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart' FOR UPDATE");
             $check->execute($params);
             if($check->fetchColumn())$db->prepare("DELETE FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart'")->execute($params);
