@@ -15,7 +15,7 @@ final class ProductionContext
         if(isset(self::$activeProductionCache[$cacheKey]))return self::$activeProductionCache[$cacheKey];
 
         if (AccessPolicy::isStaff($user)) {
-            $stmt = $db->query("SELECT id, title, season, status, lifecycle_stage, audition_starts_at, audition_ends_at, performance_starts_at, performance_ends_at, is_active FROM productions WHERE is_active = 1 ORDER BY title, id");
+            $stmt = $db->query("SELECT id, title, season, status, lifecycle_stage, audition_starts_at, audition_ends_at, performance_starts_at, performance_ends_at, is_active FROM productions WHERE is_active = 1 OR lifecycle_stage IN ('upcoming','planning') ORDER BY title, id");
             return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
         }
 
