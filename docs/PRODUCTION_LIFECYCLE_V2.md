@@ -121,3 +121,9 @@
 - ProductionFileExperience::save and its archive/unarchive operation now reject changes when a production is Completed or Archived. Historical file reads remain available under existing permissions.
 - Existing moderation actions (hide/delete/pin/reactions), channel-administration writes, other Community endpoints, forms and volunteer scheduling have NOT all been lifecycle-guarded. Moderation may need to remain possible after archival; model that exception explicitly.
 - This pass is code-only. No PHP lint or database/device integration tests were run. Do not claim lifecycle write parity or pilot readiness from these fixes alone.
+
+## Phase 14: Unknown lifecycle stage fails closed (October 25)
+- `ProductionLifecycleGuard::assertWritable` now permits operational writes only for the four explicitly writable stages: Upcoming, Planning, In Production, and Performing. Completed and Archived retain their existing closed-operation error. Null, malformed, or future unknown stages now raise an error instead of silently permitting writes.
+- This reduces accidental authorization bypass from inconsistent migrations or unexpected lifecycle values. It does not supersede staff authorization, guardian checks, or resource-specific safeguards.
+- Repository change committed via GitHub connector. PHP lint, automated tests, migration checks, deployment, and runtime verification have **not** been executed for this change; pilot readiness remains unchanged.
+- Still open: inventory direct write routes for forms, volunteer shifts, channels, reactions and moderation; remove contradictory legacy `is_active` semantics only after audited cutover; verify timezone/automatic archive behavior and mobile parity; test former-guardian access and all notification sources.
