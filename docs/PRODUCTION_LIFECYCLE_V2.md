@@ -100,3 +100,12 @@
 - Staff lifecycle-stage updates, approved announcement basics, historical reads and administrative record retention are not blocked by this operational guard.
 - This is a targeted first pass, NOT a comprehensive guarantee: direct schedule/calendar edits, channels, forms, attendance, and other write endpoints must be audited and guarded individually.
 - Do not deploy or schedule automation until regression tests verify that legacy routes do not bypass these checks.
+
+## Phase 11: Closed production schedule and attendance safeguards
+- ScheduleCreateExperience refuses new schedule items for Completed/Archived productions.
+- ScheduleImportExperience refuses actual ICS imports for Completed/Archived productions.
+- CalendarExperience refuses duplicates and cancellations on Completed/Archived production items.
+- AttendanceService checks the owning production before roster changes or new absence reports. A new ProductionLifecycleGuard::assertScheduleItemWritable resolves the item's production and checks stage.
+- Existing historical schedule and attendance records remain readable. Staff may still edit the lifecycle stage in production management, but operational writes require a writable stage.
+- Incomplete: audit direct schedule edit endpoint (`/production/edit`), channel messages/posts, forms, shift signups, file changes, and attendance routes outside AttendanceService. A complete read-only guarantee is not yet established.
+- Staging PHP lint and regression tests are mandatory before deployment; these commits have not been locally executed.
