@@ -61,3 +61,9 @@
 - Legacy activation remains necessary as a second permission check; no retirement yet. Test active stage transitions and former guardian revocation before deployment.
 - Earlier migration backfill moves previously active legacy Planning shows into In Production to avoid surprise lockouts. Stage editing back to Planning now intentionally restricts nonstaff access.
 - Do not deploy these stage enforcement changes before all migration 075–077 SQL changes and production-member access regression tests are completed.
+
+## Phase 6: Casting publication boundary audit
+- Published cast/callback content is now strictly the saved review snapshot. A missing or malformed snapshot yields an empty list rather than reading the current private casting board.
+- Casting release in-app notice creation now requires the production to be both legacy-active and in_production/performing. Every proposed recipient is rechecked through ProductionContext::isActiveMember (including active guardian/student linkage), rather than trusting the raw production_memberships audience query.
+- These controls intentionally prevent publication notifications during Planning; release behavior for approved public announcements remains separate and must be designed explicitly.
+- Outstanding: existing app_notifications retention/delivery workers may still require reauthorization before displaying/sending a queued notice after guardian revocation. Audit direct SQL in archive, community, schedule and push codepaths; no production deployment until the full safeguarding test matrix passes.
