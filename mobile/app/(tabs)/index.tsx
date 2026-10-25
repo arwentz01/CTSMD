@@ -13,11 +13,11 @@ const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
 function EventRow({event,featured=false}:{event:TheatreEvent;featured?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push('/(tabs)/theatre')} style={featured?styles.hero:styles.event}>
-    {featured&&<Text style={styles.heroEyebrow}>UP NEXT</Text>}
+    {featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
     <Text style={featured?styles.heroTitle:styles.rowTitle} numberOfLines={2}>{event.title}</Text>
     <Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.production_title}</Text>
     <Text style={featured?styles.heroText:styles.sub}>{readable(event.starts_at)}</Text>
-    {!!event.location&&<Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.location}</Text>}
+    {!!event.location&&<Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.location}</Text>}{featured&&<View style={styles.heroArrow}><Ionicons name="arrow-forward" size={19} color={colors.stage}/></View>}
   </Pressable>;
 }
 function Shortcut({icon,title,onPress}:{icon:React.ComponentProps<typeof Ionicons>['name'];title:string;onPress:()=>void}){
@@ -49,18 +49,19 @@ export default function Home(){
   </Screen>;
 }
 const styles=StyleSheet.create({
-  intro:{fontSize:14,color:colors.muted,marginTop:-7,marginBottom:8},
+  intro:{fontSize:15,color:colors.muted,marginTop:-4,marginBottom:14},
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
-  sectionTitle:{fontSize:18,fontWeight:'700',color:colors.navy},
+  sectionTitle:{fontFamily:'Georgia',fontSize:25,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
-  hero:{backgroundColor:colors.navy,padding:18,borderRadius:16,gap:6},
-  heroEyebrow:{fontSize:11,fontWeight:'800',color:'#fbc8ce',letterSpacing:1},
-  heroTitle:{fontSize:21,fontWeight:'800',color:'#fff'},
-  heroText:{fontSize:13,color:'#eef1f7'},
-  event:{backgroundColor:colors.card,padding:14,borderRadius:12,borderWidth:1,borderColor:colors.border,gap:3},
-  rowTitle:{fontSize:15,fontWeight:'700',color:colors.text},
+  hero:{backgroundColor:colors.stage,padding:22,paddingBottom:45,borderRadius:20,borderWidth:1,borderColor:colors.gold,borderBottomWidth:4,gap:10,minHeight:205,overflow:'hidden'},
+  heroHeader:{flexDirection:'row',alignItems:'center',gap:8},heroArrow:{position:'absolute',right:18,bottom:17,width:35,height:35,borderRadius:18,backgroundColor:colors.gold,alignItems:'center',justifyContent:'center'},
+  heroEyebrow:{fontSize:11,fontWeight:'800',color:colors.gold,letterSpacing:3},
+  heroTitle:{fontFamily:'Georgia',fontSize:29,fontWeight:'700',color:'#fff'},
+  heroText:{fontSize:14,color:'#fff4e6'},
+  event:{backgroundColor:colors.card,padding:19,borderRadius:16,borderWidth:1,borderColor:colors.border,gap:6},
+  rowTitle:{fontFamily:'Georgia',fontSize:19,fontWeight:'700',color:colors.text},
   sub:{color:colors.muted,fontSize:12},
-  panel:{backgroundColor:colors.card,borderRadius:12,borderWidth:1,borderColor:colors.border,padding:15,gap:12},
+  panel:{backgroundColor:colors.card,borderRadius:16,borderWidth:1,borderColor:colors.border,padding:17,gap:12},
   task:{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:5},
   shortcuts:{flexDirection:'row',flexWrap:'wrap',gap:9},
   shortcut:{width:'47%',backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:12,padding:13,gap:8},
