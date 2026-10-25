@@ -52,3 +52,6 @@ export const approvalVolunteer=(input:{action:'request';shift_id:number;note:str
 export type Recipient={id:number;name:string;role:string;selectable:boolean};
 export const recipients=()=>api<{recipients:Recipient[]}>('message-recipients');
 export const createConversation=(recipient_id:number,body:string)=>api<{conversation_id:number}>('message-create',{method:'POST',body:{recipient_id,body}});
+
+export type PublishedCasting={headline:string|null;member_note:string|null;published_at:string|null;cast:Array<{name:string;role?:string;participation_track?:string}>};
+export const productionCasting=(productionId:number)=>api<{cast:PublishedCasting|null;callbacks:PublishedCasting|null}>('production-casting?production_id='+encodeURIComponent(String(productionId)));
