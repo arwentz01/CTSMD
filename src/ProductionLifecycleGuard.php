@@ -5,6 +5,15 @@ declare(strict_types=1);
 /** Server-side guard for writes to operational production resources. */
 final class ProductionLifecycleGuard
 {
+    public static function assertScheduleItemWritable(PDO $db,int $scheduleItemId):void
+    {
+        $q=$db->prepare('SELECT production_id FROM schedule_items WHERE id=:id LIMIT 1');
+        $q->execute(['id'=>$scheduleItemId]);
+        $productionId=$q->fetchColumn();
+        if($productionId===false)throw new RuntimeException('Schedule item not found.');
+        self::assertWritable($db,(int)$productionId);
+    }
+
     public static function assertWritable(PDO $db,int $productionId):void
     {
         if($productionId<1)throw new RuntimeException('Select a production before making changes.');
