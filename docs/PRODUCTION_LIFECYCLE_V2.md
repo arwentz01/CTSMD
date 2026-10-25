@@ -24,3 +24,13 @@
 5. Add stage-transition previews and reschedule protections; confirm performance end date and archive defaults against CTSMD timezone.
 6. Add tests for staff, cast, guardian revocation, general organization member, public visitor, before/after window boundaries, staff override, and completed/archived read-only behavior.
 7. Run migration and php lint on staging, then schedule the CLI worker only after operational acceptance.
+
+## Phase 2: Explicit announcement discovery (October 25)
+- Migration 076 adds nullable announcement_published_at. No show becomes discoverable merely because its stage changes.
+- Authorized production staff can publish or withdraw basic member-facing announcements from Productions & Seasons.
+- Signed-in mobile Theatre lists include only explicit published summaries for productions outside the user's active production memberships; these contain id, title, season and lifecycle stage only.
+- Announcement-only production detail avoids member-only channels and casting API calls. Member-only schedule/calendar rules remain unchanged.
+- Private artwork and unpublished casting are not exposed with announcement previews. Native stage fallback remains until a separately approved/public artwork serving policy is implemented.
+- This is authenticated general-member discovery, NOT yet a public unauthenticated website listing. No new public URL or visitor-facing route has been introduced.
+- Legacy is_active still governs all member-only permission checks, and web production listings are not yet harmonized.
+- Migration 076 and migration 075 must be applied before deploying PHP changes. PHP lint, mobile typecheck, staff/guardian access and real device testing remain required.
