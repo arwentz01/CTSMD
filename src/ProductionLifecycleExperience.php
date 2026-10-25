@@ -7,6 +7,7 @@ require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/StorageService.php';
 
 final class ProductionLifecycleExperience
 {
@@ -55,7 +56,10 @@ final class ProductionLifecycleExperience
             $id = filter_input(INPUT_POST, 'production_id', FILTER_VALIDATE_INT) ?: 0;
             if ($id < 1) throw new RuntimeException('That production could not be found.');
 
-            if ($action === 'update') {
+            if (in_array($action,['artwork_save','artwork_remove'],true)) {
+                self::saveArtwork($db,$user,(int)$id,$action,(string)($_POST['artwork_role']??''),$_FILES['artwork_upload']??[]);
+                self::flash('success','Production artwork updated.');
+            } elseif ($action === 'update') {
                 self::updateProduction($db, $user, (int)$id, $_POST);
                 self::flash('success', 'Production details updated.');
             } elseif ($action === 'activate') {
