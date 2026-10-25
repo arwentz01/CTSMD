@@ -115,3 +115,9 @@
 - ProductionDayService::saveBrief now rejects changes to production-day briefs after completion or archival.
 - These are targeted service-level protections; remaining channel, form, volunteer, file, and other operational writes require independent audits.
 - No automated tests or production deployment were performed as part of this commit series.
+
+## Phase 13: Community posting and production file closure
+- CommunityExperience::createPost now rejects new posts and native mobile posts for production-linked channels where the lifecycle is Completed or Archived. Organization-wide channels without a production association are unaffected. Historical channel reading remains separate.
+- ProductionFileExperience::save and its archive/unarchive operation now reject changes when a production is Completed or Archived. Historical file reads remain available under existing permissions.
+- Existing moderation actions (hide/delete/pin/reactions), channel-administration writes, other Community endpoints, forms and volunteer scheduling have NOT all been lifecycle-guarded. Moderation may need to remain possible after archival; model that exception explicitly.
+- This pass is code-only. No PHP lint or database/device integration tests were run. Do not claim lifecycle write parity or pilot readiness from these fixes alone.
