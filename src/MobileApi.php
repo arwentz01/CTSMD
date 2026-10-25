@@ -169,12 +169,14 @@ final class MobileApi
         // Discoverable summaries are deliberately narrow. They never inherit
         // schedules, membership, casting drafts, or private artwork permissions.
         $known=array_fill_keys(array_map(static fn(array $p):int=>(int)$p['id'],$productions),true);
-        $announcements=$db->query("SELECT id,title,season,lifecycle_stage FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing') ORDER BY id DESC")->fetchAll();
+        $announcements=$db->query("SELECT id,title,season,lifecycle_stage,audition_starts_at,audition_ends_at,performance_starts_at,performance_ends_at FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing') ORDER BY id DESC")->fetchAll();
         foreach($announcements as $row){
             if(isset($known[(int)$row['id']]))continue;
             $productions[]=['id'=>(int)$row['id'],'title'=>$row['title'],'season'=>$row['season'],
                 'status'=>$row['lifecycle_stage'],'lifecycle_stage'=>$row['lifecycle_stage'],
-                'is_active'=>0,'has_artwork'=>false,'is_public_preview'=>true];
+                'is_active'=>0,'has_artwork'=>false,'is_public_preview'=>true,
+                'audition_starts_at'=>$row['audition_starts_at'],'audition_ends_at'=>$row['audition_ends_at'],
+                'performance_starts_at'=>$row['performance_starts_at'],'performance_ends_at'=>$row['performance_ends_at']];
         }
         $events=CalendarService::visibleEvents(
             $db,$user,new DateTimeImmutable('-1 day'),new DateTimeImmutable('+90 days')
