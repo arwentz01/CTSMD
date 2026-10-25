@@ -45,3 +45,12 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [ ] Run PHP lint and transaction-backed tests for: active primary guardian, active secondary guardian, relationship removed, inactive student, student removed from production, guardian of a different production, and simultaneous guardian relationships.
 - [ ] Review explicit selected-channel membership and broader `production_members`/`production_adults` audiences separately; these may independently grant access by design and must not be misrepresented as revoked by this change.
 - [ ] Confirm no former guardian receives new student-related messages in safeguarded conversations; channel authorization does not replace message revocation enforcement.
+
+## October 25 theatrical design system implementation
+- [x] Expo screens updated with ivory/crimson/gold palette and shared editorial heading/header composition.
+- [x] Five-tab bar now uses dark stage background, gold active selection and high-contrast inactive icons.
+- [x] Home upcoming event hero, Messages conversation cards, Community feed cards, Theatre filters, and More profile/rows receive matching branded visual treatment.
+- [ ] Import the official CTSMD logo as a native image asset. Current circular mask icon is a placeholder, not the actual supplied logo.
+- [ ] Add optimized licensed/organization-owned production artwork and curtain/stage imagery to match illustrated mockups; no show images have been fabricated or uploaded to the app.
+- [ ] Run npm typecheck, Expo launch and accessibility/contrast review on iOS and Android at small text and large font scaling.
+- [ ] Keep safeguarding authorization and migration/deployment readiness separate from visual work.
