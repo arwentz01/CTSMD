@@ -14,11 +14,15 @@ const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
 function EventRow({event,featured=false,hasArtwork=false}:{event:TheatreEvent;featured?:boolean;hasArtwork?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push('/(tabs)/theatre')} style={featured?styles.hero:styles.event}>
-    {featured&&<ProductionArtwork productionId={event.production_id} enabled={hasArtwork}/>}{featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
-    <Text style={featured?styles.heroTitle:styles.rowTitle} numberOfLines={2}>{event.title}</Text>
-    <Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.production_title}</Text>
-    <Text style={featured?styles.heroText:styles.sub}>{readable(event.starts_at)}</Text>
-    {!!event.location&&<Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.location}</Text>}{featured&&<View style={styles.heroArrow}><Ionicons name="arrow-forward" size={19} color={colors.stage}/></View>}
+    {featured&&<ProductionArtwork productionId={event.production_id} enabled={hasArtwork}/>}
+    <View style={featured?styles.heroContent:styles.eventContent}>
+      {featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
+      <Text style={featured?styles.heroTitle:styles.rowTitle} numberOfLines={2}>{event.title}</Text>
+      <Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.production_title}</Text>
+      <Text style={featured?styles.heroText:styles.sub}>{readable(event.starts_at)}</Text>
+      {!!event.location&&<Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.location}</Text>}
+    </View>
+    {featured&&<View style={styles.heroArrow}><Ionicons name="arrow-forward" size={19} color={colors.stage}/></View>}
   </Pressable>;
 }
 function Shortcut({icon,title,onPress}:{icon:React.ComponentProps<typeof Ionicons>['name'];title:string;onPress:()=>void}){
@@ -54,8 +58,8 @@ const styles=StyleSheet.create({
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   sectionTitle:{fontFamily:'serif',fontSize:21,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
-  hero:{position:'relative',backgroundColor:colors.stage,paddingHorizontal:16,paddingVertical:16,paddingRight:68,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,gap:5,minHeight:166,overflow:'hidden'},
-  heroArtwork:{position:'absolute',top:0,bottom:0,left:0,right:0,width:undefined,height:undefined,borderRadius:16},
+  hero:{position:'relative',backgroundColor:colors.stage,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,height:166,overflow:'hidden'},
+  heroContent:{flex:1,paddingVertical:13,paddingLeft:16,paddingRight:67,gap:5,justifyContent:'center'},eventContent:{gap:3},
   heroHeader:{flexDirection:'row',alignItems:'center',gap:8},heroArrow:{position:'absolute',right:13,bottom:13,width:31,height:31,borderRadius:16,backgroundColor:colors.gold,alignItems:'center',justifyContent:'center'},
   heroEyebrow:{fontSize:10,fontWeight:'800',color:colors.gold,letterSpacing:2},
   heroTitle:{fontFamily:'serif',fontSize:23,fontWeight:'700',color:'#fff'},
