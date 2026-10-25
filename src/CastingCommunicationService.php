@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__.'/MailService.php';
 require_once __DIR__.'/ProductionContext.php';
 require_once __DIR__.'/PushService.php';
@@ -18,6 +20,7 @@ final class CastingCommunicationService
 
     public static function sendResult(PDO $db,int $productionId,int $actorId,int $recordId,string $baseUrl):int
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $db->beginTransaction();
         try{
             $s=$db->prepare("SELECT cr.*,p.title production_title,CONCAT(u.first_name,' ',u.last_name) student_name,u.email student_email,u.active student_active,u.account_status student_account_status,pm.status membership_status,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.active=1 AND ar.code='student' WHERE ur.user_id=cr.user_id) student_role_active FROM production_casting_records cr JOIN productions p ON p.id=cr.production_id JOIN users u ON u.id=cr.user_id LEFT JOIN production_memberships pm ON pm.id=cr.production_membership_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");
@@ -61,6 +64,7 @@ final class CastingCommunicationService
 
     public static function savePublication(PDO $db,int $productionId,int $actorId,string $type,string $headline,string $note,bool $publish):void
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         self::assertPublicationType($type);
         $headline=trim($headline);$note=trim($note);
         $label=$type==='callback'?'callback':'cast';
@@ -103,6 +107,7 @@ final class CastingCommunicationService
 
     public static function unpublishPublication(PDO $db,int $productionId,int $actorId,string $type):void
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         self::assertPublicationType($type);
         $current=self::publication($db,$productionId,$type);
         if(($current['status']??'draft')!=='published')throw new RuntimeException('That '.($type==='callback'?'callback':'cast').' list is not currently published.');
@@ -120,6 +125,7 @@ final class CastingCommunicationService
 
     public static function setPublicPage(PDO $db,int $productionId,int $actorId,bool $enabled):array
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $db->beginTransaction();
         try{
             $s=$db->prepare("SELECT casting_public_enabled,casting_public_slug,title FROM productions WHERE id=:production FOR UPDATE");
