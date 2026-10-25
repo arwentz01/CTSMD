@@ -68,3 +68,9 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [x] Increased contrast of pure-native curtain artwork; it remains illustrative rather than a real photographic asset.
 - [ ] Confirm layout visually on Android after pulling; check text scaling, narrow devices and app tab bar.
 - [ ] Integrate approved photographic stage image and authentic CTSMD logo when source assets are ready.
+
+## October 25 Theatre production heroes
+- [x] Add compact shared ProductionHero with actual local theatre-stage image, readable overlay text and navigation arrow.
+- [x] Use ProductionHero for filtered Theatre lists and individual production hubs.
+- [ ] Expose authorized production-specific artwork through API and substitute it for stage fallback. Do not hardcode assumed show posters or publicly expose private images.
+- [ ] Validate on-device image crop, title truncation and Expo typecheck.
