@@ -33,3 +33,9 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [ ] Verify Community image authorization on expired/revoked tokens and archived/private channels.
 - [ ] Run `npm audit` and triage vulnerabilities without forced breaking upgrades.
 - [ ] Full Android and iOS navigation/device acceptance checks remain required.
+
+## Private media review (October 24)
+- [x] Private mobile image responses use inline Content-Disposition rather than forced download.
+- [x] Add cache-control, no-sniff, and Authorization variance response headers.
+- [ ] Confirm revoked-token, archived-channel, removed audience, and inactive guardian cases return no image bytes using integration tests.
+- [ ] Confirm CDN and proxy configuration respects no-store for authenticated media.
