@@ -54,3 +54,10 @@ The branch is not deployed or device-verified. Run migrations 071, 072, and 073 
 - [ ] Add optimized licensed/organization-owned production artwork and curtain/stage imagery to match illustrated mockups; no show images have been fabricated or uploaded to the app.
 - [ ] Run npm typecheck, Expo launch and accessibility/contrast review on iOS and Android at small text and large font scaling.
 - [ ] Keep safeguarding authorization and migration/deployment readiness separate from visual work.
+
+## October 25 stage graphic pass
+- [x] Added reusable pure React Native `StageBackdrop` curtain/fold/light motif, without remote image loading or new native dependencies.
+- [x] Wired stage graphic into shared header, Home hero, Messages new-conversation CTA, and More profile hero.
+- [x] Changed shared header icon to twin theatre-mask symbolism. This remains a placeholder until the official CTSMD brand logo is shipped as an approved asset.
+- [ ] Validate clipping, overlay touch behavior, accessibility scaling, typecheck, and real Android/iOS rendering.
+- [ ] Add organization-approved images and production artwork for a closer match to conceptual mockups.
