@@ -34,3 +34,11 @@
 - This is authenticated general-member discovery, NOT yet a public unauthenticated website listing. No new public URL or visitor-facing route has been introduced.
 - Legacy is_active still governs all member-only permission checks, and web production listings are not yet harmonized.
 - Migration 076 and migration 075 must be applied before deploying PHP changes. PHP lint, mobile typecheck, staff/guardian access and real device testing remain required.
+
+## Phase 3: Approved public production discovery
+- Public /productions and /productions/view?id=ID present only entries whose announcement_published_at is set, and show title, season, lifecycle stage and audition/performance date windows. They do not query casting, schedule, student, or channel records.
+- Public landing header links to the production directory. Announcements may be withdrawn in production management.
+- Mobile announcement-only production details show audition/performance windows and the public production link; private production hub calls remain disabled for previews.
+- No public artwork streaming route is provided yet. Public casting remains separate and first-name/last-initial only. Full names remain in deliberately published, authenticated member views.
+- Requires migrations 075 and 076 deployed before enabling routes. Do not run the date worker until staging validation passes.
+- Pending: web authenticated member/preview parity, public-approved description and artwork, audition signup association, per-stage permission cutover, push delivery verification, archival operational behavior and test coverage.
