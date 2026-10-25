@@ -75,3 +75,11 @@
 - This fix currently covers `casting_release` source-type only. Other notification source types and the outbound push queue still need source-aware recipient authorization at delivery time; absence of that control is a pilot blocker.
 - Mobile unread count is calculated from authorized results in the current page window, rather than the unrestricted database count. Pagination/count parity remains to be improved.
 - No migration is needed for this slice, but migrations 075-077 and all previous code changes still require integrated staging validation.
+
+## Phase 8: Production-scoped web push authorization
+- Migration 078 adds nullable production_id to push_queue. Producers can pass a production id through the optional final argument of PushService::queue.
+- A production-scoped push is reauthorized at actual delivery with ProductionContext::isActiveMember, including the lifecycle stage and guardian relationship. Revoked recipients are suppressed rather than sent to.
+- Publishing a cast or callback snapshot now queues a neutral, production-scoped web push for eligible recipients. Push text does not contain student names or casting decisions. Dedupe keys include the reviewed snapshot so resubmitting identical content does not create another push.
+- This covers NEW explicitly production-scoped push entries. Existing unscoped queued jobs and other notification categories are NOT proven safe under lifecycle changes. Audit/fix all push producers before declaring delivery parity complete.
+- The push worker and publication flow require migration 078 before deployment. If 078 is missing, publishing may fail; apply migrations in order 075–078 on staging first.
+- No push worker was run; browser delivery, native-device delivery, database transactions and safeguarding regression cases remain unverified.
