@@ -67,3 +67,11 @@
 - Casting release in-app notice creation now requires the production to be both legacy-active and in_production/performing. Every proposed recipient is rechecked through ProductionContext::isActiveMember (including active guardian/student linkage), rather than trusting the raw production_memberships audience query.
 - These controls intentionally prevent publication notifications during Planning; release behavior for approved public announcements remains separate and must be designed explicitly.
 - Outstanding: existing app_notifications retention/delivery workers may still require reauthorization before displaying/sending a queued notice after guardian revocation. Audit direct SQL in archive, community, schedule and push codepaths; no production deployment until the full safeguarding test matrix passes.
+
+## Phase 7: Notification visibility on access revocation
+- A shared ProductionNotificationAccess policy now rechecks the current production-member and active guardian/student relationship before web or mobile feeds show `casting_release` notifications.
+- The mobile mark-read endpoint also rejects casting notification IDs that are no longer authorized.
+- Notification records remain in the database for audit; the feed hides them after access is lost.
+- This fix currently covers `casting_release` source-type only. Other notification source types and the outbound push queue still need source-aware recipient authorization at delivery time; absence of that control is a pilot blocker.
+- Mobile unread count is calculated from authorized results in the current page window, rather than the unrestricted database count. Pagination/count parity remains to be improved.
+- No migration is needed for this slice, but migrations 075-077 and all previous code changes still require integrated staging validation.
