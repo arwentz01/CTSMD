@@ -400,7 +400,7 @@ final class MobileApi
         header('Pragma: no-cache');
         header('X-Content-Type-Options: nosniff');
         header('Vary: Authorization');
-        StorageService::stream(dirname(__DIR__),$attachment,true);
+        StorageService::stream(dirname(__DIR__),$attachment,false);
         exit;
     }
 
