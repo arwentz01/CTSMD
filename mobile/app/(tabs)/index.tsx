@@ -13,7 +13,7 @@ const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
 function EventRow({event,featured=false}:{event:TheatreEvent;featured?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push('/(tabs)/theatre')} style={featured?styles.hero:styles.event}>
-    {featured&&<Image source={require('../../assets/images/theatre-stage.png')} resizeMode="cover" style={styles.heroArtwork}/>}{featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
+    {featured&&<Image source={require('../../assets/images/theatre-stage.png')} resizeMode="cover" style={styles.heroArtwork} onError={(e)=>console.warn("CTSMD stage image failed:",e.nativeEvent.error)}/>}{featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
     <Text style={featured?styles.heroTitle:styles.rowTitle} numberOfLines={2}>{event.title}</Text>
     <Text style={featured?styles.heroText:styles.sub} numberOfLines={1}>{event.production_title}</Text>
     <Text style={featured?styles.heroText:styles.sub}>{readable(event.starts_at)}</Text>
