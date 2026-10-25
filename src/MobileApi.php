@@ -330,6 +330,10 @@ final class MobileApi
         self::requireMethod('POST');
         $input=self::input();$id=(int)($input['notification_id']??0);
         if($id<1)throw new RuntimeException('A notification is required.');
+        $check=$db->prepare("SELECT source_type,source_id FROM app_notifications WHERE id=:id AND recipient_user_id=:user LIMIT 1");
+        $check->execute(['id'=>$id,'user'=>(int)$user['id']]);
+        $record=$check->fetch(PDO::FETCH_ASSOC);
+        if(!$record||!ProductionNotificationAccess::visible($db,(int)$user['id'],$record))self::json(['error'=>'Notification unavailable.'],404);
         $s=$db->prepare("UPDATE app_notifications SET read_at=COALESCE(read_at,CURRENT_TIMESTAMP) WHERE id=:id AND recipient_user_id=:user");
         $s->execute(['id'=>$id,'user'=>(int)$user['id']]);
         self::json(['ok'=>true]);
