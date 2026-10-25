@@ -5,7 +5,7 @@ import {Linking,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
-import {theatre,channels,tasks,productionCasting} from '../../src/api/client';
+import {theatre,channels,productionCasting} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 
 const dateLabel=(value:string)=>{const date=new Date(value.replace(' ','T'));return Number.isFinite(date.getTime())?date.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):value;};
@@ -13,7 +13,7 @@ export default function ProductionPage(){
  const {id}=useLocalSearchParams<{id:string}>();
  const productionId=Number(id);
  const valid=Number.isSafeInteger(productionId)&&productionId>0;
- const load=useCallback(async()=>{const [t,c,a,casting]=await Promise.all([theatre(),channels(),tasks(),valid?productionCasting(productionId):Promise.resolve({cast:null,callbacks:null})]);return {t,c,a,casting}},[]);
+ const load=useCallback(async()=>{const t=await theatre();const selected=t.productions.find(p=>p.id===productionId);if(!valid||!selected||selected.is_public_preview)return {t,c:{channels:[]},casting:{cast:null,callbacks:null}};const [c,casting]=await Promise.all([channels(),productionCasting(productionId)]);return {t,c,casting}},[productionId,valid]);
  const {data,error,loading}=useScreenData(load);
  const production=data?.t.productions.find(p=>p.id===productionId);
  const events=(data?.t.events||[]).filter(e=>e.production_id===productionId&&e.status.toLowerCase()!=='cancelled'&&new Date(e.starts_at.replace(' ','T')).getTime()>=Date.now()).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
@@ -26,16 +26,16 @@ export default function ProductionPage(){
     {production&&<>
      <ProductionHero production={production}/>
      {(production.lifecycle_stage||production.status)==='planning'&&<View style={s.notice}><Ionicons name="information-circle-outline" size={16} color={colors.burgundy}/><Text style={s.noticeText}>Planning: private preparation is not published to the wider community.</Text></View>}
-     {(['callbacks','cast'] as const).map(type=>{const published=data.casting[type];return published?<View key={type} style={s.card}><Text style={s.heading}>{type==='cast'?'Published Cast':'Published Callbacks'}</Text>{!!published.headline&&<Text style={s.tileTitle}>{published.headline}</Text>}{!!published.member_note&&<Text style={s.secondary}>{published.member_note}</Text>}{published.cast.map((person,i)=><Text key={i} style={s.castEntry}>{person.name}{person.role?' · '+person.role:''}</Text>)}</View>:null})}
-     <Text style={s.heading}>Production Hub</Text>
-     <View style={s.tiles}>
+     {!production.is_public_preview&&(['callbacks','cast'] as const).map(type=>{const published=data.casting[type];return published?<View key={type} style={s.card}><Text style={s.heading}>{type==='cast'?'Published Cast':'Published Callbacks'}</Text>{!!published.headline&&<Text style={s.tileTitle}>{published.headline}</Text>}{!!published.member_note&&<Text style={s.secondary}>{published.member_note}</Text>}{published.cast.map((person,i)=><Text key={i} style={s.castEntry}>{person.name}{person.role?' · '+person.role:''}</Text>)}</View>:null})}
+     {production.is_public_preview?<View style={s.card}><Text style={s.heading}>Production announcement</Text><Text style={s.secondary}>This show has been announced. Rehearsal schedules, cast details, and channels are only available to authorized production members.</Text></View>:<Text style={s.heading}>Production Hub</Text>}
+     {!production.is_public_preview&&<View style={s.tiles}>
       <Pressable accessibilityRole="link" style={s.tile} onPress={()=>void Linking.openURL('https://ctsmd.ludus.com/index.php')}><Ionicons name="ticket-outline" color={colors.primary} size={23}/><Text style={s.tileTitle}>Tickets</Text><Text style={s.secondary}>Show tickets</Text></Pressable>
       <Pressable accessibilityRole="button" style={s.tile} onPress={()=>router.push({pathname:'/(tabs)/community',params:{production_id:String(productionId)}})}><Ionicons name="chatbubbles-outline" color={colors.primary} size={23}/><Text style={s.tileTitle}>Discussions</Text><Text style={s.secondary}>{relatedChannels.length} channels</Text></Pressable>
-     </View>
-     <Text style={s.heading}>Production Schedule</Text>
-     {events.length===0?<View style={s.card}><Text style={s.secondary}>No upcoming events for this production.</Text></View>:events.slice(0,5).map(event=><View style={s.card} key={event.id}><Text style={s.tileTitle}>{event.title}</Text><Text style={s.secondary}>{dateLabel(event.starts_at)}</Text>{!!event.location&&<Text style={s.secondary}>{event.location}</Text>}</View>)}
-     <Text style={s.heading}>Production Channels</Text>
-     {relatedChannels.length===0?<View style={s.card}><Text style={s.secondary}>No channels currently available for this production.</Text></View>:relatedChannels.map(channel=><Pressable key={channel.id} accessibilityRole="button" style={s.card} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(channel.id)}})}><Text style={s.tileTitle}>{channel.name}</Text>{!!channel.description&&<Text style={s.secondary}>{channel.description}</Text>}</Pressable>)}
+     </View>}
+     {!production.is_public_preview&&<Text style={s.heading}>Production Schedule</Text>}
+     {!production.is_public_preview&&(events.length===0?<View style={s.card}><Text style={s.secondary}>No upcoming events for this production.</Text></View>:events.slice(0,5).map(event=><View style={s.card} key={event.id}><Text style={s.tileTitle}>{event.title}</Text><Text style={s.secondary}>{dateLabel(event.starts_at)}</Text>{!!event.location&&<Text style={s.secondary}>{event.location}</Text>}</View>))}
+     {!production.is_public_preview&&<Text style={s.heading}>Production Channels</Text>}
+     {!production.is_public_preview&&(relatedChannels.length===0?<View style={s.card}><Text style={s.secondary}>No channels currently available for this production.</Text></View>:relatedChannels.map(channel=><Pressable key={channel.id} accessibilityRole="button" style={s.card} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(channel.id)}})}><Text style={s.tileTitle}>{channel.name}</Text>{!!channel.description&&<Text style={s.secondary}>{channel.description}</Text>}</Pressable>))}
     </>}
  </Screen>;
 }
