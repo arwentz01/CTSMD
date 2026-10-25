@@ -3,6 +3,7 @@ import {router} from 'expo-router';
 import {Linking,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../../src/components/Screen';
+import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {theatre} from '../../src/api/client';
 import type {Production} from '../../src/types/ctsmd';
@@ -23,9 +24,7 @@ export default function Theatre(){
   <View style={s.filters}>{(['Current','Upcoming','Past'] as Filter[]).map(filter=><Pressable key={filter} accessibilityRole="button" accessibilityState={{selected:filter===selected}} style={[s.filter,filter===selected&&s.activeFilter]} onPress={()=>setSelected(filter)}><Text style={[s.filterLabel,filter===selected&&s.activeLabel]}>{filter}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error}/>
   {data&&<>
-   {productions.length===0?<View style={s.card}><Text style={s.subtitle}>No {selected.toLowerCase()} productions available to your account.</Text></View>:productions.map(p=><Pressable key={p.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(p.id)}})} style={s.card}>
-     <View style={s.heading}><Ionicons name="film-outline" size={23} color={colors.primary}/><View style={{flex:1}}><Text style={s.title}>{p.title}</Text><Text style={s.subtitle}>{[p.season,p.status].filter(Boolean).join(' · ')}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></View>
-   </Pressable>)}
+   {productions.length===0?<View style={s.card}><Text style={s.subtitle}>No {selected.toLowerCase()} productions available to your account.</Text></View>:productions.map(p=><ProductionHero key={p.id} production={p} onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(p.id)}})}/>)
    <View style={s.sectionHeading}><Text style={s.sectionTitle}>My Theatre Schedule</Text><Text style={s.subtitle}>Upcoming</Text></View>
    {upcoming.length===0?<View style={s.card}><Text style={s.subtitle}>No upcoming events are visible.</Text></View>:upcoming.slice(0,5).map(e=><Pressable key={e.id} accessibilityRole="button" style={s.card} onPress={()=>router.push({pathname:'/theatre/[id]',params:{id:String(e.production_id)}})}><Text style={s.title}>{e.title}</Text><Text style={s.subtitle}>{e.production_title} · {formatDate(e.starts_at)}</Text>{!!e.location&&<Text style={s.subtitle}>{e.location}</Text>}</Pressable>)}
    <Text style={s.sectionTitle}>Explore Theatre</Text>
