@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
@@ -41,6 +42,7 @@ final class MobileApi
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/my-family' => self::myFamily($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
+                '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
@@ -123,6 +125,23 @@ final class MobileApi
         $db->prepare('UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE id=:id')->execute(['id'=>$userId]);
         $user = self::loadUser($db, $userId);
         self::json(['token'=>$token,'expires_at'=>$expires,'user'=>self::publicUser($user)]);
+    }
+
+    private static function productionArtwork(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $productionId=(int)($_GET['production_id']??0);
+        $role=(string)($_GET['role']??'banner');
+        if(!in_array($role,['banner','poster','thumbnail'],true))self::json(['error'=>'Image not found.'],404);
+        $allowed=false;
+        foreach(ProductionContext::activeProductions($db,$user) as $p){if((int)$p['id']===$productionId){$allowed=true;break;}}
+        if(!$allowed)self::json(['error'=>'Image not found.'],404);
+        $s=$db->prepare('SELECT sfv.* FROM production_artwork pa JOIN stored_file_versions sfv ON sfv.stored_file_id=pa.stored_file_id WHERE pa.production_id=:id AND pa.role=:role ORDER BY sfv.version_number DESC LIMIT 1');
+        $s->execute(['id'=>$productionId,'role'=>$role]);$image=$s->fetch();
+        if(!$image||!in_array($image['mime_type'],['image/jpeg','image/png','image/webp'],true))self::json(['error'=>'Image not found.'],404);
+        header('Cache-Control: private, no-store');
+        header('Vary: Authorization');
+        StorageService::stream(dirname(__DIR__),$image,false);
     }
 
     private static function theatre(PDO $db, array $user): never
