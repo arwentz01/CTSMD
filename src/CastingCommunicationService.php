@@ -158,7 +158,8 @@ final class CastingCommunicationService
         if(!$production)return null;
         $raw=$production['cast_snapshot_json']??null;
         $decoded=$raw!==null&&trim((string)$raw)!==''?json_decode((string)$raw,true):null;
-        $production['cast']=is_array($decoded)?$decoded:($type==='callback'?self::currentPublishableCallbacks($db,$productionId):self::currentPublishableCast($db,$productionId));
+        // Fail closed: publication is the reviewed snapshot, never the mutable casting board.
+        $production['cast']=is_array($decoded)?$decoded:[];
         unset($production['cast_snapshot_json']);
         return $production;
     }
