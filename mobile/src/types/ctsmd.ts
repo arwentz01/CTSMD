@@ -2,7 +2,7 @@ export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;
 export type MeResult={user:CtsmdUser};
 export type Conversation={id:number;subject:string;display_name:string;conversation_type:string;latest_at:string|null;message_count:number;participant_count:number;unread_count:number;preview:string|null};export type MessagesResult={conversations:Conversation[]};
 export type Channel={id:number;name:string;description:string|null;channel_type:string;production_id:number|null;production_title:string|null;unread_count:number};export type ChannelsResult={channels:Channel[]};
-export type Production={id:number;title:string;season:string|null;status:string;is_active:number};
+export type Production={id:number;title:string;season:string|null;status:string;is_active:number;has_artwork?:boolean};
 export type TheatreEvent={id:number;production_id:number;title:string;starts_at:string;ends_at:string|null;location:string|null;production_title:string;item_type:string;status:string;family_call_at:string|null};
 export type TheatreResult={productions:Production[];events:TheatreEvent[]};
 export type AssignedForm={id:number;status:string;due_at:string|null;title:string;submission_status:string|null};
