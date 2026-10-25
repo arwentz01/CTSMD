@@ -11,7 +11,7 @@ import {colors} from '../../src/theme/colors';
 
 type Filter='Current'|'Upcoming'|'Past';
 const isPast=(p:Production)=>['completed','closed','archived','past','cancelled'].includes(p.status.toLowerCase());
-const category=(p:Production):Filter=>isPast(p)?'Past':p.is_active===1?'Current':'Upcoming';
+const category=(p:Production):Filter=>p.lifecycle_stage?(['completed','archived'].includes(p.lifecycle_stage)?'Past':['upcoming','planning'].includes(p.lifecycle_stage)?'Upcoming':'Current'):isPast(p)?'Past':p.is_active===1?'Current':'Upcoming';
 const formatDate=(s:string)=>{const d=new Date(s.replace(' ','T'));return Number.isFinite(d.getTime())?d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):s;};
 export default function Theatre(){
  const [selected,setSelected]=useState<Filter>('Current');
