@@ -11,7 +11,7 @@ require_once __DIR__ . '/StorageService.php';
 
 final class ProductionLifecycleExperience
 {
-    private const ROUTES = ['/admin/productions', '/admin/productions/view'];
+    private const ROUTES = ['/admin/productions', '/admin/productions/view', '/admin/productions/artwork-image'];
 
     public static function handles(string $route): bool
     {
@@ -27,6 +27,7 @@ final class ProductionLifecycleExperience
         if (!AccessPolicy::canManageProduction($user)) self::forbidden($basePath, $user);
         $_SESSION['production_lifecycle_csrf'] ??= bin2hex(random_bytes(24));
 
+        if ($route === '/admin/productions/artwork-image') self::artworkImage($db);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') self::handlePost($db, $user, $basePath);
 
         $selected = null;
@@ -82,6 +83,19 @@ final class ProductionLifecycleExperience
             self::flash('error', $e->getMessage());
             self::redirect($basePath . '/admin/productions');
         }
+    }
+
+    private static function artworkImage(PDO $db): never
+    {
+        $id=(int)($_GET['id']??0);
+        $role=(string)($_GET['role']??'');
+        if($id<1||!in_array($role,['poster','banner','thumbnail'],true)){http_response_code(404);exit;}
+        $s=$db->prepare('SELECT sv.* FROM production_artwork pa JOIN stored_file_versions sv ON sv.stored_file_id=pa.stored_file_id WHERE pa.production_id=:id AND pa.role=:role ORDER BY sv.version_number DESC LIMIT 1');
+        $s->execute(['id'=>$id,'role'=>$role]);
+        $image=$s->fetch();
+        if(!$image||!in_array($image['mime_type'],['image/jpeg','image/png','image/webp'],true)){http_response_code(404);exit;}
+        header('Cache-Control: private, no-store');
+        StorageService::stream(dirname(__DIR__),$image,false);
     }
 
     private static function saveArtwork(PDO $db,array $actor,int $id,string $action,string $role,array $upload):void
