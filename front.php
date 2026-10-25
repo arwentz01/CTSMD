@@ -77,7 +77,7 @@ $experienceRoutes=[
     ['ModerationExperience',['/admin/moderation/terms','/admin/moderation/terms/edit','/admin/moderation/queue'],'route'],
     ['CommunityManagementExperience',['/admin/channels','/admin/channels/edit'],'route'],
     ['CommunityExperience',['/channels','/channels/view','/channels/attachment'],'route'],
-    ['ProductionLifecycleExperience',['/admin/productions','/admin/productions/view'],'route'],
+    ['ProductionLifecycleExperience',['/admin/productions','/admin/productions/view','/admin/productions/artwork-image'],'route'],
     ['CastingExperience',['/production/casting'],'base'],
     ['ProductionReadinessExperience',['/production/readiness'],'base'],
     ['ProductionDayExperience',['/production/day'],'route'],
