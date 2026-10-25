@@ -138,3 +138,10 @@
 - Ordinary non-production-group channels keep their existing explicit-channel membership semantics. Historical archived conversations remain a separate archive authorization path rather than silently granting live group access.
 - **Integration review required:** Inspect channel lists, attachments, native mobile group access and staff who have a direct channel assignment without production membership. Verify intended behavior and run direct-request tests for removed cast, former guardians, closed productions, and unaffected organizational channels.
 - The change was committed through GitHub; no runtime PHP lint, database-integrated tests, or mobile tests were executed. Pilot approval remains blocked on full safeguarding verification.
+
+## Phase 17: Community channel administration closure (October 25)
+- CommunityManagementExperience now applies ProductionLifecycleGuard when creating or editing a production-linked channel, including validating the existing production on reassignment so a closed show's channel cannot be moved to evade restrictions.
+- Restoring an archived production channel requires the production to be writable. Channel archival remains available to administrators after production completion because hiding inappropriate communication can be a safeguarding action; existing audit logging is preserved.
+- Organization-wide channels are not restricted by production stages. Closed productions still require a separate, intentionally authorized historical viewing experience.
+- Follow-up required: safeguard channel archival against races, audit channel membership administration and Community reactions/comments/edit routes, and test creation, editing, cross-production reassignment, restoration, and safety archival across lifecycle stages.
+- Code is committed but PHP lint, integration tests, and staging deployment were **not** executed in this connector-only pass. Do not change pilot readiness classification without test evidence.
