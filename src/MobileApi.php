@@ -394,7 +394,12 @@ final class MobileApi
         $attachment=CommunityAttachmentService::attachment($db,$id);
         if(!$attachment||$attachment['moderation_status']!=='published'||$attachment['hidden_at']!==null||$attachment['deleted_at']!==null||!CommunicationReadStateService::canAccessChannel($db,$user,(int)$attachment['channel_id']))self::json(['error'=>'Photo unavailable.'],404);
         if(!in_array((string)$attachment['mime_type'],['image/jpeg','image/png','image/webp'],true))self::json(['error'=>'Not a displayable image.'],415);
-        header('Cache-Control: private, no-store');
+        // Images can contain children and other private member content. Never cache
+        // them in shared infrastructure or allow content sniffing.
+        header('Cache-Control: private, no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        header('X-Content-Type-Options: nosniff');
+        header('Vary: Authorization');
         StorageService::stream(dirname(__DIR__),$attachment,true);
         exit;
     }
