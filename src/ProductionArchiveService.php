@@ -16,7 +16,7 @@ final class ProductionArchiveService
                 (SELECT COUNT(*) FROM production_memberships pm WHERE pm.production_id=p.id AND pm.audience_type='student') student_count,
                 (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_count
                 FROM productions p
-                WHERE p.is_active=0 AND p.status='archived'
+                WHERE p.lifecycle_stage='archived'
                 ORDER BY COALESCE(p.deactivated_at,p.created_at) DESC,p.title");
             return $stmt->fetchAll();
         }
@@ -25,9 +25,9 @@ final class ProductionArchiveService
             (SELECT COUNT(*) FROM production_memberships pm2 WHERE pm2.production_id=p.id AND pm2.audience_type='student') student_count,
             (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_count
             FROM productions p
-            WHERE p.is_active=0 AND p.status='archived'
+            WHERE p.lifecycle_stage='archived'
               AND (
-                EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer)
+                EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer AND pm.audience_type<>'guardian')
                 OR EXISTS (
                     SELECT 1 FROM family_relationships fr
                     JOIN production_memberships child_pm ON child_pm.user_id=fr.student_user_id AND child_pm.production_id=p.id AND child_pm.audience_type='student'
@@ -42,7 +42,7 @@ final class ProductionArchiveService
     public static function detail(PDO $db, array $viewer, int $productionId): ?array
     {
         if (!self::canViewProduction($db,$viewer,$productionId)) return null;
-        $p = $db->prepare("SELECT id,title,season,status,is_active,activated_at,deactivated_at,created_at FROM productions WHERE id=:id AND is_active=0 AND status='archived' LIMIT 1");
+        $p = $db->prepare("SELECT id,title,season,status,lifecycle_stage,is_active,activated_at,deactivated_at,created_at FROM productions WHERE id=:id AND lifecycle_stage='archived' LIMIT 1");
         $p->execute(['id'=>$productionId]);
         $production = $p->fetch();
         if (!$production) return null;
@@ -66,7 +66,7 @@ final class ProductionArchiveService
     public static function channelDetail(PDO $db,array $viewer,int $productionId,int $channelId):?array
     {
         if(!self::canViewProduction($db,$viewer,$productionId))return null;
-        $s=$db->prepare("SELECT c.id,c.production_id,c.name,c.description,c.access_mode,c.read_audiences_json,p.title production_title,p.season FROM channels c JOIN productions p ON p.id=c.production_id WHERE c.id=:channel AND c.production_id=:production AND p.is_active=0 AND p.status='archived' LIMIT 1");
+        $s=$db->prepare("SELECT c.id,c.production_id,c.name,c.description,c.access_mode,c.read_audiences_json,p.title production_title,p.season FROM channels c JOIN productions p ON p.id=c.production_id WHERE c.id=:channel AND c.production_id=:production AND p.lifecycle_stage='archived' LIMIT 1");
         $s->execute(['channel'=>$channelId,'production'=>$productionId]);$channel=$s->fetch();if(!$channel)return null;
         $audiences=self::historicalAudiences($db,(int)$viewer['id'],$productionId);
         if(!AccessPolicy::canManageProduction($viewer)&&!self::historicalChannelAccess($db,$channel,$viewer,$audiences))return null;
@@ -77,13 +77,13 @@ final class ProductionArchiveService
     public static function canViewProduction(PDO $db, array $viewer, int $productionId): bool
     {
         if ($productionId < 1) return false;
-        $p = $db->prepare("SELECT 1 FROM productions WHERE id=:id AND is_active=0 AND status='archived' LIMIT 1");
+        $p = $db->prepare("SELECT 1 FROM productions WHERE id=:id AND lifecycle_stage='archived' LIMIT 1");
         $p->execute(['id'=>$productionId]);
         if (!$p->fetchColumn()) return false;
         if (AccessPolicy::canManageProduction($viewer)) return true;
 
         $viewerId = (int)$viewer['id'];
-        $s = $db->prepare("SELECT 1 FROM production_memberships WHERE production_id=:production AND user_id=:viewer LIMIT 1");
+        $s = $db->prepare("SELECT 1 FROM production_memberships WHERE production_id=:production AND user_id=:viewer AND audience_type<>'guardian' LIMIT 1");
         $s->execute(['production'=>$productionId,'viewer'=>$viewerId]);
         if ($s->fetchColumn()) return true;
 
@@ -94,10 +94,10 @@ final class ProductionArchiveService
 
     public static function archiveFile(PDO $db, array $viewer, int $productionFileId): ?array
     {
-        $s = $db->prepare("SELECT pf.*,p.is_active,p.status production_status FROM production_files pf JOIN productions p ON p.id=pf.production_id WHERE pf.id=:id AND pf.status='active' LIMIT 1");
+        $s = $db->prepare("SELECT pf.*,p.is_active,p.lifecycle_stage production_status FROM production_files pf JOIN productions p ON p.id=pf.production_id WHERE pf.id=:id AND pf.status='active' LIMIT 1");
         $s->execute(['id'=>$productionFileId]);
         $file = $s->fetch();
-        if (!$file || (bool)$file['is_active'] || $file['production_status'] !== 'archived') return null;
+        if (!$file || $file['production_status'] !== 'archived') return null;
         $productionId = (int)$file['production_id'];
         if (!self::canViewProduction($db,$viewer,$productionId)) return null;
         $audiences = self::historicalAudiences($db,(int)$viewer['id'],$productionId);
@@ -108,7 +108,7 @@ final class ProductionArchiveService
 
     private static function historicalAudiences(PDO $db, int $viewerId, int $productionId): array
     {
-        $s = $db->prepare("SELECT DISTINCT audience_type FROM production_memberships WHERE production_id=:production AND user_id=:viewer");
+        $s = $db->prepare("SELECT DISTINCT audience_type FROM production_memberships WHERE production_id=:production AND user_id=:viewer AND audience_type<>'guardian'");
         $s->execute(['production'=>$productionId,'viewer'=>$viewerId]);
         $types = array_map(static fn(array $r): string => (string)$r['audience_type'],$s->fetchAll());
         if (!in_array('guardian',$types,true)) {
