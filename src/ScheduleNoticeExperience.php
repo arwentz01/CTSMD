@@ -7,6 +7,7 @@ require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionLifecycleGuard.php';
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/ModerationService.php';
 
@@ -51,6 +52,7 @@ final class ScheduleNoticeExperience
     {
         if($noticeId<1)throw new RuntimeException('That communication draft could not be found.');
         $selectedProduction=ProductionContext::selected($db,$user);if(!$selectedProduction)throw new RuntimeException('Select an active production before publishing its updates.');
+        ProductionLifecycleGuard::assertWritable($db,(int)$selectedProduction['id']);
         $subject=trim((string)($input['subject']??''));$body=trim((string)($input['body']??''));$sendInApp=isset($input['send_in_app']);$sendChannel=isset($input['send_channel']);$channelId=filter_var($input['channel_id']??null,FILTER_VALIDATE_INT)?:0;
         if($subject===''||mb_strlen($subject)>190)throw new RuntimeException('Enter a subject no longer than 190 characters.');
         if($body===''||mb_strlen($body)>6000)throw new RuntimeException('Enter update text no longer than 6,000 characters.');
