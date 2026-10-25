@@ -1,1 +1,1 @@
-export const colors={primary:'#a6192e',navy:'#1d2d47',background:'#f7f8fa',card:'#ffffff',text:'#1f2937',muted:'#667085',border:'#dfe3e8',danger:'#b42318'} as const;
+export const colors={primary:'#9e1230',navy:'#201b20',background:'#fcf9f2',card:'#fffdf9',text:'#1e1a1d',muted:'#66616a',border:'#e7cda4',danger:'#b42318',gold:'#daa94d',burgundy:'#69091b',stage:'#180e13',ivory:'#fff9ed'} as const;
