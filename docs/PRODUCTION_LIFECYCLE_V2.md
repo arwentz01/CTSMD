@@ -109,3 +109,9 @@
 - Existing historical schedule and attendance records remain readable. Staff may still edit the lifecycle stage in production management, but operational writes require a writable stage.
 - Incomplete: audit direct schedule edit endpoint (`/production/edit`), channel messages/posts, forms, shift signups, file changes, and attendance routes outside AttendanceService. A complete read-only guarantee is not yet established.
 - Staging PHP lint and regression tests are mandatory before deployment; these commits have not been locally executed.
+
+## Phase 12: Direct schedule editing and day-brief write closure
+- ProductionExperience::saveScheduleChange now checks the owning schedule item's lifecycle before updating it, blocking Completed/Archived direct edits via /production/edit.
+- ProductionDayService::saveBrief now rejects changes to production-day briefs after completion or archival.
+- These are targeted service-level protections; remaining channel, form, volunteer, file, and other operational writes require independent audits.
+- No automated tests or production deployment were performed as part of this commit series.
