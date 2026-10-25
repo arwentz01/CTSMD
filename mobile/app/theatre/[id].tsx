@@ -3,6 +3,7 @@ import {useLocalSearchParams,router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Linking,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
+import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {theatre,channels,tasks} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
@@ -23,7 +24,7 @@ export default function ProductionPage(){
     {!valid&&<Text style={s.secondary}>Invalid production.</Text>}
     {data&&valid&&!production&&<Text style={s.secondary}>This production isn't available to your account.</Text>}
     {production&&<>
-     <Text style={s.secondary}>{[production.season,production.status].filter(Boolean).join(' · ')}</Text>
+     <ProductionHero production={production}/>
      <Text style={s.heading}>Production Hub</Text>
      <View style={s.tiles}>
       <Pressable accessibilityRole="link" style={s.tile} onPress={()=>void Linking.openURL('https://ctsmd.ludus.com/index.php')}><Ionicons name="ticket-outline" color={colors.primary} size={23}/><Text style={s.tileTitle}>Tickets</Text><Text style={s.secondary}>Show tickets</Text></Pressable>
