@@ -74,7 +74,7 @@ final class CastingCommunicationService
         $s=$db->prepare("INSERT INTO production_cast_publications (production_id,publication_type,status,headline,member_note,cast_snapshot_json,published_by_user_id,published_at) VALUES (:production,:type,:status,:headline,:note,:snapshot,:actor,".($publish?'CURRENT_TIMESTAMP':'NULL').") ON DUPLICATE KEY UPDATE status=VALUES(status),headline=VALUES(headline),member_note=VALUES(member_note),cast_snapshot_json=".($publish?'VALUES(cast_snapshot_json)':'cast_snapshot_json').",published_by_user_id=".($publish?'VALUES(published_by_user_id)':'published_by_user_id').",published_at=".($publish?'CURRENT_TIMESTAMP':'NULL').",updated_at=CURRENT_TIMESTAMP");
         $s->execute(['production'=>$productionId,'type'=>$type,'status'=>$status,'headline'=>$headline!==''?$headline:null,'note'=>$note!==''?$note:null,'snapshot'=>$snapshot,'actor'=>$actorId]);
         self::audit($db,$actorId,$publish?'casting.'.$type.'_published':'casting.'.$type.'_publication_saved',$productionId,$publish?'Published production '.$label.' snapshot to members.':'Saved '.$label.' publication draft.',['headline'=>$headline?:null,'publishable_count'=>$count,'publication_type'=>$type]);
-        if($publish){
+        if($publish && ProductionContext::isLiveProductionStage($db,$productionId)){
             // The notification contains no child names or roles. Members view the
             // published snapshot only after authenticating and passing production access.
             $audience=$db->prepare("SELECT DISTINCT pm.user_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status='active'
@@ -92,6 +92,7 @@ final class CastingCommunicationService
                 VALUES (:recipient,'casting_release',:production,:title,:body,'/production',CURRENT_TIMESTAMP)");
             $noticeTitle=$type==='callback'?'Callbacks published':'Cast list published';
             foreach($audience->fetchAll(PDO::FETCH_COLUMN) as $recipientId){
+                if(!ProductionContext::isActiveMember($db,(int)$recipientId,$productionId))continue;
                 $notice->execute(['recipient'=>(int)$recipientId,'production'=>$productionId,'title'=>$noticeTitle,'body'=>'A new '.$label.' announcement is available in your CTSMD production.']);
             }
         }
