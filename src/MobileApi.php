@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/CastingCommunicationService.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
@@ -42,6 +43,7 @@ final class MobileApi
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/my-family' => self::myFamily($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
+                '/api/mobile/production-casting' => self::productionCasting($db,$user),
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
@@ -143,6 +145,19 @@ final class MobileApi
         header('Cache-Control: private, no-store');
         header('Vary: Authorization');
         StorageService::stream(dirname(__DIR__),$image,false);
+    }
+
+    private static function productionCasting(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $id=(int)($_GET['production_id']??0);
+        $allowed=false;
+        foreach(ProductionContext::activeProductions($db,$user) as $p){if((int)$p['id']===$id){$allowed=true;break;}}
+        if(!$allowed)self::json(['error'=>'Production unavailable.'],404);
+        self::json([
+            'callbacks'=>CastingCommunicationService::publishedCallbacksForProduction($db,$id),
+            'cast'=>CastingCommunicationService::publishedCastForProduction($db,$id)
+        ]);
     }
 
     private static function theatre(PDO $db, array $user): never
