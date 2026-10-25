@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/AttendanceService.php';
 
@@ -49,6 +51,7 @@ final class ProductionDayService
 
     public static function saveBrief(PDO $db,int $productionId,int $actorId,string $date,array $input):void
     {
+        ProductionLifecycleGuard::assertWritable($db,$productionId);
         $day=self::parseDate($date);
         $status=(string)($input['day_status']??'planning');
         $headline=trim((string)($input['headline']??''));
