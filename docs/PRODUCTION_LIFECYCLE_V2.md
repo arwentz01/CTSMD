@@ -83,3 +83,11 @@
 - This covers NEW explicitly production-scoped push entries. Existing unscoped queued jobs and other notification categories are NOT proven safe under lifecycle changes. Audit/fix all push producers before declaring delivery parity complete.
 - The push worker and publication flow require migration 078 before deployment. If 078 is missing, publishing may fail; apply migrations in order 075–078 on staging first.
 - No push worker was run; browser delivery, native-device delivery, database transactions and safeguarding regression cases remain unverified.
+
+## Phase 9: Archived lifecycle access and guardian revocation
+- Historical production listings, details, channel previews, and archive file reads now use `lifecycle_stage='archived'`, not legacy `is_active=0 AND status='archived'`.
+- An old guardian production membership no longer independently grants historical archive access. Guardians require a currently active family relationship to a student in the archived production. Historical audience classification also excludes stale guardian membership and adds guardian only when the active family relationship check succeeds.
+- Staff archive permissions and qualifying non-guardian historical memberships remain available.
+- Archive reads are historical only; these changes do not implement comprehensive write-blocking on all Completed/Archived operations.
+- IMPORTANT: This change requires migration 075 and coordinated rollout; audit every archive-linked endpoint and run revoked-guardian regression tests before deployment.
+- The push producer audit remains incomplete: only explicit production-scoped push jobs receive the new delivery-time production check. Do not declare notification safety parity complete.
