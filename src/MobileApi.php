@@ -417,6 +417,10 @@ final class MobileApi
         if(!$channelId||!CommunicationReadStateService::canAccessChannel($db,$user,$channelId))self::json(['error'=>'Post not found.'],404);
         $db->beginTransaction();
         try{
+            // Serialize first reactions too; a missing reaction row cannot be locked.
+            $lock=$db->prepare("SELECT id FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' AND hidden_at IS NULL AND deleted_at IS NULL FOR UPDATE");
+            $lock->execute(['post'=>$postId,'channel'=>$channelId]);
+            if(!$lock->fetchColumn())throw new RuntimeException('Post unavailable.');
             $check=$db->prepare("SELECT 1 FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart' FOR UPDATE");
             $check->execute(['post'=>$postId,'user'=>(int)$user['id']]);
             $liked=(bool)$check->fetchColumn();
