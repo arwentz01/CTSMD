@@ -138,6 +138,7 @@ final class MobileApi
         if(!$allowed)self::json(['error'=>'Image not found.'],404);
         $s=$db->prepare('SELECT sfv.* FROM production_artwork pa JOIN stored_file_versions sfv ON sfv.stored_file_id=pa.stored_file_id WHERE pa.production_id=:id AND pa.role=:role ORDER BY sfv.version_number DESC LIMIT 1');
         $s->execute(['id'=>$productionId,'role'=>$role]);$image=$s->fetch();
+        if(!$image&&$role==='banner'){$s->execute(['id'=>$productionId,'role'=>'poster']);$image=$s->fetch();}
         if(!$image||!in_array($image['mime_type'],['image/jpeg','image/png','image/webp'],true))self::json(['error'=>'Image not found.'],404);
         header('Cache-Control: private, no-store');
         header('Vary: Authorization');
