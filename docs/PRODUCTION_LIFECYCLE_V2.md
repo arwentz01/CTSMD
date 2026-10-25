@@ -127,3 +127,8 @@
 - This reduces accidental authorization bypass from inconsistent migrations or unexpected lifecycle values. It does not supersede staff authorization, guardian checks, or resource-specific safeguards.
 - Repository change committed via GitHub connector. PHP lint, automated tests, migration checks, deployment, and runtime verification have **not** been executed for this change; pilot readiness remains unchanged.
 - Still open: inventory direct write routes for forms, volunteer shifts, channels, reactions and moderation; remove contradictory legacy `is_active` semantics only after audited cutover; verify timezone/automatic archive behavior and mobile parity; test former-guardian access and all notification sources.
+
+## Phase 15: Production-group channel fallback stage gate (October 25)
+- `ProductionGroupChannelAccess::canAccess` now requires In Production or Performing for its group-inherited access query, in addition to legacy active state, active group membership, and existing guardian relationship checks. A group-inherited channel grant can no longer survive merely because legacy `is_active` remained set after completion.
+- **Important remaining gap:** the earlier explicit `channel_members` shortcut in the same function still returns a grant without checking production lifecycle, current production membership, or former-guardian relationship. This separate authorization path needs policy-aware remediation and adversarial tests before pilot. Direct channel permissions must not become a bypass for removed production members or former guardians. Archived historical reads should be handled separately from live group permissions.
+- Change has not been PHP-linted, integration-tested or deployed. No readiness percentage change is justified.
