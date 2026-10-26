@@ -33,7 +33,7 @@ final class RegistrationIntakeService
 
         $db->beginTransaction();
         try{
-            if($minor){self::ensureRelationship($db,$guardianUserId,$participantUserId,(int)$actor['id']);}
+            if($minor){self::assertActiveRelationship($db,$guardianUserId,$participantUserId);}
             self::saveLink($db,$submissionId,$participantUserId,$guardianUserId,(int)$actor['id'],'existing');
             self::audit($db,(int)$actor['id'],'registration.records_linked',$submissionId,'Linked registration to existing CTSMD people.',['participant_user_id'=>$participantUserId,'guardian_user_id'=>$guardianUserId]);
             $db->commit();
@@ -94,6 +94,14 @@ final class RegistrationIntakeService
     private static function createManagedStudent(PDO $db,string $first,string $last,int $actorId): int
     {
         $stmt=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,organization_membership_status,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,NULL,NULL,'managed','pending',:initials,'Student',0,1)");$stmt->execute(['first'=>$first,'last'=>$last,'initials'=>self::initials($first,$last)]);$id=(int)$db->lastInsertId();$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :user,id,:actor FROM auth_roles WHERE code='student' AND active=1 LIMIT 1")->execute(['user'=>$id,'actor'=>$actorId]);return $id;
+    }
+
+    private static function assertActiveRelationship(PDO $db,int $guardianId,int $studentId):void
+    {
+        // A registration is never authority to restore a former guardian's access.
+        $stmt=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' LIMIT 1");
+        $stmt->execute(['guardian'=>$guardianId,'student'=>$studentId]);
+        if(!$stmt->fetchColumn())throw new RuntimeException('The selected guardian must already have an active relationship to this Student. Review the household in Family & Safeguarding before linking this audition.');
     }
 
     private static function ensureRelationship(PDO $db,int $guardianId,int $studentId,int $actorId): void
