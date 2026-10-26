@@ -8,6 +8,9 @@ The prototype is server-rendered PHP with a lightweight MySQL data layer. It inc
 
 ## Documentation and launch readiness
 
+**Daily project checklist:** [docs/MASTER_TODO.md](docs/MASTER_TODO.md) — concise active priorities and verification gates.
+
+
 Start at [docs/INDEX.md](docs/INDEX.md) for the current documentation map, then review [docs/PLATFORM_LAUNCH_READINESS.md](docs/PLATFORM_LAUNCH_READINESS.md) for the release punch list and required verification. Historic implementation notes and commits are not evidence of a live deployment.
 
 ## Canonical product backlog
