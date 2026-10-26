@@ -41,6 +41,7 @@ final class AuditionIntakeBridge
                 $insert->execute(['submission'=>(int)$submission['id'],'student'=>$studentId,'guardian'=>$guardianId,'actor'=>$guardianId]);
             }
             self::syncAccepted($db,(int)$submission['id'],$guardianId);
+            if(!$existing)self::audit($db,$guardianId,'audition.registration_claimed',(int)$submission['id'],['student_user_id'=>$studentId,'guardian_user_id'=>$guardianId]);
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
@@ -83,6 +84,20 @@ final class AuditionIntakeBridge
         $created=$insert->rowCount()===1;
         if($created)self::audit($db,$actorId,'audition.casting_intake_created',$submissionId,['student_user_id'=>(int)$match['participant_user_id'],'production_id'=>(int)$match['production_id']]);
         return $created;
+    }
+
+    public static function withdrawPending(PDO $db,int $submissionId,?int $actorId):bool
+    {
+        // Never silently undo an offer, callback or casting decision.
+        $stmt=$db->prepare("SELECT cr.id,cr.production_id FROM production_casting_records cr JOIN registration_submissions rs ON rs.id=cr.registration_submission_id WHERE rs.id=:submission AND cr.casting_status='under_review' LIMIT 1");
+        $stmt->execute(['submission'=>$submissionId]);$record=$stmt->fetch(PDO::FETCH_ASSOC);
+        if(!$record)return false;
+        try{ProductionLifecycleGuard::assertWritable($db,(int)$record['production_id']);}catch(RuntimeException $e){return false;}
+        $update=$db->prepare("UPDATE production_casting_records SET casting_status='withdrawn',decided_by_user_id=:actor,decided_at=CURRENT_TIMESTAMP WHERE id=:id AND casting_status='under_review' AND registration_submission_id=:submission");
+        $update->execute(['actor'=>$actorId,'id'=>(int)$record['id'],'submission'=>$submissionId]);
+        if($update->rowCount()!==1)return false;
+        self::audit($db,$actorId,'audition.pending_intake_withdrawn',$submissionId,['casting_record_id'=>(int)$record['id']]);
+        return true;
     }
 
     private static function audit(PDO $db,?int $actor,string $event,int $submissionId,array $metadata):void
