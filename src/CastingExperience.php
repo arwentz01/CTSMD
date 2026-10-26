@@ -9,6 +9,7 @@ require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/ProductionContext.php';
 require_once __DIR__.'/CastingService.php';
 require_once __DIR__.'/CastingRoleService.php';
+require_once __DIR__.'/CastingOfferService.php';
 require_once __DIR__.'/CastingCommunicationService.php';
 require_once __DIR__.'/ManualParticipantService.php';
 
@@ -44,6 +45,7 @@ final class CastingExperience
             elseif($action==='transfer_manual'){ManualParticipantService::transfer($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),(int)($_POST['student_user_id']??0),['name'=>!empty($_POST['copy_name']),'biography'=>!empty($_POST['copy_biography']),'headshot'=>!empty($_POST['copy_headshot']),'credit'=>!empty($_POST['copy_credit'])]);self::flash('success','Selected data transferred to the registered Student; the manual credit was retired.');}
             elseif($action==='update'){CastingService::update($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$_POST);self::flash('success','Casting decision saved privately. No family communication was sent.');}
             elseif($action==='finalize'){CastingService::finalizeRoster($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),(array)($_POST['group_ids']??[]));self::flash('success','Casting finalized to the production roster. No family communication was sent automatically.');}
+            elseif($action==='issue_offer'){CastingOfferService::issue($db,$productionId,(int)($_POST['record_id']??0),(int)$user['id']);self::flash('success','Casting offer created for Student and Guardian Action Centers.');}
             elseif($action==='send_result'){$queued=CastingCommunicationService::sendResult($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$basePath);self::flash('success','Casting result queued for '.max(1,$queued).' family recipient'.($queued===1?'':'s').'.');}
             elseif($action==='save_publication'){
                 $type=(string)($_POST['publication_type']??'cast');
@@ -67,6 +69,7 @@ final class CastingExperience
             }
             else throw new RuntimeException('Choose a valid casting action.');
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());}
+        if(($_POST['ajax']??'')==='1'){$result=$_SESSION['casting_flash']??['type'=>'error','message'=>'Unknown result'];unset($_SESSION['casting_flash']);header('Content-Type: application/json; charset=utf-8');header('Cache-Control: no-store');echo json_encode(['ok'=>$result['type']==='success','message'=>$result['message']],JSON_THROW_ON_ERROR);exit;}
         self::redirect($basePath.self::ROUTE);
     }
 
