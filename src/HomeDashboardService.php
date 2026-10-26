@@ -8,6 +8,7 @@ require_once __DIR__ . '/FamilyDashboardService.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
+require_once __DIR__ . '/CastingOfferService.php';
 
 final class HomeDashboardService
 {
@@ -67,6 +68,16 @@ final class HomeDashboardService
         });
 
         $attention = [];
+        // The home Action Center must surface the same actionable pending
+        // offers as Notifications, for both Students and active Guardians.
+        foreach (CastingOfferService::pendingForUser($db,(int)$user['id']) as $offer) {
+            $attention[]=[
+                'kind'=>'casting_offer','urgent'=>true,'title'=>'Casting offer awaiting response',
+                'context'=>$offer['production_title'].' · '.$offer['first_name'].' '.$offer['last_name'],
+                'detail'=>$offer['role_snapshot'],
+                'href'=>'/notifications#casting-offers'
+            ];
+        }
         foreach ($forms as $form) {
             $urgent = ($form['status'] ?? '') === 'missing';
             if (!$urgent && !empty($form['due_at'])) $urgent = new DateTimeImmutable((string)$form['due_at']) <= $now->modify('+3 days');
