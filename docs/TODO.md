@@ -1,150 +1,58 @@
-# CTSMD Connect Product Backlog
+# CTSMD Connect — Single Source of Truth: To-Do & Product Backlog
 
-> **Current update (October 26, 2026):** The old feature sections below retain chronology and may still say “Next” for work now committed. For the current implementation map see [INDEX.md](INDEX.md). Release gates and the 20-point launch audit are tracked in [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md). **Production Readiness** now contains system health and a link to the separate **Production Tasks** page. Casting role multi-select, offer responses, guardian to-dos, and late-pickup tracking have been added in source; runtime acceptance remains feature-specific. Volunteer Lead currently only designates eligible task owners; broader volunteer permissions await a specification.
+**Updated:** October 26, 2026 · **Working branch:** `audit/board-pilot-readiness`
 
-## Immediate platform readiness queue
+**This is the ONE maintained list of active work, pilot gates, and approved feature backlog.** Checkboxes represent verification or implementation remaining; a merged commit is not proof of production deployment. Keep status/owner/evidence here, link details elsewhere, and do not create new competing active to-do documents.
 
-- **P0:** Test production HTTPS, secure session-cookie/proxy configuration, secret-file denial, upload isolation, safeguarding revocation, backup restore and approved privacy/terms.
-- **P0:** Confirm worker send-time guardian checks, notification revocation, safety controls, and incident playbook before a real-family pilot.
-- **P1:** Test end-to-end native app Action Center, casting offers, per-person To-Dos, keyboard/screen reader workflows, mobile drawer accessibility, and app-store privacy disclosures.
-- **P1:** Run performance/accessibility/link checks; audit public forms and rate limits.
-- **P2:** Approve public-only sitemap and metadata/social previews; consider privacy-safe analytics and cookie consent only after tracking inventory.
+**Release stance:** The most recent [board pilot report](BOARD_PILOT_READINESS.md) remains **NO-GO for a real-family pilot** until its open gates are accepted. Older percentages are dated evidence, not current calculated coverage.
+
+## How to use
+
+- **P0**: security, safeguarding and live release blockers.
+- **P1**: near-term verification and recently built workflows.
+- **P2**: public launch polish and quality.
+- **Waiting on specs**: do not build wider permissions without CTSMD requirements.
+- **Product backlog**: ideas approved for future discovery, *not* claims that all are missing or prioritized. Revalidate against source and actual behavior before scheduling.
+- When completing an item, add acceptance evidence (environment/date/tester/commit or issue) or link the verification notes.
+
+## P0 — Pilot blockers and release gates
+
+- [ ] Verify safeguarding revocation across web/mobile, including former guardians, casting offers, student tasks and notices.
+- [ ] Complete live email and push acceptance: actual delivery, deep links, retries, recipient authorization and queue operation.
+- [ ] Validate HTTPS, secure cookies, secret-file protection, sensitive uploads and production hosting incident response.
+- [ ] Assign backup/restore owners, retention, RPO/RTO and run a documented restore drill.
+- [ ] Obtain policy-owner approval for privacy notice, terms/acceptable use, guardian consent and retention wording.
+- [ ] Run staging regression suite and record real-device/mobile acceptance evidence. **Do not treat GitHub commits as deployment proof.**
+
+## P1 — Verification and workflow completion
+
+- [ ] Deploy/apply pending migrations **079–084 as applicable** and verify live schema/version before updating code.
+- [ ] Test casting roles, manual participants, callback/cast publication, offer accept/decline, and Playbill import.
+- [ ] Test production Tasks, grouped assignment, student/guardian completion, owner roles and Volunteer Lead designation.
+- [ ] Verify Attendance arrival-time corrections and late-pickup occurrence review/guardian notices, including no-send-before-approval.
+- [ ] Finish native Expo staff-side parity for casting and Tasks; test native Action Center and permissions.
+- [ ] Accessibility/responsive QA for desktop, mobile drawers, forms, attendance and keyboard navigation.
+- [ ] Run link checks, performance baseline, media upload/optimization and server-side form validation audit.
+
+## P2 — Public experience and quality
+
+- [ ] Audit public-only titles, descriptions, social previews, favicons and accessible image alternatives.
+- [ ] Create approved public-only sitemap; verify robots/noindex handling on deployed host.
+- [ ] Add branded safe 404 handling and check redirects.
+- [ ] Decide whether any analytics or cookie consent is warranted after tracking/privacy inventory.
+- [ ] Review public calls to action for Tickets, Volunteer, Join and digital Playbill.
+
+## Waiting on specs / future planning
+
+- [ ] Define broader **Volunteer Lead** authority, training prerequisites and safeguards once CTSMD supplies the role specification.
+- [ ] Review long-term acting résumé/history and additional Playbill publication enhancements after current workflows stabilize.
 
 
+## Platform launch checklist — status reference
 
-This document is the canonical product wishlist/backlog for CTSMD Connect. It captures approved future-facing ideas from product discussions so they do not live only in chat history.
+The 20-item website checklist, mobile-app gates, and privacy decisions are folded into P0–P2 above. For audit rationale, consult [Platform Launch Readiness](PLATFORM_LAUNCH_READINESS.md). The source and deployment need separate verification for: privacy policy, terms, secrets, HTTPS, consent if applicable, titles/meta, social previews, favicon, sitemap/robots, alt text, image compression, speed, contrast, mobile responsiveness, custom 404, broken links, validation, spam protection, analytics if appropriate, and public calls to action.
 
-**Build principle:** Experience defines the product. Background logic exists to support the approved experience.
-
-## Status key
-
-- **Implemented** — source build completed; local runtime verification may still be pending
-- **In progress** — current build slice
-- **Next** — high-priority near-term build
-- **Backlog** — approved direction, not yet scheduled
-- **Platform** — foundational technical work that supports multiple features
-
-## Recently implemented
-
-### Implemented — Call sheets + production-day operations
-
-- `/production/day` is now the staff-only Working-Production run-of-day workspace and replaces the old prototype route.
-- Staff can move between dates without changing Working Production and see active schedule items in chronological order with locations, family-call time, Production Group targeting, expected roster and current attendance state.
-- Expected rosters are resolved from the canonical `ScheduleAudience` / Attendance services, including group targeting and reported absences; Production Day does not create a duplicate attendance roster.
-- Attendance actions deep-link to the authoritative `/attendance/take` workflow for each schedule item.
-- Volunteer shifts for the selected date show required/filled/check-in/open counts and link to the existing Volunteer Operations roster.
-- Schedule-change notices for that day's calls show draft/published state and link to the authoritative notice workflow.
-- Readiness checklist items due/open through the selected date, plus items completed that day, are surfaced without duplicating checklist mutation.
-- Migration 025 adds `production_day_briefs`, one record per production/date, for day status (`planning`, `live`, `closed`), headline, arrival/access notes, staff operations notes and audit metadata.
-- Day briefing writes are restricted to the selected Working Production and audit logged.
-- `Print call sheet` prints the same resolved source data rather than creating a second call-sheet record; print mode expands expected rosters and includes the staff briefing.
-- Production Workspace now links directly to Production Day alongside Readiness, Schedule and Attendance.
-- Member Calendar/Schedule remains the member discovery source; Production Day is an execution surface for staff.
-- **Runtime verification:** pending local MAMP test after migration 025, including day/date isolation, Production Group rosters, attendance counts/absence reports, volunteer coverage, notice state, readiness items, briefing save/status transitions, print expansion and Working Production switching.
-
-### Implemented — Production readiness + checklist dashboard
-
-- `/production/readiness` is a staff-only Working-Production readiness workspace.
-- Readiness remains intentionally scoped to the selected Working Production; `/staff` remains the cross-production operational overview.
-- Automated readiness signals currently cover active student/guardian roster coverage, open production form assignments, uncovered upcoming volunteer slots, future active schedule items, draft schedule-change notices, Playbill publication state, and production resource/file counts.
-- Automated signals link back to their authoritative management screens rather than duplicating mutation workflows.
-- Migration 024 adds `production_checklist_items` for staff-defined production tasks with category, notes, due date/time, status, optional active-production-staff assignee, ordering, creator, completion actor, and completion timestamp.
-- Checklist states are `open`, `in_progress`, `blocked`, and `done`; checklist writes are restricted to the current Working Production and audit logged.
-- Readiness percentage is deliberately based only on explicit checklist completion. Automated system warnings are not mixed into a fake weighted readiness score.
-- Overdue incomplete checklist items are surfaced separately.
-- The Production workspace and Operations navigation now link directly to Production Readiness.
-- No checklist/demo items are hardcoded in PHP; the production team defines the checklist records it actually needs.
-- **Runtime verification:** pending local MAMP test after migration 024.
-
-### Implemented — Staff cross-production dashboard
-
-- `/staff` is now the canonical staff cross-production operations overview.
-- Dashboard spans every active production available to staff and does not depend on the selected Working Production for its overview data.
-- Working Production remains visible as a separate operations-context card and still controls production editing/management workflows.
-- All staff see active productions and the next 21 days of production calls in one chronological view.
-- Operational attention cards are permission-aware: staff only sees queues their normalized RBAC permissions authorize them to manage.
-- Account managers see verified self-registered accounts still pending CTSMD organization membership approval.
-- Forms/registration managers see missing/review/due-soon form counts across active productions and submitted/accepted public registrations that have not yet been linked to canonical CTSMD People/household records.
-- Volunteer managers see upcoming shifts below required staffing and pending shift-approval requests.
-- Community moderators see the count of Community posts pending moderation review.
-- Short membership-review, registration-intake, and volunteer-gap lists link directly into the existing authoritative management screens instead of duplicating mutation workflows on the dashboard.
-- Staff Overview is the first Operations navigation destination; `/app` remains the staff member's personal/account-wide Home.
-- No new migration was required for this build.
-- A safeguarding incident count is intentionally not fabricated because the current safeguarding experience does not yet have a canonical incident/review queue table.
-- **Runtime verification:** pending local MAMP test.
-
-### Implemented — Organization-wide member resources
-
-- Migration 023 adds `organization_resources` as the canonical home for CTSMD-wide member material that does not belong to a production.
-- Organization resources may be links, text/notes, or downloadable files backed by the existing private `stored_files` / immutable-version storage layer.
-- Approved CTSMD organization membership is the member access gate; production membership is not required for CTSMD-wide resources.
-- Member `/resources` and `/files` now combine approved organization material with all currently authorized active-production material in one account-wide library.
-- Member library filters are organizational only: **All**, **CTSMD**, and active productions. No production switch is required to discover content.
-- Staff `Member Resource Operations` is separate from Working-Production `Resource Operations` and `File Operations`.
-- **Runtime verification:** pending local MAMP test after migration 023.
-
-### Implemented — DB-backed Home + account-wide member libraries
-
-- `/app` is DB-backed rather than mock-driven.
-- Parent/student/volunteer Home aggregates schedule, forms, notifications, volunteer commitments, linked children and active productions across the account rather than requiring a production switch.
-- Staff Home remains account-wide and shows Working Production only as a separate operations-context card.
-- Member `/files` and `/resources` aggregate accessible content across all active productions with optional filters.
-- **Runtime verification:** pending local MAMP test.
-
-### Implemented — Registration intake follow-through
-
-- Migration 022 adds `registration_submission_links`, preserving the reviewed connection between a public signup and canonical CTSMD people/household records.
-- Registration Operations provides a dedicated Intake Review screen for each registrant.
-- Staff may explicitly link a registration to existing CTSMD people or create/reuse reviewed household records without silently granting production membership.
-- Accepted, waitlisted, declined and cancelled staff status changes queue family-facing email updates when the status actually changes.
-- Audition-session/time-slot scheduling remains intentionally deferred until CTSMD's real audition workflow demonstrates the needed slot model.
-- Classes, camps and workshops remain in the existing external registration system.
-- **Runtime verification:** pending local MAMP test after migration 022.
-
-### Implemented — Platform registration + household onboarding
-
-- Public `/join` is the primary CTSMD Connect account-creation path for adults/guardians.
-- Email verification activates sign-in but leaves CTSMD organization membership pending staff approval.
-- Approved organization membership, authentication, and production membership remain separate concepts.
-- Parents/guardians create child profiles through Household Setup / Manage Household; child creation and guardian relationship are transactional.
-- Creating a child profile does not add the child to a production.
-- **Runtime verification:** pending local MAMP test after migration 021.
-
-### Implemented — Lean public landing + restrained registration
-
-- `/` remains a deliberately small public CTSMD Connect landing page rather than a full replacement for the existing CTSMD website.
-- `/register` is intentionally limited to auditions, selected special/event signups, and interest/RSVP signups.
-- Classes, camps, workshops and the broader program catalog remain in the existing external registration system until CTSMD intentionally chooses to replace it.
-- Public signup intake remains separate from CTSMD Connect account creation.
-- Registration schema lives in migration 020.
-- **Runtime verification:** pending local MAMP test.
-
-## Near-term build order
-
-### Next — Casting + role assignment workflow
-
-- Add a Working-Production casting/roster workflow that bridges reviewed audition intake and the existing Production Roster without silently casting or enrolling anyone from public registration.
-- Let authorized production staff search canonical People and reviewed registration links, add a participant to the selected production, set character/participation role, and optionally place them into Production Groups in one deliberate reviewed workflow.
-- Preserve guardian safeguards: a Student cannot become an active production participant without an active guardian relationship, and active guardians should continue to receive the appropriate production audience membership.
-- Keep casting decisions separate from public registration status; `Accepted` registration does not mean cast, and casting does not rewrite the public registration record.
-- Audit casting/role/group changes and preserve participation-role history needed for future My Theatre History / acting résumé features.
-
-### Next — Registration operations later follow-through
-
-- Audition-session/time-slot management only when CTSMD defines the real audition-slot workflow.
-- Registration-specific questionnaires may reuse Dynamic Forms where appropriate.
-- CSV/export/reporting once real registration operations demonstrate what fields staff actually need.
-- Do not expand into class/camp/workshop registration unless CTSMD explicitly decides to replace the current external registration system.
-
-## Future public-site options — only if CTSMD chooses to expand Connect
-
-- Full public CTSMD website/CMS bridge.
-- Public production/audition/event detail pages beyond the lean registration page.
-- Class/camp/workshop catalog and registration only as an intentional replacement project for the current external system.
-- Broad public calendar, news, donations, sponsorship and RSVP experiences.
-- Payments only after actual program/payment requirements are defined.
-
-## Future product slices
+## Product backlog — approved directions (not scheduled)
 
 ### Backlog — Production archive + My Theatre History
 
@@ -298,45 +206,28 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Immutable recipient snapshots for published communications where required.
 - Validate database trigger privileges/behavior on Bluehost; retain PHP service equivalents where required.
 
-## Architectural notes
 
-- Multiple productions may be active concurrently.
-- Production activity is independent from the per-session Working Production selector.
-- **Working Production context is for staff/admin production operations only.** Parents, students and ordinary volunteers should not need to switch productions to discover current obligations or communication.
-- **Account scope is authoritative for member experience:** Home, Family, Calendar, Community, Messages, Notifications, assigned Forms, personal Volunteer activity and member files/resources aggregate everything the account is permitted to see across active productions and the approved organization layer.
-- **Staff operational overview is also organization scoped:** `/staff` aggregates active productions and permitted operational queues, while Working Production remains the editing context for one show.
-- **Production readiness and Production Day are Working-Production scoped:** they evaluate/execute one show's operational state without affecting account-wide communication or staff overview behavior.
-- Production Day derives schedule, expected rosters, attendance, volunteer coverage, notices and readiness from their canonical domains; the day brief stores only day-specific operational notes/status so duplicate state is minimized.
-- Staff/admin accounts participate in both scopes: production operations may be scoped to the selected Working Production, while Messages, Community, Notifications, personal Calendar, unread state and `/staff` remain account-wide/cross-production.
-- Production/library filters are organizational filters only; they must never function as required context gates that can hide unread or actionable information.
-- Authentication identity is browser-session scoped; no shared database current-user mutation is permitted.
-- Runtime administrator authorization is role/permission based, not display-label based.
-- Authentication, organization membership and production membership are three separate concepts.
-- A verified self-registered account starts with organization membership `pending`; email verification alone does not grant general Community or organization-resource access.
-- Organization approval unlocks general member Community and organization-wide member resources without enrolling the person in any production.
-- Active production membership grants show-specific access according to production/audience/group rules and does not require a member-facing production context switch.
-- Students/minors do not anonymously self-register. Student profile creation is guardian-mediated and must preserve family/safeguarding rules.
-- A family dashboard resolves each linked student's current permissions independently; guardian visibility never substitutes for or broadens the student's own production/group schedule access.
-- Public audition/special-signup intake and authenticated platform membership are separate lifecycles. Registration may be explicitly linked/converted into canonical people/household records only through staff review; it never silently grants membership or production access.
-- Stored files and their immutable versions are infrastructure objects; production files and organization resources are permissioned domain objects that reference them.
-- Private files are never exposed by direct storage URLs; every download re-checks current CTSMD authorization.
-- Outbound email is queue-first; web workflows enqueue messages and CLI/cron workers perform transport delivery.
-- Account-security mail is transactional and cannot be disabled by ordinary notification preferences.
-- General Teams and Production Groups are separate concepts.
-- Community channels may be audience-driven, selected-member, Team-backed or hybrid.
-- Private Community membership must not bypass safeguarded direct-message rules.
-- Community moderation is exception-based; clean posts publish immediately, matched content is intercepted before visibility.
-- When a production becomes inactive/archived, production-owned active experiences should leave current member navigation while their historical records remain preserved in read-only/archive experiences as appropriate.
-- Historical records should normally be deactivated/archived rather than hard-deleted.
-- Domain/demo records belong in the database/seed, never hardcoded into PHP views.
-# Manual participants deployment acceptance
+## Completed in source — retain as context, not open tasks
 
-- Apply migration 069 to a disposable MySQL 8 database and validate create/edit/archive, multi-production credits, selective Student transfer, and lifecycle write denial.
-- Verify manual participant publication withdrawal across member casting, mobile casting, Playbill HTML/assets, and archived edition behavior.
-- Run authenticated desktop/mobile UI acceptance for the Casting and Playbill editors before deployment.
+- Casting: separate Cast/Callbacks, role library/multi-select for registered students, offer-response flow, manual participants, publication privacy and Playbill import integration. See [Casting Roles](CASTING_ROLES_ROLLOUT.md), [Casting Offers](CASTING_OFFER_WORKFLOW.md) and [Manual Participants](MANUAL_PARTICIPANTS.md). **Manual participant role parity and runtime acceptance remain P1.**
+- Attendance: editable arrival time; late checkout under student More; late-pickup occurrence/draft/review logic. See [Late Pickup Workflow](LATE_PICKUP_WORKFLOW.md). Runtime acceptance remains P1.
+- Tasks: standalone `/production/tasks` page, grouped assignees, per-person completion and guardian Action Center visibility. Volunteer Lead is only production-scoped task owner designation. See [Tasks Extraction](PRODUCTION_TASKS_EXTRACTION.md).
+- Mobile: authenticated student/guardian Action Center with casting offers and individual To-Dos; native staff parity is **not** complete. See [Native Parity](../mobile/docs/CASTING_TASKS_PARITY.md).
+- Search privacy: robots directives and private-app noindex headers in source, not yet verified deployed.
+- Documentation: canonical index and archive of older roadmap notes; live and release testing still required.
 
-# Late pickup deployment acceptance
+## Reference documents (technical evidence, not parallel active checklists)
 
-- Apply migration 084 to a disposable MySQL 8 database and run transactional tests for corrections, reversals, threshold reclassification, cross-production isolation, approval gating, guardian revocation, and queue idempotency.
-- Verify the Attendance late-checkout editor and `/production/late-pickups` drawers in authenticated desktop and mobile browser sessions.
-- Process an isolated fake guardian queue row and verify sent, failed, suppressed, and stale-guardian states without touching existing production mail.
+- [Documentation Index](INDEX.md)
+- [Board/pilot evidence and blockers](BOARD_PILOT_READINESS.md)
+- [Platform launch audit rationale](PLATFORM_LAUNCH_READINESS.md)
+- [Late pickup workflow](LATE_PICKUP_WORKFLOW.md)
+- [Native parity](../mobile/docs/CASTING_TASKS_PARITY.md)
+- [Original long backlog archive](archive/TODO_PRE_CONSOLIDATION_2026-10-26.md)
+
+## Maintenance policy
+
+1. Add or change **actionable tasks only here**. Technical documents may contain acceptance criteria, but must link back to this tracker rather than claiming a second current work queue.
+2. If functionality already exists, write the action as **verify / remediate** rather than accidentally reopening implemented work.
+3. Do not mark pilot gates complete based on code presence; attach tests and approvals.
+4. Preserve older content and dated decisions in `docs/archive/`, not in competing live lists.
