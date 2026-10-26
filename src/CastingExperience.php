@@ -90,6 +90,39 @@ final class CastingExperience
             <?php if($publicSettings['enabled']&&!empty($publicSettings['slug'])):?><code><?=$e('https://ctsmd.me/public/casting?slug='.(string)$publicSettings['slug'])?></code><?php endif;?>
             <form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="toggle_public_page"><input type="hidden" name="public_enabled" value="<?=$publicSettings['enabled']?'0':'1'?>"><button type="submit"><?=$publicSettings['enabled']?'Disable public page':'Enable public page'?></button></form>
         </section>
+        <?php foreach(['callback'=>'Callbacks','cast'=>'Cast'] as $listStatus=>$listTitle):
+            $listRows=array_values(array_filter($board,static fn(array $r):bool=>(string)($r['casting_status']??'')===$listStatus));
+            usort($listRows,static fn(array $a,array $b):int=>strnatcasecmp((string)($a['person_name']??''),(string)($b['person_name']??'')));
+            $roleIndex=[];
+            foreach($listRows as $person){
+                $roleText=trim((string)($person['role_title']??''));
+                $roles=array_values(array_filter(array_map('trim',explode('/',$roleText)),static fn(string $r):bool=>$r!==''));
+                if(!$roles)$roles=['Unassigned'];
+                foreach($roles as $role)$roleIndex[$role][]=(string)($person['person_name']??'');
+            }
+            uksort($roleIndex,'strnatcasecmp');
+        ?>
+        <section class="cast-panel cast-assignment-list" data-cast-list="<?=$e($listStatus)?>">
+          <header><div><small><?=$listStatus==='callback'?'CALLBACK DECISIONS':'CONFIRMED CAST'?></small><h3><?=$e($listTitle)?> · <?=count($listRows)?></h3><p>Private working list. Publishing remains a separate action.</p></div>
+            <div class="cast-view-switch" role="group" aria-label="<?=$e($listTitle)?> display"><button type="button" data-view="student" aria-pressed="true">By Student</button><button type="button" data-view="role" aria-pressed="false">By Role</button></div>
+          </header>
+          <?php if(!$listRows):?><p>No <?=$e(strtolower($listTitle))?> decisions yet.</p><?php else:?>
+          <div data-content="student" class="cast-view-content"><?php foreach($listRows as $person):?>
+            <div class="cast-list-line"><strong><?=$e((string)$person['person_name'])?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e((string)(($person['role_title']??'')?:'Unassigned'))?></span></div>
+          <?php endforeach;?></div>
+          <div data-content="role" class="cast-view-content" hidden><?php foreach($roleIndex as $role=>$names):?>
+            <div class="cast-list-line"><strong><?=$e($role)?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e(implode(', ',array_unique($names)))?></span></div>
+          <?php endforeach;?></div>
+          <?php endif;?>
+        </section>
+        <?php endforeach;?>
+        <style>
+        .cast-assignment-list{margin-block:16px}.cast-assignment-list>header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+        .cast-view-switch{display:inline-flex;gap:4px;border:1px solid #d5d5da;border-radius:8px;padding:3px}.cast-view-switch button{background:transparent;border:0;border-radius:5px;padding:8px 12px;cursor:pointer;color:inherit}.cast-view-switch button[aria-pressed="true"]{background:#293b63;color:white}
+        .cast-list-line{display:flex;align-items:baseline;gap:9px;padding:9px 0;border-bottom:1px solid #ececf0}.cast-list-line strong{font-weight:650}.cast-list-dots{flex:1;min-width:16px;border-bottom:2px dotted #a9a9b3}.cast-list-line>span:last-child{text-align:right;max-width:60%}
+        @media(max-width:480px){.cast-list-line{flex-wrap:wrap}.cast-list-line>span:last-child{max-width:100%}}
+        </style>
+        <script>document.addEventListener('click',function(event){const button=event.target.closest('.cast-view-switch button[data-view]');if(!button)return;const panel=button.closest('[data-cast-list]');if(!panel)return;panel.querySelectorAll('.cast-view-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));panel.querySelectorAll('.cast-view-content').forEach(c=>c.hidden=c.dataset.content!==button.dataset.view);});</script>
         <section class="cast-summary"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast'] as $key=>$label):?><article><b><?=(int)$counts[$key]?></b><span><?=$e($label)?></span></article><?php endforeach;?></section>
         <div class="cast-intake-grid"><section class="cast-panel"><header><small>AUDITION INTAKE</small><h3>Reviewed registrations</h3></header><?php if(!$intake):?><p>No linked audition registrations are waiting to be added.</p><?php endif;?><?php foreach($intake as $row):?><form class="cast-candidate" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_intake"><input type="hidden" name="user_id" value="<?=(int)$row['user_id']?>"><input type="hidden" name="submission_id" value="<?=(int)$row['submission_id']?>"><span><b><?=$e((string)$row['person_name'])?></b><small><?=$e((string)$row['opportunity_title'])?> · <?=ucwords(str_replace('_',' ',(string)$row['registration_status']))?></small></span><button type="submit">Add to casting</button></form><?php endforeach;?></section>
         <section class="cast-panel"><header><small>PEOPLE</small><h3>Add existing student</h3></header><?php if($people):?><form class="cast-add" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_person"><select name="user_id" required><option value="">Choose student…</option><?php foreach($people as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?> · <?=$e((string)$p['role'])?></option><?php endforeach;?></select><button type="submit">Add student</button></form><?php else:?><p>Every active Student is already represented on the casting board.</p><?php endif;?><p class="cast-help">Registered Students retain normal account and family workflows.</p></section></div>
