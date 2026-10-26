@@ -203,8 +203,14 @@ document.addEventListener('submit',async function(event){
  feedback.textContent='Saving…';feedback.dataset.error='0';
  try{
   const response=await fetch(form.action||location.href,{method:'POST',body:data,credentials:'same-origin',headers:{'Accept':'application/json'}});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const result=await response.json();feedback.textContent=result.message||'No response received.';feedback.dataset.error=result.ok?'0':'1';
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.includes('application/json')){
+   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'The server returned an unexpected response (HTTP '+response.status+'). Check the server error log.';
+   feedback.dataset.error='1';return;
+  }
+  const result=await response.json();
+  feedback.textContent=result.message||('The server returned HTTP '+response.status+'.');feedback.dataset.error=response.ok&&result.ok?'0':'1';
+  if(!response.ok||!result.ok)return;
   if(result.ok&&data.get('action')==='update'){
    const summary=drawer.previousElementSibling?.querySelector('small');
    if(summary){const roles=[...form.querySelectorAll('input[name="role_ids[]"]:checked')].map(input=>input.closest('label')?.querySelector('span')?.textContent?.trim()).filter(Boolean);summary.textContent=String(data.get('casting_status')||'')+' · '+(roles.join(' / ')||'No roles assigned');}
@@ -219,7 +225,7 @@ document.addEventListener('submit',async function(event){
    if(finalizeButton)finalizeButton.disabled=status!=='cast';
   }
   if(result.ok&&data.get('action')==='issue_offer')form.querySelector('button[type="submit"]')?.setAttribute('data-sent','1');
- }catch(e){feedback.textContent='Save failed. Please check your connection and try again.';feedback.dataset.error='1';}
+ }catch(e){feedback.textContent='Could not complete the save: '+(e instanceof Error?e.message:'unexpected response')+'. Check your connection or the server error log.';feedback.dataset.error='1';}
  finally{buttons.forEach(button=>{if(button.dataset.sent==='1')button.disabled=true;else if(data.get('action')!=='update')button.disabled=false;else if(!['issue_offer','send_result','finalize'].includes(String(button.value)))button.disabled=false;});}
 });
 })();</script>        <?php endif;?></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
