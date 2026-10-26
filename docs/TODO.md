@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **New child primary-adult pickup default (source committed October 26):** creating a managed child automatically inserts an active, linked pickup authorization for the creating adult within the same transaction. Requires migration 085. Verify new parent/guardian-created child, pickup visible in Family and Attendance, rollback behavior, and no changes to legacy/demo children. Parents/staff can later revoke pickup authorization independently.
+
+
 - [ ] **Production People removal → casting cleanup (source committed October 26):** Removing an active student membership now deletes that student's linked casting record and offer/role assignment rows for this production, preserves the decision/offer snapshot in the audit log, and regenerates published cast/callback snapshots. Verify on staging: student removed from People and Casting, public/member published list updated, multi-child guardian membership retained when still needed, orphan guardians retired, and failed deletion fully rolled back. Important: original linked offer records are deleted via FK cascade; confirm archival/retention requirements before using on real-family productions. No migration required.
 
 
