@@ -1,5 +1,17 @@
 # CTSMD Connect Product Backlog
 
+> **Current update (October 26, 2026):** The old feature sections below retain chronology and may still say “Next” for work now committed. For the current implementation map see [INDEX.md](INDEX.md). Release gates and the 20-point launch audit are tracked in [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md). **Production Readiness** now contains system health and a link to the separate **Production Tasks** page. Casting role multi-select, offer responses, guardian to-dos, and late-pickup tracking have been added in source; runtime acceptance remains feature-specific. Volunteer Lead currently only designates eligible task owners; broader volunteer permissions await a specification.
+
+## Immediate platform readiness queue
+
+- **P0:** Test production HTTPS, secure session-cookie/proxy configuration, secret-file denial, upload isolation, safeguarding revocation, backup restore and approved privacy/terms.
+- **P0:** Confirm worker send-time guardian checks, notification revocation, safety controls, and incident playbook before a real-family pilot.
+- **P1:** Test end-to-end native app Action Center, casting offers, per-person To-Dos, keyboard/screen reader workflows, mobile drawer accessibility, and app-store privacy disclosures.
+- **P1:** Run performance/accessibility/link checks; audit public forms and rate limits.
+- **P2:** Approve public-only sitemap and metadata/social previews; consider privacy-safe analytics and cookie consent only after tracking inventory.
+
+
+
 This document is the canonical product wishlist/backlog for CTSMD Connect. It captures approved future-facing ideas from product discussions so they do not live only in chat history.
 
 **Build principle:** Experience defines the product. Background logic exists to support the approved experience.
