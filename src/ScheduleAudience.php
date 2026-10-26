@@ -98,7 +98,7 @@ final class ScheduleAudience
                     SELECT 1 FROM family_relationships fr
                     JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
                     JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
-                    WHERE spm.production_id=pm.production_id AND fr.guardian_user_id=pm.user_id AND fr.status='active'
+                    WHERE spm.production_id=pm.production_id AND fr.guardian_user_id=pm.user_id AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
                 ))";
         $stmt=$db->prepare($sql);
         $stmt->execute(array_merge([$productionId],$groupIds,$types));
@@ -121,7 +121,7 @@ final class ScheduleAudience
                     FROM family_relationships fr
                     JOIN production_memberships gpm ON gpm.user_id=fr.guardian_user_id AND gpm.production_id=? AND gpm.audience_type='guardian' AND gpm.status='active'
                     JOIN users u ON u.id=gpm.user_id AND u.active=1 AND u.account_status<>'disabled'
-                    WHERE fr.status='active' AND fr.student_user_id IN ($studentPh)");
+                    WHERE fr.status='active' AND fr.relationship_type IN ('parent','guardian') AND fr.student_user_id IN ($studentPh)");
                 $guardianStmt->execute(array_merge([$productionId],$studentIds));
                 foreach($guardianStmt->fetchAll() as $row) $byId[(int)$row['id']]=$row;
             }
@@ -142,7 +142,7 @@ final class ScheduleAudience
                   SELECT 1 FROM family_relationships fr
                   JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
                   JOIN users student ON student.id=spm.user_id AND student.active=1 AND student.account_status<>'disabled'
-                  WHERE spm.production_id=pm.production_id AND fr.guardian_user_id=pm.user_id AND fr.status='active'
+                  WHERE spm.production_id=pm.production_id AND fr.guardian_user_id=pm.user_id AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
               ))
             ORDER BY sort_last_name,sort_first_name");
         $stmt->execute(array_merge([$productionId],$types));
@@ -181,7 +181,7 @@ final class ScheduleAudience
                 JOIN production_group_members pgm ON pgm.production_membership_id=spm.id AND pgm.status='active'
                 JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1 AND pg.production_id=:production_group
                 JOIN schedule_item_groups sig ON sig.group_id=pg.id AND sig.schedule_item_id=:item
-                WHERE fr.guardian_user_id=:guardian AND fr.status='active' LIMIT 1");
+                WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
             $guardian->execute(['production'=>$productionId,'production_group'=>$productionId,'item'=>$scheduleItemId,'guardian'=>(int)$user['id']]);
             return (bool)$guardian->fetchColumn();
         }
