@@ -14,6 +14,8 @@ final class AuditionStubStatement extends PDOStatement
         if(str_contains($this->sql,'INSERT IGNORE INTO production_casting_records')){
             $this->writes[]=$params??[];
             $this->affected=(int)($this->scenario['inserted']??1);
+        } elseif(str_contains($this->sql,'INSERT INTO audit_events')){
+            $this->affected=1;
         }
         return true;
     }
