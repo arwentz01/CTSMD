@@ -189,9 +189,7 @@ document.addEventListener('submit',async function(event){
  const form=event.target;
  const drawer=form.closest('[data-working-drawer]');
  if(!drawer)return;
- const hasFile=[...form.querySelectorAll('input[type="file"]')].some(input=>input.files&&input.files.length);
- if(hasFile)return;
- event.preventDefault();
+  event.preventDefault();
  const feedback=drawer.querySelector('.cast-working-feedback');
  const data=new FormData(form);data.set('ajax','1');
  if(event.submitter&&event.submitter.name)data.set(event.submitter.name,event.submitter.value);
@@ -206,9 +204,18 @@ document.addEventListener('submit',async function(event){
    const summary=drawer.previousElementSibling?.querySelector('small');
    if(summary)summary.textContent=String(data.get('casting_status')||'')+' · '+String(data.get('role_title')||'No roles assigned');
   }
+  if(result.ok&&data.get('action')==='update'){
+   const status=String(data.get('casting_status')||'');
+   const offerButton=drawer.querySelector('.cast-offer-issue button[type="submit"]');
+   if(offerButton)offerButton.disabled=status!=='offered';
+   const communicationButton=drawer.querySelector('.cast-communication button[type="submit"]');
+   if(communicationButton)communicationButton.disabled=!['offered','cast','not_cast'].includes(status);
+   const finalizeButton=drawer.querySelector('.cast-finalize button[type="submit"]');
+   if(finalizeButton)finalizeButton.disabled=status!=='cast';
+  }
   if(result.ok&&data.get('action')==='issue_offer')form.querySelector('button[type="submit"]')?.setAttribute('data-sent','1');
  }catch(e){feedback.textContent='Save failed. Please check your connection and try again.';feedback.dataset.error='1';}
- finally{buttons.forEach(button=>{button.disabled=button.dataset.sent==='1';});}
+ finally{buttons.forEach(button=>{if(button.dataset.sent==='1')button.disabled=true;else if(data.get('action')!=='update')button.disabled=false;else if(!['issue_offer','send_result','finalize'].includes(String(button.value)))button.disabled=false;});}
 });
 })();</script>        <?php endif;?></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
