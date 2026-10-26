@@ -26,10 +26,15 @@
 
 ## P1 — Verification and workflow completion
 
-- [ ] Deploy/apply pending migrations **079–084 as applicable** and verify live schema/version before updating code.
-- [ ] Test casting roles, manual participants, callback/cast publication, offer accept/decline, and Playbill import.
-- [ ] Test production Tasks, grouped assignment, student/guardian completion, owner roles and Volunteer Lead designation.
-- [ ] Verify Attendance arrival-time corrections, compact time controls, tap-again to clear status, and the combined Late arrival/pickup review on staging and mobile; verify pickup occurrence review/guardian notices, including no-send-before-approval. Source updated October 26, 2026; not runtime tested.
+**Next technical improvement selected:** introduce a read-only database schema preflight for critical feature tables before deployment (the missing Volunteer Leads table caused a Tasks HTTP 500). Never apply migrations automatically or expose credentials in web responses.
+
+- [ ] Run a full live schema/migration audit for **079–084** and later migrations as applicable before the next deployment. **Migration 082 (Volunteer Leads) was identified as the Tasks 500 cause and subsequently smoke-tested by the user on October 26; remaining migration coverage is not independently confirmed.**
+- [x] **User smoke test (October 26, live site):** casting offer acceptance and decline, staff response notifications, links and Action Center clear were reported working. This is functional smoke testing, **not** full safeguarding/device acceptance.
+- [ ] Finish deeper casting verification: manual participant handling, role assignment, callback/cast publication, Playbill import and safeguarding authorization edge cases.
+- [x] **User smoke test (October 26, live site):** Production Tasks reported working after the missing migration 082 issue was identified and addressed. Tests were informal; no full regression evidence.
+- [ ] Verify Tasks grouped assignment, guardian/student completion, delegated owner/Volunteer Lead authorization and revocation in an explicit regression pass.
+- [x] **User smoke test (October 26, live site):** attendance entry, drawer save, pickup times and general workflow reported working following recent fixes.
+- [ ] Complete attendance regression: arrival-time corrections, tap-again clear, mobile sizing, cross-date/past-event handling, Late review and guardian-notice approval safeguards (no send before approval).
 - [ ] Finish native Expo staff-side parity for casting and Tasks; test native Action Center and permissions.
 - [ ] Verify Expo Student/Guardian casting offer display and Accept/Decline on physical iOS/Android devices, including decline-note requirement, rejected/stale offer, former-guardian revocation, and Home pending-offer visibility. Test new unread/past notification screen, mark-read, and casting notification navigation. Source update committed October 26, 2026; **not device verified**.
 - [ ] Accessibility/responsive QA for desktop, mobile drawers, forms, attendance and keyboard navigation.
