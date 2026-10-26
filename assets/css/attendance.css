@@ -74,3 +74,14 @@
 .att-pickup-in-more label{display:grid;gap:4px;font-size:12px}
 .att-pickup-in-more input[type=time]{max-width:155px;width:100%;padding:7px;border-radius:8px;border:1px solid #d6cbd0}
 @media(max-width:650px){.att-pickup-in-more .att-pickup-fields{grid-template-columns:1fr}.att-arrival-inline{display:flex}}
+
+/* Compact arrival editor sits beside the attendee identity, not beneath it. */
+.att-roster .att-person{grid-template-columns:minmax(160px,.72fr) minmax(135px,.34fr) minmax(340px,1.35fr);gap:10px}
+.att-roster .att-arrival-inline{grid-column:2;justify-content:flex-start;margin:0;gap:5px;min-width:0}
+.att-roster .att-arrival-inline [data-arrival-label]{font-size:11px}
+.att-roster .att-arrival-inline input[type=time]{width:100px;max-width:100px;min-width:0}
+.att-roster .att-status-picker{grid-column:3}
+.att-roster .att-report{grid-column:1/-1}
+@media(max-width:1100px){.att-roster .att-person{grid-template-columns:minmax(140px,.7fr) minmax(125px,.35fr) minmax(270px,1.3fr)}}
+@media(max-width:750px){.att-roster .att-person{grid-template-columns:minmax(140px,1fr) minmax(120px,auto)}.att-roster .att-arrival-inline{grid-column:2;grid-row:1}.att-roster .att-status-picker{grid-column:1/-1}}
+@media(max-width:400px){.att-roster .att-person{grid-template-columns:1fr}.att-roster .att-arrival-inline{grid-column:1;grid-row:auto}.att-roster .att-status-picker{grid-column:1}}
