@@ -391,13 +391,15 @@ The Floot native app now has authenticated adapters for form detail/submission a
 
 **Pilot remains NO-GO.** This coverage does not change the existing OS push, keyboard/device or operational closure gates.
 
-## October 25 late pickup workflow — source only
+## October 25 late pickup workflow — locally validated source
 
 Migration 084 and the associated source add auditable, production-scoped late pickup recording and staff review. The authoritative release is the schedule item's `ends_at`; arrival time and attendance Late status remain separate. Production settings control the occurrence threshold and grace period. Threshold crossing creates an internal review and versioned guardian notice draft only. Approval and explicit send are separate actions, current guardians are resolved at send time, and the mail worker rechecks the active relationship immediately before delivery.
 
 Approved family-visible notices are returned through the existing mobile Action Center without internal notes or occurrence history. Full staff editing remains web-first. No fee or financial charge is assessed; template language treats repercussions as dependent on actual CTSMD policy.
 
-All PHP files linted cleanly and `tests/late_pickup_workflow.php` passed 12 source-contract checks. Migration 084 and transactional MySQL acceptance were not run because the local database is unavailable. The wider suite retains an unrelated volunteer cancellation rollback failure and unavailable safeguarding database test. Expo typecheck retains three unrelated existing errors in `app/theatre/[id].tsx`, `ProductionHero.tsx`, and `StageBackdrop.tsx`. This source work is not deployed and does not change readiness percentages.
+Migration 084 applied cleanly to a disposable MySQL 8.0.44 clone. `tests/late_pickup_integration.php` passed 35 database-backed checks covering schedule targeting, expected-release calculation, grace handling, correction/reversal audit history, threshold crossing and reopening, approval gates, guardian snapshots, queue deduplication, preference suppression, relationship revocation at worker time, Action Center revocation, cross-production isolation, closed/cancelled event denial, disabled Student denial, and policy reclassification. `tests/late_pickup_workflow.php` passed 14 source-contract checks, including both staff write entry points, and the existing safeguarding suite passed 36 checks against the clone with its transaction rolled back.
+
+All 145 PHP files in the repository's PHP source/test directories linted cleanly, `git diff --check` passed, and mobile `npm run typecheck` passed after three existing presentation-only TypeScript errors were corrected. Manual participant, lifecycle, push claim/recovery/destination, rate-limit, Playbill publication, and Playbill pagination tests pass. The wider suite retains the pre-existing `tests/pilot_volunteer_cancellation.php` test-double rollback failure; its SQL integration behavior was not changed by this work. This source work is not deployed and does not change readiness percentages.
 
 ## October 25 manual production participants — source only
 

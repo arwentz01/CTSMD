@@ -13,7 +13,7 @@ export function StageBackdrop(){
  </View>;
 }
 const styles=StyleSheet.create({
- layer:{...StyleSheet.absoluteFillObject,overflow:'hidden',borderRadius:12},
+ layer:{position:'absolute',top:0,right:0,bottom:0,left:0,overflow:'hidden',borderRadius:12},
  curtain:{position:'absolute',right:0,top:0,bottom:0,width:'40%',backgroundColor:'#60051c',overflow:'hidden'},
  fold:{position:'absolute',top:0,bottom:0,width:13,backgroundColor:'#b22240'},
  edge:{position:'absolute',left:0,top:0,bottom:0,width:2,backgroundColor:'#d3a04b'},
