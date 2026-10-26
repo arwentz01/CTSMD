@@ -1,0 +1,26 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /app
+Disallow: /api/
+Disallow: /attendance
+Disallow: /community
+Disallow: /family
+Disallow: /forms
+Disallow: /messages
+Disallow: /notifications
+Disallow: /production/
+Disallow: /settings
+Disallow: /staff
+Disallow: /volunteer/
+Disallow: /my-theatre/
+Disallow: /account
+Disallow: /login
+Disallow: /logout
+Disallow: /register
+Disallow: /student/
+Disallow: /storage/
+Disallow: /files/
+Disallow: /resources
+Disallow: /playbills/
+# Public sitemap intentionally omitted pending approved canonical URL audit.
+# Robots rules do NOT replace authentication or authorization.
