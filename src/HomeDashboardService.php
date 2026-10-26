@@ -9,6 +9,7 @@ require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/CastingOfferService.php';
+require_once __DIR__ . '/ProductionNotificationAccess.php';
 
 final class HomeDashboardService
 {
@@ -77,6 +78,20 @@ final class HomeDashboardService
                 'detail'=>$offer['role_snapshot'],
                 'href'=>'/notifications?offer='.(int)$offer['id'].'#casting-offer-'.(int)$offer['id']
             ];
+        }
+        if ($staff) {
+            foreach ($notifications['items'] as $notice) {
+                if ((string)($notice['source_type']??'')!=='casting_offer_response' || !empty($notice['read_at']))continue;
+                $declined=str_contains(strtolower((string)$notice['title']),' declined · ');
+                $attention[]=[
+                    'kind'=>$declined?'casting_declined':'casting_accepted',
+                    'urgent'=>$declined,
+                    'title'=>(string)$notice['title'],
+                    'context'=>'Casting response',
+                    'detail'=>(string)$notice['body'],
+                    'href'=>'/notifications#notification-'.(int)$notice['id']
+                ];
+            }
         }
         foreach ($forms as $form) {
             $urgent = ($form['status'] ?? '') === 'missing';
@@ -155,10 +170,10 @@ final class HomeDashboardService
 
     private static function notifications(PDO $db,int $userId):array
     {
-        $stmt=$db->prepare("SELECT id,title,body,action_path,source_type,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY (read_at IS NULL) DESC,created_at DESC,id DESC LIMIT 40");
-        $stmt->execute(['user'=>$userId]);$items=$stmt->fetchAll();
-        $count=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
-        $count->execute(['user'=>$userId]);
-        return ['items'=>$items,'unread_count'=>(int)$count->fetchColumn()];
+        $stmt=$db->prepare("SELECT id,source_type,source_id,title,body,action_path,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY (read_at IS NULL) DESC,created_at DESC,id DESC LIMIT 100");
+        $stmt->execute(['user'=>$userId]);
+        $items=array_slice(ProductionNotificationAccess::filter($db,$userId,$stmt->fetchAll()),0,40);
+        return ['items'=>$items,'unread_count'=>count(array_filter($items,static fn(array $n):bool=>empty($n['read_at'])))];
     }
+
 }
