@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver authorization audit (Oct 26):** Casting offers, family forms, private casting communication, and student Theatre Profiles now distinguish active parent/guardian from caregiver relationships. Verify corresponding web and mobile API endpoints, family schedule-only presentation, safeguarded messaging and notifications, guardian-context production enrollment, and pending role approvals before enabling caregiver account access. Caregiver approval remains blocked intentionally. Run PHP lint and role-based tests after deployment.
+
+
 - [ ] **Legacy staff family-editor consolidation (Oct 26 source):** `/admin/accounts/view?id=` now routes child relationships to Family & Pickup rather than direct add/deactivate actions that bypassed pickup selection and safeguarding review. Verify staff child and parent account pages, approved parent invitations, pickup choice, and old POST actions rejected. No automatic migration/backfill.
 
 
