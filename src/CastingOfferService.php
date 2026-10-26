@@ -21,7 +21,7 @@ final class CastingOfferService {
             if(!$guardians)throw new RuntimeException('An active guardian is required before sending a student casting offer.');
             $s=$db->prepare("SELECT id,status FROM production_cast_offers WHERE casting_record_id=:record FOR UPDATE");
             $s->execute(['record'=>$recordId]);$existing=$s->fetch();
-            if($existing && $existing['status']==='pending')return (int)$existing['id'];
+            if($existing && $existing['status']==='pending'){if($ownsTransaction)$db->commit();return (int)$existing['id'];}
             if($existing && $existing['status']==='accepted')throw new RuntimeException('This offer was accepted. Update the casting decision before issuing another.');
             if($existing){
                 $s=$db->prepare("UPDATE production_cast_offers SET status='pending',role_snapshot=:role,student_user_id=:student,offered_by_user_id=:actor,responded_by_user_id=NULL,response_note=NULL,offered_at=NOW(),responded_at=NULL WHERE id=:id");
@@ -31,7 +31,7 @@ final class CastingOfferService {
                 $s->execute(['production'=>$productionId,'record'=>$recordId,'student'=>(int)$r['user_id'],'role'=>$role,'actor'=>$actorId]);$offerId=(int)$db->lastInsertId();
             }
             $recipients=array_values(array_unique(array_merge([(int)$r['user_id']],$guardians)));
-            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:recipient,'casting_offer',:id,:title,:body,'/notifications',NOW())");
+            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:recipient,'casting_offer',:id,:title,:body,'/notifications#casting-offers',NOW())");
             foreach($recipients as $recipient){$notify->execute(['recipient'=>$recipient,'id'=>$offerId,'title'=>'Casting offer needs a response','body'=>'A role has been offered for '.(string)$r['production_title'].'. Sign in to review and accept or decline.']);}
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'casting.offer_issued','casting_record',:record,'Sent a casting offer for family response.',:meta)");
             $audit->execute(['actor'=>$actorId,'record'=>$recordId,'meta'=>json_encode(['production_id'=>$productionId,'offer_id'=>$offerId,'recipient_count'=>count($recipients)],JSON_THROW_ON_ERROR)]);
