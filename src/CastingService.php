@@ -54,7 +54,7 @@ final class CastingService
     public static function update(PDO $db,int $productionId,int $actorId,int $recordId,array $input):void
     {
         ProductionLifecycleGuard::assertWritable($db,$productionId);
-        $status=(string)($input['casting_status']??'under_review');$structuredRoles=array_key_exists('role_ids',$input);$role=trim((string)($input['role_title']??''));$track=trim((string)($input['participation_track']??''));$notes=trim((string)($input['staff_notes']??''));
+        $status=(string)($input['casting_status']??'under_review');$structuredRoles=array_key_exists('cast_roles_present',$input);$role=trim((string)($input['role_title']??''));$track=trim((string)($input['participation_track']??''));$notes=trim((string)($input['staff_notes']??''));
         if(!in_array($status,['under_review','callback','offered','cast','not_cast','withdrawn'],true))throw new RuntimeException('Choose a valid casting status.');
         if(mb_strlen($role)>190||mb_strlen($track)>100||mb_strlen($notes)>2000)throw new RuntimeException('One or more casting fields are too long.');
         $db->beginTransaction();try{
@@ -62,7 +62,7 @@ final class CastingService
             $liveState=in_array($status,['under_review','callback','offered','cast'],true);if($liveState&&((int)$before['user_active']!==1||$before['user_account_status']==='disabled'||!self::isStudent($db,(int)$before['user_id'])))throw new RuntimeException('That Student account is no longer available for active casting. Move the record to Not cast or Withdrawn to retain the historical decision.');
             $decision=in_array($status,['offered','cast','not_cast','withdrawn'],true);$u=$db->prepare('UPDATE production_casting_records SET casting_status=:status,role_title=:role,participation_track=:track,staff_notes=:notes,decided_by_user_id=:actor,decided_at='.($decision?'CURRENT_TIMESTAMP':'decided_at').' WHERE id=:id');$u->execute(['status'=>$status,'role'=>$role!==''?$role:null,'track'=>$track!==''?$track:null,'notes'=>$notes!==''?$notes:null,'actor'=>$actorId,'id'=>$recordId]);
             if($structuredRoles){
-                CastingRoleService::set($db,$productionId,$recordId,(array)$input['role_ids']);
+                CastingRoleService::set($db,$productionId,$recordId,(array)($input['role_ids']??[]));
                 $latest=$db->prepare("SELECT role_title FROM production_casting_records WHERE id=:id");
                 $latest->execute(['id'=>$recordId]);$role=trim((string)$latest->fetchColumn());
             }
