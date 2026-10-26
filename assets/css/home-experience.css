@@ -9,3 +9,13 @@
 .home-action.casting-response.casting-declined>i{background:#f5dcdf;color:#a3233a}
 .home-action.casting-response.casting-declined small,.home-action.casting-response.casting-declined>a{color:#a3233a}
 @media(max-width:650px){.home-action.casting-response{grid-template-columns:30px minmax(0,1fr)}.home-action.casting-response>a{grid-column:2}}
+
+/* Inline staff casting response navigation and acknowledgement. */
+.home-action-links{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.home-action-links>a{font-size:11px;font-weight:800;color:var(--red);white-space:nowrap}
+.home-action.casting-accepted .home-action-links>a{color:#23683c}
+.home-action-links form{margin:0}
+.home-action-links button{font:inherit;font-size:11px;font-weight:800;cursor:pointer;border:1px solid #d9cbd0;border-radius:8px;padding:7px 10px;background:#fff;color:#655159}
+.home-action-links button:hover{background:#f6eff1}
+.home-action-links button:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
+@media(max-width:650px){.home-action-links{grid-column:2;justify-content:flex-start}}
