@@ -28,6 +28,11 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Family & Pickup Management V1 deployed/runtime tested:** apply migration 085; verify each child has independent adult relationships and pickup-only people, edit/deactivate/restore, audit entries, CSRF, staff approval and final-guardian protections. New route: `/student-profile/family?student=ID`. Source implemented October 26, not runtime verified.
+- [ ] **Family & Pickup Management safeguarding closure:** design verified adult invitation delivery/claiming and pending request review queue, including custody/dispute holds; restrict caregiver account permissions before approvals (currently explicitly blocked), check same-child pickup authorization independently, and ensure former guardians lose future messages, tasks, casting and notices after deactivation. Avoid granting broad child access by pickup-only status.
+- [ ] **Attendance pickup integration:** display authorized pickup names (including no-account contacts) to appropriate staff at checkout; verify ID/pickup workflow and log who actually collected the student. This V1 management slice does not yet verify collection.
+
+
 **Deployment preflight added in source:** `php bin/check-schema.php` checks required feature tables/arrival column for migrations 079–084 without changing data or exposing connection details. This would detect the absent Volunteer Leads table. **Still needs to be run on hosting and incorporated into the deployment checklist/automation.**
 
 - [ ] Run `php bin/check-schema.php` on the live hosting CLI, remediate any missing schema for **079–084**, and audit later migrations before subsequent deployment. **Migration 082 (Volunteer Leads) was identified as the Tasks 500 cause and subsequently smoke-tested by the user on October 26; remaining migration coverage is not independently confirmed.**
