@@ -27,12 +27,12 @@ final class PlatformOnboardingExperience
             if($route==='/verify-email'){$token=(string)($_POST['token']??'');$subject=RateLimiter::requestSubject(hash('sha256',$token));RateLimiter::enforce($db,'verify-email',$subject,10,3600,3600);$userId=PlatformRegistrationService::verify($db,$token);RateLimiter::clear($db,'verify-email',$subject);Auth::establishSession($db,$userId);self::redirect($basePath.'/onboarding');}
             if($route==='/onboarding'||$route==='/family/manage'){
                 if(!$user)throw new RuntimeException('Sign in to manage your household.');$action=(string)($_POST['action']??'');
-                if($action==='add_child'){PlatformRegistrationService::addManagedChild($db,$user,$_POST+['base_path'=>$basePath]);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Child profile added. If you provided an email address, an account setup invitation was queued.'];self::redirect($basePath.'/family/manage');}
+                if($action==='add_child'){PlatformRegistrationService::addManagedChild($db,$user,array_merge($_POST,['base_path'=>$basePath]));$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Child profile added. If you provided an email address, an account setup invitation was queued.'];self::redirect($basePath.'/family/manage');}
                 if($action==='complete_onboarding'){PlatformRegistrationService::completeOnboarding($db,(int)$user['id']);$_SESSION['platform_onboarding_flash']=['type'=>'success','message'=>'Household setup saved. Your CTSMD membership is pending staff approval.'];self::redirect($basePath.'/family/manage');}
             }
             throw new RuntimeException('Choose a valid account action.');
         }catch(RateLimitExceeded $e){http_response_code(429);header('Retry-After: '.$e->retryAfter);header('Content-Type: text/plain; charset=utf-8');exit($e->getMessage());
-        }catch(RuntimeException $e){$_SESSION['platform_onboarding_flash']=['type'=>'error','message'=>$e->getMessage()];self::redirect($basePath.$route);}
+        }catch(RuntimeException $e){$_SESSION['platform_onboarding_flash']=['type'=>'error','message'=>$e->getMessage()];self::redirect($basePath.$route.($route==='/student/activate'&&preg_match('/^[a-f0-9]{64}$/',(string)($_POST['token']??''))?'?token='.rawurlencode((string)$_POST['token']):''));}
     }
 
     private static function joinPage(string $basePath):never
