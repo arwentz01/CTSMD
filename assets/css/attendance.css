@@ -190,3 +190,13 @@
 .att-roster .att-status-more .att-more-panel .att-drawer-footer span{font-size:12px;color:#6d6268}
 .att-roster .att-status-more .att-more-panel .att-drawer-save{display:block;position:static;width:100%;min-height:46px;border-radius:10px;background:#a6192e;color:#fff;border:1px solid #a6192e;font-weight:800;cursor:pointer}
 .att-roster .att-status-more .att-more-panel .att-drawer-save:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
+
+/* Pickup authorization is a staff-only reference in the existing attendance drawer. */
+.att-roster .att-status-more .att-more-panel .att-authorized-pickup{border-top:1px solid #eadfe3;padding-top:14px;display:grid;gap:8px}
+.att-roster .att-status-more .att-authorized-pickup>strong{font-size:13px;color:#30252a}
+.att-roster .att-status-more .att-authorized-pickup p{margin:0;font-size:12px;line-height:1.5;color:#6b6066}
+.att-roster .att-status-more .att-authorized-pickup ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.att-roster .att-status-more .att-authorized-pickup li{padding:8px 10px;background:#f8f5f6;border:1px solid #eee6e9;border-radius:8px;font-size:12px;line-height:1.5}
+.att-roster .att-status-more .att-authorized-pickup li b{font-weight:800}
+.att-roster .att-status-more .att-authorized-pickup li small{display:block;color:#675b61;font-size:11px}
+.att-roster .att-status-more .att-authorized-pickup .att-pickup-warning{color:#98334a;font-weight:700}
