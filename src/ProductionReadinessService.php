@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/ProductionChecklistAssignmentService.php';
 
 final class ProductionReadinessService
 {
@@ -70,6 +71,9 @@ final class ProductionReadinessService
         $db->beginTransaction();try{
             if($id){$s=$db->prepare('SELECT * FROM production_checklist_items WHERE id=:id AND production_id=:production FOR UPDATE');$s->execute(['id'=>$id,'production'=>$productionId]);$before=$s->fetch();if(!$before)throw new RuntimeException('That checklist item no longer exists in this production.');$completedAt=$status==='done'?($before['completed_at']?:date('Y-m-d H:i:s')):null;$completedBy=$status==='done'?($before['completed_by_user_id']?:$actor['id']):null;$u=$db->prepare('UPDATE production_checklist_items SET category=:category,title=:title,notes=:notes,due_at=:due,status=:status,assigned_to_user_id=:assignee,sort_order=:sort,completed_by_user_id=:completed_by,completed_at=:completed_at WHERE id=:id');$u->execute(['category'=>$category,'title'=>$title,'notes'=>$notes?:null,'due'=>$due,'status'=>$status,'assignee'=>$assignee,'sort'=>$sort,'completed_by'=>$completedBy,'completed_at'=>$completedAt,'id'=>$id]);$event='production_checklist.updated';
             }else{$completedAt=$status==='done'?date('Y-m-d H:i:s'):null;$completedBy=$status==='done'?(int)$actor['id']:null;$s=$db->prepare('INSERT INTO production_checklist_items (production_id,category,title,notes,due_at,status,assigned_to_user_id,sort_order,created_by_user_id,completed_by_user_id,completed_at) VALUES (:production,:category,:title,:notes,:due,:status,:assignee,:sort,:creator,:completed_by,:completed_at)');$s->execute(['production'=>$productionId,'category'=>$category,'title'=>$title,'notes'=>$notes?:null,'due'=>$due,'status'=>$status,'assignee'=>$assignee,'sort'=>$sort,'creator'=>(int)$actor['id'],'completed_by'=>$completedBy,'completed_at'=>$completedAt]);$id=(int)$db->lastInsertId();$event='production_checklist.created';}
+            if(isset($input['assignment_enabled'])){
+                ProductionChecklistAssignmentService::assign($db,$productionId,$id,(array)($input['assignee_ids']??[]),isset($input['required_each']));
+            }
             self::audit($db,(int)$actor['id'],$event,$id,'Saved production readiness checklist item.',['production_id'=>$productionId,'status'=>$status,'category'=>$category,'assigned_to_user_id'=>$assignee]);$db->commit();return $id;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The checklist item could not be saved.');}
     }
