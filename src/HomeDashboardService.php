@@ -155,7 +155,7 @@ final class HomeDashboardService
 
     private static function notifications(PDO $db,int $userId):array
     {
-        $stmt=$db->prepare("SELECT id,title,body,action_path,source_type,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC LIMIT 12");
+        $stmt=$db->prepare("SELECT id,title,body,action_path,source_type,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY (read_at IS NULL) DESC,created_at DESC,id DESC LIMIT 40");
         $stmt->execute(['user'=>$userId]);$items=$stmt->fetchAll();
         $count=$db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
         $count->execute(['user'=>$userId]);
