@@ -43,9 +43,18 @@ final class MobileApi
             $user = self::bearerUser($db);
             if (!$user) self::json(['error' => 'Authentication required.'], 401);
 
+            // A caregiver-only identity cannot inherit general guardian mobile
+            // endpoints. Serve only a scoped family logistics contract.
+            $roleCheck=$db->prepare("SELECT relationship_type FROM family_relationships WHERE guardian_user_id=:id AND status='active'");
+            $roleCheck->execute(['id'=>(int)$user['id']]);$familyTypes=$roleCheck->fetchAll(PDO::FETCH_COLUMN);
+            $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
+            if($caregiverOnly && !in_array($route,['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],true)){
+                self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
+            }
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/my-family' => self::myFamily($db, $user),
+                '/api/mobile/caregiver-schedule' => self::caregiverSchedule($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
                 '/api/mobile/production-casting' => self::productionCasting($db,$user),
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
@@ -87,6 +96,24 @@ final class MobileApi
             error_log('Mobile API error: ' . $e->getMessage());
             self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
         }
+    }
+
+    private static function caregiverSchedule(PDO $db,array $user):never {
+        self::requireMethod('GET');
+        $q=$db->prepare("SELECT u.id,u.first_name,u.last_name FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:adult AND fr.status='active' AND fr.relationship_type='caregiver'");
+        $q->execute(['adult'=>(int)$user['id']]);$children=$q->fetchAll();
+        $from=new DateTimeImmutable('now');$until=$from->modify('+45 days');$calls=[];
+        foreach($children as $child){
+            $sid=(int)$child['id'];$q=$db->prepare("SELECT id,first_name,last_name,initials,display_role role,active FROM users WHERE id=:id");$q->execute(['id'=>$sid]);$student=$q->fetch();
+            if(!$student)continue;
+            $student['roles']=Auth::roles($db,$sid);$student['permissions']=Auth::permissions($db,$sid);
+            foreach(CalendarService::visibleEvents($db,$student,$from,$until) as $event){
+                if(($event['status']??'active')==='cancelled')continue;
+                $calls[]=['student_id'=>$sid,'student_first_name'=>$child['first_name'],'schedule_item_id'=>(int)$event['id'],'production_title'=>$event['production_title'],'title'=>$event['title'],'starts_at'=>$event['starts_at'],'ends_at'=>$event['ends_at'],'location'=>$event['location']];
+            }
+        }
+        usort($calls,static fn(array $a,array $b):int=>strcmp((string)$a['starts_at'],(string)$b['starts_at']));
+        self::json(['calls'=>$calls]);
     }
 
     private static function myFamily(PDO $db,array $user): never
