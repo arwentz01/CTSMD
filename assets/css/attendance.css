@@ -92,14 +92,60 @@
 .att-roster .att-pickup-in-more input:focus-visible{outline:3px solid rgba(166,25,46,.2);outline-offset:2px;border-color:#a6192e}
 .att-roster .att-pickup-in-more input:disabled{background:#f5f1f2;opacity:.7;cursor:not-allowed}
 
-/* Expanded attendance controls use the full row, never a narrow side column. */
-.att-roster .att-person:has(.att-status-more[open]) .att-status-picker{grid-column:1/-1;grid-row:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
-.att-roster .att-person:has(.att-status-more[open]) .att-status-primary{grid-column:1}
-.att-roster .att-person .att-status-more[open]{grid-column:1/-1;display:block;padding:0;margin:0}
-.att-roster .att-status-more[open] summary{margin:6px 0 0 auto;width:max-content}
-.att-roster .att-status-more .att-more-panel{display:grid;gap:14px;padding:16px;margin:10px 0 0;border:1px solid #e5dadd;border-radius:12px;background:#faf7f8}
-.att-roster .att-status-more .att-more-note{display:grid;gap:6px}
-.att-roster .att-status-more .att-more-note input{position:static;opacity:1;pointer-events:auto;display:block;box-sizing:border-box;width:100%;min-height:42px;border:1px solid #d7cbd0;border-radius:9px;padding:10px;background:#fff;color:#282027;font:inherit;font-size:13px}
-.att-roster .att-status-more .att-pickup-in-more{margin-top:0;padding-top:12px}
-.att-roster .att-status-more .att-pickup-fields{grid-template-columns:minmax(130px,170px) minmax(0,1fr)}
-@media(max-width:750px){.att-roster .att-person:has(.att-status-more[open]) .att-status-picker{grid-column:1/-1}.att-roster .att-status-more .att-pickup-fields{grid-template-columns:1fr}}
+
+/* Roster v3: a single compact control bar, details on a second row only. */
+.att-roster .att-roster-section-list .att-person,
+.att-roster .att-roster-section-list .att-person:has(.att-status-more[open]){
+ display:grid;
+ grid-template-columns:minmax(150px,.9fr) minmax(150px,.6fr) minmax(300px,1.8fr) 70px;
+ align-items:center;gap:9px 12px;padding:10px 14px;min-height:64px;
+}
+.att-roster .att-person-id{grid-column:1;grid-row:1;min-width:0}
+.att-roster .att-arrival-inline{grid-column:2;grid-row:1;min-width:0;margin:0}
+.att-roster .att-status-picker,
+.att-roster .att-person:has(.att-status-more[open]) .att-status-picker{display:contents}
+.att-roster .att-status-primary,
+.att-roster .att-person:has(.att-status-more[open]) .att-status-primary{grid-column:3;grid-row:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.att-roster .att-status-more,
+.att-roster .att-person .att-status-more[open]{grid-column:4;grid-row:1;display:block;min-width:0;margin:0;padding:0}
+.att-roster .att-status-more>summary,
+.att-roster .att-status-more[open]>summary{box-sizing:border-box;display:flex;justify-content:center;align-items:center;width:100%;max-width:none;min-height:44px;margin:0;padding:0 7px;border:1px solid #ddd2d7;border-radius:10px;background:#fff;color:#8c1830;font-size:12px;font-weight:800}
+.att-roster .att-person .att-status-more[open]{display:contents}
+.att-roster .att-status-more[open]>summary{grid-column:4;grid-row:1}
+.att-roster .att-status-more .att-more-panel,
+.att-roster .att-status-more[open] .att-more-panel{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.5fr);align-items:start;gap:12px 18px;padding:14px 16px;margin:0;border:1px solid #e6dade;border-radius:11px;background:#fbf8f9}
+.att-roster .att-status-secondary,
+.att-roster .att-status-more[open] .att-status-secondary{grid-column:1;grid-row:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}
+.att-roster .att-status-more .att-more-note{grid-column:2;grid-row:1;display:grid;gap:5px;margin:0;min-width:0}
+.att-roster .att-status-more .att-more-note span{font-size:12px}
+.att-roster .att-status-more .att-more-note input{display:block;box-sizing:border-box;position:static;opacity:1;pointer-events:auto;width:100%;min-width:0;min-height:42px;margin:0;border:1px solid #d7cbd0;border-radius:9px;padding:9px 11px;background:#fff;color:#282027;font:inherit;font-size:13px}
+.att-roster .att-status-more .att-pickup-in-more{grid-column:1/-1;grid-row:2;margin:0;padding:10px 0 0;border-top:1px solid #e9dfe3}
+.att-roster .att-status-more .att-pickup-in-more>strong{margin-bottom:9px}
+.att-roster .att-status-more .att-pickup-fields{display:grid;grid-template-columns:minmax(155px,200px) minmax(0,1fr);gap:12px;align-items:end;margin:0}
+.att-roster .att-status-more .att-pickup-fields label{display:grid;gap:5px;min-width:0;text-align:left}
+.att-roster .att-status-more .att-pickup-fields input:not([type=hidden]){display:block;width:100%;max-width:none;box-sizing:border-box;margin:0;min-width:0;min-height:42px;text-align:left}
+.att-roster .att-status-more .att-pickup-fields input[type=time]{max-width:200px}
+.att-roster .att-report{grid-column:1/-1;grid-row:auto}
+@media(max-width:1050px){
+ .att-roster .att-roster-section-list .att-person,.att-roster .att-roster-section-list .att-person:has(.att-status-more[open]){grid-template-columns:minmax(140px,1fr) minmax(120px,.7fr) minmax(250px,1.6fr) 65px}
+}
+@media(max-width:760px){
+ .att-roster .att-roster-section-list .att-person,.att-roster .att-roster-section-list .att-person:has(.att-status-more[open]){grid-template-columns:minmax(140px,1fr) minmax(120px,auto) 65px;gap:8px}
+ .att-roster .att-person-id{grid-column:1;grid-row:1}
+ .att-roster .att-arrival-inline{grid-column:2;grid-row:1}
+ .att-roster .att-status-primary,.att-roster .att-person:has(.att-status-more[open]) .att-status-primary{grid-column:1/3;grid-row:2}
+ .att-roster .att-status-more[open]>summary,.att-roster .att-status-more>summary{grid-column:3;grid-row:2}
+ .att-roster .att-status-more .att-more-panel,.att-roster .att-status-more[open] .att-more-panel{grid-row:3;grid-template-columns:1fr}
+ .att-roster .att-status-secondary,.att-roster .att-status-more[open] .att-status-secondary{grid-column:1;grid-row:1}
+ .att-roster .att-status-more .att-more-note{grid-column:1;grid-row:2}
+ .att-roster .att-status-more .att-pickup-in-more{grid-column:1;grid-row:3}
+}
+@media(max-width:490px){
+ .att-roster .att-roster-section-list .att-person,.att-roster .att-roster-section-list .att-person:has(.att-status-more[open]){grid-template-columns:minmax(0,1fr) 65px}
+ .att-roster .att-person-id{grid-column:1}
+ .att-roster .att-arrival-inline{grid-column:1/-1;grid-row:2}
+ .att-roster .att-status-primary,.att-roster .att-person:has(.att-status-more[open]) .att-status-primary{grid-column:1;grid-row:3}
+ .att-roster .att-status-more>summary,.att-roster .att-status-more[open]>summary{grid-column:2;grid-row:3}
+ .att-roster .att-status-more .att-more-panel,.att-roster .att-status-more[open] .att-more-panel{grid-row:4}
+ .att-roster .att-status-more .att-pickup-fields{grid-template-columns:1fr}
+}
