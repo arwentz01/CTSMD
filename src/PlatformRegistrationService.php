@@ -39,7 +39,7 @@ final class PlatformRegistrationService
             $role=$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id) SELECT :user,id FROM auth_roles WHERE code='member' AND active=1 LIMIT 1");
             $role->execute(['user'=>$userId]);
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'account.self_registered','user',:id,'Created a public CTSMD Connect registration.',:meta)");
-            $audit->execute(['id'=>$userId,'meta'=>json_encode(['relationship_type'=>$relationship],JSON_THROW_ON_ERROR)]);
+            $audit->execute(['id'=>$userId,'meta'=>json_encode(['relationship_type'=>$relationship,'creator_pickup_authorized'=>true],JSON_THROW_ON_ERROR)]);
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('We could not create that account. Please try again.');}
 
@@ -87,6 +87,13 @@ final class PlatformRegistrationService
             $role->execute(['user'=>$childId,'actor'=>(int)$guardian['id']]);
             $relation=$db->prepare("INSERT INTO family_relationships (guardian_user_id,student_user_id,relationship_type,is_primary,status,created_by_user_id) VALUES (:guardian,:student,:relationship,1,'active',:creator)");
             $relation->execute(['guardian'=>(int)$guardian['id'],'student'=>$childId,'relationship'=>$relationship,'creator'=>(int)$guardian['id']]);
+            // The creating adult is the child's initial primary relationship and
+            // is authorized for pickup by default. This runs in the same
+            // transaction as child creation, not as a separate enrollment step.
+            $pickupName=trim((string)($guardian['first_name']??'').' '.(string)($guardian['last_name']??''));
+            if($pickupName===''){$nameStmt=$db->prepare("SELECT CONCAT(first_name,' ',last_name) FROM users WHERE id=:id");$nameStmt->execute(['id'=>(int)$guardian['id']]);$pickupName=trim((string)$nameStmt->fetchColumn());}
+            $pickup=$db->prepare("INSERT INTO student_pickup_people (student_user_id,name,relationship_label,linked_guardian_user_id,active,updated_by_user_id) VALUES (:student,:name,:relation,:adult,1,:actor)");
+            $pickup->execute(['student'=>$childId,'name'=>$pickupName,'relation'=>ucfirst($relationship),'adult'=>(int)$guardian['id'],'actor'=>(int)$guardian['id']]);
             $db->prepare('UPDATE users SET onboarding_completed_at=COALESCE(onboarding_completed_at,CURRENT_TIMESTAMP) WHERE id=:id')->execute(['id'=>(int)$guardian['id']]);
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'family.child_created','user',:student,'Created a guardian-managed student profile.',:meta)");
             $audit->execute(['actor'=>(int)$guardian['id'],'student'=>$childId,'meta'=>json_encode(['relationship_type'=>$relationship],JSON_THROW_ON_ERROR)]);
