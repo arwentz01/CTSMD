@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/MailService.php';
+require_once __DIR__ . '/AuditionIntakeBridge.php';
 
 final class RegistrationService
 {
@@ -62,7 +63,7 @@ final class RegistrationService
     public static function cancelByToken(PDO $db,string $token): void
     {
         $submission=self::submissionForToken($db,$token);if(!$submission)throw new RuntimeException('That registration link is invalid.');if(in_array($submission['status'],['cancelled','declined'],true))return;
-        $db->prepare("UPDATE registration_submissions SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['id'=>(int)$submission['id']]);$audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'registration.cancelled','registration_submission',:id,'Public registration cancelled by registrant.',NULL)");$audit->execute(['id'=>(int)$submission['id']]);
+        $db->prepare("UPDATE registration_submissions SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['id'=>(int)$submission['id']]);$audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'registration.cancelled','registration_submission',:id,'Public registration cancelled by registrant.',NULL)");$audit->execute(['id'=>(int)$submission['id']]);AuditionIntakeBridge::withdrawPending($db,(int)$submission['id'],null);
     }
 
     public static function allOpportunities(PDO $db): array
