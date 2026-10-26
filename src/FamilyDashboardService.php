@@ -101,6 +101,7 @@ final class FamilyDashboardService
             JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled'
             WHERE fr.guardian_user_id=:guardian
               AND fr.status='active'
+              AND fr.relationship_type IN ('parent','guardian')
               AND EXISTS (
                   SELECT 1
                   FROM auth_user_roles ur
