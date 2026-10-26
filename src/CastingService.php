@@ -72,7 +72,18 @@ final class CastingService
             }
             if(!empty($before['production_membership_id']))TheatreHistoryService::syncStudentCredit($db,$productionId,(int)$before['user_id'],$actorId);
             self::audit($db,$actorId,'casting.decision_updated',$recordId,'Updated casting decision.',['production_id'=>$productionId,'before_status'=>$before['casting_status'],'after_status'=>$status,'role_title'=>$role?:null,'participation_track'=>$track?:null]);$db->commit();
-        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('The casting decision could not be saved.');}
+        }catch(Throwable $e){
+            if($db->inTransaction())$db->rollBack();
+            if($e instanceof PDOException){
+                error_log('Casting decision save database failure: '.$e->getMessage());
+                if(str_contains($e->getMessage(),'production_cast_offers'))throw new RuntimeException('Casting offer storage is unavailable. Ask an administrator to apply migration 080 before saving decisions.');
+                if(str_contains($e->getMessage(),'production_cast_role_assignments')||str_contains($e->getMessage(),'production_cast_roles'))throw new RuntimeException('Casting role storage is unavailable. Ask an administrator to apply migration 079 before saving decisions.');
+                throw new RuntimeException('The casting decision could not be saved due to a database error. Contact the administrator.');
+            }
+            if($e instanceof RuntimeException)throw $e;
+            error_log('Casting decision save unexpected failure: '.$e->getMessage());
+            throw new RuntimeException('The casting decision could not be saved. Contact the administrator.');
+        }
     }
 
     public static function finalizeRoster(PDO $db,int $productionId,int $actorId,int $recordId,array $groupIds):void
