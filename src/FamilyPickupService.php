@@ -95,6 +95,24 @@ final class FamilyPickupService {
             self::audit($db,(int)$actor['id'],$student,'family.relationship_deactivated',['relationship_id'=>$relationshipId,'adult_user_id'=>(int)$r['guardian_user_id']]);$db->commit();
         }catch(Throwable $e){$db->rollBack();throw $e;}
     }
+    public static function pendingForStaff(PDO $db):array {
+        $s=$db->query("SELECT rr.id,rr.student_user_id,rr.adult_email,rr.relationship_type,rr.relationship_label,rr.pickup_authorized,rr.created_at,CONCAT(child.first_name,' ',child.last_name) student_name,CONCAT(requester.first_name,' ',requester.last_name) requested_by_name FROM student_relationship_requests rr JOIN users child ON child.id=rr.student_user_id JOIN users requester ON requester.id=rr.requested_by_user_id WHERE rr.status='pending' ORDER BY rr.created_at,rr.id LIMIT 100");
+        return $s->fetchAll();
+    }
+    public static function cancelRequest(PDO $db,array $actor,int $student,int $id):void {
+        self::requireManager($db,$actor,$student);
+        $db->beginTransaction();
+        try {
+            $s=$db->prepare("SELECT requested_by_user_id,status FROM student_relationship_requests WHERE id=:id AND student_user_id=:student FOR UPDATE");
+            $s->execute(['id'=>$id,'student'=>$student]);$row=$s->fetch();
+            if(!$row||$row['status']!=='pending')throw new RuntimeException('Only pending requests can be cancelled.');
+            if(!AccessPolicy::canManagePeople($actor)&&(int)$row['requested_by_user_id']!==(int)$actor['id'])throw new RuntimeException('Only the requester or CTSMD staff may cancel this request.');
+            $s=$db->prepare("UPDATE student_relationship_requests SET status='cancelled',reviewed_by_user_id=:actor,reviewed_at=NOW() WHERE id=:id");
+            $s->execute(['actor'=>(int)$actor['id'],'id'=>$id]);
+            self::audit($db,(int)$actor['id'],$student,'family.relationship_cancelled',['request_id'=>$id]);
+            $db->commit();
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+    }
     public static function decide(PDO $db,array $actor,int $student,int $id,bool $approve):void {
         if(!AccessPolicy::canManagePeople($actor))throw new RuntimeException('CTSMD staff approval is required to activate new adult access.');
         self::requireManager($db,$actor,$student);
