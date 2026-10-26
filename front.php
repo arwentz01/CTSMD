@@ -15,6 +15,15 @@ $requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)
 $route = $requestPath;
 if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) $route = substr($route, strlen($detectedBasePath)) ?: '/';
 $route = rtrim($route, '/') ?: '/';
+// Private Connect screens and APIs are not search-indexable. Access control is
+// still enforced by their handlers; this header is not an authorization boundary.
+$privateIndexRoutes = ['/admin','/api','/app','/attendance','/community','/family','/forms','/messages','/notifications','/production','/settings','/staff','/volunteer','/my-theatre','/account','/login','/logout','/student','/files'];
+foreach ($privateIndexRoutes as $privateRoute) {
+    if ($route === $privateRoute || str_starts_with($route, $privateRoute . '/')) {
+        header('X-Robots-Tag: noindex, nofollow, noarchive');
+        break;
+    }
+}
 require_once __DIR__ . '/src/Auth.php';Auth::startSession();
 require_once __DIR__ . '/src/MobileApi.php';if(MobileApi::handles($route))MobileApi::render($route);
 if ($route === '/dev/identity') {
