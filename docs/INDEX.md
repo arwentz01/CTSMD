@@ -1,0 +1,36 @@
+# CTSMD Connect documentation map
+
+Updated 2026-10-26. Start here instead of reading every chronological build note.
+
+## Current sources of truth
+
+| Area | Document | Purpose |
+|---|---|---|
+| Release / pilot decision | [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md) | Historical evidence and pilot gates; dates matter, not automatic signoff |
+| Platform launch gate and 20-point checklist | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | **Current** security, compliance, web/native and public-launch punch list |
+| Product roadmap | [TODO.md](TODO.md) | Long-term features and approved backlog; read recent delta below before old status sections |
+| Architecture / product intent | [PRODUCT_CHARTER.md](PRODUCT_CHARTER.md), [VISUAL_FIRST_ARCHITECTURE.md](VISUAL_FIRST_ARCHITECTURE.md) | Product scope and implementation principles |
+| Mobile integration | [MOBILE_V1_FOLLOWUPS.md](MOBILE_V1_FOLLOWUPS.md), [mobile parity](../mobile/docs/CASTING_TASKS_PARITY.md) | Native scope and outstanding staff parity |
+| Production lifecycle | [PRODUCTION_LIFECYCLE_V2.md](PRODUCTION_LIFECYCLE_V2.md) | Stage, lifecycle and approval behavior |
+| Casting / published Playbill | [CASTING_ROLES_ROLLOUT.md](CASTING_ROLES_ROLLOUT.md), [CASTING_OFFER_WORKFLOW.md](CASTING_OFFER_WORKFLOW.md), [PLAYBILL_PUBLICATION.md](PLAYBILL_PUBLICATION.md), [MANUAL_PARTICIPANTS.md](MANUAL_PARTICIPANTS.md) | Roles, offers, publication and manual records |
+| Tasks / guardians / Volunteer Leads | [PRODUCTION_TASKS_EXTRACTION.md](PRODUCTION_TASKS_EXTRACTION.md), [PRODUCTION_TODO_ASSIGNMENTS.md](PRODUCTION_TODO_ASSIGNMENTS.md) | /production/tasks and individual completion |
+| Attendance / late pickups | [LATE_PICKUP_WORKFLOW.md](LATE_PICKUP_WORKFLOW.md) | Current late-pickup design and acceptance |
+| Email operations | [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md), [EMAIL_AUTOMATION_ROLLOUT.md](EMAIL_AUTOMATION_ROLLOUT.md) | Mail queue, worker, opt-in activation, stale email safety |
+| Hosting incident | [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md) | Incident response and disaster recovery work |
+| UX / IA | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [NAVIGATION_IA.md](NAVIGATION_IA.md), [UI_OPTIMIZATION_AUDIT.md](UI_OPTIMIZATION_AUDIT.md) | Design standards and historical UI findings |
+
+## Current delta relative to older notes
+
+- Production **Readiness** now covers automated signals and links to **Tasks**; task creation and per-person completion are at `/production/tasks`. Any doc implying the full checklist editor is still on Readiness is historical.
+- Casting includes production-role multi-select, distinct callback/cast lists, private working drawers, manual participant support, and authorized student/guardian offer responses. Pre-role-library `Next — Casting` language in the original TODO predates these builds.
+- Attendance records editable arrival time; late checkout is in each student's **More** section with time-only UI. Server stores full timestamps.
+- Late-pickup workflow has advanced beyond the original [LATE_PICKUP_CODEX_HANDOFF.md](LATE_PICKUP_CODEX_HANDOFF.md) specification. Consult [LATE_PICKUP_WORKFLOW.md](LATE_PICKUP_WORKFLOW.md) for newer implementation/acceptance evidence; the handoff is retained only as historical requirements.
+- Native app has a student/guardian Action Center for casting offers and To-Dos, but staff creation/editing parity is documented as incomplete.
+- Volunteer Lead currently affects **production task owner eligibility only**. Do not infer volunteer-shift authority, training permissions, financial enforcement, or broader administration.
+- Production deployment status and operational approval **cannot be inferred from GitHub commits**. Use the pilot report plus real deployment evidence.
+
+## Historical records
+`BUILD_001.md`, earlier audit checkpoints, rollout specifications and old readiness percentages remain for chronology and traceability. They should not be read as current acceptance decisions. Prefer updating the current source and linking historical notes rather than deleting evidence.
+
+## Documentation maintenance rule
+When a new workflow ships, update: (1) this map if a new canonical doc is introduced; (2) the applicable current feature doc; (3) TODO for deferred work; (4) release readiness if a new gate arises; and (5) test/deployment evidence. Never replace untested claims with “production ready.”
