@@ -145,3 +145,10 @@
 - Organization-wide channels are not restricted by production stages. Closed productions still require a separate, intentionally authorized historical viewing experience.
 - Follow-up required: safeguard channel archival against races, audit channel membership administration and Community reactions/comments/edit routes, and test creation, editing, cross-production reassignment, restoration, and safety archival across lifecycle stages.
 - Code is committed but PHP lint, integration tests, and staging deployment were **not** executed in this connector-only pass. Do not change pilot readiness classification without test evidence.
+
+## Family Hub: optional student account email invitation (October 25)
+- Family Manage / Onboarding Add Child now accepts an optional child email. Without an email, the existing guardian-managed profile workflow remains unchanged.
+- With an email, the guardian-created student profile keeps its existing student role and family relationship; a 48-hour hashed single-use activation token is stored using `auth_email_verifications`, and MailService queues a student invitation. Existing email addresses are rejected to avoid duplicate identity creation.
+- `/student/activate` verifies the invitation and lets the student create an 8-character-minimum password on the **same** profile; email verification and audit recording occur during activation. This does not assign production access or bypass staff membership approval.
+- Queue processing must already be operational for actual delivery. This change does not assert that an email was delivered.
+- **Unverified:** PHP lint, SQL schema compatibility, mail-worker delivery, successful/expired/replayed links, concurrent activation, child identity/address corrections, resend flow, failed-email recovery, guardian/child session interactions, and real-device mobile support. No live migrations/deployment/tests were performed. Existing child profiles with no email need a future staff/guardian invitation-management affordance.
