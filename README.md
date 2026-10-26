@@ -6,6 +6,10 @@ CTSMD Connect is the visual-first community and operations platform prototype fo
 
 The prototype is server-rendered PHP with a lightweight MySQL data layer. It includes account authentication/RBAC, queued email, and Web Push delivery code. Deployment verification, safeguarding validation, and delivery acceptance tests are still required before a real-family pilot. See [`docs/BOARD_PILOT_READINESS.md`](docs/BOARD_PILOT_READINESS.md).
 
+## Documentation and launch readiness
+
+Start at [docs/INDEX.md](docs/INDEX.md) for the current documentation map, then review [docs/PLATFORM_LAUNCH_READINESS.md](docs/PLATFORM_LAUNCH_READINESS.md) for the release punch list and required verification. Historic implementation notes and commits are not evidence of a live deployment.
+
 ## Canonical product backlog
 
 The approved product wishlist, near-term build order, architectural notes, and platform debt are tracked in [`docs/TODO.md`](docs/TODO.md). That document is the source of truth for “what comes next” rather than older build-checkpoint notes.
