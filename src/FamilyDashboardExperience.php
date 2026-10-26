@@ -26,6 +26,13 @@ final class FamilyDashboardExperience
         if (!$user) self::redirect($basePath . '/login');
         if (Auth::hasRole($user, 'student')) self::forbidden();
 
+        $parents=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:id AND status='active' AND relationship_type IN ('parent','guardian') LIMIT 1");
+        $parents->execute(['id'=>(int)$user['id']]);
+        if(!$parents->fetchColumn()){
+            $caregiver=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:id AND status='active' AND relationship_type='caregiver' LIMIT 1");
+            $caregiver->execute(['id'=>(int)$user['id']]);
+            if($caregiver->fetchColumn())self::redirect(($basePath?:'').'/family/caregiver-schedule');
+        }
         $data = FamilyDashboardService::build($db, $user);
         self::page($route, $basePath, $user, $data);
     }
