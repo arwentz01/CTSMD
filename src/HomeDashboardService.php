@@ -89,7 +89,7 @@ final class HomeDashboardService
                     'title'=>(string)$notice['title'],
                     'context'=>'Casting response',
                     'detail'=>(string)$notice['body'],
-                    'href'=>'/notifications#notification-'.(int)$notice['id']
+                    'href'=>'/production/casting'
                 ];
             }
         }
