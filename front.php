@@ -72,7 +72,7 @@ $experienceRoutes=[
     ['CalendarExperience',['/calendar','/calendar/feed'],'route'],
     ['MemberCastExperience',['/cast'],'base'],
     ['StudentProfileExperience',['/student-profile','/student-profile/headshot'],'route'],
-    ['FamilyPickupExperience',['/student-profile/family'],'route'],
+    ['FamilyPickupExperience',['/student-profile/family','/student-profile/family/review'],'route'],
     ['ActingResumeExperience',['/theatre-history/resume'],'base'],
     ['TheatreHistoryExperience',['/theatre-history'],'base'],
     ['ProductionArchiveExperience',['/archive','/archive/production','/archive/community','/archive/file'],'route'],
