@@ -73,6 +73,7 @@ $experienceRoutes=[
     ['MemberCastExperience',['/cast'],'base'],
     ['StudentProfileExperience',['/student-profile','/student-profile/headshot'],'route'],
     ['FamilyPickupExperience',['/student-profile/family','/student-profile/family/review'],'route'],
+    ['CaregiverLogisticsExperience',['/family/caregiver-schedule'],'route'],
     ['ActingResumeExperience',['/theatre-history/resume'],'base'],
     ['TheatreHistoryExperience',['/theatre-history'],'base'],
     ['ProductionArchiveExperience',['/archive','/archive/production','/archive/community','/archive/file'],'route'],
