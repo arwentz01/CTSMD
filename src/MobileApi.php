@@ -131,7 +131,16 @@ final class MobileApi
           WHERE fr.student_user_id=:id AND fr.status='active'
           ORDER BY fr.is_primary DESC,u.first_name,u.last_name,u.id");
         $guardians->execute(['id'=>$id]);
-        self::json(['students'=>$students->fetchAll(),'guardians'=>$guardians->fetchAll()]);
+        $studentRows=$students->fetchAll();
+        // For caregiver relationships expose only the minimum needed to label
+        // the logistics page; never include full student names or account IDs.
+        foreach($studentRows as &$child){
+            if($child['relationship_type']==='caregiver'){
+                $child=['first_name'=>explode(' ',(string)$child['name'],2)[0],'relationship_type'=>'caregiver'];
+            }
+        }
+        unset($child);
+        self::json(['students'=>$studentRows,'guardians'=>$guardians->fetchAll()]);
     }
 
     private static function login(PDO $db): never
