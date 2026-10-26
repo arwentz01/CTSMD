@@ -38,3 +38,18 @@
 - Re-approval/retry: no duplicate casting, no reset of callback/offered/cast decisions.
 - Completed/archived production: no new casting writes.
 - Verify php lint, `php tests/audition_intake_bridge.php`, existing regression tests, migrated MySQL integration and browser/device UI before production rollout.
+
+
+## Follow-up hardening (October 26)
+- Staff linking of existing students now requires an **already-active** guardian relationship. Registration intake cannot reactivate a former guardian. Household relationship changes belong in Family & Safeguarding.
+- Staff intake displays whether student identity is missing, guardian verification is pending, the linked registration awaits approval/sync, or casting already has a record.
+- Cancellation or staff decline withdraws only a casting record still in `under_review`, using the exact originating audition submission ID; callbacks, offers and cast decisions are preserved for staff review.
+- The targeted stub tests also cover withdrawal and prevention of unintended withdrawal. They are committed but have **not** been executed in CI or against a migrated database.
+- Casting creation requires both guardian email verification and an active guardian-to-student relationship. No parent account can be inserted as a Student participant.
+
+## Remaining release gates
+- Run `php -l` over changed PHP files and `php tests/audition_intake_bridge.php`.
+- Test both public and staff status transitions in migrated staging MySQL, including cancellation after a callback.
+- Validate account activation for existing `invited` accounts separately; email verification on new self-registrations does not automatically activate every legacy invitation state.
+- Verify multiple registrations for the same student across one production preserve the original source and do not overwrite an existing casting decision.
+- Confirm guardian revocation after linking removes future access while retaining historical registration/casting audit data.
