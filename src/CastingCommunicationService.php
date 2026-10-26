@@ -211,6 +211,17 @@ final class CastingCommunicationService
         return $out;
     }
 
+    public static function refreshPublishedAfterRosterRemoval(PDO $db,int $productionId):void {
+        if(!$db->inTransaction())throw new LogicException('An active transaction is required.');
+        $s=$db->prepare("SELECT publication_type FROM production_cast_publications WHERE production_id=:id AND status='published' FOR UPDATE");
+        $s->execute(['id'=>$productionId]);
+        foreach($s->fetchAll(PDO::FETCH_COLUMN) as $type){
+            $rows=$type==='callback'?self::currentPublishableCallbacks($db,$productionId):self::currentPublishableCast($db,$productionId);
+            $sql="UPDATE production_cast_publications SET status=:status,cast_snapshot_json=:snapshot,updated_at=NOW() WHERE production_id=:id AND publication_type=:type";
+            $update=$db->prepare($sql);
+            $update->execute(['status'=>$rows?'published':'draft','snapshot'=>json_encode($rows,JSON_THROW_ON_ERROR),'id'=>$productionId,'type'=>$type]);
+        }
+    }
     private static function currentPublishableCast(PDO $db,int $productionId):array{$s=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,COALESCE(NULLIF(cr.role_title,''),pm.participation_role) role,cr.participation_track,'registered' identity_type FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' JOIN production_memberships pm ON pm.id=cr.production_membership_id AND pm.status='active' WHERE cr.production_id=:production AND cr.casting_status='cast' AND cr.rostered_at IS NOT NULL ORDER BY COALESCE(cr.participation_track,''),COALESCE(pm.participation_role,''),u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return array_merge($s->fetchAll(),ManualParticipantService::publicCastingRows($db,$productionId,'cast'));}
     private static function currentPublishableCallbacks(PDO $db,int $productionId):array{$s=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,cr.role_title role,cr.participation_track,'registered' identity_type FROM production_casting_records cr JOIN users u ON u.id=cr.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE cr.production_id=:production AND cr.casting_status='callback' ORDER BY COALESCE(cr.participation_track,''),u.last_name,u.first_name");$s->execute(['production'=>$productionId]);return array_merge($s->fetchAll(),ManualParticipantService::publicCastingRows($db,$productionId,'callback'));}
     private static function publishableCount(PDO $db,int $productionId,string $type):int{return count($type==='callback'?self::currentPublishableCallbacks($db,$productionId):self::currentPublishableCast($db,$productionId));}
