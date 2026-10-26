@@ -28,8 +28,8 @@
 
 ## P1 — Verification and workflow completion
 
-- [ ] **Family & Pickup Management V1 deployed/runtime tested:** apply migration 085; verify each child has independent adult relationships and pickup-only people, edit/deactivate/restore, audit entries, CSRF, staff approval and final-guardian protections. New route: `/student-profile/family?student=ID`. Source implemented October 26, not runtime verified.
-- [ ] **Family & Pickup Management safeguarding closure:** design verified adult invitation delivery/claiming and pending request review queue, including custody/dispute holds; restrict caregiver account permissions before approvals (currently explicitly blocked), check same-child pickup authorization independently, and ensure former guardians lose future messages, tasks, casting and notices after deactivation. Avoid granting broad child access by pickup-only status.
+- [ ] **Family & Pickup Management V1 deployed/runtime tested:** apply migration 085; verify each child has independent adult relationships and pickup-only people, edit/deactivate/restore, audit entries, CSRF, staff approval and final-guardian protections. Routes: `/student-profile/family?student=ID` and staff inbox `/student-profile/family/review`. New pending requests can be cancelled by their requester, and staff can approve/reject through a central review view. Source implemented October 26, not runtime verified.
+- [ ] **Family & Pickup Management safeguarding closure:** design verified adult invitation delivery/claiming and safeguarding/custody-dispute review protocols, including custody/dispute holds; restrict caregiver account permissions before approvals (currently explicitly blocked), check same-child pickup authorization independently, and ensure former guardians lose future messages, tasks, casting and notices after deactivation. Avoid granting broad child access by pickup-only status.
 - [ ] **Attendance pickup integration:** display authorized pickup names (including no-account contacts) to appropriate staff at checkout; verify ID/pickup workflow and log who actually collected the student. This V1 management slice does not yet verify collection.
 
 
