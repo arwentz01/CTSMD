@@ -15,6 +15,8 @@
 - **Product backlog**: ideas approved for future discovery, *not* claims that all are missing or prioritized. Revalidate against source and actual behavior before scheduling.
 - When completing an item, add acceptance evidence (environment/date/tester/commit or issue) or link the verification notes.
 
+**Current priority decision (October 26):** Stabilize the rest of the platform first. Casting and the published cast list are working in user smoke tests. Playbill is parked by choice, not considered a blocker for finishing other modules.
+
 ## P0 — Pilot blockers and release gates
 
 - [ ] Verify safeguarding revocation across web/mobile, including former guardians, casting offers, student tasks and notices.
@@ -30,7 +32,8 @@
 
 - [ ] Run `php bin/check-schema.php` on the live hosting CLI, remediate any missing schema for **079–084**, and audit later migrations before subsequent deployment. **Migration 082 (Volunteer Leads) was identified as the Tasks 500 cause and subsequently smoke-tested by the user on October 26; remaining migration coverage is not independently confirmed.**
 - [x] **User smoke test (October 26, live site):** casting offer acceptance and decline, staff response notifications, links and Action Center clear were reported working. This is functional smoke testing, **not** full safeguarding/device acceptance.
-- [ ] Finish deeper casting verification: manual participant handling, role assignment, callback/cast publication, Playbill import and safeguarding authorization edge cases.
+- [x] **User smoke test (October 26, live site):** casting workflow and published cast list reported working. Do not reopen normal casting/list UI without a concrete regression.
+- [ ] Verify remaining casting safeguarding/permission edge cases, including manual participant authorization, offer revocation, and access to unpublished student information. **Playbill integration deliberately deferred.**
 - [x] **User smoke test (October 26, live site):** Production Tasks reported working after the missing migration 082 issue was identified and addressed. Tests were informal; no full regression evidence.
 - [ ] Verify Tasks grouped assignment, guardian/student completion, delegated owner/Volunteer Lead authorization and revocation in an explicit regression pass.
 - [x] **User smoke test (October 26, live site):** attendance entry, drawer save, pickup times and general workflow reported working following recent fixes.
@@ -51,7 +54,7 @@
 ## Waiting on specs / future planning
 
 - [ ] Define broader **Volunteer Lead** authority, training prerequisites and safeguards once CTSMD supplies the role specification.
-- [ ] Review long-term acting résumé/history and additional Playbill publication enhancements after current workflows stabilize.
+- [ ] **Playbill is deliberately deferred by product decision (October 26).** Do not schedule Playbill publication, PDF/QR polish, sponsorship, biographies, imports or résumé integrations until the wider platform is operational and safeguarding/release gates are addressed.
 
 
 ## Platform launch checklist — status reference
@@ -137,7 +140,7 @@ The 20-item website checklist, mobile-app gates, and privacy decisions are folde
 - More detailed organization/production resource view/download reporting where needed.
 - Future remote/object-storage driver only if CTSMD outgrows shared-hosting filesystem storage.
 
-## Playbill backlog
+## Playbill backlog — parked / not current build scope
 
 - Headshots/photos and actor/staff bios using the shared storage layer.
 - Sponsor logos/ads and reusable sponsor management.
@@ -215,7 +218,7 @@ The 20-item website checklist, mobile-app gates, and privacy decisions are folde
 
 ## Completed in source — retain as context, not open tasks
 
-- Casting: separate Cast/Callbacks, role library/multi-select for registered students, offer-response flow, manual participants, publication privacy and Playbill import integration. See [Casting Roles](CASTING_ROLES_ROLLOUT.md), [Casting Offers](CASTING_OFFER_WORKFLOW.md) and [Manual Participants](MANUAL_PARTICIPANTS.md). **Manual participant role parity and runtime acceptance remain P1.**
+- Casting: separate Cast/Callbacks, role library/multi-select for registered students, offer-response flow, manual participants and publication privacy. Published cast lists have passed user smoke testing; Playbill integration is deferred. See [Casting Roles](CASTING_ROLES_ROLLOUT.md), [Casting Offers](CASTING_OFFER_WORKFLOW.md) and [Manual Participants](MANUAL_PARTICIPANTS.md). **Manual participant role parity and runtime acceptance remain P1.**
 - Attendance: editable arrival time; late checkout under student More; late-pickup occurrence/draft/review logic. See [Late Pickup Workflow](LATE_PICKUP_WORKFLOW.md). Runtime acceptance remains P1.
 - Tasks: standalone `/production/tasks` page, grouped assignees, per-person completion and guardian Action Center visibility. Volunteer Lead is only production-scoped task owner designation. See [Tasks Extraction](PRODUCTION_TASKS_EXTRACTION.md).
 - Mobile: authenticated student/guardian Action Center with casting offers and individual To-Dos; native staff parity is **not** complete. See [Native Parity](../mobile/docs/CASTING_TASKS_PARITY.md).
