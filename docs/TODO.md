@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver safeguarding boundary follow-up (Oct 26):** ScheduleAudience family/guardian delegation and SafeguardedConversationPolicy eligibleGuardian queries now require an active parent/guardian relationship, not caregiver. Runtime-test eligible guardian coverage, student scheduling, existing safeguarded conversations and revocation, and mobile API family/message endpoints before activating caregiver account approval. Caregivers are still blocked in FamilyPickupService::decide; mobile family listing still returns active family children and requires a scoped logistics-only contract before enabling that role.
+
+
 - [ ] **Caregiver authorization audit (Oct 26):** Casting offers, family forms, private casting communication, and student Theatre Profiles now distinguish active parent/guardian from caregiver relationships. Verify corresponding web and mobile API endpoints, family schedule-only presentation, safeguarded messaging and notifications, guardian-context production enrollment, and pending role approvals before enabling caregiver account access. Caregiver approval remains blocked intentionally. Run PHP lint and role-based tests after deployment.
 
 
