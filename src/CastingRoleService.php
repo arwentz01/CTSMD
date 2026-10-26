@@ -42,6 +42,9 @@ final class CastingRoleService {
             $db->prepare("UPDATE $table SET role_title=:role WHERE id=:id")->execute(['role'=>$display,'id'=>$recordId]);
             if(!$manual){
                 $db->prepare("UPDATE production_memberships pm JOIN production_casting_records cr ON cr.production_membership_id=pm.id SET pm.participation_role=:role WHERE cr.id=:id AND cr.production_id=:production AND pm.audience_type='student'")->execute(['role'=>$display,'id'=>$recordId,'production'=>$productionId]);
+                // The offered role is a snapshot: changing selected roles invalidates
+                // an unanswered offer so a family never accepts an obsolete assignment.
+                $db->prepare("UPDATE production_cast_offers SET status='cancelled',responded_at=NOW() WHERE casting_record_id=:id AND status='pending' AND role_snapshot<>:role")->execute(['id'=>$recordId,'role'=>$display??'']);
             }
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
