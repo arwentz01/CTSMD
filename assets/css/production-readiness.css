@@ -81,3 +81,24 @@
 .pr-item .pr-assignment-open span{font-size:15px!important;color:inherit;line-height:1}
 .pr-composer .pr-group-list,.pr-composer .pr-multi-assignees{display:grid;gap:2px}
 .pr-composer .pr-group-picker,.pr-composer .pr-multi-assignees{min-width:0;width:100%}
+
+/* Checklist: content-height cards, expandable person-by-person status. */
+.pr-list{align-content:start!important;grid-auto-rows:max-content!important;align-items:start!important}
+.pr-list .pr-item-compact{align-self:start!important;min-height:0!important;grid-template-columns:34px minmax(0,1fr);gap:12px;padding:13px 15px}
+.pr-item-details{min-width:0;width:100%;align-self:start}
+.pr-item-details>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:40px}
+.pr-item-details>summary::-webkit-details-marker{display:none}
+.pr-item-heading{display:grid;gap:3px;min-width:0;flex:1}
+.pr-item-heading>strong{font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.pr-item-heading .pr-item-meta{display:block;font-size:11px;color:#786c73;line-height:1.4}
+.pr-item-progress{font-size:11px!important;color:#85213c!important;font-weight:800;white-space:nowrap;border:1px solid #eed6de;background:#fdf8fa;border-radius:999px;padding:5px 9px}
+.pr-item-chevron{font-size:21px!important;line-height:1;color:#796d73;transition:transform .2s}
+.pr-item-details[open] .pr-item-chevron{transform:rotate(180deg)}
+.pr-item-details>summary:focus-visible{outline:3px solid #ddb33c;outline-offset:3px;border-radius:6px}
+.pr-item-expanded{border-top:1px solid #eee5e9;margin-top:13px;padding-top:12px}
+.pr-item-expanded>p{font-size:13px;line-height:1.5;margin:0 0 10px}
+.pr-item-expanded-title{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px}
+.pr-item-assignee{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #f2ecf0;padding:9px 0}
+.pr-item-assignee span{font-size:12px!important;color:#443940;letter-spacing:normal;overflow-wrap:anywhere}
+.pr-item-assignee span:last-child{text-align:right;color:#806f79}
+@media(max-width:600px){.pr-item-details>summary{flex-wrap:wrap}.pr-item-progress{margin-left:auto}.pr-item-assignee{display:grid;gap:3px}.pr-item-assignee span:last-child{text-align:left}}
