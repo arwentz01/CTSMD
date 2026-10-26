@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS production_cast_role_assignments (
  UNIQUE KEY uq_role_manual (role_id,manual_credit_id),
  CONSTRAINT fk_cast_assignment_role FOREIGN KEY (role_id) REFERENCES production_cast_roles(id) ON DELETE CASCADE,
  CONSTRAINT fk_cast_assignment_record FOREIGN KEY (casting_record_id) REFERENCES production_casting_records(id) ON DELETE CASCADE,
+ CONSTRAINT fk_cast_assignment_manual FOREIGN KEY (manual_credit_id) REFERENCES manual_participant_credits(id) ON DELETE CASCADE,
  CONSTRAINT chk_cast_assignment_target CHECK ((casting_record_id IS NULL) <> (manual_credit_id IS NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
