@@ -75,7 +75,7 @@ final class PlatformRegistrationService
         $first=trim((string)($input['first_name']??''));$last=trim((string)($input['last_name']??''));$relationship=(string)($input['relationship_type']??'parent');
         $email=mb_strtolower(trim((string)($input['email']??'')));
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter the child’s first and last name.');
-        if(!in_array($relationship,['parent','guardian','caregiver'],true))throw new RuntimeException('Choose your relationship to this child.');
+        if(!in_array($relationship,['parent','guardian'],true))throw new RuntimeException('Only a parent or legal guardian may create a child profile. Staff can help link other caregivers.');
         if($email!==''&&!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid child email address.');
         if($email!==''){$lookup=$db->prepare('SELECT id FROM users WHERE LOWER(email)=:email LIMIT 1');$lookup->execute(['email'=>$email]);if($lookup->fetchColumn())throw new RuntimeException('This email already belongs to a CTSMD account. Ask staff to link the existing account.');}
         $initials=mb_strtoupper(mb_substr($first,0,1).mb_substr($last,0,1));
