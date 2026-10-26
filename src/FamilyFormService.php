@@ -17,7 +17,7 @@ final class FamilyFormService
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
             WHERE (subject.account_status<>'disabled' OR fa.status='completed') AND (
                 fa.user_id=:viewer
-                OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active')
+                OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))
             )
             ORDER BY CASE fa.status WHEN 'missing' THEN 1 WHEN 'due_soon' THEN 2 WHEN 'requires_review' THEN 3 ELSE 4 END,fa.due_at IS NULL,fa.due_at,subject.last_name,subject.first_name,fa.id");
         $s->execute(['viewer'=>$viewerId,'guardian'=>$viewerId]);return$s->fetchAll();
@@ -35,7 +35,7 @@ final class FamilyFormService
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
             WHERE fa.id=:id AND (subject.account_status<>'disabled' OR fa.status='completed') AND (
                 fa.user_id=:viewer
-                OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active')
+                OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))
             ) LIMIT 1");
         $s->execute(['id'=>$assignmentId,'viewer'=>$viewerId,'guardian'=>$viewerId]);return$s->fetch()?:null;
     }
