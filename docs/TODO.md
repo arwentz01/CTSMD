@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Legacy staff family-editor consolidation (Oct 26 source):** `/admin/accounts/view?id=` now routes child relationships to Family & Pickup rather than direct add/deactivate actions that bypassed pickup selection and safeguarding review. Verify staff child and parent account pages, approved parent invitations, pickup choice, and old POST actions rejected. No automatic migration/backfill.
+
+
 - [ ] **New child primary-adult pickup default (source committed October 26):** creating a managed child automatically inserts an active, linked pickup authorization for the creating adult within the same transaction. Requires migration 085. Verify new parent/guardian-created child, pickup visible in Family and Attendance, rollback behavior, and no changes to legacy/demo children. Parents/staff can later revoke pickup authorization independently.
 
 
