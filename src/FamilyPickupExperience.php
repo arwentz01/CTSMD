@@ -6,10 +6,24 @@ require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/FamilyPickupService.php';
 
 final class FamilyPickupExperience {
-    public static function handles(string $route):bool {return $route==='/student-profile/family';}
+    public static function handles(string $route):bool {return in_array($route,['/student-profile/family','/student-profile/family/review'],true);}
     public static function render(string $route,string $basePath):never {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$viewer=Auth::currentUser($db);
         if(!$viewer)self::go($basePath.'/login');
+        if($route==='/student-profile/family/review'){
+            if(!AccessPolicy::canManagePeople($viewer)){http_response_code(403);exit('Staff authorization required.');}
+            $_SESSION['family_pickup_csrf']??=bin2hex(random_bytes(24));
+            if($_SERVER['REQUEST_METHOD']==='POST'){
+                if(!hash_equals((string)$_SESSION['family_pickup_csrf'],(string)($_POST['csrf_token']??''))){http_response_code(403);exit('Invalid session token.');}
+                try{
+                    $student=(int)($_POST['student_id']??0);$id=(int)($_POST['request_id']??0);
+                    FamilyPickupService::decide($db,$viewer,$student,$id,($_POST['action']??'')==='request_approve');
+                    $_SESSION['family_review_flash']=['success','Relationship request reviewed.'];
+                }catch(RuntimeException|PDOException $e){$_SESSION['family_review_flash']=['error',$e instanceof PDOException?'The review could not be saved.':$e->getMessage()];}
+                self::go($basePath.'/student-profile/family/review');
+            }
+            self::reviewPage($db,$viewer,$basePath);
+        }
         $student=(int)($_POST['student_id']??$_GET['student']??0);
         if(!FamilyPickupService::canManage($db,$viewer,$student)){http_response_code(404);exit('Student family settings unavailable.');}
         $_SESSION['family_pickup_csrf']??=bin2hex(random_bytes(24));
@@ -20,6 +34,7 @@ final class FamilyPickupExperience {
                 if($action==='pickup_save')FamilyPickupService::savePickup($db,$viewer,$student,$_POST);
                 elseif($action==='pickup_status')FamilyPickupService::togglePickup($db,$viewer,$student,(int)($_POST['pickup_id']??0),($_POST['active']??'')==='1');
                 elseif($action==='adult_request')FamilyPickupService::requestAdult($db,$viewer,$student,$_POST);
+                elseif($action==='request_cancel')FamilyPickupService::cancelRequest($db,$viewer,$student,(int)($_POST['request_id']??0));
                 elseif($action==='adult_pickup')FamilyPickupService::setAdultPickup($db,$viewer,$student,(int)($_POST['relationship_id']??0),($_POST['active']??'')==='1');
                 elseif($action==='adult_remove')FamilyPickupService::deactivateAdult($db,$viewer,$student,(int)($_POST['relationship_id']??0));
                 elseif($action==='request_approve')FamilyPickupService::decide($db,$viewer,$student,(int)($_POST['request_id']??0),true);
@@ -61,8 +76,17 @@ final class FamilyPickupExperience {
 </section>
 <section class="fp-card fp-full"><h2>Relationship requests</h2><p>New adults cannot see the child's private information until an authorized staff member reviews the request.</p>
 <?php if(!$requests):?><p class="fp-tip">No requests yet.</p><?php endif;?>
-<?php foreach($requests as $request):?><div class="fp-entry"><div><strong><?=$e($request['adult_email'])?></strong><small><?=$e($request['relationship_label'])?> · <?=$e(ucfirst($request['status']))?><?=$request['pickup_authorized']?' · Pickup requested':''?></small></div><?php if($staff&&$request['status']==='pending'):?><div><form method="post"><?=$hidden?><input type="hidden" name="action" value="request_approve"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Approve</button></form> <form method="post"><?=$hidden?><input type="hidden" name="action" value="request_reject"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Reject</button></form></div><?php endif;?></div><?php endforeach;?>
+<?php foreach($requests as $request):?><div class="fp-entry"><div><strong><?=$e($request['adult_email'])?></strong><small><?=$e($request['relationship_label'])?> · <?=$e(ucfirst($request['status']))?><?=$request['pickup_authorized']?' · Pickup requested':''?></small></div><?php if($request['status']==='pending'):?><form method="post"><?=$hidden?><input type="hidden" name="action" value="request_cancel"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Cancel request</button></form><?php endif;?><?php if($staff&&$request['status']==='pending'):?><div><form method="post"><?=$hidden?><input type="hidden" name="action" value="request_approve"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Approve</button></form> <form method="post"><?=$hidden?><input type="hidden" name="action" value="request_reject"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Reject</button></form></div><?php endif;?></div><?php endforeach;?>
 </section></div></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+    private static function reviewPage(PDO $db,array $viewer,string $basePath):never {
+        $rows=FamilyPickupService::pendingForStaff($db);
+        $flash=$_SESSION['family_review_flash']??null;unset($_SESSION['family_review_flash']);
+        $esc=static fn(mixed $s):string=>htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');
+        $url=static fn(string $path):string=>($basePath?:'').$path;
+        header('Content-Type: text/html; charset=utf-8');?>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Family relationship requests · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><style>.fr-wrap{max-width:850px;margin:0 auto;padding:24px}.fr-wrap h1{font-family:Georgia,serif}.fr-card{background:#fff;border:1px solid #e5dbe0;border-radius:12px;padding:16px;margin:12px 0}.fr-card small{display:block;color:#6c6268;margin:5px 0}.fr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.fr-actions form{margin:0}.fr-actions button{padding:9px 14px;border:1px solid #ad2541;background:#a6192e;color:#fff;border-radius:8px;cursor:pointer}.fr-actions button.secondary{background:#fff;color:#a6192e}.fr-alert{padding:12px;background:#fff2e5;border-radius:9px}</style></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/student-profile',$basePath,$viewer);?><main class="unified-main"><?php AppNavigation::renderHeader('People','Family requests',$basePath,[]);?><div class="fr-wrap"><h1>Family relationship requests</h1><p>Verify the adult's authority and any safeguarding restrictions before granting child account access. Pickup-only people do not need account access.</p><?php if($flash):?><div class="fr-alert" role="status"><?=$esc($flash[1])?></div><?php endif;?><?php if(!$rows):?><div class="fr-card">No pending family requests.</div><?php endif;?>
+<?php foreach($rows as $row):?><article class="fr-card"><strong><?=$esc($row['student_name'])?> · <?=$esc($row['relationship_label'])?></strong><small>Adult: <?=$esc($row['adult_email'])?> · Requested by <?=$esc($row['requested_by_name'])?></small><small>Requested access: <?=$esc(ucfirst($row['relationship_type']))?> · Pickup: <?=$row['pickup_authorized']?'Yes':'No'?> · <?=$esc($row['created_at'])?></small><div class="fr-actions"><a href="<?=$url('/student-profile/family?student='.(int)$row['student_user_id'])?>">Review child profile</a><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc($_SESSION['family_pickup_csrf'])?>"><input type="hidden" name="student_id" value="<?=(int)$row['student_user_id']?>"><input type="hidden" name="request_id" value="<?=(int)$row['id']?>"><button name="action" value="request_approve" type="submit">Approve</button></form><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc($_SESSION['family_pickup_csrf'])?>"><input type="hidden" name="student_id" value="<?=(int)$row['student_user_id']?>"><input type="hidden" name="request_id" value="<?=(int)$row['id']?>"><button class="secondary" name="action" value="request_reject" type="submit">Reject</button></form></div></article><?php endforeach;?></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
     private static function go(string $path):never{header('Location: '.$path,true,303);exit;}
 }
