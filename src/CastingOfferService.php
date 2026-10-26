@@ -17,7 +17,7 @@ final class CastingOfferService {
             $assigned=CastingRoleService::assigned($db,$productionId,$recordId);
             if($assigned)$role=implode(' / ',array_column($assigned,'title'));
             if($role==='')throw new RuntimeException('Assign the offered role before sending.');
-            $s=$db->prepare("SELECT fr.guardian_user_id FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active'");
+            $s=$db->prepare("SELECT fr.guardian_user_id FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')");
             $s->execute(['student'=>(int)$r['user_id']]);$guardians=array_map('intval',$s->fetchAll(PDO::FETCH_COLUMN));
             if(!$guardians)throw new RuntimeException('An active guardian is required before sending a student casting offer.');
             $s=$db->prepare("SELECT id,status FROM production_cast_offers WHERE casting_record_id=:record FOR UPDATE");
@@ -40,7 +40,7 @@ final class CastingOfferService {
         }catch(Throwable $e){if($ownsTransaction&&$db->inTransaction())$db->rollBack();throw $e;}
     }
     public static function pendingForUser(PDO $db,int $userId):array {
-        $s=$db->prepare("SELECT o.id,o.role_snapshot,p.title production_title,u.first_name,u.last_name FROM production_cast_offers o JOIN productions p ON p.id=o.production_id JOIN production_casting_records cr ON cr.id=o.casting_record_id AND cr.casting_status='offered' JOIN users u ON u.id=o.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE o.status='pending' AND p.lifecycle_stage NOT IN ('completed','archived') AND p.status<>'archived' AND (o.student_user_id=:student OR EXISTS(SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=o.student_user_id AND fr.guardian_user_id=:guardian AND fr.status='active')) ORDER BY o.offered_at DESC");
+        $s=$db->prepare("SELECT o.id,o.role_snapshot,p.title production_title,u.first_name,u.last_name FROM production_cast_offers o JOIN productions p ON p.id=o.production_id JOIN production_casting_records cr ON cr.id=o.casting_record_id AND cr.casting_status='offered' JOIN users u ON u.id=o.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE o.status='pending' AND p.lifecycle_stage NOT IN ('completed','archived') AND p.status<>'archived' AND (o.student_user_id=:student OR EXISTS(SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=o.student_user_id AND fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))) ORDER BY o.offered_at DESC");
         $s->execute(['student'=>$userId,'guardian'=>$userId]);return $s->fetchAll();
     }
     public static function respond(PDO $db,int $userId,int $offerId,string $decision,string $note):void {
@@ -60,7 +60,7 @@ final class CastingOfferService {
                 $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' LIMIT 1");
                 $s->execute(['guardian'=>$userId,'student'=>(int)$o['student_user_id']]);if(!$s->fetchColumn())throw new RuntimeException('You are not an active guardian for this student.');
             }else{
-                $s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active' LIMIT 1");
+                $s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
                 $s->execute(['student'=>(int)$o['student_user_id']]);if(!$s->fetchColumn())throw new RuntimeException('An active guardian is required to respond.');
             }
             ProductionLifecycleGuard::assertWritable($db,(int)$o['production_id']);
