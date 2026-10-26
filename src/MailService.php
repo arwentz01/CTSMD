@@ -41,12 +41,16 @@ final class MailService
         };
     }
 
-    public static function process(PDO $db, string $projectRoot, int $limit = 25, ?int $queueId = null): array
+    public static function process(PDO $db, string $projectRoot, int $limit = 25, ?int $queueId = null, ?int $minQueueId = null): array
     {
         $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;$suppressed=0;
         if($queueId!==null&&$queueId<1)throw new InvalidArgumentException('Queue ID must be a positive integer.');
+        if($minQueueId!==null&&$minQueueId<1)throw new InvalidArgumentException('Minimum queue ID must be a positive integer.');
+        if($minQueueId!==null&&$queueId!==null&&$queueId<$minQueueId)throw new InvalidArgumentException('Requested queue ID is below the protected cutoff.');
         if($queueId===null){
-            $db->exec("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+            $recoverSql="UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)";
+            if($minQueueId!==null)$recoverSql.=' AND id>='.(int)$minQueueId;
+            $db->exec($recoverSql);
         }else{
             $recover=$db->prepare("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE id=:id AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
             $recover->execute(['id'=>$queueId]);
@@ -56,7 +60,9 @@ final class MailService
             $db->beginTransaction();
             try{
                 if($queueId===null){
-                    $row=$db->query("SELECT * FROM email_queue WHERE status='queued' AND available_at<=NOW() ORDER BY id ASC LIMIT 1 FOR UPDATE")->fetch();
+                    $selectSql="SELECT * FROM email_queue WHERE status='queued' AND available_at<=NOW()";
+                    if($minQueueId!==null)$selectSql.=' AND id>='.(int)$minQueueId;
+                    $row=$db->query($selectSql.' ORDER BY id ASC LIMIT 1 FOR UPDATE')->fetch();
                 }else{
                     $select=$db->prepare("SELECT * FROM email_queue WHERE id=:id AND status='queued' AND available_at<=NOW() LIMIT 1 FOR UPDATE");
                     $select->execute(['id'=>$queueId]);
