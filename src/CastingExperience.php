@@ -93,6 +93,7 @@ final class CastingExperience
             <?php if($publicSettings['enabled']&&!empty($publicSettings['slug'])):?><code><?=$e('https://ctsmd.me/public/casting?slug='.(string)$publicSettings['slug'])?></code><?php endif;?>
             <form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="toggle_public_page"><input type="hidden" name="public_enabled" value="<?=$publicSettings['enabled']?'0':'1'?>"><button type="submit"><?=$publicSettings['enabled']?'Disable public page':'Enable public page'?></button></form>
         </section>
+        <div class="cast-main-toolbar"><div class="cast-primary-tabs" role="tablist" aria-label="Casting lists"><button type="button" role="tab" aria-selected="true" data-cast-tab="callback">Callbacks <span><?=(int)$counts['callback']?></span></button><button type="button" role="tab" aria-selected="false" data-cast-tab="cast">Cast <span><?=(int)$counts['cast']?></span></button></div><button type="button" class="button" data-open-cast-drawer="roles">Manage Roles</button></div>
         <?php foreach(['callback'=>'Callbacks','cast'=>'Cast'] as $listStatus=>$listTitle):
             $listRows=array_values(array_filter($board,static fn(array $r):bool=>(string)($r['casting_status']??'')===$listStatus));
             usort($listRows,static fn(array $a,array $b):int=>strnatcasecmp((string)($a['person_name']??''),(string)($b['person_name']??'')));
@@ -105,13 +106,13 @@ final class CastingExperience
             }
             uksort($roleIndex,'strnatcasecmp');
         ?>
-        <section class="cast-panel cast-assignment-list" data-cast-list="<?=$e($listStatus)?>">
+        <section class="cast-panel cast-assignment-list" data-cast-list="<?=$e($listStatus)?>"<?=$listStatus==='cast'?' hidden':''?>>
           <header><div><small><?=$listStatus==='callback'?'CALLBACK DECISIONS':'CONFIRMED CAST'?></small><h3><?=$e($listTitle)?> · <?=count($listRows)?></h3><p>Private working list. Publishing remains a separate action.</p></div>
             <div class="cast-view-switch" role="group" aria-label="<?=$e($listTitle)?> display"><button type="button" data-view="student" aria-pressed="true">By Student</button><button type="button" data-view="role" aria-pressed="false">By Role</button></div>
           </header>
           <?php if(!$listRows):?><p>No <?=$e(strtolower($listTitle))?> decisions yet.</p><?php else:?>
           <div data-content="student" class="cast-view-content"><?php foreach($listRows as $person):?>
-            <div class="cast-list-line"><strong><?=$e((string)$person['person_name'])?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e((string)(($person['role_title']??'')?:'Unassigned'))?></span></div>
+            <div class="cast-list-line"><strong><?=$e((string)$person['person_name'])?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e((string)(($person['role_title']??'')?:'Needs assignment'))?></span><button type="button" class="cast-small-action" data-open-assignment="<?=$e((string)$person['identity_type'])?>:<?=(int)$person['id']?>">Assign</button></div>
           <?php endforeach;?></div>
           <div data-content="role" class="cast-view-content" hidden><?php foreach($roleIndex as $role=>$names):?>
             <div class="cast-list-line"><strong><?=$e($role)?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e(implode(', ',array_unique($names)))?></span></div>
@@ -127,29 +128,46 @@ final class CastingExperience
         </style>
         <script>document.addEventListener('click',function(event){const button=event.target.closest('.cast-view-switch button[data-view]');if(!button)return;const panel=button.closest('[data-cast-list]');if(!panel)return;panel.querySelectorAll('.cast-view-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));panel.querySelectorAll('.cast-view-content').forEach(c=>c.hidden=c.dataset.content!==button.dataset.view);});</script>
         <?php if($production):$roleDb=Database::connect(dirname(__DIR__));$castRoles=CastingRoleService::roles($roleDb,(int)$production['id']);?>
-        <section class="cast-panel" id="cast-role-library">
-          <header><div><small>PRODUCTION ROLES</small><h3>Role library & assignments</h3><p>Use the same roles for Cast and Callbacks. Students may have multiple roles; their membership is unchanged.</p></div></header>
-          <form method="post" class="cast-add"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="create_role">
-            <label>Role name<input name="title" maxlength="190" required placeholder="e.g. Minor Character 3"></label>
+        <div class="cast-drawer-backdrop" data-close-cast-drawer hidden></div>
+        <aside class="cast-drawer" id="cast-roles-drawer" aria-label="Manage production roles" aria-modal="true" role="dialog" hidden tabindex="-1">
+          <div class="cast-drawer-head"><div><small>PRODUCTION ROLES</small><h2>Manage Roles</h2></div><button type="button" data-close-cast-drawer aria-label="Close role drawer">×</button></div>
+          <p>Create roles once, then assign them to any eligible cast member. Roles can be shared.</p>
+          <form method="post" class="cast-drawer-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="create_role">
+            <label>Role name<input name="title" maxlength="190" required placeholder="Minor Character 3"></label>
             <label>Category<select name="category"><?php foreach(['principal'=>'Principal','supporting'=>'Supporting','minor'=>'Minor Character','ensemble'=>'Ensemble','other'=>'Other'] as $key=>$value):?><option value="<?=$e($key)?>"><?=$e($value)?></option><?php endforeach;?></select></label>
-            <label>Order<input type="number" name="sort_order" value="0"></label><button type="submit">Add / update role</button>
+            <label>Display order<input type="number" name="sort_order" value="0"></label><button type="submit" class="button">Save role</button>
           </form>
-          <?php if(!$castRoles):?><p>Create production roles to enable structured assignments. Existing character text is preserved.</p><?php endif;?>
-          <?php foreach($board as $member):
-            if(!in_array((string)$member['casting_status'],['callback','offered','cast'],true))continue;
-            $manual=($member['identity_type']??'')==='manual';
-            $selectedRoleIds=array_map('intval',array_column(CastingRoleService::assigned($roleDb,(int)$production['id'],(int)$member['id'],$manual),'id'));
-          ?>
-          <form method="post" class="cast-role-assignment">
-            <input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="assign_roles"><input type="hidden" name="record_id" value="<?=(int)$member['id']?>"><input type="hidden" name="identity_type" value="<?=$manual?'manual':'registered'?>">
-            <div><b><?=$e((string)$member['person_name'])?></b><small><?=ucfirst($e((string)$member['casting_status']))?><?=$manual?' · Manual':''?></small></div>
-            <fieldset><legend>Assigned roles</legend><?php foreach($castRoles as $role):?><label class="cast-role-choice"><input type="checkbox" name="role_ids[]" value="<?=(int)$role['id']?>"<?=in_array((int)$role['id'],$selectedRoleIds,true)?' checked':''?>><span><?=$e((string)$role['title'])?></span></label><?php endforeach;?></fieldset>
-            <button type="submit">Save roles</button>
+          <h3>Available roles</h3><div class="cast-role-chip-list"><?php foreach($castRoles as $role):?><span class="cast-role-chip"><?=$e((string)$role['title'])?><small><?=$e((string)$role['category'])?></small></span><?php endforeach;?></div>
+        </aside>
+        <?php foreach($board as $person):if(!in_array((string)$person['casting_status'],['callback','offered','cast'],true))continue;
+          $isManual=($person['identity_type']??'')==='manual';
+          $assignedIds=array_map('intval',array_column(CastingRoleService::assigned($roleDb,(int)$production['id'],(int)$person['id'],$isManual),'id'));
+          $drawerKey=($isManual?'manual':'registered').':'.(int)$person['id'];
+        ?>
+        <aside class="cast-drawer" data-assignment-drawer="<?=$e($drawerKey)?>" role="dialog" aria-modal="true" aria-label="Assign cast roles" hidden tabindex="-1">
+          <div class="cast-drawer-head"><div><small>CAST ASSIGNMENTS</small><h2><?=$e((string)$person['person_name'])?></h2><p><?=ucfirst($e((string)$person['casting_status']))?></p></div><button type="button" data-close-cast-drawer aria-label="Close assignment drawer">×</button></div>
+          <form method="post" class="cast-drawer-form">
+            <input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="assign_roles"><input type="hidden" name="record_id" value="<?=(int)$person['id']?>"><input type="hidden" name="identity_type" value="<?=$isManual?'manual':'registered'?>">
+            <fieldset><legend>Select all applicable roles</legend><?php foreach($castRoles as $role):?><label class="cast-drawer-choice"><input type="checkbox" name="role_ids[]" value="<?=(int)$role['id']?>"<?=in_array((int)$role['id'],$assignedIds,true)?' checked':''?>><span><?=$e((string)$role['title'])?></span><small><?=$e((string)$role['category'])?></small></label><?php endforeach;?></fieldset>
+            <?php if(!$castRoles):?><p>No roles defined. Close this drawer and select Manage Roles to create one.</p><?php endif;?>
+            <button type="submit" class="button">Save assignments</button>
           </form>
-          <?php endforeach;?>
-        </section>
-        <style>.cast-role-assignment{display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e4e4ea}.cast-role-assignment>div small{display:block;opacity:.7}.cast-role-assignment fieldset{display:flex;flex-wrap:wrap;gap:6px 12px;min-width:0;border:1px solid #ddd;border-radius:7px;padding:8px}.cast-role-choice{display:inline-flex;align-items:center;gap:5px;font-size:.9rem}@media(max-width:750px){.cast-role-assignment{grid-template-columns:1fr}}</style>
-        <?php endif;?>
+        </aside>
+        <?php endforeach;endif;?>
+        <style>
+        .cast-main-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}.cast-primary-tabs{display:flex;gap:6px}.cast-primary-tabs button{border:1px solid #ded9de;background:white;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:700}.cast-primary-tabs button[aria-selected="true"]{background:#293b63;color:#fff}.cast-primary-tabs span{font-weight:400;opacity:.8}.cast-small-action{border:1px solid #d2ced4;background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}.cast-assignment-list{margin:10px 0;padding:18px!important}.cast-assignment-list>header{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.cast-assignment-list header p{margin:4px 0;font-size:.85rem}.cast-view-switch{display:inline-flex;border:1px solid #ddd;border-radius:8px;padding:3px}.cast-view-switch button{border:0;background:transparent;padding:7px 12px;border-radius:6px;cursor:pointer}.cast-view-switch button[aria-pressed="true"]{background:#293b63;color:white}.cast-list-line{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #eee}.cast-list-dots{flex:1;min-width:14px;border-bottom:2px dotted #b4aeb6}.cast-list-line>span:last-of-type{text-align:right}.cast-drawer-backdrop{position:fixed;inset:0;background:rgba(13,16,25,.42);z-index:1190}.cast-drawer{position:fixed;right:0;top:0;bottom:0;width:min(480px,100vw);padding:24px;background:#fff;box-shadow:-8px 0 35px #0002;z-index:1200;overflow-y:auto}.cast-drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.cast-drawer-head h2{margin:4px 0}.cast-drawer-head button{border:0;background:#f3f0f3;border-radius:8px;padding:7px 13px;font-size:24px;cursor:pointer}.cast-drawer-form{display:grid;gap:14px;margin:22px 0}.cast-drawer-form label{display:grid;gap:5px}.cast-drawer-form input,.cast-drawer-form select{max-width:100%;padding:10px;border:1px solid #c7c3ca;border-radius:7px}.cast-drawer-choice{display:flex!important;flex-direction:row;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #eee}.cast-drawer-choice input{width:auto}.cast-drawer-choice small{margin-left:auto;opacity:.6}.cast-role-chip-list{display:flex;flex-wrap:wrap;gap:8px}.cast-role-chip{border:1px solid #ddd;background:#f7f5f7;padding:8px;border-radius:7px}.cast-role-chip small{display:block;opacity:.6}@media(max-width:540px){.cast-drawer{padding:18px}.cast-list-line{flex-wrap:wrap}.cast-list-dots{display:none}}
+        </style>
+        <script>
+        (function(){let current=null,previousFocus=null;const backdrop=document.querySelector('.cast-drawer-backdrop');function close(){if(!current)return;current.hidden=true;current=null;if(backdrop)backdrop.hidden=true;document.body.style.overflow='';if(previousFocus&&previousFocus.focus)previousFocus.focus();}
+        function open(drawer){if(!drawer)return;close();previousFocus=document.activeElement;current=drawer;drawer.hidden=false;if(backdrop)backdrop.hidden=false;document.body.style.overflow='hidden';drawer.focus();}
+        document.addEventListener('click',function(e){const tab=e.target.closest('[data-cast-tab]');if(tab){document.querySelectorAll('[data-cast-tab]').forEach(t=>t.setAttribute('aria-selected',String(t===tab)));document.querySelectorAll('[data-cast-list]').forEach(p=>p.hidden=p.dataset.castList!==tab.dataset.castTab);return;}
+        const view=e.target.closest('.cast-view-switch [data-view]');if(view){const panel=view.closest('[data-cast-list]');panel.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===view)));panel.querySelectorAll('[data-content]').forEach(c=>c.hidden=c.dataset.content!==view.dataset.view);return;}
+        const roles=e.target.closest('[data-open-cast-drawer]');if(roles){open(document.getElementById('cast-roles-drawer'));return;}
+        const assign=e.target.closest('[data-open-assignment]');if(assign){open([...document.querySelectorAll('[data-assignment-drawer]')].find(x=>x.dataset.assignmentDrawer===assign.dataset.openAssignment));return;}
+        if(e.target.closest('[data-close-cast-drawer]'))close();
+        });document.addEventListener('keydown',function(e){if(e.key==='Escape')close();if(e.key!=='Tab'||!current)return;const items=[...current.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(x=>x.offsetParent!==null);if(!items.length)return;const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});
+        })();
+        </script>
         <section class="cast-summary"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast'] as $key=>$label):?><article><b><?=(int)$counts[$key]?></b><span><?=$e($label)?></span></article><?php endforeach;?></section>
         <div class="cast-intake-grid"><section class="cast-panel"><header><small>AUDITION INTAKE</small><h3>Reviewed registrations</h3></header><?php if(!$intake):?><p>No linked audition registrations are waiting to be added.</p><?php endif;?><?php foreach($intake as $row):?><form class="cast-candidate" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_intake"><input type="hidden" name="user_id" value="<?=(int)$row['user_id']?>"><input type="hidden" name="submission_id" value="<?=(int)$row['submission_id']?>"><span><b><?=$e((string)$row['person_name'])?></b><small><?=$e((string)$row['opportunity_title'])?> · <?=ucwords(str_replace('_',' ',(string)$row['registration_status']))?></small></span><button type="submit">Add to casting</button></form><?php endforeach;?></section>
         <section class="cast-panel"><header><small>PEOPLE</small><h3>Add existing student</h3></header><?php if($people):?><form class="cast-add" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_person"><select name="user_id" required><option value="">Choose student…</option><?php foreach($people as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?> · <?=$e((string)$p['role'])?></option><?php endforeach;?></select><button type="submit">Add student</button></form><?php else:?><p>Every active Student is already represented on the casting board.</p><?php endif;?><p class="cast-help">Registered Students retain normal account and family workflows.</p></section></div>
