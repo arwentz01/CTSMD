@@ -39,7 +39,7 @@ final class CastingOfferService {
         }catch(Throwable $e){if($ownsTransaction&&$db->inTransaction())$db->rollBack();throw $e;}
     }
     public static function pendingForUser(PDO $db,int $userId):array {
-        $s=$db->prepare("SELECT o.id,o.role_snapshot,p.title production_title,u.first_name,u.last_name FROM production_cast_offers o JOIN productions p ON p.id=o.production_id AND p.is_active=1 JOIN production_casting_records cr ON cr.id=o.casting_record_id AND cr.casting_status='offered' JOIN users u ON u.id=o.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE o.status='pending' AND (o.student_user_id=:student OR EXISTS(SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=o.student_user_id AND fr.guardian_user_id=:guardian AND fr.status='active')) ORDER BY o.offered_at DESC");
+        $s=$db->prepare("SELECT o.id,o.role_snapshot,p.title production_title,u.first_name,u.last_name FROM production_cast_offers o JOIN productions p ON p.id=o.production_id JOIN production_casting_records cr ON cr.id=o.casting_record_id AND cr.casting_status='offered' JOIN users u ON u.id=o.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE o.status='pending' AND p.lifecycle_stage NOT IN ('completed','archived') AND p.status<>'archived' AND (o.student_user_id=:student OR EXISTS(SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=o.student_user_id AND fr.guardian_user_id=:guardian AND fr.status='active')) ORDER BY o.offered_at DESC");
         $s->execute(['student'=>$userId,'guardian'=>$userId]);return $s->fetchAll();
     }
     public static function respond(PDO $db,int $userId,int $offerId,string $decision,string $note):void {
@@ -50,7 +50,7 @@ final class CastingOfferService {
         try{
             $s=$db->prepare("SELECT o.*,cr.casting_status,p.is_active production_active FROM production_cast_offers o JOIN production_casting_records cr ON cr.id=o.casting_record_id JOIN productions p ON p.id=o.production_id WHERE o.id=:id FOR UPDATE");
             $s->execute(['id'=>$offerId]);$o=$s->fetch();
-            if(!$o||$o['status']!=='pending'||$o['casting_status']!=='offered'||!(int)$o['production_active'])throw new RuntimeException('This casting offer is no longer available.');
+            if(!$o||$o['status']!=='pending'||$o['casting_status']!=='offered')throw new RuntimeException('This casting offer is no longer available.');
             $s=$db->prepare("SELECT active,account_status FROM users WHERE id=:id");$s->execute(['id'=>$userId]);$actor=$s->fetch();
             if(!$actor||!(int)$actor['active']||$actor['account_status']!=='active')throw new RuntimeException('Your account cannot respond to this offer.');
             $s=$db->prepare("SELECT active,account_status FROM users WHERE id=:id");$s->execute(['id'=>(int)$o['student_user_id']]);$student=$s->fetch();
