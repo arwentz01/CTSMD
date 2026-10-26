@@ -88,7 +88,7 @@ final class CastingCommunicationService
                   pm.audience_type<>'guardian' OR EXISTS (
                     SELECT 1 FROM family_relationships fr
                     JOIN production_memberships spm ON spm.user_id=fr.student_user_id
-                      AND spm.production_id=pm.production_id AND spm.audience_type='student' AND spm.status='active'
+                      AND spm.production_id=:production AND spm.audience_type='student' AND spm.status='active'
                     JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
                     WHERE fr.guardian_user_id=pm.user_id AND fr.status='active'
                   )
