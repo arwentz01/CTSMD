@@ -10,6 +10,7 @@ require_once __DIR__.'/PushService.php';
 require_once __DIR__.'/ManualParticipantService.php';
 
 require_once __DIR__.'/CastingRoleService.php';
+require_once __DIR__.'/CastingOfferService.php';
 
 final class CastingCommunicationService
 {
@@ -68,6 +69,10 @@ final class CastingCommunicationService
             $queued=0;$guardianQueued=0;$guardianIds=array_map(static fn(array $guardian):int=>(int)$guardian['id'],$guardians);$nonce=date('YmdHis');
             foreach($recipients as $email=>$recipient){$id=MailService::queue($db,$recipient['user_id'],$email,$recipient['name'],'system',$subject,$body,null,'casting-result-'.$recordId.'-'.$status.'-'.$email.'-'.$nonce);if($id>0){$queued++;if(in_array((int)$recipient['user_id'],$guardianIds,true))$guardianQueued++;}}
             if($guardianQueued<1)throw new RuntimeException('Current email preferences prevented every guardian copy from being queued. No casting result was marked as communicated.');
+            // An Offered result is one staff action: send the email and create the
+            // actionable student/guardian offer in the same database transaction.
+            // Reuse any pending offer rather than notifying the family twice.
+            if($status==='offered')CastingOfferService::issue($db,$productionId,$recordId,$actorId);
             $db->prepare('UPDATE production_casting_records SET result_communicated_at=CURRENT_TIMESTAMP,result_communicated_by_user_id=:actor WHERE id=:id')->execute(['actor'=>$actorId,'id'=>$recordId]);
             self::audit($db,$actorId,'casting.result_communicated',$recordId,'Queued casting result communication.',['production_id'=>$productionId,'casting_status'=>$status,'recipient_count'=>count($recipients),'queue_count'=>$queued,'guardian_queue_count'=>$guardianQueued]);
             $db->commit();return $queued;
