@@ -37,7 +37,7 @@ final class AppNavigation
         $memberTheatre = $approved || $hasActiveProduction || $hasArchive || $staff;
         $communicationsAvailable = $approved || $hasActiveProduction;
         $homeRoutes = ['/app','/family/action','/notifications','/notification-preferences','/push-settings'];
-        $familyRoutes = ['/family-hub','/parent','/family/manage','/onboarding'];
+        $familyRoutes = ['/family-hub','/parent','/family/manage','/onboarding','/student-profile/family'];
         $productionRoutes = ['/production','/production/casting','/production/readiness','/production/tasks','/production/people','/production/groups','/production/groups/view','/production/schedule/new','/production/schedule/import','/schedule','/production/day','/production/edit','/production/notices','/production/notice','/attendance','/attendance/take','/attendance/report','/production/late-pickups','/playbills','/admin/playbill','/admin/playbill/media','/admin/productions','/calendar','/cast'];
         $myTheatreRoutes = ['/my-theatre','/theatre-history','/archive','/resources','/volunteer-readiness','/volunteer-shifts','/volunteer/shift','/volunteer/approvals','/volunteer/training','/volunteer/history','/volunteer/service-record','/volunteer/verifications','/volunteer/verification','/forms','/forms/view'];
         $operationsPrefixes = ['/admin/','/people','/safeguarding','/staff'];
