@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__.'/CastProductionEnrollmentService.php';
 
 final class CastingOfferService {
     public static function issue(PDO $db,int $productionId,int $recordId,int $actorId):int {
@@ -68,6 +69,9 @@ final class CastingOfferService {
             $s->execute(['decision'=>$decision,'note'=>$note?:null,'actor'=>$userId,'id'=>$offerId]);if($s->rowCount()!==1)throw new RuntimeException('This offer has already been answered.');
             $s=$db->prepare("UPDATE production_casting_records SET casting_status=:status,decided_at=NOW(),decided_by_user_id=:actor WHERE id=:id AND casting_status='offered'");
             $s->execute(['status'=>$status,'actor'=>$userId,'id'=>(int)$o['casting_record_id']]);if($s->rowCount()!==1)throw new RuntimeException('The casting decision changed. Contact production staff.');
+            if($decision==='accepted'){
+                CastProductionEnrollmentService::enroll($db,(int)$o['production_id'],(int)$o['student_user_id'],$userId,(string)$o['role_snapshot']);
+            }
             // Notify only current production staff; responses are already
             // authorized and the resulting casting state was written above.
             $detail=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) student_name,p.title production_title FROM users u JOIN productions p ON p.id=:production WHERE u.id=:student");
