@@ -67,7 +67,7 @@ final class PlatformRegistrationService
             $audit->execute(['actor'=>(int)$verification['user_id'],'id'=>(int)$verification['user_id']]);
             $db->commit();
             // Reconcile auditions only after the adult has verified control of their email.
-            try{AuditionIntakeBridge::reconcileVerifiedGuardian($db,(int)$verification['user_id']);}catch(Throwable $bridgeError){error_log('Audition account reconciliation: '.$bridgeError->getMessage());}
+            try{AuditionIntakeBridge::reconcileVerifiedGuardian($db,(int)$verification['user_id']);AuditionIntakeBridge::syncLinkedForGuardian($db,(int)$verification['user_id']);}catch(Throwable $bridgeError){error_log('Audition account reconciliation: '.$bridgeError->getMessage());}
             return (int)$verification['user_id'];
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
