@@ -14,6 +14,9 @@ final class AuditionStubStatement extends PDOStatement
         if(str_contains($this->sql,'INSERT IGNORE INTO production_casting_records')){
             $this->writes[]=$params??[];
             $this->affected=(int)($this->scenario['inserted']??1);
+        } elseif(str_contains($this->sql,"UPDATE production_casting_records SET casting_status='withdrawn'")){
+            $this->writes[]=$params??[];
+            $this->affected=(int)($this->scenario['withdrawn']??1);
         } elseif(str_contains($this->sql,'INSERT INTO audit_events')){
             $this->affected=1;
         }
@@ -21,6 +24,7 @@ final class AuditionStubStatement extends PDOStatement
     }
     public function fetch(int $mode=PDO::FETCH_DEFAULT,int $cursorOrientation=PDO::FETCH_ORI_NEXT,int $cursorOffset=0):mixed
     {
+        if(str_contains($this->sql,'SELECT cr.id,cr.production_id'))return $this->scenario['pending_record']??false;
         return str_contains($this->sql,'SELECT ro.production_id,rsl.participant_user_id') ? ($this->scenario['matched']??false) : false;
     }
     public function fetchColumn(int $column=0):mixed
@@ -58,4 +62,12 @@ verify($archived->writes===[],'No archived casting insert.');
 $already=new AuditionStubPDO(['matched'=>['production_id'=>11,'participant_user_id'=>42],'stage'=>'planning','inserted'=>0]);
 verify(!AuditionIntakeBridge::syncAccepted($already,7,3),'Duplicate casting insertion must be a no-op.');
 
-echo "PASS: audition bridge student-only, unmatched, lifecycle and duplicate smoke checks.\n";
+$withdraw=new AuditionStubPDO(['pending_record'=>['id'=>19,'production_id'=>11],'stage'=>'planning']);
+verify(AuditionIntakeBridge::withdrawPending($withdraw,7,3),'Cancellation should withdraw only under-review intake.');
+verify(count($withdraw->writes)===1&&$withdraw->writes[0]['id']===19,'Expected one targeted casting withdrawal.');
+
+$decided=new AuditionStubPDO(['pending_record'=>false]);
+verify(!AuditionIntakeBridge::withdrawPending($decided,7,3),'Later casting decisions must not be withdrawn automatically.');
+verify($decided->writes===[],'No casting update should occur for decided records.');
+
+echo "PASS: audition bridge student-only, unmatched, lifecycle, duplicate and withdrawal smoke checks.\\n";
