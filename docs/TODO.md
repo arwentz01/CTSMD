@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver mobile schedule response minimization (Oct 26 source):** `/api/mobile/caregiver-schedule` no longer returns internal `student_id` or `schedule_item_id`; intended keys are `student_first_name`, `production_title`, `title`, `starts_at`, `ends_at`, `location`. Verify native client field expectations and rerun mixed-role, active/revoked relationship, student-only item visibility, and cached-token authorization tests. Caregiver approval stays blocked.
+
+
 - [ ] **Caregiver mobile family identity minimization (Oct 26):** `/api/mobile/my-family` now returns first name and relationship type only for caregiver-linked children (no student ID or full name), while preserving parent/guardian entries. Regression-test native family rendering, mixed-role adults, token access after relationship revocation, and verify no private child data is reachable through other mobile routes. No caregiver approval until full parity.
 
 
