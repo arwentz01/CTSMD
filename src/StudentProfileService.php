@@ -11,14 +11,14 @@ final class StudentProfileService
     {
         $viewerId=(int)$viewer['id'];$subjects=[];
         if(self::isStudent($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
-        $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
+        $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
         if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
         return array_values(array_filter($subjects));
     }
 
     public static function canEdit(PDO $db,array $viewer,int $studentId):bool
     {
-        if($studentId<1||!self::isStudent($db,$studentId))return false;if((int)$viewer['id']===$studentId)return true;if(AccessPolicy::canManagePeople($viewer))return true;$s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:viewer AND fr.student_user_id=:student AND fr.status='active' LIMIT 1");$s->execute(['viewer'=>(int)$viewer['id'],'student'=>$studentId]);return(bool)$s->fetchColumn();
+        if($studentId<1||!self::isStudent($db,$studentId))return false;if((int)$viewer['id']===$studentId)return true;if(AccessPolicy::canManagePeople($viewer))return true;$s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:viewer AND fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$s->execute(['viewer'=>(int)$viewer['id'],'student'=>$studentId]);return(bool)$s->fetchColumn();
     }
 
     public static function profile(PDO $db,int $studentId):?array
