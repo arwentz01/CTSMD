@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/MailService.php';
+require_once __DIR__ . '/AuditionIntakeBridge.php';
 
 final class PlatformRegistrationService
 {
@@ -65,6 +66,8 @@ final class PlatformRegistrationService
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'account.email_verified','user',:id,'Verified a self-registered CTSMD Connect email address.',NULL)");
             $audit->execute(['actor'=>(int)$verification['user_id'],'id'=>(int)$verification['user_id']]);
             $db->commit();
+            // Reconcile auditions only after the adult has verified control of their email.
+            try{AuditionIntakeBridge::reconcileVerifiedGuardian($db,(int)$verification['user_id']);}catch(Throwable $bridgeError){error_log('Audition account reconciliation: '.$bridgeError->getMessage());}
             return (int)$verification['user_id'];
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
@@ -98,6 +101,8 @@ final class PlatformRegistrationService
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'family.child_created','user',:student,'Created a guardian-managed student profile.',:meta)");
             $audit->execute(['actor'=>(int)$guardian['id'],'student'=>$childId,'meta'=>json_encode(['relationship_type'=>$relationship],JSON_THROW_ON_ERROR)]);
             $db->commit();
+            // A verified household may now contain the child named on a prior audition.
+            try{AuditionIntakeBridge::reconcileVerifiedGuardian($db,(int)$guardian['id']);}catch(Throwable $bridgeError){error_log('Audition child reconciliation: '.$bridgeError->getMessage());}
             if($email!=='')self::inviteManagedChild($db,$childId,(int)$guardian['id'],(string)($input['base_path']??''));
             return $childId;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw new RuntimeException('We could not add that child profile. Please try again.');}
