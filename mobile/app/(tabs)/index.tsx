@@ -43,6 +43,10 @@ export default function Home(){
       <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/(tabs)/theatre')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
       {openForms.length>0&&<View style={styles.panel}><Text style={styles.sectionTitle}>Needs Your Attention</Text>{openForms.slice(0,3).map(f=><Pressable key={f.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/forms/[id]',params:{id:String(f.id)}})} style={styles.task}><Ionicons name="document-text-outline" color={colors.primary} size={21}/><View style={{flex:1}}><Text style={styles.rowTitle}>{f.title}</Text><Text style={styles.sub}>Assigned form · Action required</Text></View><Ionicons name="chevron-forward" color={colors.muted}/></Pressable>)}{openForms.length>3&&<Pressable onPress={()=>router.push('/(tabs)/forms')} accessibilityRole="button"><Text style={styles.link}>View all {openForms.length} forms →</Text></Pressable>}</View>}
+      {!!data.a.casting_offers.length&&<View style={styles.panel}>
+        <View style={styles.heading}><Text style={styles.sectionTitle}>Casting offers awaiting your response</Text><Text style={styles.offerCount}>{data.a.casting_offers.length}</Text></View>
+        {data.a.casting_offers.map(offer=><Pressable key={offer.id} accessibilityRole="button" accessibilityLabel={'Review offer of '+offer.role_snapshot+' in '+offer.production_title} onPress={()=>router.push('/action-center')} style={styles.offerRow}><Ionicons name="star" color={colors.primary} size={24}/><View style={{flex:1}}><Text style={styles.offerProduction}>{offer.production_title}</Text><Text style={styles.offerRole}>Role offered: {offer.role_snapshot}</Text><Text style={styles.sub}>For {offer.first_name} {offer.last_name}</Text></View><Ionicons name="chevron-forward" size={21} color={colors.primary}/></Pressable>)}
+      </View>}
       <Pressable accessibilityRole="button" accessibilityLabel="Open Action Center" onPress={()=>router.push('/action-center')} style={styles.panel}><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><View style={{flex:1}}><Text style={styles.sectionTitle}>Action Center</Text><Text style={styles.sub}>Production tasks, casting offers, and family notices</Text></View><Ionicons name="chevron-forward" size={23} color={colors.primary}/></View></Pressable>
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.shortcuts}>
@@ -55,6 +59,7 @@ export default function Home(){
   </Screen>;
 }
 const styles=StyleSheet.create({
+ offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontFamily:'Georgia',fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
   intro:{fontSize:13,color:colors.muted,marginTop:-2,marginBottom:6},
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   sectionTitle:{fontFamily:'serif',fontSize:21,fontWeight:'700',color:colors.navy},
