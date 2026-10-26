@@ -15,7 +15,9 @@
 .home-action-links>a{font-size:11px;font-weight:800;color:var(--red);white-space:nowrap}
 .home-action.casting-accepted .home-action-links>a{color:#23683c}
 .home-action-links form{margin:0}
-.home-action-links button{font:inherit;font-size:11px;font-weight:800;cursor:pointer;border:1px solid #d9cbd0;border-radius:8px;padding:7px 10px;background:#fff;color:#655159}
-.home-action-links button:hover{background:#f6eff1}
-.home-action-links button:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
+.home-action-links .home-action-dismiss{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 12px;border:1px solid #d9cbd0;border-radius:9px;background:#fff;color:#655159;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;white-space:nowrap;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.home-action-links .home-action-dismiss:hover{background:#f6eff1;border-color:#bc9fa9;color:#7c2338}
+.home-action-links .home-action-dismiss:active{background:#ebdfe3}
+.home-action-links .home-action-dismiss:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
+@media(max-width:650px){.home-action-links .home-action-dismiss{min-height:40px;padding:9px 14px}}
 @media(max-width:650px){.home-action-links{grid-column:2;justify-content:flex-start}}
