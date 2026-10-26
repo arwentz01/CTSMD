@@ -84,8 +84,22 @@ final class ProductionReadinessService
     }
 
     private static function checklist(PDO $db,int $productionId):array{$s=$db->prepare("SELECT pci.*,CONCAT(a.first_name,' ',a.last_name) assignee FROM production_checklist_items pci LEFT JOIN users a ON a.id=pci.assigned_to_user_id WHERE pci.production_id=:production ORDER BY pci.status='done',pci.sort_order,pci.due_at IS NULL,pci.due_at,pci.category,pci.id");$s->execute(['production'=>$productionId]);return $s->fetchAll();}
-    private static function staff(PDO $db,int $productionId):array{$s=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.audience_type='staff' AND pm.status='active' ORDER BY name");$s->execute(['production'=>$productionId]);return $s->fetchAll();}
-    private static function staffMember(PDO $db,int $productionId,int $userId):bool{$s=$db->prepare("SELECT 1 FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type='staff' AND pm.status='active' LIMIT 1");$s->execute(['production'=>$productionId,'user'=>$userId]);return (bool)$s->fetchColumn();}
+    private static function staff(PDO $db,int $productionId):array{
+        $s=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,
+         CASE WHEN EXISTS(SELECT 1 FROM production_volunteer_leads vl WHERE vl.production_id=:lead_production AND vl.user_id=u.id) THEN 'Volunteer Lead'
+         WHEN EXISTS(SELECT 1 FROM auth_user_roles aur JOIN auth_roles ar ON ar.id=aur.role_id AND ar.active=1 WHERE aur.user_id=u.id AND ar.code IN ('admin','administrator')) THEN 'Administrator'
+         ELSE 'Staff' END owner_role
+         FROM users u JOIN production_memberships pm ON pm.user_id=u.id AND pm.production_id=:production AND pm.status='active'
+         WHERE u.active=1 AND u.account_status='active' AND
+         (pm.audience_type='staff' OR EXISTS(SELECT 1 FROM production_volunteer_leads vl WHERE vl.production_id=:lead_check AND vl.user_id=u.id)
+         OR EXISTS(SELECT 1 FROM auth_user_roles aur JOIN auth_roles ar ON ar.id=aur.role_id AND ar.active=1 WHERE aur.user_id=u.id AND ar.code IN ('admin','administrator')))
+         ORDER BY name");
+        $s->execute(['production'=>$productionId,'lead_production'=>$productionId,'lead_check'=>$productionId]);return $s->fetchAll();
+    }
+    private static function staffMember(PDO $db,int $productionId,int $userId):bool{
+        foreach(self::staff($db,$productionId) as $person)if((int)$person['id']===$userId)return true;
+        return false;
+    }
     private static function playbill(PDO $db,int $productionId):?array{$s=$db->prepare('SELECT id,status,published_at FROM playbills WHERE production_id=:production ORDER BY id DESC LIMIT 1');$s->execute(['production'=>$productionId]);return $s->fetch()?:null;}
     private static function openVolunteerSlots(PDO $db,int $productionId):int
     {
