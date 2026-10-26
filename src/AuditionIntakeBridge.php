@@ -9,6 +9,40 @@ declare(strict_types=1);
  */
 final class AuditionIntakeBridge
 {
+    public static function eligibleChildren(PDO $db,int $guardianId,array $submission): array
+    {
+        if(($submission['status']??'')==='cancelled'||($submission['status']??'')==='declined')return [];
+        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id");
+        $stmt->execute(['guardian'=>$guardianId,'first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function claimWithToken(PDO $db,string $token,int $guardianId,int $studentId): void
+    {
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('This registration link is invalid.');
+        $db->beginTransaction();
+        try{
+            $g=$db->prepare("SELECT email FROM users WHERE id=:id AND active=1 AND account_status='active' AND email_verified_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=:student)");
+            $g->execute(['id'=>$guardianId,'student'=>$guardianId]);$email=$g->fetchColumn();
+            if(!$email)throw new RuntimeException('Verify your guardian account before linking an audition.');
+            $s=$db->prepare("SELECT rs.*,ro.opportunity_type FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id WHERE rs.manage_token_hash=:hash FOR UPDATE");
+            $s->execute(['hash'=>hash('sha256',$token)]);$submission=$s->fetch(PDO::FETCH_ASSOC);
+            if(!$submission||$submission['opportunity_type']!=='audition'||$submission['participant_age_group']==='adult'||!in_array($submission['status'],['submitted','waitlisted','accepted'],true))throw new RuntimeException('This audition registration cannot be linked.');
+            if(!hash_equals(mb_strtolower((string)$submission['guardian_email']),mb_strtolower((string)$email)))throw new RuntimeException('Sign in with the verified guardian email used on this audition.');
+            $eligible=self::eligibleChildren($db,$guardianId,$submission);
+            if(!in_array($studentId,array_map('intval',array_column($eligible,'id')),true))throw new RuntimeException('Select a matching child from your authorized household.');
+            $check=$db->prepare("SELECT participant_user_id,guardian_user_id FROM registration_submission_links WHERE submission_id=:id");
+            $check->execute(['id'=>(int)$submission['id']]);$existing=$check->fetch(PDO::FETCH_ASSOC);
+            if($existing&&((int)$existing['participant_user_id']!==$studentId||(int)$existing['guardian_user_id']!==$guardianId))throw new RuntimeException('This audition is already linked. Contact CTSMD staff to review it.');
+            if(!$existing){
+                $insert=$db->prepare("INSERT INTO registration_submission_links (submission_id,participant_user_id,guardian_user_id,linked_by_user_id,link_method) VALUES (:submission,:student,:guardian,:actor,'existing')");
+                $insert->execute(['submission'=>(int)$submission['id'],'student'=>$studentId,'guardian'=>$guardianId,'actor'=>$guardianId]);
+            }
+            self::syncAccepted($db,(int)$submission['id'],$guardianId);
+            $db->commit();
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+    }
+
     public static function reconcileVerifiedGuardian(PDO $db, int $guardianId): void
     {
         $guardian = $db->prepare("SELECT email FROM users WHERE id=:id AND active=1 AND account_status='active' AND email_verified_at IS NOT NULL AND email IS NOT NULL AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.code='student' AND r.active=1 WHERE ur.user_id=:id2)");
