@@ -91,7 +91,7 @@ final class FamilyDashboardExperience
         <header class="fd-section-head"><div><small>MY PEOPLE</small><h3>Children & productions</h3></div><span><?= count($children) ?> linked to <?= $e($firstName) ?></span></header>
         <div class="fd-child-grid">
             <?php foreach ($children as $child): ?>
-            <article class="fd-child-card">
+            <article class="fd-child-card"><a href="<?= $url('/student-profile/family?student='.(int)$child['id']) ?>" style="display:inline-block;margin-bottom:10px;font-size:12px;font-weight:800;color:#a6192e">Family &amp; pickup →</a>
                 <header><span class="fd-avatar"><?= $e((string)$child['initials']) ?></span><div><h4><?= $e((string)$child['name']) ?></h4><p><?= $e(ucfirst((string)$child['relationship_type'])) ?> relationship<?= !empty($child['is_primary']) ? ' · Primary' : '' ?></p></div></header>
                 <div class="fd-production-list">
                     <?php if ($child['productions']): foreach ($child['productions'] as $production): ?>
