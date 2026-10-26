@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Production People removal → casting cleanup (source committed October 26):** Removing an active student membership now deletes that student's linked casting record and offer/role assignment rows for this production, preserves the decision/offer snapshot in the audit log, and regenerates published cast/callback snapshots. Verify on staging: student removed from People and Casting, public/member published list updated, multi-child guardian membership retained when still needed, orphan guardians retired, and failed deletion fully rolled back. Important: original linked offer records are deleted via FK cascade; confirm archival/retention requirements before using on real-family productions. No migration required.
+
+
 - [ ] **Casting acceptance → Production People (source implemented October 26):** accept a pending registered-student offer and verify automatic student and active parent/guardian production membership, no duplicates on existing memberships, no enrollment on decline, Theatre History sync, audit event and transaction rollback when enrollment cannot complete. Pickup-only people and pending adult relationship requests must never be enrolled. Existing accepted offers need a separate reviewed reconciliation; no automatic backfill was run.
 
 
