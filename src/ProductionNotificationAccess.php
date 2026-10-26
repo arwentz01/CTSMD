@@ -13,7 +13,22 @@ final class ProductionNotificationAccess
 {
     public static function visible(PDO $db,int $recipientId,array $notification):bool
     {
-        if(($notification['source_type']??'')!=='casting_release')return true;
+        $source=(string)($notification['source_type']??'');
+        if($source==='casting_offer'||$source==='casting_offer_response'){
+            $offerId=(int)($notification['source_id']??0);
+            if($offerId<1)return false;
+            $s=$db->prepare("SELECT production_id,student_user_id FROM production_cast_offers WHERE id=:id LIMIT 1");
+            $s->execute(['id'=>$offerId]);$offer=$s->fetch();
+            if(!$offer)return false;
+            if($source==='casting_offer'){
+                if($recipientId===(int)$offer['student_user_id'])return true;
+                $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' LIMIT 1");
+                $s->execute(['guardian'=>$recipientId,'student'=>(int)$offer['student_user_id']]);
+                return (bool)$s->fetchColumn();
+            }
+            return ProductionContext::isActiveMember($db,$recipientId,(int)$offer['production_id']);
+        }
+        if($source!=='casting_release')return true;
         $productionId=(int)($notification['source_id']??0);
         return $productionId>0 && ProductionContext::isActiveMember($db,$recipientId,$productionId);
     }
