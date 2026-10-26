@@ -44,7 +44,7 @@ final class CastingCommunicationService
             }
             if(!empty($r['production_membership_id'])&&in_array((string)$r['casting_status'],['offered','cast'],true)&&$r['membership_status']!=='active')throw new RuntimeException('That finalized production membership is no longer active. Restore the roster membership or update the casting decision before communicating it.');
 
-            $g=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' ORDER BY fr.is_primary DESC,fr.id");
+            $g=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY fr.is_primary DESC,fr.id");
             $g->execute(['student'=>(int)$r['user_id']]);
             $guardians=$g->fetchAll();
             if(!$guardians)throw new RuntimeException('This Student has no available active guardian relationship. Restore guardian context before communicating a casting result.');
@@ -106,7 +106,7 @@ final class CastingCommunicationService
                     JOIN production_memberships spm ON spm.user_id=fr.student_user_id
                       AND spm.production_id=:guardian_production AND spm.audience_type='student' AND spm.status='active'
                     JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
-                    WHERE fr.guardian_user_id=pm.user_id AND fr.status='active'
+                    WHERE fr.guardian_user_id=pm.user_id AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
                   )
                 )");
             $audience->execute(['production'=>$productionId,'guardian_production'=>$productionId]);
