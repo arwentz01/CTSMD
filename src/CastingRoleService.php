@@ -37,10 +37,11 @@ final class CastingRoleService {
             foreach($ids as $id)$insert->execute(['role'=>$id,'id'=>$recordId]);
             $names=array_column(self::assigned($db,$productionId,$recordId,$manual),'title');
             // Retain one compatible display value for existing roster, email, and playbill consumers.
-            if($names){
-                $display=implode(' / ',$names);
-                if(mb_strlen($display)>190)throw new RuntimeException('Selected role names exceed the casting display limit.');
-                $db->prepare("UPDATE $table SET role_title=:role WHERE id=:id")->execute(['role'=>$display,'id'=>$recordId]);
+            $display=$names?implode(' / ',$names):null;
+            if($display!==null&&mb_strlen($display)>190)throw new RuntimeException('Selected role names exceed the casting display limit.');
+            $db->prepare("UPDATE $table SET role_title=:role WHERE id=:id")->execute(['role'=>$display,'id'=>$recordId]);
+            if(!$manual){
+                $db->prepare("UPDATE production_memberships pm JOIN production_casting_records cr ON cr.production_membership_id=pm.id SET pm.participation_role=:role WHERE cr.id=:id AND cr.production_id=:production AND pm.audience_type='student'")->execute(['role'=>$display,'id'=>$recordId,'production'=>$productionId]);
             }
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
