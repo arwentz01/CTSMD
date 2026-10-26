@@ -63,8 +63,26 @@ final class FamilyPickupService {
             self::audit($db,(int)$actor['id'],$student,'family.relationship_requested',['request_id'=>(int)$db->lastInsertId(),'email'=>$email,'type'=>$type]);$db->commit();
         }catch(Throwable $e){$db->rollBack();throw $e;}
     }
+    public static function setAdultPickup(PDO $db,array $actor,int $student,int $relationshipId,bool $authorized):void {
+        self::requireManager($db,$actor,$student);
+        $db->beginTransaction();try{
+            $s=$db->prepare("SELECT fr.guardian_user_id,fr.relationship_type,CONCAT(u.first_name,' ',u.last_name) name FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id WHERE fr.id=:id AND fr.student_user_id=:student AND fr.status='active' FOR UPDATE");
+            $s->execute(['id'=>$relationshipId,'student'=>$student]);$adult=$s->fetch();
+            if(!$adult)throw new RuntimeException('The adult relationship is unavailable.');
+            $s=$db->prepare("SELECT id FROM student_pickup_people WHERE student_user_id=:student AND linked_guardian_user_id=:adult FOR UPDATE");$s->execute(['student'=>$student,'adult'=>(int)$adult['guardian_user_id']]);$id=$s->fetchColumn();
+            if($id){
+                $s=$db->prepare("UPDATE student_pickup_people SET active=:active,updated_by_user_id=:actor WHERE id=:id");
+                $s->execute(['active'=>$authorized?1:0,'actor'=>(int)$actor['id'],'id'=>$id]);
+            }elseif($authorized){
+                $s=$db->prepare("INSERT INTO student_pickup_people(student_user_id,name,relationship_label,linked_guardian_user_id,updated_by_user_id) VALUES(:student,:name,:relation,:adult,:actor)");
+                $s->execute(['student'=>$student,'name'=>$adult['name'],'relation'=>$adult['relationship_type'],'adult'=>(int)$adult['guardian_user_id'],'actor'=>(int)$actor['id']]);
+            }
+            self::audit($db,(int)$actor['id'],$student,'family.adult_pickup_changed',['relationship_id'=>$relationshipId,'authorized'=>$authorized]);$db->commit();
+        }catch(Throwable $e){$db->rollBack();throw $e;}
+    }
     public static function deactivateAdult(PDO $db,array $actor,int $student,int $relationshipId):void {
         self::requireManager($db,$actor,$student);
+        if(!AccessPolicy::canManagePeople($actor))throw new RuntimeException('CTSMD staff review is required before removing an adult account relationship.');
         $db->beginTransaction();try{
             $s=$db->prepare("SELECT * FROM family_relationships WHERE id=:id AND student_user_id=:student FOR UPDATE");$s->execute(['id'=>$relationshipId,'student'=>$student]);$r=$s->fetch();
             if(!$r||$r['status']!=='active')throw new RuntimeException('That relationship is not active.');
@@ -84,6 +102,7 @@ final class FamilyPickupService {
             $s=$db->prepare("SELECT * FROM student_relationship_requests WHERE id=:id AND student_user_id=:student FOR UPDATE");$s->execute(['id'=>$id,'student'=>$student]);$request=$s->fetch();
             if(!$request||$request['status']!=='pending')throw new RuntimeException('Relationship request is no longer pending.');
             if($approve){
+                if($request['relationship_type']==='caregiver')throw new RuntimeException('Caregiver account access is pending a restricted-permissions implementation. Use pickup-only authorization for now.');
                 $s=$db->prepare("SELECT id FROM users WHERE LOWER(email)=:email AND active=1 AND account_status='active' LIMIT 1");$s->execute(['email'=>$request['adult_email']]);$adult=$s->fetchColumn();
                 if(!$adult)throw new RuntimeException('The adult must first register and have an active CTSMD account.');
                 $s=$db->prepare("INSERT INTO family_relationships(guardian_user_id,student_user_id,relationship_type,is_primary,status,created_by_user_id) VALUES(:adult,:student,:type,0,'active',:actor) ON DUPLICATE KEY UPDATE relationship_type=VALUES(relationship_type),status='active'");
