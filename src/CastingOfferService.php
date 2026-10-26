@@ -31,7 +31,7 @@ final class CastingOfferService {
                 $s->execute(['production'=>$productionId,'record'=>$recordId,'student'=>(int)$r['user_id'],'role'=>$role,'actor'=>$actorId]);$offerId=(int)$db->lastInsertId();
             }
             $recipients=array_values(array_unique(array_merge([(int)$r['user_id']],$guardians)));
-            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:recipient,'casting_offer',:id,:title,:body,'/notifications#casting-offers',NOW())");
+            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:recipient,'casting_offer',:id,:title,:body,'/notifications#casting-offers',NOW()) ON DUPLICATE KEY UPDATE title=VALUES(title),body=VALUES(body),action_path=VALUES(action_path),read_at=NULL");
             foreach($recipients as $recipient){$notify->execute(['recipient'=>$recipient,'id'=>$offerId,'title'=>'Casting offer needs a response','body'=>'A role has been offered for '.(string)$r['production_title'].'. Sign in to review and accept or decline.']);}
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'casting.offer_issued','casting_record',:record,'Sent a casting offer for family response.',:meta)");
             $audit->execute(['actor'=>$actorId,'record'=>$recordId,'meta'=>json_encode(['production_id'=>$productionId,'offer_id'=>$offerId,'recipient_count'=>count($recipients)],JSON_THROW_ON_ERROR)]);
