@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver web navigation boundary (source committed Oct 26):** family dashboard and household child queries now exclude caregiver-only relationships, caregiver-only `/family-hub` and `/family/manage` redirect to read-only logistics view, child creation requires parent/guardian (server+form), and mobile `/my-family` includes relationship_type for clients to distinguish caregiver. Verify mixed-role adults, direct POST access, and native client behavior. **Caregiver approvals remain BLOCKED until all message/form/mobile safeguarding checks are complete.**
+
+
 - [ ] **Caregiver logistics V1 (source committed Oct 26):** new `/family/caregiver-schedule` renders only the next 45 days of schedule title, call time and location for children with an active caregiver relationship; excludes private notes, forms, casting and conversation content. Runtime-test audience filtering and revocation, then add appropriate navigation and native API route after authorization parity. Do not enable caregiver approvals until existing web/mobile relationship gates are audited.
 
 
