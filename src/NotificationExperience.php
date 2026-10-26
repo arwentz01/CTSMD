@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__ . '/CastingOfferService.php';
 
 final class NotificationExperience
 {
@@ -28,6 +29,7 @@ final class NotificationExperience
 
         $notifications = self::notifications($db, (int)$user['id']);
         $openForms = self::openForms($db, (int)$user['id']);
+        $castingOffers = CastingOfferService::pendingForUser($db,(int)$user['id']);
         $unread = count(array_filter($notifications, static fn(array $row): bool => empty($row['read_at'])));
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -46,7 +48,7 @@ final class NotificationExperience
         <?php if($flash): ?><div class="notification-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <section class="home-hero compact"><div><span>NOTIFICATION CENTER</span><h2>What needs action, and what actually changed.</h2><p>Find updates, reminders, and tasks that need your attention.</p></div><?php if($unread): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['notification_csrf']) ?>"><input type="hidden" name="action" value="mark_all_read"><button class="button" type="submit">Mark all read</button></form><?php endif; ?></section>
         <div class="notification-summary"><article><strong><?= $unread ?></strong><span>unread updates</span></article><article><strong><?= count($openForms) ?></strong><span>open forms</span></article></div>
-        <div class="notification-columns"><section class="home-card"><header class="home-section-head"><div><span>ACTION REQUIRED</span><h3>Needs you</h3></div><b><?= count($openForms) ?></b></header><?php if($openForms): foreach($openForms as $form): ?><article class="notification-row <?= $form['status']==='missing'?'urgent':'' ?>"><i aria-hidden="true">!</i><div class="notification-form-copy"><b><?= $esc($form['title']) ?></b><span><?= $esc(ucwords(str_replace('_',' ',$form['status']))) ?><?= $form['due_at'] ? ' · Due '.$esc(date('M j',strtotime($form['due_at']))) : '' ?></span></div><a class="notification-form-action" href="<?= $url('/forms/view?id='.(int)$form['id']) ?>">Open form →</a></article><?php endforeach; else: ?><div class="home-empty"><b>Nothing needs action.</b><span>You are caught up on assigned forms.</span></div><?php endif; ?></section>
+        <div class="notification-columns"><section class="home-card"><header class="home-section-head"><div><span>ACTION REQUIRED</span><h3>Needs you</h3></div><b><?= count($openForms)+count($castingOffers) ?></b></header><?php foreach($castingOffers as $offer):?><article class="notification-row urgent"><i aria-hidden="true">!</i><div class="notification-form-copy"><b>Role offer · <?= $esc((string)$offer['production_title']) ?></b><span><?= $esc((string)$offer['first_name'].' '.(string)$offer['last_name']) ?> · <?= $esc((string)$offer['role_snapshot']) ?></span><form method="post" class="cast-offer-response"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['notification_csrf']) ?>"><input type="hidden" name="action" value="respond_cast_offer"><input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>"><label>Note if declining<textarea name="response_note" maxlength="2000" rows="2" placeholder="Please share why the role is being declined"></textarea></label><div><button type="submit" name="decision" value="accepted">Accept offer</button><button type="submit" name="decision" value="declined">Decline offer</button></div></form></div></article><?php endforeach;?><?php if($openForms): foreach($openForms as $form): ?><article class="notification-row <?= $form['status']==='missing'?'urgent':'' ?>"><i aria-hidden="true">!</i><div class="notification-form-copy"><b><?= $esc($form['title']) ?></b><span><?= $esc(ucwords(str_replace('_',' ',$form['status']))) ?><?= $form['due_at'] ? ' · Due '.$esc(date('M j',strtotime($form['due_at']))) : '' ?></span></div><a class="notification-form-action" href="<?= $url('/forms/view?id='.(int)$form['id']) ?>">Open form →</a></article><?php endforeach; elseif(!$castingOffers): ?><div class="home-empty"><b>Nothing needs action.</b><span>You are caught up on assigned forms.</span></div><?php endif; ?></section>
         <section class="home-card"><header class="home-section-head"><div><span>YOUR ACTIVITY</span><h3>Recent updates</h3></div><b><?= count($notifications) ?></b></header><?php if(!$notifications): ?><div class="home-empty"><b>No personal updates yet.</b><span>Published production changes and future account notices will appear here.</span></div><?php else: foreach($notifications as $notice): ?><article class="persisted-notification<?= empty($notice['read_at'])?' unread':'' ?>"><div class="persisted-marker"></div><div><small><?= empty($notice['read_at'])?'NEW · ':'' ?><?= $esc(date('M j · g:i A',strtotime($notice['created_at']))) ?></small><h3><?= $esc($notice['title']) ?></h3><p><?= nl2br($esc($notice['body'])) ?></p><footer><?php if($notice['action_path']): ?><a href="<?= $url($notice['action_path']) ?>">Open related page →</a><?php endif; ?><?php if(empty($notice['read_at'])): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['notification_csrf']) ?>"><input type="hidden" name="action" value="mark_read"><input type="hidden" name="notification_id" value="<?= (int)$notice['id'] ?>"><button type="submit">Mark read</button></form><?php endif; ?></footer></div></article><?php endforeach; endif; ?></section></div>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
@@ -60,7 +62,11 @@ final class NotificationExperience
             self::redirect($basePath.'/notifications');
         }
         $action = (string)($_POST['action'] ?? '');
-        if ($action === 'mark_read') {
+        if ($action === 'respond_cast_offer') {
+            try {CastingOfferService::respond($db,$userId,(int)($_POST['offer_id']??0),(string)($_POST['decision']??''),(string)($_POST['response_note']??''));self::flash('success','Your casting response was recorded.');}
+            catch(Throwable $e){self::flash('error',$e instanceof RuntimeException?$e->getMessage():'Unable to record this response.');}
+            self::redirect($basePath.'/notifications');
+        } elseif ($action === 'mark_read') {
             $id = filter_input(INPUT_POST,'notification_id',FILTER_VALIDATE_INT) ?: 0;
             $stmt = $db->prepare('UPDATE app_notifications SET read_at = COALESCE(read_at,CURRENT_TIMESTAMP) WHERE id = :id AND recipient_user_id = :user_id');
             $stmt->execute(['id'=>$id,'user_id'=>$userId]);
