@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver mobile family identity minimization (Oct 26):** `/api/mobile/my-family` now returns first name and relationship type only for caregiver-linked children (no student ID or full name), while preserving parent/guardian entries. Regression-test native family rendering, mixed-role adults, token access after relationship revocation, and verify no private child data is reachable through other mobile routes. No caregiver approval until full parity.
+
+
 - [ ] **Caregiver-only mobile API gate (Oct 26 source):** `/api/mobile/caregiver-schedule` returns a minimal 45-day calls payload for active caregiver-linked students. Caregiver-only accounts are denied all mobile endpoints other than `/me`, `/my-family`, this schedule and `/logout`. Test direct requests including saved tokens before deployment; mixed parent/caregiver accounts still need per-child authorization audits. This is a conservative interim block, not caregiver launch approval.
 
 
