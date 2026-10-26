@@ -68,10 +68,22 @@ final class CastingOfferService {
             $s->execute(['decision'=>$decision,'note'=>$note?:null,'actor'=>$userId,'id'=>$offerId]);if($s->rowCount()!==1)throw new RuntimeException('This offer has already been answered.');
             $s=$db->prepare("UPDATE production_casting_records SET casting_status=:status,decided_at=NOW(),decided_by_user_id=:actor WHERE id=:id AND casting_status='offered'");
             $s->execute(['status'=>$status,'actor'=>$userId,'id'=>(int)$o['casting_record_id']]);if($s->rowCount()!==1)throw new RuntimeException('The casting decision changed. Contact production staff.');
+            // Notify only current production staff; responses are already
+            // authorized and the resulting casting state was written above.
+            $detail=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) student_name,p.title production_title FROM users u JOIN productions p ON p.id=:production WHERE u.id=:student");
+            $detail->execute(['production'=>(int)$o['production_id'],'student'=>(int)$o['student_user_id']]);
+            $context=$detail->fetch();
+            $studentName=(string)($context['student_name']??'Student');
+            $productionTitle=(string)($context['production_title']??'Production');
+            $responseWord=$decision==='accepted'?'accepted':'declined';
             $staff=$db->prepare("SELECT DISTINCT pm.user_id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status='active' WHERE pm.production_id=:production AND pm.audience_type='staff' AND pm.status='active'");
             $staff->execute(['production'=>(int)$o['production_id']]);
-            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:user,'casting_offer_response',:source,:title,:body,'/production/casting',NOW())");
-            foreach($staff->fetchAll(PDO::FETCH_COLUMN) as $staffId){$notify->execute(['user'=>(int)$staffId,'source'=>$offerId,'title'=>'Casting offer '.($decision==='accepted'?'accepted':'declined'),'body'=>$decision==='declined'?'A student or guardian declined an offered role. Review the response note in casting.':'A student or guardian accepted an offered role.']);}
+            $notify=$db->prepare("INSERT INTO app_notifications (recipient_user_id,source_type,source_id,title,body,action_path,created_at) VALUES (:user,'casting_offer_response',:source,:title,:body,'/production/casting',NOW()) ON DUPLICATE KEY UPDATE title=VALUES(title),body=VALUES(body),action_path=VALUES(action_path),read_at=NULL,created_at=NOW()");
+            foreach($staff->fetchAll(PDO::FETCH_COLUMN) as $staffId){
+                $notify->execute(['user'=>(int)$staffId,'source'=>$offerId,
+                    'title'=>$studentName.' '.$responseWord.' · '.$productionTitle,
+                    'body'=>'Role: '.(string)$o['role_snapshot'].($decision==='declined'?' · Review the decline note in Casting.':' · Offer accepted.')]);
+            }
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'casting_record',:record,:summary,:meta)");
             $audit->execute(['actor'=>$userId,'event'=>'casting.offer_'.$decision,'record'=>(int)$o['casting_record_id'],'summary'=>'A family member responded to a casting offer.','meta'=>json_encode(['offer_id'=>$offerId,'production_id'=>(int)$o['production_id'],'response_note'=>$note],JSON_THROW_ON_ERROR)]);
             $db->commit();
