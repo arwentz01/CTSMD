@@ -2,15 +2,15 @@
 
 Updated 2026-10-26. Start here instead of reading every chronological build note.
 
-**Start here for current work:** [MASTER_TODO.md](MASTER_TODO.md) is the concise active to-do list; [TODO.md](TODO.md) preserves the larger product wishlist and history.
+**Single active task tracker:** [TODO.md](TODO.md) holds P0–P2 work, release gates and the product backlog. The [historical snapshot](archive/TODO_PRE_CONSOLIDATION_2026-10-26.md) is archived. Do not maintain a second active list.
 
 ## Current sources of truth
 
 | Area | Document | Purpose |
 |---|---|---|
 | Release / pilot decision | [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md) | Historical evidence and pilot gates; dates matter, not automatic signoff |
-| Platform launch gate and 20-point checklist | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | **Current** security, compliance, web/native and public-launch punch list |
-| Product roadmap | [TODO.md](TODO.md) | Long-term features and approved backlog; read recent delta below before old status sections |
+| Platform launch reference | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | Supporting audit rationale; actionable priorities live only in TODO.md |
+| **Single work tracker and roadmap** | [TODO.md](TODO.md) | **Only maintained actionable To-Do**: pilot gates, verification, and future backlog |
 | Architecture / product intent | [PRODUCT_CHARTER.md](PRODUCT_CHARTER.md), [VISUAL_FIRST_ARCHITECTURE.md](VISUAL_FIRST_ARCHITECTURE.md) | Product scope and implementation principles |
 | Mobile integration | [MOBILE_V1_FOLLOWUPS.md](MOBILE_V1_FOLLOWUPS.md), [mobile parity](../mobile/docs/CASTING_TASKS_PARITY.md) | Native scope and outstanding staff parity |
 | Production lifecycle | [PRODUCTION_LIFECYCLE_V2.md](PRODUCTION_LIFECYCLE_V2.md) | Stage, lifecycle and approval behavior |
@@ -35,4 +35,4 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 `BUILD_001.md`, earlier audit checkpoints, rollout specifications and old readiness percentages remain for chronology and traceability. They should not be read as current acceptance decisions. Prefer updating the current source and linking historical notes rather than deleting evidence.
 
 ## Documentation maintenance rule
-When a new workflow ships, update: (1) this map if a new canonical doc is introduced; (2) the applicable current feature doc; (3) TODO for deferred work; (4) release readiness if a new gate arises; and (5) test/deployment evidence. Never replace untested claims with “production ready.”
+When work changes, update TODO.md as the single actionable tracker, then the relevant feature/evidence document and this index only if needed. Supporting launch and pilot documents keep dated findings, not duplicate active checklists. Never replace untested claims with “production ready.”
