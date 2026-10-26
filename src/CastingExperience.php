@@ -202,10 +202,11 @@ document.addEventListener('submit',async function(event){
  buttons.forEach(button=>button.disabled=true);
  feedback.textContent='Saving…';feedback.dataset.error='0';
  try{
-  const response=await fetch(form.action||location.href,{method:'POST',body:data,credentials:'same-origin',headers:{'Accept':'application/json'}});
+  const endpoint=<?=json_encode($u('/front.php?ctsmd_casting_post=1'),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;
+  const response=await fetch(endpoint,{method:'POST',body:data,credentials:'same-origin',headers:{'Accept':'application/json'}});
   const contentType=response.headers.get('content-type')||'';
   if(!contentType.includes('application/json')){
-   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'The server returned an unexpected response (HTTP '+response.status+'). Check the server error log.';
+   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'The save endpoint returned HTTP '+response.status+'. If it persists, check your host request/security logs.';
    feedback.dataset.error='1';return;
   }
   const result=await response.json();
