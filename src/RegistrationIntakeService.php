@@ -9,10 +9,13 @@ final class RegistrationIntakeService
     public static function review(PDO $db,int $submissionId): ?array
     {
         if($submissionId<1)return null;
-        $stmt=$db->prepare("SELECT rs.*,ro.title opportunity_title,ro.production_id,ro.opportunity_type,p.title production_title,rsl.participant_user_id,rsl.guardian_user_id,rsl.link_method,rsl.linked_at,CONCAT(pu.first_name,' ',pu.last_name) linked_participant_name,CONCAT(gu.first_name,' ',gu.last_name) linked_guardian_name FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN productions p ON p.id=ro.production_id LEFT JOIN registration_submission_links rsl ON rsl.submission_id=rs.id LEFT JOIN users pu ON pu.id=rsl.participant_user_id LEFT JOIN users gu ON gu.id=rsl.guardian_user_id WHERE rs.id=:id LIMIT 1");
+        $stmt=$db->prepare("SELECT rs.*,ro.title opportunity_title,ro.production_id,ro.opportunity_type,p.title production_title,rsl.participant_user_id,rsl.guardian_user_id,rsl.link_method,rsl.linked_at,gu.account_status linked_guardian_status,gu.email_verified_at linked_guardian_verified_at,cr.casting_status linked_casting_status,CONCAT(pu.first_name,' ',pu.last_name) linked_participant_name,CONCAT(gu.first_name,' ',gu.last_name) linked_guardian_name FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN productions p ON p.id=ro.production_id LEFT JOIN registration_submission_links rsl ON rsl.submission_id=rs.id LEFT JOIN users pu ON pu.id=rsl.participant_user_id LEFT JOIN users gu ON gu.id=rsl.guardian_user_id LEFT JOIN production_casting_records cr ON cr.production_id=ro.production_id AND cr.user_id=rsl.participant_user_id WHERE rs.id=:id LIMIT 1");
         $stmt->execute(['id'=>$submissionId]);$row=$stmt->fetch();if(!$row)return null;
         $row['participant_candidates']=self::participantCandidates($db,$row);
         $row['guardian_candidates']=$row['participant_age_group']==='adult'?[]:self::guardianCandidates($db,$row);
+        if($row['opportunity_type']==='audition'&&$row['participant_age_group']!=='adult'){
+            $row['audition_link_status']=!empty($row['linked_casting_status'])?'in_casting':(empty($row['participant_user_id'])?'awaiting_identity':(($row['linked_guardian_status']??'')!=='active'||empty($row['linked_guardian_verified_at'])?'awaiting_guardian_verification':($row['status']==='accepted'?'awaiting_casting_sync':'linked_awaiting_approval')));
+        }
         return $row;
     }
 
