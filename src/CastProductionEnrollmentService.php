@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/IdentityRolePolicy.php';
+require_once __DIR__.'/TheatreHistoryService.php';
 
 /**
  * Enroll an accepted cast student and their currently active parent/guardian
@@ -23,7 +24,8 @@ final class CastProductionEnrollmentService {
             self::membership($db,$productionId,$id,'guardian',ucfirst((string)$adult['relationship_type']));
             $guardianIds[]=$id;
         }
-        if(!$guardianIds)throw new RuntimeException('A verified active parent or guardian must be linked before casting acceptance can complete.');
+        if(!$guardianIds)throw new RuntimeException('An active parent or guardian must be linked before casting acceptance can complete.');
+        TheatreHistoryService::syncStudentCredit($db,$productionId,$studentId,$actorId);
         $audit=$db->prepare("INSERT INTO audit_events(actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES(:actor,'casting.acceptance_enrollment','production',:production,'Automatically enrolled accepted student and active family guardians.',:metadata)");
         $audit->execute(['actor'=>$actorId,'production'=>$productionId,'metadata'=>json_encode(['student_user_id'=>$studentId,'guardian_user_ids'=>$guardianIds,'role'=>$role],JSON_THROW_ON_ERROR)]);
         return $guardianIds;
