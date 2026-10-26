@@ -121,7 +121,7 @@ final class MobileApi
         self::requireMethod('GET');
         $id=(int)$user['id'];
         // Only current, active family relationships. No organization-wide roster exposure.
-        $students=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,fr.is_primary,fr.relationship_type
+        $students=$db->prepare("SELECT u.id,u.first_name,CONCAT(u.first_name,' ',u.last_name) name,fr.is_primary,fr.relationship_type
           FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status='active'
           WHERE fr.guardian_user_id=:id AND fr.status='active'
           ORDER BY u.first_name,u.last_name,u.id");
@@ -136,7 +136,7 @@ final class MobileApi
         // the logistics page; never include full student names or account IDs.
         foreach($studentRows as &$child){
             if($child['relationship_type']==='caregiver'){
-                $child=['first_name'=>explode(' ',(string)$child['name'],2)[0],'relationship_type'=>'caregiver'];
+                $child=['first_name'=>(string)$child['first_name'],'relationship_type'=>'caregiver'];
             }
         }
         unset($child);
