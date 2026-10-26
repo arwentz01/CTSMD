@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+
 /**
  * Bridges public audition intake to an authenticated household and the casting board.
  * A guardian's verified email is only used to identify their existing household;
@@ -70,6 +72,8 @@ final class AuditionIntakeBridge
         $stmt->execute(['submission'=>$submissionId]);
         $match=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$match)return false;
+        // Never create new casting records for a read-only production lifecycle stage.
+        try{ProductionLifecycleGuard::assertWritable($db,(int)$match['production_id']);}catch(RuntimeException $e){return false;}
         // An existing casting decision is never reset to Under Review.
         $insert=$db->prepare("INSERT IGNORE INTO production_casting_records (production_id,user_id,registration_submission_id,casting_status,created_by_user_id) VALUES (:production,:student,:submission,'under_review',:actor)");
         $insert->execute(['production'=>(int)$match['production_id'],'student'=>(int)$match['participant_user_id'],'submission'=>$submissionId,'actor'=>$actorId]);
