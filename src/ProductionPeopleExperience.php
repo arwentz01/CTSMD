@@ -10,6 +10,7 @@ require_once __DIR__ . '/IdentityRolePolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/TheatreHistoryService.php';
 require_once __DIR__ . '/ManualParticipantService.php';
+require_once __DIR__ . '/CastingCommunicationService.php';
 
 final class ProductionPeopleExperience
 {
@@ -191,7 +192,29 @@ final class ProductionPeopleExperience
             $update = $db->prepare("UPDATE production_memberships SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = :id");
             $update->execute(['id' => $membershipId]);
             $autoRetiredGuardians = [];
+            $removedCasting = [];
             if ($membership['audience_type'] === 'student') {
+                $casting=$db->prepare("SELECT cr.id,cr.casting_status,cr.role_title,cr.participation_track,cr.staff_notes FROM production_casting_records cr WHERE cr.production_id=:production AND cr.user_id=:student FOR UPDATE");
+                $casting->execute(['production'=>$productionId,'student'=>(int)$membership['user_id']]);
+                $removedCasting=$casting->fetchAll();
+                if($removedCasting){
+                    // Preserve the decision/offer details in the immutable audit before
+                    // removing the active casting record and its dependent role links.
+                    $offers=$db->prepare("SELECT o.id,o.status,o.role_snapshot,o.offered_at,o.responded_at,o.responded_by_user_id FROM production_cast_offers o JOIN production_casting_records cr ON cr.id=o.casting_record_id WHERE cr.production_id=:production AND cr.user_id=:student FOR UPDATE");
+                    $offers->execute(['production'=>$productionId,'student'=>(int)$membership['user_id']]);
+                    $removedOffers=$offers->fetchAll();
+                    self::audit($db,(int)$actor['id'],'casting.removed_with_production_membership','production',$productionId,'Removed student casting data during production roster removal.',[
+                        'student_user_id'=>(int)$membership['user_id'],
+                        'casting_records'=>$removedCasting,
+                        'offer_history'=>$removedOffers,
+                    ]);
+                    // Remove active casting and offer data only in this production.
+                    // Foreign-key cascades remove linked offer/role assignments.
+                    $delete=$db->prepare("DELETE FROM production_casting_records WHERE production_id=:production AND user_id=:student");
+                    $delete->execute(['production'=>$productionId,'student'=>(int)$membership['user_id']]);
+                    CastingCommunicationService::refreshPublishedAfterRosterRemoval($db,$productionId);
+                }
+
                 TheatreHistoryService::closeStudentCredit($db, $productionId, (int)$membership['user_id']);
                 $autoRetiredGuardians = self::retireOrphanGuardians($db, $productionId, (int)$membership['user_id']);
             }
@@ -202,6 +225,7 @@ final class ProductionPeopleExperience
                 'audience_type' => $membership['audience_type'],
                 'participation_role' => $membership['participation_role'],
                 'auto_retired_guardian_user_ids' => $autoRetiredGuardians,
+                'removed_casting_record_ids' => array_map('intval',array_column($removedCasting,'id')),
             ]);
 
             $db->commit();
