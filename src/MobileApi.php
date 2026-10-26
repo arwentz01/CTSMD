@@ -109,7 +109,7 @@ final class MobileApi
             $student['roles']=Auth::roles($db,$sid);$student['permissions']=Auth::permissions($db,$sid);
             foreach(CalendarService::visibleEvents($db,$student,$from,$until) as $event){
                 if(($event['status']??'active')==='cancelled')continue;
-                $calls[]=['student_id'=>$sid,'student_first_name'=>$child['first_name'],'schedule_item_id'=>(int)$event['id'],'production_title'=>$event['production_title'],'title'=>$event['title'],'starts_at'=>$event['starts_at'],'ends_at'=>$event['ends_at'],'location'=>$event['location']];
+                $calls[]=['student_first_name'=>$child['first_name'],'production_title'=>$event['production_title'],'title'=>$event['title'],'starts_at'=>$event['starts_at'],'ends_at'=>$event['ends_at'],'location'=>$event['location']];
             }
         }
         usort($calls,static fn(array $a,array $b):int=>strcmp((string)$a['starts_at'],(string)$b['starts_at']));
