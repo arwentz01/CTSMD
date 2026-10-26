@@ -30,7 +30,8 @@ final class CastingRoleService {
         $check->execute(['id'=>$recordId,'p'=>$productionId]);if(!$check->fetchColumn())throw new RuntimeException('Casting participant not found in this production.');
         if($ids){$placeholders=implode(',',array_fill(0,count($ids),'?'));$q=$db->prepare("SELECT COUNT(*) FROM production_cast_roles WHERE production_id=? AND active=1 AND id IN ($placeholders)");$q->execute(array_merge([$productionId],$ids));if((int)$q->fetchColumn()!==count($ids))throw new RuntimeException('An assigned role is not in this production.');}
         $column=$manual?'manual_credit_id':'casting_record_id';
-        $db->beginTransaction();
+        $ownsTransaction=!$db->inTransaction();
+        if($ownsTransaction)$db->beginTransaction();
         try {
             $delete=$db->prepare("DELETE FROM production_cast_role_assignments WHERE $column=:id");$delete->execute(['id'=>$recordId]);
             $insert=$db->prepare("INSERT INTO production_cast_role_assignments (role_id,$column) VALUES (:role,:id)");
@@ -46,7 +47,7 @@ final class CastingRoleService {
                 // an unanswered offer so a family never accepts an obsolete assignment.
                 $db->prepare("UPDATE production_cast_offers SET status='cancelled',responded_at=NOW() WHERE casting_record_id=:id AND status='pending' AND role_snapshot<>:role")->execute(['id'=>$recordId,'role'=>$display??'']);
             }
-            $db->commit();
-        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+            if($ownsTransaction)$db->commit();
+        }catch(Throwable $e){if($ownsTransaction&&$db->inTransaction())$db->rollBack();throw $e;}
     }
 }
