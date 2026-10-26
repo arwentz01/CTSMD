@@ -2,6 +2,8 @@
 
 Updated 2026-10-26. Start here instead of reading every chronological build note.
 
+**Start here for current work:** [MASTER_TODO.md](MASTER_TODO.md) is the concise active to-do list; [TODO.md](TODO.md) preserves the larger product wishlist and history.
+
 ## Current sources of truth
 
 | Area | Document | Purpose |
