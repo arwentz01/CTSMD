@@ -15,6 +15,7 @@ final class SafeguardedConversationPolicy
                 AND u.account_status='active'
             WHERE fr.student_user_id=:student
                 AND fr.status='active'
+                AND fr.relationship_type IN ('parent','guardian')
             ORDER BY fr.is_primary DESC,fr.id,u.id");
         $stmt->execute(['student'=>$studentId]);
         return $stmt->fetchAll();
