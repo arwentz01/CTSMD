@@ -38,3 +38,10 @@
 @media(max-width:540px){.notification-page .casting-offer-content{padding:18px}.notification-page .casting-offer-actions{align-items:stretch;flex-direction:column}.notification-page .casting-offer-actions button{width:100%}}
 
 .notification-history{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}.notification-history>summary{cursor:pointer;display:flex;gap:10px;align-items:center;padding:12px;color:#65555a;font-size:13px;font-weight:800;border-radius:10px}.notification-history>summary:hover{background:#f9f5f5}.notification-history>summary span{margin-left:auto;background:#f4edef;border-radius:20px;padding:3px 9px}.notification-history>summary:focus-visible{outline:3px solid #cca045;outline-offset:2px}.notification-history-items{padding:0 8px}.notification-history-items .persisted-notification{opacity:.82}.home-notification-history .home-notice{opacity:.82}.notification-history-more{display:block;padding:10px;color:#a6192e;font-weight:800}
+
+/* Checklist completion action: consistent with CTSMD notification controls. */
+.notification-page .notification-task-complete{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 13px;border:1px solid #d9cbd0;border-radius:9px;background:#fff;color:#8b1830;font-family:inherit;font-size:12px;font-weight:800;line-height:1.2;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.notification-page .notification-task-complete:hover{background:#fff1f3;border-color:#c899a4;color:#731225}
+.notification-page .notification-task-complete:active{background:#f4dfe4}
+.notification-page .notification-task-complete:focus-visible{outline:3px solid #cca045;outline-offset:2px}
+@media(max-width:650px){.notification-page .notification-task-complete{min-height:44px;padding:10px 15px}}
