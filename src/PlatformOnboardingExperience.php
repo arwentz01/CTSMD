@@ -16,7 +16,11 @@ final class PlatformOnboardingExperience
 
     public static function render(string $route,string $basePath):never
     {
-        Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['platform_onboarding_csrf']??=bin2hex(random_bytes(24));$user=self::isPublic($route)?null:Auth::currentUser($db);if(!self::isPublic($route)&&!$user)self::redirect($basePath.'/login?return_to='.rawurlencode($route));if($user&&Auth::hasRole($user,'student'))self::forbidden();if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);if($route==='/join')self::joinPage($basePath);if($route==='/verify-email')self::verifyPage($db,$basePath);if($route==='/student/activate')self::studentActivationPage($db,$basePath);self::householdPage($db,$basePath,$user,$route);
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['platform_onboarding_csrf']??=bin2hex(random_bytes(24));$user=self::isPublic($route)?null:Auth::currentUser($db);if(!self::isPublic($route)&&!$user)self::redirect($basePath.'/login?return_to='.rawurlencode($route));if($user&&Auth::hasRole($user,'student'))self::forbidden();if($user&&$route==='/family/manage'){
+            $check=$db->prepare("SELECT relationship_type FROM family_relationships WHERE guardian_user_id=:id AND status='active'");
+            $check->execute(['id'=>(int)$user['id']]);$types=$check->fetchAll(PDO::FETCH_COLUMN);
+            if(in_array('caregiver',$types,true) && !array_intersect($types,['parent','guardian']))self::redirect($basePath.'/family/caregiver-schedule');
+        }if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath,$user);if($route==='/join')self::joinPage($basePath);if($route==='/verify-email')self::verifyPage($db,$basePath);if($route==='/student/activate')self::studentActivationPage($db,$basePath);self::householdPage($db,$basePath,$user,$route);
     }
 
     private static function handlePost(PDO $db,string $route,string $basePath,?array $user):never
