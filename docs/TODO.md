@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver logistics V1 (source committed Oct 26):** new `/family/caregiver-schedule` renders only the next 45 days of schedule title, call time and location for children with an active caregiver relationship; excludes private notes, forms, casting and conversation content. Runtime-test audience filtering and revocation, then add appropriate navigation and native API route after authorization parity. Do not enable caregiver approvals until existing web/mobile relationship gates are audited.
+
+
 - [ ] **Caregiver safeguarding boundary follow-up (Oct 26):** ScheduleAudience family/guardian delegation and SafeguardedConversationPolicy eligibleGuardian queries now require an active parent/guardian relationship, not caregiver. Runtime-test eligible guardian coverage, student scheduling, existing safeguarded conversations and revocation, and mobile API family/message endpoints before activating caregiver account approval. Caregivers are still blocked in FamilyPickupService::decide; mobile family listing still returns active family children and requires a scoped logistics-only contract before enabling that role.
 
 
