@@ -22,6 +22,8 @@ export const toggleCommunityHeart=(post_id:number)=>api<{ok:boolean;hearted:bool
 export const communityFeed=()=>api<{posts:CommunityFeedPost[]}>('community-feed');
 export const theatre=()=>api<TheatreResult>('theatre');
 export const tasks=()=>api<TasksResult>('daily-tasks');
+export const completeProductionTodo=(assignment_id:number)=>api<{ok:boolean}>('production-todo-complete',{method:'POST',body:{assignment_id}});
+export const respondCastingOffer=(offer_id:number,decision:'accepted'|'declined',response_note:string)=>api<{ok:boolean}>('casting-offer-respond',{method:'POST',body:{offer_id,decision,response_note}});
 export const thread=(id:number)=>api<Thread>('message-thread?id='+id);
 export const channel=(id:number)=>api<ChannelFeed>('channel?id='+id);
 export type CommunityReply={id:number;post_id:number;body:string;created_at:string;author_user_id:number;initials:string;author:string};
