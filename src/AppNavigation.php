@@ -193,7 +193,7 @@ final class AppNavigation
         ];
 
         if ($canManageProduction) {
-            $items[] = ['label'=>'Late pickups','href'=>'/production/late-pickups','active'=>$active(['/production/late-pickups'])];
+            $items[] = ['label'=>'Late','href'=>'/production/late-pickups','active'=>$active(['/production/late-pickups'])];
             $items[] = ['label'=>'Groups','href'=>'/production/groups','active'=>$active(['/production/groups'])];
             $items[] = ['label'=>'People','href'=>'/production/people','active'=>$active(['/production/people'])];
             $items[] = ['label'=>'Casting','href'=>'/production/casting','active'=>$active(['/production/casting'])];
