@@ -8,6 +8,7 @@ require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/ProductionContext.php';
 require_once __DIR__.'/CastingService.php';
+require_once __DIR__.'/CastingRoleService.php';
 require_once __DIR__.'/CastingCommunicationService.php';
 require_once __DIR__.'/ManualParticipantService.php';
 
@@ -33,7 +34,9 @@ final class CastingExperience
         $selected=ProductionContext::selected($db,$user);if(!$selected||(int)$selected['id']!==$productionId){self::flash('error','The Working Production changed before this casting action was saved.');self::redirect($basePath.self::ROUTE);}
         try{
             $action=(string)($_POST['action']??'');
-            if($action==='add_intake'){CastingService::add($db,$productionId,(int)$user['id'],(int)($_POST['user_id']??0),(int)($_POST['submission_id']??0));self::flash('success','Audition intake added to the casting board.');}
+            if($action==='create_role'){CastingRoleService::create($db,$productionId,(string)($_POST['title']??''),(string)($_POST['category']??'other'),(int)($_POST['sort_order']??0));self::flash('success','Production role saved.');}
+            elseif($action==='assign_roles'){CastingRoleService::set($db,$productionId,(int)($_POST['record_id']??0),(array)($_POST['role_ids']??[]),(string)($_POST['identity_type']??'')==='manual');self::flash('success','Cast roles saved privately. Republish when ready to release changes.');}
+            elseif($action==='add_intake'){CastingService::add($db,$productionId,(int)$user['id'],(int)($_POST['user_id']??0),(int)($_POST['submission_id']??0));self::flash('success','Audition intake added to the casting board.');}
             elseif($action==='add_person'){CastingService::add($db,$productionId,(int)$user['id'],(int)($_POST['user_id']??0),null);self::flash('success','Student added to the casting board.');}
             elseif($action==='add_manual'){if((int)($_POST['existing_manual_participant_id']??0)>0)ManualParticipantService::addExistingCredit($db,$productionId,(int)$user['id'],(int)$_POST['existing_manual_participant_id'],$_POST);else ManualParticipantService::create($db,dirname(__DIR__),$productionId,(int)$user['id'],$_POST,$_FILES['headshot']??[]);self::flash('success','Manual participant added. No account or membership was created.');}
             elseif($action==='update_manual'){ManualParticipantService::update($db,dirname(__DIR__),$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$_POST,$_FILES['headshot']??[]);self::flash('success','Manual participant saved.');}
@@ -123,6 +126,30 @@ final class CastingExperience
         @media(max-width:480px){.cast-list-line{flex-wrap:wrap}.cast-list-line>span:last-child{max-width:100%}}
         </style>
         <script>document.addEventListener('click',function(event){const button=event.target.closest('.cast-view-switch button[data-view]');if(!button)return;const panel=button.closest('[data-cast-list]');if(!panel)return;panel.querySelectorAll('.cast-view-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));panel.querySelectorAll('.cast-view-content').forEach(c=>c.hidden=c.dataset.content!==button.dataset.view);});</script>
+        <?php if($production):$roleDb=Database::connect(dirname(__DIR__));$castRoles=CastingRoleService::roles($roleDb,(int)$production['id']);?>
+        <section class="cast-panel" id="cast-role-library">
+          <header><div><small>PRODUCTION ROLES</small><h3>Role library & assignments</h3><p>Use the same roles for Cast and Callbacks. Students may have multiple roles; their membership is unchanged.</p></div></header>
+          <form method="post" class="cast-add"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="create_role">
+            <label>Role name<input name="title" maxlength="190" required placeholder="e.g. Minor Character 3"></label>
+            <label>Category<select name="category"><?php foreach(['principal'=>'Principal','supporting'=>'Supporting','minor'=>'Minor Character','ensemble'=>'Ensemble','other'=>'Other'] as $key=>$value):?><option value="<?=$e($key)?>"><?=$e($value)?></option><?php endforeach;?></select></label>
+            <label>Order<input type="number" name="sort_order" value="0"></label><button type="submit">Add / update role</button>
+          </form>
+          <?php if(!$castRoles):?><p>Create production roles to enable structured assignments. Existing character text is preserved.</p><?php endif;?>
+          <?php foreach($board as $member):
+            if(!in_array((string)$member['casting_status'],['callback','offered','cast'],true))continue;
+            $manual=($member['identity_type']??'')==='manual';
+            $selectedRoleIds=array_map('intval',array_column(CastingRoleService::assigned($roleDb,(int)$production['id'],(int)$member['id'],$manual),'id'));
+          ?>
+          <form method="post" class="cast-role-assignment">
+            <input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="assign_roles"><input type="hidden" name="record_id" value="<?=(int)$member['id']?>"><input type="hidden" name="identity_type" value="<?=$manual?'manual':'registered'?>">
+            <div><b><?=$e((string)$member['person_name'])?></b><small><?=ucfirst($e((string)$member['casting_status']))?><?=$manual?' · Manual':''?></small></div>
+            <fieldset><legend>Assigned roles</legend><?php foreach($castRoles as $role):?><label class="cast-role-choice"><input type="checkbox" name="role_ids[]" value="<?=(int)$role['id']?>"<?=in_array((int)$role['id'],$selectedRoleIds,true)?' checked':''?>><span><?=$e((string)$role['title'])?></span></label><?php endforeach;?></fieldset>
+            <button type="submit">Save roles</button>
+          </form>
+          <?php endforeach;?>
+        </section>
+        <style>.cast-role-assignment{display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e4e4ea}.cast-role-assignment>div small{display:block;opacity:.7}.cast-role-assignment fieldset{display:flex;flex-wrap:wrap;gap:6px 12px;min-width:0;border:1px solid #ddd;border-radius:7px;padding:8px}.cast-role-choice{display:inline-flex;align-items:center;gap:5px;font-size:.9rem}@media(max-width:750px){.cast-role-assignment{grid-template-columns:1fr}}</style>
+        <?php endif;?>
         <section class="cast-summary"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast'] as $key=>$label):?><article><b><?=(int)$counts[$key]?></b><span><?=$e($label)?></span></article><?php endforeach;?></section>
         <div class="cast-intake-grid"><section class="cast-panel"><header><small>AUDITION INTAKE</small><h3>Reviewed registrations</h3></header><?php if(!$intake):?><p>No linked audition registrations are waiting to be added.</p><?php endif;?><?php foreach($intake as $row):?><form class="cast-candidate" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_intake"><input type="hidden" name="user_id" value="<?=(int)$row['user_id']?>"><input type="hidden" name="submission_id" value="<?=(int)$row['submission_id']?>"><span><b><?=$e((string)$row['person_name'])?></b><small><?=$e((string)$row['opportunity_title'])?> · <?=ucwords(str_replace('_',' ',(string)$row['registration_status']))?></small></span><button type="submit">Add to casting</button></form><?php endforeach;?></section>
         <section class="cast-panel"><header><small>PEOPLE</small><h3>Add existing student</h3></header><?php if($people):?><form class="cast-add" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_person"><select name="user_id" required><option value="">Choose student…</option><?php foreach($people as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?> · <?=$e((string)$p['role'])?></option><?php endforeach;?></select><button type="submit">Add student</button></form><?php else:?><p>Every active Student is already represented on the casting board.</p><?php endif;?><p class="cast-help">Registered Students retain normal account and family workflows.</p></section></div>
