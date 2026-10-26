@@ -54,3 +54,11 @@
 .att-roster .att-roster-section-list .att-person:last-child{border-bottom:1px solid #e9e3e6;border-radius:0 0 14px 14px}
 .att-roster .att-roster-section-list .att-person:has(+ .att-savebar){border-radius:0}
 @media(max-width:650px){.att-roster-section-head{padding:10px 12px}.att-roster-section{margin-bottom:10px}}
+
+/* Inline arrival times remain editable after attendance is saved. */
+.att-arrival-inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+.att-arrival-inline[hidden]{display:none!important}
+.att-arrival-inline [data-arrival-label]{font-size:12px;font-weight:750;color:#32664a;white-space:nowrap}
+.att-arrival-inline[data-initial-status="late"] [data-arrival-label]{color:#a56a15}
+.att-arrival-inline input[type="datetime-local"]{font:inherit;font-size:12px;padding:5px 7px;border:1px solid #d9ced3;border-radius:7px;background:#fff;max-width:210px;min-width:0;color:#383036}
+@media(max-width:520px){.att-arrival-inline{align-items:flex-start;gap:5px}.att-arrival-inline input[type="datetime-local"]{width:100%;max-width:100%}}
