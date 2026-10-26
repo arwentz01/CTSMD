@@ -26,9 +26,9 @@
 
 ## P1 — Verification and workflow completion
 
-**Next technical improvement selected:** introduce a read-only database schema preflight for critical feature tables before deployment (the missing Volunteer Leads table caused a Tasks HTTP 500). Never apply migrations automatically or expose credentials in web responses.
+**Deployment preflight added in source:** `php bin/check-schema.php` checks required feature tables/arrival column for migrations 079–084 without changing data or exposing connection details. This would detect the absent Volunteer Leads table. **Still needs to be run on hosting and incorporated into the deployment checklist/automation.**
 
-- [ ] Run a full live schema/migration audit for **079–084** and later migrations as applicable before the next deployment. **Migration 082 (Volunteer Leads) was identified as the Tasks 500 cause and subsequently smoke-tested by the user on October 26; remaining migration coverage is not independently confirmed.**
+- [ ] Run `php bin/check-schema.php` on the live hosting CLI, remediate any missing schema for **079–084**, and audit later migrations before subsequent deployment. **Migration 082 (Volunteer Leads) was identified as the Tasks 500 cause and subsequently smoke-tested by the user on October 26; remaining migration coverage is not independently confirmed.**
 - [x] **User smoke test (October 26, live site):** casting offer acceptance and decline, staff response notifications, links and Action Center clear were reported working. This is functional smoke testing, **not** full safeguarding/device acceptance.
 - [ ] Finish deeper casting verification: manual participant handling, role assignment, callback/cast publication, Playbill import and safeguarding authorization edge cases.
 - [x] **User smoke test (October 26, live site):** Production Tasks reported working after the missing migration 082 issue was identified and addressed. Tests were informal; no full regression evidence.
