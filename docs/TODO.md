@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Caregiver-only mobile API gate (Oct 26 source):** `/api/mobile/caregiver-schedule` returns a minimal 45-day calls payload for active caregiver-linked students. Caregiver-only accounts are denied all mobile endpoints other than `/me`, `/my-family`, this schedule and `/logout`. Test direct requests including saved tokens before deployment; mixed parent/caregiver accounts still need per-child authorization audits. This is a conservative interim block, not caregiver launch approval.
+
+
 - [ ] **Caregiver web navigation boundary (source committed Oct 26):** family dashboard and household child queries now exclude caregiver-only relationships, caregiver-only `/family-hub` and `/family/manage` redirect to read-only logistics view, child creation requires parent/guardian (server+form), and mobile `/my-family` includes relationship_type for clients to distinguish caregiver. Verify mixed-role adults, direct POST access, and native client behavior. **Caregiver approvals remain BLOCKED until all message/form/mobile safeguarding checks are complete.**
 
 
