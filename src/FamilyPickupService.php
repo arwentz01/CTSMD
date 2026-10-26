@@ -44,6 +44,14 @@ final class FamilyPickupService {
     public static function togglePickup(PDO $db,array $actor,int $student,int $id,bool $active):void {
         self::requireManager($db,$actor,$student);
         $db->beginTransaction();try{
+            $linked=$db->prepare("SELECT linked_guardian_user_id FROM student_pickup_people WHERE id=:id AND student_user_id=:student FOR UPDATE");
+            $linked->execute(['id'=>$id,'student'=>$student]);$link=$linked->fetch();
+            if(!$link)throw new RuntimeException('Pickup person not found.');
+            if($active && !empty($link['linked_guardian_user_id'])){
+                $check=$db->prepare("SELECT 1 FROM family_relationships WHERE student_user_id=:student AND guardian_user_id=:adult AND status='active' LIMIT 1");
+                $check->execute(['student'=>$student,'adult'=>(int)$link['linked_guardian_user_id']]);
+                if(!$check->fetchColumn())throw new RuntimeException('An inactive adult relationship cannot be authorized for pickup.');
+            }
             $s=$db->prepare("UPDATE student_pickup_people SET active=:active,updated_by_user_id=:actor WHERE id=:id AND student_user_id=:student");
             $s->execute(['active'=>$active?1:0,'actor'=>(int)$actor['id'],'id'=>$id,'student'=>$student]);
             if(!$s->rowCount())throw new RuntimeException('Pickup authorization was not changed.');
