@@ -34,23 +34,31 @@ final class AttendanceService
         if(!$expected)return [];
         $ids=array_map(static fn(array $m):int=>(int)$m['id'],$expected);
         $ph=implode(',',array_fill(0,count($ids),'?'));
-        $stmt=$db->prepare("SELECT ar.user_id,ar.status,ar.staff_note,ar.marked_at,CONCAT(marker.first_name,' ',marker.last_name) marked_by FROM attendance_records ar LEFT JOIN users marker ON marker.id=ar.marked_by_user_id WHERE ar.schedule_item_id=? AND ar.user_id IN ($ph)");
+        $stmt=$db->prepare("SELECT ar.user_id,ar.status,ar.staff_note,ar.marked_at,ar.arrived_at,CONCAT(marker.first_name,' ',marker.last_name) marked_by FROM attendance_records ar LEFT JOIN users marker ON marker.id=ar.marked_by_user_id WHERE ar.schedule_item_id=? AND ar.user_id IN ($ph)");
         $stmt->execute(array_merge([$scheduleItemId],$ids));
         $records=[];foreach($stmt->fetchAll() as $row)$records[(int)$row['user_id']]=$row;
         $reports=self::activeReportsByStudent($db,$scheduleItemId);
-        foreach($expected as &$member){$id=(int)$member['id'];$record=$records[$id]??null;$member['attendance_status']=$record['status']??'unmarked';$member['staff_note']=$record['staff_note']??null;$member['marked_at']=$record['marked_at']??null;$member['marked_by']=$record['marked_by']??null;$member['absence_report']=$reports[$id]??null;}unset($member);
+        foreach($expected as &$member){$id=(int)$member['id'];$record=$records[$id]??null;$member['attendance_status']=$record['status']??'unmarked';$member['staff_note']=$record['staff_note']??null;$member['marked_at']=$record['marked_at']??null;$member['arrived_at']=$record['arrived_at']??null;$member['marked_by']=$record['marked_by']??null;$member['absence_report']=$reports[$id]??null;}unset($member);
         return $expected;
     }
 
-    public static function saveRoster(PDO $db,int $scheduleItemId,int $actorUserId,array $statuses,array $notes):void
+    public static function saveRoster(PDO $db,int $scheduleItemId,int $actorUserId,array $statuses,array $notes,array $arrivals=[]):void
     {
         ProductionLifecycleGuard::assertScheduleItemWritable($db,$scheduleItemId);
         $active=$db->prepare("SELECT 1 FROM schedule_items WHERE id=:id AND status='active' LIMIT 1");$active->execute(['id'=>$scheduleItemId]);if(!$active->fetchColumn())throw new RuntimeException('Attendance cannot be changed for a cancelled schedule item.');
         $expected=self::expectedMembers($db,$scheduleItemId);
         $allowed=[];foreach($expected as $member)$allowed[(int)$member['id']]=true;
         $validStatuses=['unmarked','present','absent','late','excused','left_early'];
-        $upsert=$db->prepare("INSERT INTO attendance_records (schedule_item_id,user_id,status,staff_note,marked_by_user_id,marked_at) VALUES (:item,:user,:status,:note,:actor,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE status=VALUES(status),staff_note=VALUES(staff_note),marked_by_user_id=VALUES(marked_by_user_id),marked_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP");
-        foreach($statuses as $userId=>$status){$userId=(int)$userId;$status=(string)$status;if(!isset($allowed[$userId])||!in_array($status,$validStatuses,true))continue;$note=trim((string)($notes[$userId]??''));if(mb_strlen($note)>1000)throw new RuntimeException('Attendance notes must be 1,000 characters or fewer.');$upsert->execute(['item'=>$scheduleItemId,'user'=>$userId,'status'=>$status,'note'=>$note!==''?$note:null,'actor'=>$actorUserId]);}
+        $upsert=$db->prepare("INSERT INTO attendance_records (schedule_item_id,user_id,status,staff_note,marked_by_user_id,marked_at,arrived_at) VALUES (:item,:user,:status,:note,:actor,CURRENT_TIMESTAMP,:arrived) ON DUPLICATE KEY UPDATE status=VALUES(status),staff_note=VALUES(staff_note),marked_by_user_id=VALUES(marked_by_user_id),marked_at=CURRENT_TIMESTAMP,arrived_at=VALUES(arrived_at),updated_at=CURRENT_TIMESTAMP");
+        foreach($statuses as $userId=>$status){$userId=(int)$userId;$status=(string)$status;if(!isset($allowed[$userId])||!in_array($status,$validStatuses,true))continue;$note=trim((string)($notes[$userId]??''));if(mb_strlen($note)>1000)throw new RuntimeException('Attendance notes must be 1,000 characters or fewer.');$arrival=null;
+            if(in_array($status,['present','late'],true)){
+                $value=trim((string)($arrivals[$userId]??''));
+                if($value==='')throw new RuntimeException('Set an arrival time for each student marked Present or Late.');
+                $parsed=DateTimeImmutable::createFromFormat('!Y-m-d\\TH:i',$value);
+                if(!$parsed||$parsed->format('Y-m-d\\TH:i')!==$value)throw new RuntimeException('Enter a valid arrival date and time.');
+                $arrival=$parsed->format('Y-m-d H:i:s');
+            }
+            $upsert->execute(['item'=>$scheduleItemId,'user'=>$userId,'status'=>$status,'note'=>$note!==''?$note:null,'actor'=>$actorUserId,'arrived'=>$arrival]);}
     }
 
     public static function reportableStudents(PDO $db,array $user,int $scheduleItemId):array
