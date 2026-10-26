@@ -38,7 +38,7 @@ final class AppNavigation
         $communicationsAvailable = $approved || $hasActiveProduction;
         $homeRoutes = ['/app','/family/action','/notifications','/notification-preferences','/push-settings'];
         $familyRoutes = ['/family-hub','/parent','/family/manage','/onboarding'];
-        $productionRoutes = ['/production','/production/casting','/production/readiness','/production/tasks','/production/people','/production/groups','/production/groups/view','/production/schedule/new','/production/schedule/import','/schedule','/production/day','/production/edit','/production/notices','/production/notice','/attendance','/attendance/take','/attendance/report','/playbills','/admin/playbill','/admin/playbill/media','/admin/productions','/calendar','/cast'];
+        $productionRoutes = ['/production','/production/casting','/production/readiness','/production/tasks','/production/people','/production/groups','/production/groups/view','/production/schedule/new','/production/schedule/import','/schedule','/production/day','/production/edit','/production/notices','/production/notice','/attendance','/attendance/take','/attendance/report','/production/late-pickups','/playbills','/admin/playbill','/admin/playbill/media','/admin/productions','/calendar','/cast'];
         $myTheatreRoutes = ['/my-theatre','/theatre-history','/archive','/resources','/volunteer-readiness','/volunteer-shifts','/volunteer/shift','/volunteer/approvals','/volunteer/training','/volunteer/history','/volunteer/service-record','/volunteer/verifications','/volunteer/verification','/forms','/forms/view'];
         $operationsPrefixes = ['/admin/','/people','/safeguarding','/staff'];
 
@@ -193,6 +193,7 @@ final class AppNavigation
         ];
 
         if ($canManageProduction) {
+            $items[] = ['label'=>'Late pickups','href'=>'/production/late-pickups','active'=>$active(['/production/late-pickups'])];
             $items[] = ['label'=>'Groups','href'=>'/production/groups','active'=>$active(['/production/groups'])];
             $items[] = ['label'=>'People','href'=>'/production/people','active'=>$active(['/production/people'])];
             $items[] = ['label'=>'Casting','href'=>'/production/casting','active'=>$active(['/production/casting'])];

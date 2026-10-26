@@ -322,3 +322,9 @@ This document is the canonical product wishlist/backlog for CTSMD Connect. It ca
 - Apply migration 069 to a disposable MySQL 8 database and validate create/edit/archive, multi-production credits, selective Student transfer, and lifecycle write denial.
 - Verify manual participant publication withdrawal across member casting, mobile casting, Playbill HTML/assets, and archived edition behavior.
 - Run authenticated desktop/mobile UI acceptance for the Casting and Playbill editors before deployment.
+
+# Late pickup deployment acceptance
+
+- Apply migration 084 to a disposable MySQL 8 database and run transactional tests for corrections, reversals, threshold reclassification, cross-production isolation, approval gating, guardian revocation, and queue idempotency.
+- Verify the Attendance late-checkout editor and `/production/late-pickups` drawers in authenticated desktop and mobile browser sessions.
+- Process an isolated fake guardian queue row and verify sent, failed, suppressed, and stale-guardian states without touching existing production mail.

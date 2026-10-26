@@ -6,6 +6,7 @@ require_once __DIR__.'/ProductionLifecycleGuard.php';
 
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__.'/LatePickupService.php';
 
 final class AttendanceService
 {
@@ -37,8 +38,8 @@ final class AttendanceService
         $stmt=$db->prepare("SELECT ar.user_id,ar.status,ar.staff_note,ar.marked_at,ar.arrived_at,CONCAT(marker.first_name,' ',marker.last_name) marked_by FROM attendance_records ar LEFT JOIN users marker ON marker.id=ar.marked_by_user_id WHERE ar.schedule_item_id=? AND ar.user_id IN ($ph)");
         $stmt->execute(array_merge([$scheduleItemId],$ids));
         $records=[];foreach($stmt->fetchAll() as $row)$records[(int)$row['user_id']]=$row;
-        $reports=self::activeReportsByStudent($db,$scheduleItemId);
-        foreach($expected as &$member){$id=(int)$member['id'];$record=$records[$id]??null;$member['attendance_status']=$record['status']??'unmarked';$member['staff_note']=$record['staff_note']??null;$member['marked_at']=$record['marked_at']??null;$member['arrived_at']=$record['arrived_at']??null;$member['marked_by']=$record['marked_by']??null;$member['absence_report']=$reports[$id]??null;}unset($member);
+        $reports=self::activeReportsByStudent($db,$scheduleItemId);$pickups=LatePickupService::forSchedule($db,$scheduleItemId);
+        foreach($expected as &$member){$id=(int)$member['id'];$record=$records[$id]??null;$member['attendance_status']=$record['status']??'unmarked';$member['staff_note']=$record['staff_note']??null;$member['marked_at']=$record['marked_at']??null;$member['arrived_at']=$record['arrived_at']??null;$member['marked_by']=$record['marked_by']??null;$member['absence_report']=$reports[$id]??null;$member['late_pickup']=$pickups[$id]??null;}unset($member);
         return $expected;
     }
 

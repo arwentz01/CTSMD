@@ -23,7 +23,7 @@ export default function ActionCenter(){
   finally{setBusy(null);}
  };
  return <Screen title="Action Center">
-  <Text style={s.intro}>Production tasks and casting offers requiring your attention.</Text>
+  <Text style={s.intro}>Production tasks, casting offers, and approved family notices.</Text>
   {!!error&&<View style={s.card}><Text style={s.error}>{error}</Text><Pressable onPress={()=>void refresh()}><Text style={s.link}>Try again</Text></Pressable></View>}
   {!data&&!error&&<Text style={s.muted}>Loading your assignments…</Text>}
   {data&&<>
@@ -44,6 +44,14 @@ export default function ActionCenter(){
      <Text style={s.body}>{o.first_name} {o.last_name} · {o.role_snapshot}</Text>
      <TextInput style={s.input} multiline maxLength={2000} value={notes[o.id]||''} onChangeText={value=>setNotes(current=>({...current,[o.id]:value}))} placeholder="Reason for declining (required to decline)" accessibilityLabel="Reason for declining casting offer"/>
      <View style={s.actions}><Pressable disabled={busy!==null} accessibilityRole="button" style={[s.button,{flex:1}]} onPress={()=>void respond(o.id,'accepted')}><Text style={s.buttonText}>Accept</Text></Pressable><Pressable disabled={busy!==null} accessibilityRole="button" style={s.secondaryButton} onPress={()=>void respond(o.id,'declined')}><Text style={s.secondaryText}>Decline</Text></Pressable></View>
+   </View>)}
+   <View style={s.heading}><Ionicons name="time-outline" size={22} color={colors.primary}/><Text style={s.title}>Pickup Notices</Text></View>
+   {!(data.late_pickup_notices??[]).length&&<Text style={s.muted}>No approved pickup notices.</Text>}
+   {(data.late_pickup_notices??[]).map(n=><View key={n.id} style={s.card}>
+     <Text style={s.name}>{n.subject}</Text>
+     <Text style={s.muted}>{n.production_title} · {n.student_name}</Text>
+     <Text style={s.body}>{n.body}</Text>
+     <Text style={s.muted}>{n.status==='approved'?'Approved for family review':n.status==='queued'?'Email queued; delivery is not confirmed':'Email sent'}</Text>
    </View>)}
    <Pressable accessibilityRole="button" onPress={()=>void refresh()} style={s.refresh}><Ionicons name="refresh-outline" size={17} color={colors.primary}/><Text style={s.link}>Refresh</Text></Pressable>
   </>}

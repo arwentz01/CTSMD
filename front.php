@@ -87,6 +87,7 @@ $experienceRoutes=[
     ['ProductionGroupExperience',['/production/groups','/production/groups/view'],'route'],
     ['ProductionPeopleExperience',['/production/people'],'route'],
     ['AttendanceExperience',['/attendance','/attendance/take','/attendance/report'],'route'],
+    ['LatePickupExperience',['/production/late-pickups'],'base'],
     ['ScheduleCreateExperience',['/production/schedule/new'],'route'],
     ['ScheduleNoticeExperience',['/production/notices','/production/notice'],'route'],
     ['ProductionFileExperience',['/files','/files/view','/files/download','/admin/files','/admin/files/edit'],'route'],

@@ -87,6 +87,8 @@ final class MailService
                     continue;
                 }
             }
+            try{$latePickup=$db->prepare("SELECT r.guardian_user_id,n.student_user_id FROM late_pickup_notice_recipients r JOIN late_pickup_notice_drafts n ON n.id=r.notice_id WHERE r.email_queue_id=:queue LIMIT 1");$latePickup->execute(['queue'=>(int)$row['id']]);$pickupRecipient=$latePickup->fetch();}catch(PDOException $e){$pickupRecipient=false;if(!str_contains($e->getMessage(),"doesn't exist"))throw$e;}
+            if($pickupRecipient){$relationship=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status='active' WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active' LIMIT 1");$relationship->execute(['guardian'=>(int)$pickupRecipient['guardian_user_id'],'student'=>(int)$pickupRecipient['student_user_id']]);if(!$relationship->fetchColumn()){$db->prepare("UPDATE email_queue SET status='suppressed',last_error='Guardian relationship is no longer active.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);self::log($db,(int)$row['id'],self::driver(),'suppressed','Guardian relationship is no longer active.');$suppressed++;continue;}}
 
             try{
                 self::deliver($projectRoot,$row);

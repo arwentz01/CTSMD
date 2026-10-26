@@ -391,6 +391,14 @@ The Floot native app now has authenticated adapters for form detail/submission a
 
 **Pilot remains NO-GO.** This coverage does not change the existing OS push, keyboard/device or operational closure gates.
 
+## October 25 late pickup workflow — source only
+
+Migration 084 and the associated source add auditable, production-scoped late pickup recording and staff review. The authoritative release is the schedule item's `ends_at`; arrival time and attendance Late status remain separate. Production settings control the occurrence threshold and grace period. Threshold crossing creates an internal review and versioned guardian notice draft only. Approval and explicit send are separate actions, current guardians are resolved at send time, and the mail worker rechecks the active relationship immediately before delivery.
+
+Approved family-visible notices are returned through the existing mobile Action Center without internal notes or occurrence history. Full staff editing remains web-first. No fee or financial charge is assessed; template language treats repercussions as dependent on actual CTSMD policy.
+
+All PHP files linted cleanly and `tests/late_pickup_workflow.php` passed 12 source-contract checks. Migration 084 and transactional MySQL acceptance were not run because the local database is unavailable. The wider suite retains an unrelated volunteer cancellation rollback failure and unavailable safeguarding database test. Expo typecheck retains three unrelated existing errors in `app/theatre/[id].tsx`, `ProductionHero.tsx`, and `StageBackdrop.tsx`. This source work is not deployed and does not change readiness percentages.
+
 ## October 25 manual production participants — source only
 
 Migration 069 and the associated source add no-login cast, crew, creative, and other production participants without creating `users`, roles, family relationships, memberships, bearer tokens, or notification recipients. Reusable person profiles are separated from production credits, private notes are excluded from published queries, and name/biography/headshot each have explicit publication approval boundaries. Approved data now participates in casting snapshots shared by web/mobile, production directories, and Playbill company pages. Staff may selectively transfer approved fields to an existing active Student; the manual credit is retired but retained for audit.
