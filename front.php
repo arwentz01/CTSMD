@@ -15,6 +15,13 @@ $requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)
 $route = $requestPath;
 if ($detectedBasePath !== '' && str_starts_with($route, $detectedBasePath)) $route = substr($route, strlen($detectedBasePath)) ?: '/';
 $route = rtrim($route, '/') ?: '/';
+// Explicit same-origin POST target for casting drawer saves on hosts whose
+// rewrite/WAF rules reject POST to extensionless application URLs.
+// The CastingExperience handler still enforces login, permissions and CSRF.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === '/front.php' && ($_GET['ctsmd_casting_post'] ?? '') === '1') {
+    $route = '/production/casting';
+}
+
 // Private Connect screens and APIs are not search-indexable. Access control is
 // still enforced by their handlers; this header is not an authorization boundary.
 $privateIndexRoutes = ['/admin','/api','/app','/attendance','/community','/family','/forms','/messages','/notifications','/production','/settings','/staff','/volunteer','/my-theatre','/account','/login','/logout','/student','/files'];
