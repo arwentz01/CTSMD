@@ -73,13 +73,16 @@ final class PlatformRegistrationService
     {
         if(Auth::hasRole($guardian,'student'))throw new RuntimeException('Student accounts cannot create household profiles.');
         $first=trim((string)($input['first_name']??''));$last=trim((string)($input['last_name']??''));$relationship=(string)($input['relationship_type']??'parent');
+        $email=mb_strtolower(trim((string)($input['email']??'')));
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter the child’s first and last name.');
         if(!in_array($relationship,['parent','guardian','caregiver'],true))throw new RuntimeException('Choose your relationship to this child.');
+        if($email!==''&&!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid child email address.');
+        if($email!==''){$lookup=$db->prepare('SELECT id FROM users WHERE LOWER(email)=:email LIMIT 1');$lookup->execute(['email'=>$email]);if($lookup->fetchColumn())throw new RuntimeException('This email already belongs to a CTSMD account. Ask staff to link the existing account.');}
         $initials=mb_strtoupper(mb_substr($first,0,1).mb_substr($last,0,1));
         $db->beginTransaction();
         try{
-            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,NULL,NULL,'managed',:initials,'Student',0,1)");
-            $insert->execute(['first'=>$first,'last'=>$last,'initials'=>$initials]);$childId=(int)$db->lastInsertId();
+            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,:email,NULL,'managed',:initials,'Student',0,1)");
+            $insert->execute(['first'=>$first,'last'=>$last,'email'=>$email?:null,'initials'=>$initials]);$childId=(int)$db->lastInsertId();
             $role=$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :user,id,:actor FROM auth_roles WHERE code='student' AND active=1 LIMIT 1");
             $role->execute(['user'=>$childId,'actor'=>(int)$guardian['id']]);
             $relation=$db->prepare("INSERT INTO family_relationships (guardian_user_id,student_user_id,relationship_type,is_primary,status,created_by_user_id) VALUES (:guardian,:student,:relationship,1,'active',:creator)");
@@ -87,8 +90,47 @@ final class PlatformRegistrationService
             $db->prepare('UPDATE users SET onboarding_completed_at=COALESCE(onboarding_completed_at,CURRENT_TIMESTAMP) WHERE id=:id')->execute(['id'=>(int)$guardian['id']]);
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'family.child_created','user',:student,'Created a guardian-managed student profile.',:meta)");
             $audit->execute(['actor'=>(int)$guardian['id'],'student'=>$childId,'meta'=>json_encode(['relationship_type'=>$relationship],JSON_THROW_ON_ERROR)]);
-            $db->commit();return $childId;
+            $db->commit();
+            if($email!=='')self::inviteManagedChild($db,$childId,(int)$guardian['id'],(string)($input['base_path']??''));
+            return $childId;
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw new RuntimeException('We could not add that child profile. Please try again.');}
+    }
+
+    private static function inviteManagedChild(PDO $db,int $childId,int $guardianId,string $basePath):void
+    {
+        $q=$db->prepare("SELECT id,first_name,last_name,email FROM users WHERE id=:id AND account_status='managed' AND active=1 AND email IS NOT NULL LIMIT 1");
+        $q->execute(['id'=>$childId]);$child=$q->fetch();if(!$child)return;
+        $token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);
+        $db->prepare("INSERT INTO auth_email_verifications (user_id,token_hash,expires_at) VALUES (:user,:hash,DATE_ADD(NOW(),INTERVAL 48 HOUR))")->execute(['user'=>$childId,'hash'=>$hash]);
+        $link=self::absoluteUrl('/student/activate?token='.$token,$basePath);
+        $body="Hi {$child['first_name']},\n\nYour parent or guardian invited you to finish setting up your CTSMD Connect student account. Use this link within 48 hours to verify your email and choose your own password:\n{$link}\n\nIf you were not expecting this invitation, you can ignore it.\n\nChildren's Theatre of Southern Maryland";
+        MailService::queue($db,$childId,(string)$child['email'],trim($child['first_name'].' '.$child['last_name']),'account_security','Finish your CTSMD Connect student account',$body,null,'student-activation-'.$hash);
+        $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'family.student_invited','user',:child,'Queued student account invitation.',NULL)");
+        $audit->execute(['actor'=>$guardianId,'child'=>$childId]);
+    }
+
+    public static function studentInvitation(PDO $db,string $token):?array
+    {
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))return null;
+        $q=$db->prepare("SELECT v.id verification_id,u.id user_id,u.first_name,u.email FROM auth_email_verifications v JOIN users u ON u.id=v.user_id AND u.active=1 AND u.account_status='managed' WHERE v.token_hash=:hash AND v.verified_at IS NULL AND v.expires_at>NOW() AND u.email IS NOT NULL LIMIT 1");
+        $q->execute(['hash'=>hash('sha256',$token)]);return $q->fetch()?:null;
+    }
+
+    public static function activateStudent(PDO $db,string $token,string $password,string $confirm):int
+    {
+        if(!hash_equals($password,$confirm))throw new RuntimeException('Passwords do not match.');
+        if(strlen($password)<Auth::PASSWORD_MIN_LENGTH)throw new RuntimeException('Use a password with at least '.Auth::PASSWORD_MIN_LENGTH.' characters.');
+        $db->beginTransaction();
+        try{
+            $child=self::studentInvitation($db,$token);
+            if(!$child)throw new RuntimeException('This invitation is invalid or expired.');
+            $q=$db->prepare("UPDATE users SET password_hash=:password,account_status='active',email_verified_at=CURRENT_TIMESTAMP WHERE id=:id AND account_status='managed'");
+            $q->execute(['password'=>password_hash($password,PASSWORD_DEFAULT),'id'=>$child['user_id']]);
+            if($q->rowCount()!==1)throw new RuntimeException('This invitation has already been used.');
+            $db->prepare("UPDATE auth_email_verifications SET verified_at=CURRENT_TIMESTAMP WHERE user_id=:user AND verified_at IS NULL")->execute(['user'=>$child['user_id']]);
+            $db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'family.student_activated','user',:id,'Student activated an invited managed profile.',NULL)")->execute(['actor'=>$child['user_id'],'id'=>$child['user_id']]);
+            $db->commit();return (int)$child['user_id'];
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
 
     public static function completeOnboarding(PDO $db,int $userId): void
