@@ -56,7 +56,7 @@ final class RegistrationService
 
     public static function submissionForToken(PDO $db,string $token): ?array
     {
-        if(!preg_match('/^[a-f0-9]{64}$/',$token))return null;$stmt=$db->prepare("SELECT rs.*,ro.title opportunity_title,ro.slug,ro.starts_at,ro.location FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id WHERE rs.manage_token_hash=:hash LIMIT 1");$stmt->execute(['hash'=>hash('sha256',$token)]);return $stmt->fetch()?:null;
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))return null;$stmt=$db->prepare("SELECT rs.*,ro.title opportunity_title,ro.slug,ro.starts_at,ro.location,rsl.participant_user_id linked_student_id FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id LEFT JOIN registration_submission_links rsl ON rsl.submission_id=rs.id WHERE rs.manage_token_hash=:hash LIMIT 1");$stmt->execute(['hash'=>hash('sha256',$token)]);return $stmt->fetch()?:null;
     }
 
     public static function cancelByToken(PDO $db,string $token): void
