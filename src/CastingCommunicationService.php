@@ -9,6 +9,8 @@ require_once __DIR__.'/ProductionContext.php';
 require_once __DIR__.'/PushService.php';
 require_once __DIR__.'/ManualParticipantService.php';
 
+require_once __DIR__.'/CastingRoleService.php';
+
 final class CastingCommunicationService
 {
     public static function publication(PDO $db,int $productionId,string $type='cast'):array
@@ -29,7 +31,16 @@ final class CastingCommunicationService
             if(!$r)throw new RuntimeException('That casting record could not be found.');
             if(!(bool)$r['student_active']||$r['student_account_status']==='disabled'||!(bool)$r['student_role_active'])throw new RuntimeException('That Student identity is no longer available for live casting communication.');
             if(!in_array((string)$r['casting_status'],['offered','cast','not_cast'],true))throw new RuntimeException('Only Offered, Cast, or Not cast decisions can be communicated.');
-            if(in_array((string)$r['casting_status'],['offered','cast'],true)&&trim((string)($r['role_title']??''))==='')throw new RuntimeException('Add the offered/cast role before sending the result.');
+            // Multi-select roles are authoritative; role_title is only a legacy display
+            // projection and may be empty for records written by older editors.
+            $role=trim((string)($r['role_title']??''));
+            if(in_array((string)$r['casting_status'],['offered','cast'],true)){
+                $assignedRoles=CastingRoleService::assigned($db,$productionId,$recordId);
+                if($assignedRoles){
+                    $role=implode(' / ',array_column($assignedRoles,'title'));
+                }
+                if($role==='')throw new RuntimeException('Add at least one character/role under Casting Decisions, save it, then send the result.');
+            }
             if(!empty($r['production_membership_id'])&&in_array((string)$r['casting_status'],['offered','cast'],true)&&$r['membership_status']!=='active')throw new RuntimeException('That finalized production membership is no longer active. Restore the roster membership or update the casting decision before communicating it.');
 
             $g=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' ORDER BY fr.is_primary DESC,fr.id");
@@ -47,7 +58,7 @@ final class CastingCommunicationService
             }
             if($guardianRecipients<1)throw new RuntimeException('This Student has guardian context, but no available guardian email address can receive the casting result.');
 
-            $status=(string)$r['casting_status'];$production=(string)$r['production_title'];$student=(string)$r['student_name'];$role=trim((string)($r['role_title']??''));
+            $status=(string)$r['casting_status'];$production=(string)$r['production_title'];$student=(string)$r['student_name'];
             $subject=$status==='not_cast'?'Casting update · '.$production:($status==='offered'?'Casting offer · '.$production:'Casting result · '.$production);
             $body=$status==='not_cast'
                 ?"CTSMD has an update regarding {$student}'s casting for {$production}.\n\nAt this time, {$student} has not been cast in this production. Thank you for the time, preparation, and courage it takes to audition.\n\nCTSMD Connect"
