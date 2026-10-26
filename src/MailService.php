@@ -72,7 +72,7 @@ final class MailService
                 $account=$db->prepare("SELECT active,account_status FROM users WHERE id=:user LIMIT 1");$account->execute(['user'=>(int)$row['user_id']]);$recipient=$account->fetch();
                 $allowedAccount=$recipient && (bool)$recipient['active'] && (
                     $recipient['account_status']==='active'
-                    || ((string)$row['category']==='account_security' && $recipient['account_status']==='invited')
+                    || ((string)$row['category']==='account_security' && in_array((string)$recipient['account_status'],['invited','pending_verification','managed'],true))
                 );
                 if(!$allowedAccount){
                     $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
