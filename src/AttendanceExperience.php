@@ -41,7 +41,7 @@ final class AttendanceExperience
                 $item=AttendanceService::scheduleItem($db,(int)$itemId,(int)$production['id']);if(!$item)throw new RuntimeException('That active schedule item is not in the working production.');
                 $db->beginTransaction();
                 AttendanceService::saveRoster($db,(int)$itemId,(int)$user['id'],(array)($_POST['status']??[]),(array)($_POST['note']??[]),(array)($_POST['arrived_at']??[]));
-                foreach((array)($_POST['pickup_at']??[]) as $studentId=>$pickupAt)if(array_key_exists((int)$studentId,(array)($_POST['status']??[])))LatePickupService::record($db,(int)$itemId,(int)$studentId,(int)$user['id'],trim((string)$pickupAt)!==''?(string)$pickupAt:null,(string)(($_POST['pickup_reason']??[])[$studentId]??''));
+                foreach((array)($_POST['pickup_at']??[]) as $studentId=>$pickupAt)if(trim((string)$pickupAt)!=='' || trim((string)(($_POST['pickup_reason']??[])[$studentId]??''))!=='')LatePickupService::record($db,(int)$itemId,(int)$studentId,(int)$user['id'],trim((string)$pickupAt)!==''?(string)$pickupAt:null,(string)(($_POST['pickup_reason']??[])[$studentId]??''));
                 self::audit($db,(int)$user['id'],'attendance.roster_saved','schedule_item',(int)$itemId,'Saved attendance roster.',['production_id'=>(int)$production['id']]);
                 $db->commit();self::flash('success','Attendance saved.');self::redirect($basePath.'/attendance/take?id='.(int)$itemId);
             }
@@ -72,7 +72,7 @@ final class AttendanceExperience
         }
         $title=$route==='/attendance'?'Attendance':($route==='/attendance/take'?'Take attendance':'Report an absence');$subnav=AppNavigation::productionSubnav($route,$user);
         header('Content-Type: text/html; charset=utf-8');?>
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/attendance.css?v=20261026-drawer-save?v=20261025-pickups') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav);?><div class="att-page">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/attendance.css?v=20261026-pickup-save?v=20261025-pickups') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav);?><div class="att-page">
 <?php if($flash):?><div class="att-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?>
 <?php if(!$production):?><section class="att-empty"><h2>No active production selected</h2><p>Choose a working production before opening attendance.</p><a class="button" href="<?= $url('/production') ?>">Choose production</a></section>
 <?php elseif($route==='/attendance'):?>
@@ -144,7 +144,7 @@ document.addEventListener('keydown',e=>{
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
  }
 });
-const all=form.querySelector('[data-mark-all="present"]');if(all)all.addEventListener('click',()=>{form.querySelectorAll('input[type="radio"][value="present"]').forEach(input=>{input.checked=true;});allArrivals();refresh();});form.addEventListener('submit',()=>{submitting=true;});window.addEventListener('beforeunload',e=>{if(!submitting&&snapshot()!==initial){e.preventDefault();e.returnValue='';}});allArrivals();updatePickups();initial=snapshot();refresh();})();</script><?php endif;?></body></html><?php exit;
+const all=form.querySelector('[data-mark-all="present"]');if(all)all.addEventListener('click',()=>{form.querySelectorAll('input[type="radio"][value="present"]').forEach(input=>{input.checked=true;});allArrivals();refresh();});form.addEventListener('submit',()=>{allArrivals();updatePickups();submitting=true;});window.addEventListener('beforeunload',e=>{if(!submitting&&snapshot()!==initial){e.preventDefault();e.returnValue='';}});allArrivals();updatePickups();initial=snapshot();refresh();})();</script><?php endif;?></body></html><?php exit;
     }
 
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta):void{$stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$stmt->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
