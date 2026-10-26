@@ -184,3 +184,9 @@
 .att-roster .att-status-more .att-more-panel .att-more-note input,.att-roster .att-status-more .att-more-panel .att-pickup-fields input:not([type=hidden]){width:100%;max-width:100%;box-sizing:border-box;text-align:left}
 .att-roster .att-status-more .att-more-panel .att-pickup-fields input[type=time]{width:160px;max-width:100%}
 @media(max-width:400px){.att-roster .att-status-more .att-more-panel:not([hidden]){padding:16px}}
+
+/* Attendance drawer footer: clear, reachable save action. */
+.att-roster .att-status-more .att-more-panel .att-drawer-footer{margin-top:auto;padding-top:15px;border-top:1px solid #eadfe3;display:grid;gap:10px}
+.att-roster .att-status-more .att-more-panel .att-drawer-footer span{font-size:12px;color:#6d6268}
+.att-roster .att-status-more .att-more-panel .att-drawer-save{display:block;position:static;width:100%;min-height:46px;border-radius:10px;background:#a6192e;color:#fff;border:1px solid #a6192e;font-weight:800;cursor:pointer}
+.att-roster .att-status-more .att-more-panel .att-drawer-save:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
