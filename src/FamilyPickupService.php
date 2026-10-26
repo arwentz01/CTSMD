@@ -63,6 +63,20 @@ final class FamilyPickupService {
             self::audit($db,(int)$actor['id'],$student,'family.relationship_requested',['request_id'=>(int)$db->lastInsertId(),'email'=>$email,'type'=>$type]);$db->commit();
         }catch(Throwable $e){$db->rollBack();throw $e;}
     }
+    public static function deactivateAdult(PDO $db,array $actor,int $student,int $relationshipId):void {
+        self::requireManager($db,$actor,$student);
+        $db->beginTransaction();try{
+            $s=$db->prepare("SELECT * FROM family_relationships WHERE id=:id AND student_user_id=:student FOR UPDATE");$s->execute(['id'=>$relationshipId,'student'=>$student]);$r=$s->fetch();
+            if(!$r||$r['status']!=='active')throw new RuntimeException('That relationship is not active.');
+            $s=$db->prepare("SELECT COUNT(*) FROM family_relationships WHERE student_user_id=:student AND status='active' AND relationship_type IN ('parent','guardian')");$s->execute(['student'=>$student]);
+            if(in_array($r['relationship_type'],['parent','guardian'],true)&&(int)$s->fetchColumn()<=1)throw new RuntimeException('The final active parent/guardian relationship cannot be removed here. Contact CTSMD administration.');
+            if((int)$r['guardian_user_id']===(int)$actor['id']&&!AccessPolicy::canManagePeople($actor))throw new RuntimeException('Contact CTSMD staff to remove your own account relationship.');
+            $s=$db->prepare("UPDATE family_relationships SET status='inactive' WHERE id=:id AND student_user_id=:student");$s->execute(['id'=>$relationshipId,'student'=>$student]);
+            $s=$db->prepare("UPDATE student_pickup_people SET active=0,updated_by_user_id=:actor WHERE student_user_id=:student AND linked_guardian_user_id=:adult");
+            $s->execute(['actor'=>(int)$actor['id'],'student'=>$student,'adult'=>(int)$r['guardian_user_id']]);
+            self::audit($db,(int)$actor['id'],$student,'family.relationship_deactivated',['relationship_id'=>$relationshipId,'adult_user_id'=>(int)$r['guardian_user_id']]);$db->commit();
+        }catch(Throwable $e){$db->rollBack();throw $e;}
+    }
     public static function decide(PDO $db,array $actor,int $student,int $id,bool $approve):void {
         if(!AccessPolicy::canManagePeople($actor))throw new RuntimeException('CTSMD staff approval is required to activate new adult access.');
         self::requireManager($db,$actor,$student);
