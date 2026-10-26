@@ -159,3 +159,21 @@
 .att-roster .att-status-more .att-more-panel[hidden]{display:none!important}
 @media(max-width:760px){.att-roster .att-status-more .att-more-toggle{grid-column:3;grid-row:2}.att-roster .att-status-more .att-more-panel{grid-row:3}}
 @media(max-width:490px){.att-roster .att-status-more .att-more-toggle{grid-column:2;grid-row:3}.att-roster .att-status-more .att-more-panel{grid-row:4}}
+
+/* Attendance More is a fixed editor drawer; the roster never expands. */
+.att-roster .att-status-more .att-more-panel:not([hidden]){position:fixed;top:0;right:0;bottom:0;left:auto;z-index:1002;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;width:min(460px,100vw);height:100dvh;overflow-y:auto;padding:24px;background:#fff;box-shadow:-12px 0 45px rgba(27,17,22,.22);border:0;border-radius:0;margin:0}
+.att-roster .att-status-more .att-more-panel[hidden]{display:none!important}
+.att-drawer-active:before{content:"";position:fixed;inset:0;z-index:1001;background:rgba(24,16,20,.45)}
+.att-drawer-header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #eadfe3;padding-bottom:16px}
+.att-drawer-header small{font-size:10px;font-weight:850;color:#a6192e;letter-spacing:.12em}
+.att-drawer-header h3{font-family:Georgia,serif;margin:5px 0 0;color:#23191e;font-size:24px}
+.att-roster .att-status-more .att-drawer-close{border:1px solid #e0d5d9;background:#fff;color:#8c1830;border-radius:10px;font-size:24px;min-width:42px;min-height:42px;cursor:pointer}
+.att-roster .att-status-more .att-more-panel .att-status-secondary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+.att-roster .att-status-more .att-more-panel .att-more-note{display:grid;gap:7px;min-width:0}
+.att-roster .att-status-more .att-more-panel .att-more-note input,
+.att-roster .att-status-more .att-more-panel .att-pickup-fields input:not([type=hidden]){box-sizing:border-box;width:100%;max-width:none;min-height:42px;position:static;opacity:1;pointer-events:auto;padding:10px;border:1px solid #d9cbd0;border-radius:9px;background:#fff;color:#282027;font:inherit;font-size:14px}
+.att-roster .att-status-more .att-more-panel .att-pickup-in-more{margin-top:2px;padding-top:15px;border-top:1px solid #eadfe3}
+.att-roster .att-status-more .att-more-panel .att-pickup-fields{display:grid;grid-template-columns:1fr;gap:13px}
+.att-roster .att-status-more .att-more-panel .att-pickup-fields label{display:grid;gap:6px;min-width:0;text-align:left}
+.att-roster .att-status-more .att-more-panel .att-pickup-fields input[type=time]{max-width:220px}
+@media(max-width:520px){.att-roster .att-status-more .att-more-panel:not([hidden]){padding:17px;width:100vw}}
