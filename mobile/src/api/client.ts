@@ -57,3 +57,7 @@ export const createConversation=(recipient_id:number,body:string)=>api<{conversa
 
 export type PublishedCasting={headline:string|null;member_note:string|null;published_at:string|null;cast:Array<{name:string;role?:string;participation_track?:string}>};
 export const productionCasting=(productionId:number)=>api<{cast:PublishedCasting|null;callbacks:PublishedCasting|null}>('production-casting?production_id='+encodeURIComponent(String(productionId)));
+
+export type MobileNotification={id:number;source_type:string;source_id:number|null;title:string;body:string;action_path:string|null;read_at:string|null;created_at:string};
+export const notifications=()=>api<{notifications:MobileNotification[];unread_count:number}>('notifications');
+export const markNotificationRead=(notification_id:number)=>api<{ok:boolean}>('notification-read',{method:'POST',body:{notification_id}});
