@@ -10,6 +10,8 @@ require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
+require_once __DIR__ . '/CastingOfferService.php';
+require_once __DIR__ . '/ProductionChecklistAssignmentService.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
@@ -48,6 +50,8 @@ final class MobileApi
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/casting-offer-respond' => self::castingOfferRespond($db,$user),
+                '/api/mobile/production-todo-complete' => self::productionTodoComplete($db,$user),
                 '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
                 '/api/mobile/volunteer-cancel' => self::volunteerCancel($db, $user),
                 '/api/mobile/volunteer-approval' => self::volunteerApproval($db, $user),
@@ -306,7 +310,25 @@ final class MobileApi
         }
         unset($row);
         }
-        self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows,'volunteer_enabled'=>$live]);
+        self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows,'volunteer_enabled'=>$live,
+            'production_todos'=>ProductionChecklistAssignmentService::actionItems($db,$id),
+            'casting_offers'=>CastingOfferService::pendingForUser($db,$id)]);
+    }
+
+    private static function castingOfferRespond(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        CastingOfferService::respond($db,(int)$user['id'],(int)($input['offer_id']??0),(string)($input['decision']??''),(string)($input['response_note']??''));
+        self::json(['ok'=>true]);
+    }
+
+    private static function productionTodoComplete(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();
+        ProductionChecklistAssignmentService::complete($db,(int)$user['id'],(int)($input['assignment_id']??0));
+        self::json(['ok'=>true]);
     }
 
     private static function notifications(PDO $db,array $user):never
