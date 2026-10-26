@@ -75,7 +75,7 @@ final class HomeDashboardService
                 'kind'=>'casting_offer','urgent'=>true,'title'=>'Casting offer awaiting response',
                 'context'=>$offer['production_title'].' · '.$offer['first_name'].' '.$offer['last_name'],
                 'detail'=>$offer['role_snapshot'],
-                'href'=>'/notifications#casting-offers'
+                'href'=>'/notifications?offer='.(int)$offer['id'].'#casting-offer-'.(int)$offer['id']
             ];
         }
         foreach ($forms as $form) {
