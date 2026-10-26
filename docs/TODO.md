@@ -31,6 +31,7 @@
 - [ ] Test production Tasks, grouped assignment, student/guardian completion, owner roles and Volunteer Lead designation.
 - [ ] Verify Attendance arrival-time corrections and late-pickup occurrence review/guardian notices, including no-send-before-approval.
 - [ ] Finish native Expo staff-side parity for casting and Tasks; test native Action Center and permissions.
+- [ ] Verify Expo Student/Guardian casting offer display and Accept/Decline on physical iOS/Android devices, including decline-note requirement, rejected/stale offer, former-guardian revocation, and Home pending-offer visibility. Test new unread/past notification screen, mark-read, and casting notification navigation. Source update committed October 26, 2026; **not device verified**.
 - [ ] Accessibility/responsive QA for desktop, mobile drawers, forms, attendance and keyboard navigation.
 - [ ] Run link checks, performance baseline, media upload/optimization and server-side form validation audit.
 
