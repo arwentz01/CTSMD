@@ -1,6 +1,6 @@
 # CTSMD Connect — Platform launch readiness
 
-Updated 2026-10-26. Canonical release-readiness punch list, separate from per-production Readiness or Tasks.
+Updated 2026-10-26. **Supporting launch-audit reference, not a second maintained To-Do.** All actionable priorities and completions are tracked in [TODO.md](TODO.md). Separate from per-production Readiness or Tasks.
 
 **Evidence rule:** "In code" is not "verified live". Mark production-ready only after acceptance with date, environment, tester, and evidence. This checklist does not supersede the pilot NO-GO in [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md).
 
