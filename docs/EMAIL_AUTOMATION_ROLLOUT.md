@@ -31,4 +31,4 @@ The first automated run will **fail closed** if MAIL_AUTO_MIN_ID is absent, zero
 - Rollback: remove/disable the scheduler entry. Do not delete old rows or rewind queue IDs.
 
 ## Important distinction
-The Email Operations UI's existing **Process 25 now** action remains a legacy manual unrestricted operation; it does **not** use the auto cutoff. Do not click it while deferred messages remain queued. For an urgent individual invitation, CLI `--queue-id ID` targets only that message after explicitly approving its recipient and confirming the deployed worker.
+The Email Operations UI's **Process 25 eligible emails** action now also requires the approved `MAIL_AUTO_MIN_ID` cutoff and fails closed when it is not configured. It cannot process earlier quarantined rows. For an urgent individual invitation, CLI `--queue-id ID` targets only that message after explicitly approving its recipient and confirming the deployed worker.
