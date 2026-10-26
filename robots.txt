@@ -20,7 +20,5 @@ Disallow: /register
 Disallow: /student/
 Disallow: /storage/
 Disallow: /files/
-Disallow: /resources
-Disallow: /playbills/
 # Public sitemap intentionally omitted pending approved canonical URL audit.
 # Robots rules do NOT replace authentication or authorization.
