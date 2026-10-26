@@ -91,3 +91,15 @@
 .att-roster .att-pickup-in-more input[type=time]{max-width:160px;cursor:auto}
 .att-roster .att-pickup-in-more input:focus-visible{outline:3px solid rgba(166,25,46,.2);outline-offset:2px;border-color:#a6192e}
 .att-roster .att-pickup-in-more input:disabled{background:#f5f1f2;opacity:.7;cursor:not-allowed}
+
+/* Expanded attendance controls use the full row, never a narrow side column. */
+.att-roster .att-person:has(.att-status-more[open]) .att-status-picker{grid-column:1/-1;grid-row:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.att-roster .att-person:has(.att-status-more[open]) .att-status-primary{grid-column:1}
+.att-roster .att-person .att-status-more[open]{grid-column:1/-1;display:block;padding:0;margin:0}
+.att-roster .att-status-more[open] summary{margin:6px 0 0 auto;width:max-content}
+.att-roster .att-status-more .att-more-panel{display:grid;gap:14px;padding:16px;margin:10px 0 0;border:1px solid #e5dadd;border-radius:12px;background:#faf7f8}
+.att-roster .att-status-more .att-more-note{display:grid;gap:6px}
+.att-roster .att-status-more .att-more-note input{position:static;opacity:1;pointer-events:auto;display:block;box-sizing:border-box;width:100%;min-height:42px;border:1px solid #d7cbd0;border-radius:9px;padding:10px;background:#fff;color:#282027;font:inherit;font-size:13px}
+.att-roster .att-status-more .att-pickup-in-more{margin-top:0;padding-top:12px}
+.att-roster .att-status-more .att-pickup-fields{grid-template-columns:minmax(130px,170px) minmax(0,1fr)}
+@media(max-width:750px){.att-roster .att-person:has(.att-status-more[open]) .att-status-picker{grid-column:1/-1}.att-roster .att-status-more .att-pickup-fields{grid-template-columns:1fr}}
