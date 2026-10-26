@@ -62,7 +62,10 @@ final class AuditionIntakeBridge
             if(count($ids)!==1)continue;
             $link=$db->prepare("INSERT IGNORE INTO registration_submission_links (submission_id,participant_user_id,guardian_user_id,linked_by_user_id,link_method) VALUES (:submission,:student,:guardian,NULL,'existing')");
             $link->execute(['submission'=>(int)$registration['id'],'student'=>(int)$ids[0],'guardian'=>$guardianId]);
-            if($link->rowCount()===1)self::syncAccepted($db,(int)$registration['id'],null);
+            if($link->rowCount()===1){
+                self::audit($db,$guardianId,'audition.registration_auto_linked',(int)$registration['id'],['student_user_id'=>(int)$ids[0],'guardian_user_id'=>$guardianId]);
+                self::syncAccepted($db,(int)$registration['id'],null);
+            }
         }
     }
 
@@ -77,7 +80,15 @@ final class AuditionIntakeBridge
         // An existing casting decision is never reset to Under Review.
         $insert=$db->prepare("INSERT IGNORE INTO production_casting_records (production_id,user_id,registration_submission_id,casting_status,created_by_user_id) VALUES (:production,:student,:submission,'under_review',:actor)");
         $insert->execute(['production'=>(int)$match['production_id'],'student'=>(int)$match['participant_user_id'],'submission'=>$submissionId,'actor'=>$actorId]);
-        return $insert->rowCount()===1;
+        $created=$insert->rowCount()===1;
+        if($created)self::audit($db,$actorId,'audition.casting_intake_created',$submissionId,['student_user_id'=>(int)$match['participant_user_id'],'production_id'=>(int)$match['production_id']]);
+        return $created;
+    }
+
+    private static function audit(PDO $db,?int $actor,string $event,int $submissionId,array $metadata):void
+    {
+        $stmt=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'registration_submission',:submission,:summary,:metadata)");
+        $stmt->execute(['actor'=>$actor,'event'=>$event,'submission'=>$submissionId,'summary'=>'Linked verified audition intake to a CTSMD Student record.','metadata'=>json_encode($metadata,JSON_THROW_ON_ERROR)]);
     }
 
     public static function syncLinkedForGuardian(PDO $db, int $guardianId): void
