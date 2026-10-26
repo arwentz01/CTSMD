@@ -17,6 +17,7 @@ $required = [
     '080 offer responses' => ['production_cast_offers'],
     '081 checklist assignments' => ['production_checklist_assignments'],
     '082 volunteer leads' => ['production_volunteer_leads'],
+    '085 family and pickup' => ['student_pickup_people', 'student_relationship_requests'],
     '084 late pickup' => [
         'production_late_pickup_settings', 'late_pickup_occurrences',
         'late_pickup_occurrence_revisions', 'late_pickup_reviews',
@@ -47,7 +48,7 @@ try {
         fwrite(STDERR, "Review and apply the appropriate migrations with the established deployment procedure.\n");
         exit(1);
     }
-    fwrite(STDOUT, "CTSMD schema preflight passed: migrations 079–084 feature tables and attendance arrival column exist.\n");
+    fwrite(STDOUT, "CTSMD schema preflight passed: migrations 079–085 feature tables and attendance arrival column exist.\n");
     exit(0);
 } catch (Throwable $error) {
     fwrite(STDERR, "CTSMD schema preflight FAILED: could not inspect database schema. Check connection, permissions and server logs.\n");
