@@ -20,11 +20,69 @@ final class SafeguardingStatementService
         self::audit($db,(int)$actor['id'],$caseId,'safeguarding.statement_summary_updated',['shared_description_changed'=>true]);
     }
 
+    /**
+     * All selectable destinations are resolved again on POST. Children are offered
+     * only as a guardian-delivery choice; no child email is exposed or used.
+     */
+    public static function recipientOptions(PDO $db,array $actor):array
+    {
+        self::authorize($actor);
+        $adults=$db->query("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email
+            FROM users u
+            WHERE u.active=1 AND u.account_status='active' AND u.email_verified_at IS NOT NULL
+              AND u.email IS NOT NULL AND u.email<>''
+              AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student')
+            ORDER BY u.last_name,u.first_name,u.id")->fetchAll(PDO::FETCH_ASSOC);
+        $families=$db->query("SELECT student.id student_id,CONCAT(student.first_name,' ',student.last_name) student_name,
+                guardian.id guardian_id,CONCAT(guardian.first_name,' ',guardian.last_name) guardian_name,guardian.email guardian_email
+            FROM family_relationships fr
+            JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled'
+            JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status='active'
+                AND guardian.email_verified_at IS NOT NULL AND guardian.email IS NOT NULL AND guardian.email<>''
+            WHERE fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+            ORDER BY student.last_name,student.first_name,fr.is_primary DESC,guardian.last_name,guardian.first_name")->fetchAll(PDO::FETCH_ASSOC);
+        return ['adults'=>$adults,'families'=>$families];
+    }
+
+    private static function resolveRecipient(PDO $db,array $input):array
+    {
+        $choice=trim((string)($input['recipient_choice']??''));
+        if($choice==='manual'){
+            $name=trim((string)($input['recipient_name']??''));
+            $email=mb_strtolower(trim((string)($input['recipient_email']??'')));
+            if($name===''||mb_strlen($name)>190||!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)
+                throw new RuntimeException('Provide a valid name and email address for the external recipient.');
+            return ['id'=>null,'name'=>$name,'email'=>$email];
+        }
+        if(preg_match('/^adult:(\\d+)$/D',$choice,$match)){
+            $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM users u
+                WHERE u.id=:id AND u.active=1 AND u.account_status='active' AND u.email_verified_at IS NOT NULL AND u.email IS NOT NULL
+                AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student') LIMIT 1");
+            $s->execute(['id'=>(int)$match[1]]);
+            $r=$s->fetch(PDO::FETCH_ASSOC);
+            if($r)return ['id'=>(int)$r['id'],'name'=>(string)$r['name'],'email'=>mb_strtolower((string)$r['email'])];
+        }
+        if(preg_match('/^guardian:(\\d+):(\\d+)$/D',$choice,$match)){
+            $s=$db->prepare("SELECT guardian.id,CONCAT(guardian.first_name,' ',guardian.last_name) name,guardian.email
+                FROM family_relationships fr
+                JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status='active' AND guardian.email_verified_at IS NOT NULL
+                JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled'
+                WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active'
+                AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
+            $s->execute(['guardian'=>(int)$match[1],'student'=>(int)$match[2]]);
+            $r=$s->fetch(PDO::FETCH_ASSOC);
+            if($r)return ['id'=>(int)$r['id'],'name'=>(string)$r['name'],'email'=>mb_strtolower((string)$r['email'])];
+        }
+        throw new RuntimeException('Select an active CTSMD recipient or choose an external recipient.');
+    }
+
     public static function invite(PDO $db,array $actor,int $caseId,array $input,string $basePath):int
     {
         self::authorize($actor);
-        $name=trim((string)($input['recipient_name']??''));
-        $email=mb_strtolower(trim((string)($input['recipient_email']??'')));
+        $recipient=self::resolveRecipient($db,$input);
+        $name=$recipient['name'];
+        $email=$recipient['email'];
+        $recipientUserId=$recipient['id'];
         $description=trim((string)($input['shared_description']??''));
         $publicTitle=trim((string)($input['shared_title']??''));
         if($publicTitle===''||mb_strlen($publicTitle)>190)throw new RuntimeException('Enter a recipient-facing case name up to 190 characters.');
@@ -42,8 +100,8 @@ final class SafeguardingStatementService
         $link=self::absoluteUrl($basePath.'/incident-statement?token='.$token);
         $db->beginTransaction();
         try{
-            $stmt=$db->prepare("INSERT INTO safeguarding_statement_requests (case_id,recipient_name,recipient_email,token_hash,shared_title,shared_description,shared_occurred_at,shared_production_title,expires_at,invited_by_user_id) VALUES (:case,:name,:email,:hash,:title,:description,:occurred,:production,:expiry,:actor)");
-            $stmt->execute(['case'=>$caseId,'name'=>$name,'email'=>$email,'hash'=>$hash,'title'=>$publicTitle,'description'=>$description,'occurred'=>$row['occurred_at'],'production'=>$row['production_title'],'expiry'=>$expiry,'actor'=>(int)$actor['id']]);
+            $stmt=$db->prepare("INSERT INTO safeguarding_statement_requests (case_id,recipient_name,recipient_email,recipient_user_id,token_hash,shared_title,shared_description,shared_occurred_at,shared_production_title,expires_at,invited_by_user_id) VALUES (:case,:name,:email,:recipient_id,:hash,:title,:description,:occurred,:production,:expiry,:actor)");
+            $stmt->execute(['case'=>$caseId,'name'=>$name,'email'=>$email,'recipient_id'=>$recipientUserId,'hash'=>$hash,'title'=>$publicTitle,'description'=>$description,'occurred'=>$row['occurred_at'],'production'=>$row['production_title'],'expiry'=>$expiry,'actor'=>(int)$actor['id']]);
             $id=(int)$db->lastInsertId();
             $body="CTSMD has requested your individual account of an incident.\n\nOpen your private statement form:\n".$link."\n\nThis link expires in ".$days." days. Please do not forward it. Your response will become read-only once submitted.\n\nIf you believe you received this request in error, contact CTSMD directly.\n\nChildren’s Theatre of Southern Maryland";
             // Avoid subject lines or email body revealing case names or confidential facts.
