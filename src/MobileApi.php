@@ -138,7 +138,8 @@ final class MobileApi
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
         $video=RehearsalVideoService::record($db,(int)$id);
         if(!$video||$video['status']!=='active'){self::json(['error'=>'Video unavailable.'],404);}
-        if(!RehearsalVideoService::canView($db,$user,$video)){
+        if(!RehearsalVideoService::canView($db,$user,$video)
+            &&!RehearsalVideoService::canManage($user)){
             self::json(['error'=>'Video unavailable.'],404);
         }
         header_remove('Content-Type');
