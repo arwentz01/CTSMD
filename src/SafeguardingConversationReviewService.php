@@ -47,6 +47,19 @@ final class SafeguardingConversationReviewService
         return ['rows'=>array_slice($rows,0,50),'has_more'=>count($rows)>50,'page'=>$page];
     }
 
+    public static function reviewAttachment(PDO $db,array $reviewer,int $conversationId,int $attachmentId,string $reason,?int $caseId=null):array
+    {
+        self::assertReviewer($db,$reviewer);
+        if(mb_strlen(trim($reason))<12||mb_strlen($reason)>1000)throw new RuntimeException('Review reason required.');
+        $stmt=$db->prepare("SELECT sfv.*,m.conversation_id FROM message_attachments ma JOIN messages m ON m.id=ma.message_id JOIN stored_files sf ON sf.id=ma.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=ma.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE ma.id=:attachment AND m.conversation_id=:conversation LIMIT 1");
+        $stmt->execute(['attachment'=>$attachmentId,'conversation'=>$conversationId]);
+        $file=$stmt->fetch(PDO::FETCH_ASSOC);
+        if(!$file)throw new RuntimeException('Attachment unavailable.');
+        $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'safeguarding.conversation_attachment_reviewed','conversation',:conversation,'Safeguarding reviewer accessed message attachment.',:metadata)");
+        $audit->execute(['actor'=>(int)$reviewer['id'],'conversation'=>$conversationId,'metadata'=>json_encode(['reason'=>$reason,'case_id'=>$caseId,'attachment_id'=>$attachmentId],JSON_THROW_ON_ERROR)]);
+        return $file;
+    }
+
     public static function review(PDO $db,array $reviewer,int $conversationId,string $reason,?int $caseId=null,int $page=1):array
     {
         self::assertReviewer($db,$reviewer);
@@ -72,6 +85,16 @@ final class SafeguardingConversationReviewService
         $messages=$db->prepare('SELECT m.id,m.sender_user_id,m.body,m.created_at,m.hidden_at,CONCAT(u.first_name,\' \',u.last_name) sender_name FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id ORDER BY m.id DESC LIMIT 51 OFFSET '.(($page-1)*50));
         $messages->execute(['id'=>$conversationId]);$rows=$messages->fetchAll(PDO::FETCH_ASSOC);
         $conversation['messages']=array_reverse(array_slice($rows,0,50));
+        $ids=array_map(static fn(array $m):int=>(int)$m['id'],$conversation['messages']);
+        $attachments=[];
+        if($ids){
+            $ph=implode(',',array_fill(0,count($ids),'?'));
+            $files=$db->prepare("SELECT ma.id,ma.message_id,sfv.original_name,sfv.byte_size FROM message_attachments ma JOIN stored_files sf ON sf.id=ma.stored_file_id AND sf.status='active' JOIN stored_file_versions sfv ON sfv.id=(SELECT v.id FROM stored_file_versions v WHERE v.stored_file_id=ma.stored_file_id ORDER BY v.version_number DESC LIMIT 1) WHERE ma.message_id IN ($ph) ORDER BY ma.id");
+            $files->execute($ids);
+            foreach($files->fetchAll(PDO::FETCH_ASSOC) as $file)$attachments[(int)$file['message_id']][]=$file;
+        }
+        foreach($conversation['messages'] as &$message)$message['attachments']=$attachments[(int)$message['id']]??[];
+        unset($message);
         $conversation['has_older']=count($rows)>50;
         $conversation['page']=$page;
         return $conversation;
