@@ -114,7 +114,7 @@ $experienceRoutes=[
     ['PlaybillExperience',['/playbills','/admin/playbill'],'route'],
     ['ProductionExperience',['/production','/schedule','/production/day','/production/edit','/resources','/playbills'],'route'],
     ['CommunicationExperience',['/messages','/messages/new','/messages/thread','/messages/attachment'],'route'],
-    ['SafeguardingConversationReviewExperience',['/safeguarding/conversations'],'route'],
+    ['SafeguardingConversationReviewExperience',['/safeguarding/conversations','/safeguarding/conversations/attachment'],'route'],
     ['SafeguardingCaseExperience',['/safeguarding/cases','/safeguarding/case'],'route'],
     ['SafeguardingExperience',['/safeguarding','/safeguarding/review','/safeguarding/audit'],'route'],
 ];
