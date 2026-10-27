@@ -29,7 +29,7 @@ final class RegistrationOperationsExperience
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user||!AccessPolicy::canManageForms($user))self::forbidden();$_SESSION['registration_ops_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$basePath,$route);
-        if($route==='/admin/registrations/intake'){$submissionId=filter_input(INPUT_GET,'submission',FILTER_VALIDATE_INT)?:0;$intake=RegistrationIntakeService::review($db,(int)$submissionId);self::intakePage($user,$basePath,$intake);}
+        if($route==='/admin/registrations/intake'){header('Cache-Control: private, no-store, max-age=0');header('Pragma: no-cache');header('X-Robots-Tag: noindex, nofollow');header('Referrer-Policy: no-referrer');$submissionId=filter_input(INPUT_GET,'submission',FILTER_VALIDATE_INT)?:0;$intake=RegistrationIntakeService::review($db,(int)$submissionId);self::intakePage($user,$basePath,$intake);}
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$opportunity=$id?self::opportunity($db,(int)$id):null;$submissions=$opportunity?RegistrationService::submissions($db,(int)$opportunity['id']):[];self::page($db,$user,$basePath,$route,$opportunity,$submissions);
     }
 
