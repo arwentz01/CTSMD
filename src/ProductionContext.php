@@ -19,41 +19,22 @@ final class ProductionContext
             return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
         }
 
-        // Member pages aggregate every CURRENT production on the student's roster.
-        // Guardians inherit access from an active relationship to a rostered child;
-        // they do not require their own redundant production_memberships row.
-        // Do not couple member visibility to staff's selected production or to
-        // lifecycle stages (planning/callbacks/rehearsals are all relevant).
         $stmt=$db->prepare("SELECT DISTINCT p.id,p.title,p.season,p.status,p.lifecycle_stage,
             p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,p.is_active
-            FROM productions p
-            WHERE p.is_active=1 AND (
-                EXISTS (
-                    SELECT 1 FROM production_memberships pm
-                    WHERE pm.production_id=p.id AND pm.user_id=:user_id AND pm.status='active'
-                    AND (pm.audience_type<>'guardian' OR EXISTS (
-                        SELECT 1 FROM family_relationships fr
-                        JOIN production_memberships child_pm ON child_pm.production_id=p.id
-                             AND child_pm.user_id=fr.student_user_id AND child_pm.audience_type='student'
-                             AND child_pm.status='active'
-                        JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                             AND child.account_status<>'disabled'
-                        WHERE fr.guardian_user_id=:guardian_id AND fr.status='active'
-                             AND fr.relationship_type IN ('parent','guardian')
-                    ))
-                )
-                OR EXISTS (
-                    SELECT 1 FROM family_relationships fr
-                    JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                         AND child.account_status<>'disabled'
-                    JOIN production_memberships child_pm ON child_pm.user_id=child.id
-                         AND child_pm.production_id=p.id AND child_pm.audience_type='student'
-                         AND child_pm.status='active'
-                    WHERE fr.guardian_user_id=:family_id AND fr.status='active'
-                         AND fr.relationship_type IN ('parent','guardian')
-                )
-            ) ORDER BY p.title,p.id");
-        $stmt->execute(['user_id'=>(int)$user['id'],'guardian_id'=>(int)$user['id'],'family_id'=>(int)$user['id']]);
+            FROM productions p JOIN (
+                SELECT pm.production_id
+                FROM production_memberships pm
+                JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
+                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian'
+                UNION
+                SELECT pm.production_id
+                FROM family_relationships fr
+                JOIN users child ON child.id=fr.student_user_id AND child.active=1 AND child.account_status<>'disabled'
+                JOIN production_memberships pm ON pm.user_id=child.id AND pm.audience_type='student' AND pm.status='active'
+                WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+            ) eligible ON eligible.production_id=p.id
+            WHERE p.is_active=1 ORDER BY p.title,p.id");
+        $stmt->execute(['member'=>(int)$user['id'],'guardian'=>(int)$user['id']]);
         return self::$activeProductionCache[$cacheKey]=$stmt->fetchAll();
     }
 
