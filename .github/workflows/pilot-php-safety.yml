@@ -39,3 +39,4 @@ jobs:
           php tests/pilot_lifecycle.php
           php tests/pilot_rate_limit.php
           php tests/pilot_volunteer_cancellation.php
+          php tests/pilot_video_privacy.php
