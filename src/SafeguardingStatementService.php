@@ -121,7 +121,7 @@ final class SafeguardingStatementService
     public static function requests(PDO $db,array $actor,int $caseId):array
     {
         self::authorize($actor);
-        $s=$db->prepare("SELECT id,recipient_name,recipient_email,shared_title,shared_description,shared_occurred_at,shared_production_title,status,invited_at,expires_at,submitted_at,statement_body,statement_witnesses,statement_followup,attested_name,accepted_attestation,revoked_at FROM safeguarding_statement_requests WHERE case_id=:id ORDER BY COALESCE(submitted_at,invited_at),id");
+        $s=$db->prepare("SELECT sr.id,sr.recipient_name,sr.recipient_email,sr.recipient_user_id,sr.shared_title,sr.shared_description,sr.shared_occurred_at,sr.shared_production_title,sr.status,sr.invited_at,sr.expires_at,sr.submitted_at,sr.statement_body,sr.statement_witnesses,sr.statement_followup,sr.attested_name,sr.accepted_attestation,sr.revoked_at,eq.status delivery_status,eq.sent_at delivery_sent_at FROM safeguarding_statement_requests sr LEFT JOIN email_queue eq ON eq.dedupe_key=CONCAT('safeguarding-statement-',sr.id) WHERE sr.case_id=:id ORDER BY COALESCE(sr.submitted_at,sr.invited_at),sr.id");
         $s->execute(['id'=>$caseId]);return $s->fetchAll(PDO::FETCH_ASSOC);
     }
 
