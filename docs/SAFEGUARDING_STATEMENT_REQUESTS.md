@@ -6,7 +6,7 @@
 
 A safeguarding reviewer can send a private, one-time statement form to a specific person. The recipient sees only a **snapshot** of:
 
-- Case name (staff must check that the title itself is suitable for disclosure)
+- **Recipient-facing case name** (editable per invitation; defaults to a neutral incident-review label rather than the confidential internal case title)
 - Incident date/time, when recorded
 - Production name, if associated with the case
 - A manually written **brief description safe to share**
@@ -18,7 +18,7 @@ The email subject/body contain no case title, incident details or other private 
 ## Workflow
 
 1. Safeguarding staff open a specific `/safeguarding/case?id=...`.
-2. Under **Statements & Perspectives**, staff edit/save the brief shareable description and enter recipient name/email.
+2. Under **Statements & Perspectives**, staff edit/save the brief shareable description, review/edit the recipient-facing case name, and enter recipient name/email.
 3. They review the **exact description** to appear in the invitation, select a 3/7/14-day expiry, and send a private email invitation. Sending queues email through existing `MailService`; it does not prove delivery.
 4. The recipient opens `/incident-statement?token=...` without needing a CTSMD account. They see the limited contextual facts and respond to prompts about what happened, others present, and relevant follow-up.
 5. They enter their name and attest that the account is their own, accurate to the best of their knowledge. On submission, the request becomes `submitted`, with server-side `submitted_at`, response text, and attested name.
@@ -37,7 +37,7 @@ Statement responses are **not editable through the application**. A database adm
 
 ## Recommended follow-up features
 
-- **Recipient preview & disclosure review:** make it easy to review exactly what the recipient will see before sending, including a neutral or anonymized case title if the internal one contains identifying details.
+- **Full preview before delivery:** render an exact read-only preview of all contextual fields, not just the editable name/description, prior to sending.
 - **Guardian-specific delivery:** use relationship-aware recipient selection and verify that no invitation is sent directly to minors.
 - **Reminders and status tracking:** see pending, expired, and returned requests; send manually triggered reminders with no incident details in email.
 - **Attachments:** optional *only* after secure upload scanning, permission controls, audit and retention policy are implemented.
