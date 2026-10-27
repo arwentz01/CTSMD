@@ -52,6 +52,9 @@ final class SafeguardingStatementService
             $email=mb_strtolower(trim((string)($input['recipient_email']??'')));
             if($name===''||mb_strlen($name)>190||!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)
                 throw new RuntimeException('Provide a valid name and email address for the external recipient.');
+            $check=$db->prepare("SELECT 1 FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id WHERE LOWER(u.email)=:email AND r.code='student' AND u.active=1 LIMIT 1");
+            $check->execute(['email'=>$email]);
+            if($check->fetchColumn())throw new RuntimeException('Choose the Student from the directory so the request is sent to an authorized guardian.');
             return ['id'=>null,'name'=>$name,'email'=>$email];
         }
         if(preg_match('/^adult:(\\d+)$/D',$choice,$match)){
