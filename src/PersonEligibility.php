@@ -61,7 +61,7 @@ final class PersonEligibility
         $min=isset($opportunity['minimum_age'])?(int)$opportunity['minimum_age']:null;
         $max=isset($opportunity['maximum_age'])?(int)$opportunity['maximum_age']:null;
         $ok=($min===null||$age >= $min)&&($max===null||$age <= $max);
-        return ['status'=>$ok?'self_reported_pending_verification':'ineligible','age'=>$age];
+        return ['status'=>$ok?'self_reported':'ineligible','age'=>$age];
     }
 
     public static function contact(array $input,bool $requireAddress=true):array
