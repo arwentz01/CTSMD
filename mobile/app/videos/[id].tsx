@@ -65,7 +65,7 @@ export default function VideoDetail(){
   {error?<Text style={styles.error}>{error}</Text>:null}
   {!source&&!error?<ActivityIndicator color={colors.primary}/>:null}
   {source?<Player source={source}/>:null}
-  {item?<View style={styles.info}><Text style={styles.eyebrow}>{item.category.toUpperCase()} · {item.audience_scope==='platform'?'CTSMD-wide':item.audience_scope==='group'?(item.group_name||'Production Group'):'Entire production'}</Text><Text style={styles.title}>{item.title}</Text>{item.description?<Text style={styles.desc}>{item.description}</Text>:null}<Text style={styles.note}>These videos are for authorized CTSMD viewing only. Video playback may use mobile data.</Text></View>:null}
+  {item?<View style={styles.info}><Text style={styles.eyebrow}>{item.category.toUpperCase()} · {item.audience_scope==='platform'?'CTSMD-wide':(item.production_title||'Production')+' · '+(item.audience_scope==='group'?(item.group_name||'Production Group'):'Entire production')}</Text><Text style={styles.title}>{item.title}</Text>{item.description?<Text style={styles.desc}>{item.description}</Text>:null}<Text style={styles.note}>These videos are for authorized CTSMD viewing only. Video playback may use mobile data.</Text></View>:null}
  </Screen>;
 }
 const styles=StyleSheet.create({
