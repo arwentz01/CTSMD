@@ -83,28 +83,26 @@ final class ProductionContext
 
     public static function userHasActiveProduction(PDO $db, int $userId): bool
     {
-        $stmt=$db->prepare("SELECT 1 FROM productions p WHERE p.is_active=1
-            AND (EXISTS (SELECT 1 FROM production_memberships pm
-                WHERE pm.production_id=p.id AND pm.user_id=:user_id AND pm.status='active'
-                AND (pm.audience_type<>'guardian' OR EXISTS (
-                    SELECT 1 FROM family_relationships fr
-                    JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id
-                         AND cpm.production_id=p.id AND cpm.audience_type='student' AND cpm.status='active'
-                    JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                         AND child.account_status<>'disabled'
-                    WHERE fr.guardian_user_id=:guardian AND fr.status='active'
-                         AND fr.relationship_type IN ('parent','guardian')
-                )))
-            OR EXISTS (
-                SELECT 1 FROM family_relationships fr
-                JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.production_id=p.id
-                     AND cpm.audience_type='student' AND cpm.status='active'
+        if($userId<1)return false;
+        $stmt=$db->prepare("SELECT 1 FROM productions p
+            JOIN (
+                SELECT pm.production_id FROM production_memberships pm
+                JOIN users member ON member.id=pm.user_id AND member.active=1
+                  AND member.account_status<>'disabled'
+                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian'
+                UNION
+                SELECT cpm.production_id FROM family_relationships fr
                 JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                     AND child.account_status<>'disabled'
-                WHERE fr.guardian_user_id=:family AND fr.status='active'
-                     AND fr.relationship_type IN ('parent','guardian')
-            )) LIMIT 1");
-        $stmt->execute(['user_id'=>$userId,'guardian'=>$userId,'family'=>$userId]);
+                  AND child.account_status<>'disabled'
+                JOIN production_memberships cpm ON cpm.user_id=child.id AND cpm.audience_type='student'
+                  AND cpm.status='active'
+                JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1
+                  AND guardian.account_status<>'disabled'
+                WHERE fr.guardian_user_id=:guardian AND fr.status='active'
+                  AND fr.relationship_type IN ('parent','guardian')
+            ) eligible ON eligible.production_id=p.id
+            WHERE p.is_active=1 LIMIT 1");
+        $stmt->execute(['member'=>$userId,'guardian'=>$userId]);
         return (bool)$stmt->fetchColumn();
     }
 
