@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/RehearsalVideoService.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
 require_once __DIR__ . '/CastingOfferService.php';
@@ -56,6 +57,8 @@ final class MobileApi
                 '/api/mobile/my-family' => self::myFamily($db, $user),
                 '/api/mobile/caregiver-schedule' => self::caregiverSchedule($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
+                '/api/mobile/videos' => self::videos($db,$user),
+                '/api/mobile/video-play' => self::videoPlay($db,$user),
                 '/api/mobile/production-casting' => self::productionCasting($db,$user),
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
@@ -96,6 +99,51 @@ final class MobileApi
             error_log('Mobile API error: ' . $e->getMessage());
             self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
         }
+    }
+
+    private static function videos(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $available=ProductionContext::activeProductions($db,$user);
+        $byId=[];
+        foreach(array_merge([['id'=>0]],$available) as $production){
+            foreach(RehearsalVideoService::visible($db,$user,(int)$production['id']) as $item){
+                if($item['status']!=='active')continue;
+                $byId[(int)$item['id']]=[
+                    'id'=>(int)$item['id'],
+                    'title'=>(string)$item['title'],
+                    'description'=>$item['description'],
+                    'category'=>(string)$item['category'],
+                    'audience_scope'=>(string)$item['audience_scope'],
+                    'production_id'=>$item['production_id']===null?null:(int)$item['production_id'],
+                    'group_name'=>$item['group_name'],
+                    'byte_size'=>(int)$item['byte_size'],
+                    'created_at'=>$item['created_at'],
+                ];
+            }
+        }
+        usort($byId,static fn(array $a,array $b):int=>strcmp((string)$b['created_at'],(string)$a['created_at']));
+        self::json(['videos'=>array_values($byId)]);
+    }
+
+    private static function videoPlay(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
+        $video=RehearsalVideoService::record($db,(int)$id);
+        if(!$video||$video['status']!=='active'){self::json(['error'=>'Video unavailable.'],404);}
+        $scope=(string)($video['audience_scope']??'production');
+        if($scope!=='platform'){
+            $available=ProductionContext::activeProductions($db,$user);
+            $found=false;
+            foreach($available as $production)if((int)$production['id']===(int)$video['production_id']){$found=true;break;}
+            if(!$found){self::json(['error'=>'Video unavailable.'],404);}
+        }
+        if(!RehearsalVideoService::canView($db,$user,$video)&&!RehearsalVideoService::canManage($user)){
+            self::json(['error'=>'Video unavailable.'],404);
+        }
+        header_remove('Content-Type');
+        RehearsalVideoService::stream($video);
     }
 
     private static function caregiverSchedule(PDO $db,array $user):never {
