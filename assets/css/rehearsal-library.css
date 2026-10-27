@@ -5,3 +5,8 @@
 .rl-playback-tools button{cursor:pointer}
 .rl-playback-tools button[hidden]{display:none}
 .rl-playback-tools button:focus-visible,.rl-playback-tools select:focus-visible{outline:2px solid #a6192e;outline-offset:2px}
+
+.rl-hosting-limits{background:#faf7f3;border:1px solid #e5d7cd;border-radius:10px;padding:12px;display:grid;gap:5px;margin:0 0 13px}
+.rl-hosting-limits strong{font-size:12px;color:#47353b}
+.rl-hosting-limits small{font-size:11px;color:#665c61;line-height:1.45}
+.rl-hosting-limits .rl-limit-warning{color:#9d2436;font-weight:750}
