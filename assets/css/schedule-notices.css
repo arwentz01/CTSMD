@@ -16,3 +16,18 @@
 .notice-layout .notice-deliveries span{display:block;font-size:11px;line-height:1.4}
 @media(max-width:1000px){.notice-layout{grid-template-columns:1fr}}
 @media(max-width:680px){.notice-layout>.notice-card{padding:18px}.notice-layout .notice-people>span{grid-template-columns:32px minmax(0,1fr) auto}}
+
+
+/* Draft review dismissal: preserve audit, remove only unsent items from active queue. */
+.notice-review-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.notice-review-link{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:15px;align-items:center;min-width:0;text-decoration:none;color:inherit}
+.notice-review-link:hover h3{text-decoration:underline;text-underline-offset:3px}
+.notice-review-link>div{min-width:0}
+.notice-review-link h3,.notice-review-link p{overflow-wrap:anywhere}
+.notice-review-link>b{white-space:nowrap}
+.notice-row-dismiss{margin:0}
+.notice-row-dismiss button{border:1px solid #ddbec5;background:#fff7f8;color:#991b32;border-radius:8px;padding:8px 12px;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.notice-row-dismiss button:hover{background:#fcebee}
+.notice-row-dismiss button:focus-visible,.notice-review-link:focus-visible,.notice-cancel button:focus-visible{outline:2px solid #a6192e;outline-offset:3px}
+.notice-cancel button{border:1px solid #ddbec5;background:#fff7f8;border-radius:9px;padding:9px 13px}
+@media(max-width:760px){.notice-review-row{grid-template-columns:1fr}.notice-review-link{grid-template-columns:1fr;gap:7px}.notice-review-link>.notice-status,.notice-review-link>b{justify-self:start}.notice-row-dismiss button{width:100%}}
