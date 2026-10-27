@@ -21,7 +21,7 @@ class RosterStatement extends PDOStatement {
     public function __construct(public string $query){}
     public function execute(?array $params=null):bool{$this->params=$params??[];return true;}
     public function fetchAll(int $mode=PDO::FETCH_DEFAULT,...$args):array{
-        if(str_contains($this->query,'FROM productions p')&&str_contains($this->query,'SELECT DISTINCT p.id')){
+        if(str_contains($this->query,'FROM productions p JOIN (')&&str_contains($this->query,'SELECT DISTINCT p.id')){
             return [['id'=>17,'title'=>'Beauty and the Beast'],['id'=>23,'title'=>'Christmas Carol']];
         }
         if(str_contains($this->query,'FROM rehearsal_videos rv')){
@@ -44,7 +44,8 @@ $available=ProductionContext::activeProductions($db,$member);
 assertRoster(count($available)===2,'student roster includes both current productions');
 $rosterSql=$db->queries[0]??'';
 assertRoster(str_contains($rosterSql,"family_relationships")&&str_contains($rosterSql,"fr.status='active'"),'guardian membership requires active family relationship');
-assertRoster(str_contains($rosterSql,"child_pm.status='active'"),'guardian access follows current student roster');
+assertRoster(str_contains($rosterSql,"pm.status='active'"),'guardian access follows current student roster');
+assertRoster(str_contains($rosterSql,'UNION')&&str_contains($rosterSql,'eligible ON eligible.production_id=p.id'),'member roster uses noncorrelated MySQL-safe UNION');
 assertRoster(!str_contains($rosterSql,"lifecycle_stage IN"),'member roster is not restricted to performing lifecycle stages');
 assertRoster(!str_contains($rosterSql,'selected_production_id'),'member roster ignores staff selection');
 $videos=RehearsalVideoService::visibleAcrossProductions($db,$member);
