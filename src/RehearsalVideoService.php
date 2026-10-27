@@ -154,6 +154,31 @@ final class RehearsalVideoService
      * Upload diagnostics for staff. Filesystem free bytes are informational only:
      * shared Bluehost account quotas may be lower than the volume's free space.
      */
+    /** Export-friendly inventory; includes archived entries because they still consume disk. */
+    public static function inventory(PDO $db):array
+    {
+        return $db->query("SELECT v.id,v.production_id,COALESCE(p.title,'CTSMD Platform') production_title,
+            v.title,v.category,v.audience_scope,v.status,v.original_filename,v.storage_key,v.mime_type,
+            v.byte_size,v.created_at,v.archived_at,COALESCE(g.name,'') group_name
+            FROM rehearsal_videos v
+            LEFT JOIN productions p ON p.id=v.production_id
+            LEFT JOIN production_groups g ON g.id=v.group_id
+            ORDER BY v.production_id,v.created_at,v.id")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Grouped totals for local-storage capacity planning; archived files are included. */
+    public static function usageByProduction(PDO $db):array
+    {
+        return $db->query("SELECT v.production_id,COALESCE(p.title,'CTSMD Platform') production_title,
+            COUNT(*) video_count,COALESCE(SUM(v.byte_size),0) stored_bytes,
+            SUM(CASE WHEN v.status='archived' THEN 1 ELSE 0 END) archived_count,
+            COALESCE(SUM(CASE WHEN v.status='archived' THEN v.byte_size ELSE 0 END),0) archived_bytes
+            FROM rehearsal_videos v
+            LEFT JOIN productions p ON p.id=v.production_id
+            GROUP BY v.production_id,p.title
+            ORDER BY stored_bytes DESC,production_title")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public static function totalUsage(PDO $db):array
     {
         $result=$db->query('SELECT COUNT(*) n,COALESCE(SUM(byte_size),0) bytes FROM rehearsal_videos');
@@ -196,7 +221,7 @@ final class RehearsalVideoService
         if(!is_file($base.'/.htaccess'))throw new RuntimeException('Private storage access guard is missing. Upload blocked.');
     }
 
-    public static function stream(array $video):never
+    public static function stream(array $video,bool $download=false):never
     {
         self::assertPrivateStorage();
         $path=self::absolute((string)$video['storage_key']);
@@ -211,7 +236,7 @@ final class RehearsalVideoService
         header('Accept-Ranges: bytes');
         header('Cache-Control: private, no-store, max-age=0');
         header('X-Content-Type-Options: nosniff');
-        header('Content-Disposition: inline; filename="rehearsal-video.'.pathinfo($path,PATHINFO_EXTENSION).'"');
+        header('Content-Disposition: '.($download?'attachment':'inline').'; filename="'.($download?basename($path):'rehearsal-video.'.pathinfo($path,PATHINFO_EXTENSION)).'"');
         $range=(string)($_SERVER['HTTP_RANGE']??'');
         if($range!==''){
             if(!preg_match('/^bytes=(\\d*)-(\\d*)$/D',$range,$m)||($m[1]===''&&$m[2]==='')){header('Content-Range: bytes */'.$size);http_response_code(416);exit;}
