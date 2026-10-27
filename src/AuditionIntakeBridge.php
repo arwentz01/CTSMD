@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__.'/PersonEligibility.php';
 
 /**
  * Bridges public audition intake to an authenticated household and the casting board.
@@ -14,7 +15,7 @@ final class AuditionIntakeBridge
     public static function eligibleChildren(PDO $db,int $guardianId,array $submission): array
     {
         if(($submission['status']??'')==='cancelled'||($submission['status']??'')==='declined')return [];
-        $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id");
+        $stmt=$db->prepare("SELECT DISTINCT u.id,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) name FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id");
         $stmt->execute(['guardian'=>$guardianId,'first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -31,6 +32,7 @@ final class AuditionIntakeBridge
             $s->execute(['hash'=>hash('sha256',$token)]);$submission=$s->fetch(PDO::FETCH_ASSOC);
             if(!$submission||$submission['opportunity_type']!=='audition'||$submission['participant_age_group']==='adult'||!in_array($submission['status'],['submitted','waitlisted','accepted'],true))throw new RuntimeException('This audition registration cannot be linked.');
             if(!hash_equals(mb_strtolower((string)$submission['guardian_email']),mb_strtolower((string)$email)))throw new RuntimeException('Sign in with the verified guardian email used on this audition.');
+            self::assertStudentEligible($db,(int)$submission['id'],$studentId);
             $eligible=self::eligibleChildren($db,$guardianId,$submission);
             if(!in_array($studentId,array_map('intval',array_column($eligible,'id')),true))throw new RuntimeException('Select a matching child from your authorized household.');
             $check=$db->prepare("SELECT participant_user_id,guardian_user_id FROM registration_submission_links WHERE submission_id=:id");
@@ -61,6 +63,7 @@ final class AuditionIntakeBridge
             $ids=$children->fetchAll(PDO::FETCH_COLUMN);
             // Never guess which child is involved when multiple records match.
             if(count($ids)!==1)continue;
+            try{self::assertStudentEligible($db,(int)$registration['id'],(int)$ids[0]);}catch(RuntimeException){continue;}
             $link=$db->prepare("INSERT IGNORE INTO registration_submission_links (submission_id,participant_user_id,guardian_user_id,linked_by_user_id,link_method) VALUES (:submission,:student,:guardian,NULL,'existing')");
             $link->execute(['submission'=>(int)$registration['id'],'student'=>(int)$ids[0],'guardian'=>$guardianId]);
             if($link->rowCount()===1){
@@ -70,12 +73,24 @@ final class AuditionIntakeBridge
         }
     }
 
+    public static function assertStudentEligible(PDO $db,int $submissionId,int $studentId):void
+    {
+        $s=$db->prepare("SELECT ro.minimum_age,ro.maximum_age,ro.age_eligibility_date,ro.starts_at,u.date_of_birth FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id JOIN users u ON u.id=:student WHERE rs.id=:submission AND ro.opportunity_type='audition' LIMIT 1");
+        $s->execute(['submission'=>$submissionId,'student'=>$studentId]);
+        $row=$s->fetch(PDO::FETCH_ASSOC);
+        if(!$row)throw new RuntimeException('The audition or Student could not be found.');
+        $result=PersonEligibility::evaluate($row,$row['date_of_birth']?:null);
+        if($result['status']==='ineligible')throw new RuntimeException('This Student does not meet the audition age requirements.');
+        if($result['status']==='needs_review')throw new RuntimeException('Add the Student date of birth before linking this age-restricted audition.');
+    }
+
     public static function syncAccepted(PDO $db, int $submissionId, ?int $actorId): bool
     {
         $stmt=$db->prepare("SELECT ro.production_id,rsl.participant_user_id FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id AND ro.opportunity_type='audition' JOIN registration_submission_links rsl ON rsl.submission_id=rs.id JOIN users guardian ON guardian.id=rsl.guardian_user_id AND guardian.active=1 AND guardian.account_status='active' AND guardian.email_verified_at IS NOT NULL JOIN users u ON u.id=rsl.participant_user_id AND u.active=1 AND u.account_status<>'disabled' JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE rs.id=:submission AND rs.status='accepted' AND rs.participant_age_group<>'adult' AND ro.production_id IS NOT NULL AND rsl.guardian_user_id IS NOT NULL AND EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=rsl.guardian_user_id AND fr.student_user_id=rsl.participant_user_id AND fr.status='active') LIMIT 1");
         $stmt->execute(['submission'=>$submissionId]);
         $match=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$match)return false;
+        try{self::assertStudentEligible($db,$submissionId,(int)$match['participant_user_id']);}catch(RuntimeException){return false;}
         // Never create new casting records for a read-only production lifecycle stage.
         try{ProductionLifecycleGuard::assertWritable($db,(int)$match['production_id']);}catch(RuntimeException $e){return false;}
         // An existing casting decision is never reset to Under Review.
