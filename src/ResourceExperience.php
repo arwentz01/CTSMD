@@ -35,7 +35,9 @@ final class ResourceExperience
         if ($admin && !$staff) self::forbidden($basePath, $user);
 
         $_SESSION['resource_csrf'] ??= bin2hex(random_bytes(24));
-        $production = ProductionContext::selected($db, $user);
+        $memberProductions = $staff ? [] : ProductionContext::activeProductions($db,$user);
+        $production = $staff ? ProductionContext::selected($db,$user)
+            : ($memberProductions ? ['id'=>0,'title'=>'All your productions'] : null);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $admin) {
             self::handlePost($db, $user, $production, $route, $basePath);
@@ -45,7 +47,7 @@ final class ResourceExperience
         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
         if ($id > 0 && in_array($route, ['/resources/view', '/admin/resources/edit'], true)) {
             $resource = self::resource($db, (int)$id);
-            if ($resource && (!$production || (int)$resource['production_id'] !== (int)$production['id'])) {
+            if ($resource && ($admin || $staff) && (!$production || (int)$resource['production_id'] !== (int)$production['id'])) {
                 $resource = null;
             }
             if ($resource && !$staff && !self::canRead($db, $user, $resource)) {
@@ -53,7 +55,9 @@ final class ResourceExperience
             }
         }
 
-        $resources = $production ? self::resources($db, $user, (int)$production['id'], $admin) : [];
+        $resources = $staff
+            ? ($production ? self::resources($db,$user,(int)$production['id'],$admin) : [])
+            : self::resourcesAcrossProductions($db,$user,$memberProductions);
         self::page($route, $basePath, $db, $user, $production, $resources, $resource, $staff);
     }
 
@@ -178,6 +182,21 @@ final class ResourceExperience
         }
     }
 
+    private static function resourcesAcrossProductions(PDO $db,array $user,array $productions):array
+    {
+        if(!$productions)return [];
+        $ids=array_values(array_unique(array_map(static fn(array $p):int=>(int)$p['id'],$productions)));
+        $holders=implode(',',array_fill(0,count($ids),'?'));
+        $stmt=$db->prepare("SELECT pr.*,p.title production_title,CONCAT(u.first_name,' ',u.last_name) creator
+            FROM production_resources pr JOIN productions p ON p.id=pr.production_id
+            LEFT JOIN users u ON u.id=pr.created_by_user_id
+            WHERE pr.production_id IN ($holders) AND pr.status='active'
+            ORDER BY pr.pinned DESC,p.title,pr.category,pr.title");
+        $stmt->execute($ids);
+        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
+            static fn(array $row):bool=>self::canRead($db,$user,$row)));
+    }
+
     private static function resources(PDO $db, array $user, int $productionId, bool $admin): array
     {
         $stmt = $db->prepare("SELECT pr.*, CONCAT(u.first_name,' ',u.last_name) creator FROM production_resources pr LEFT JOIN users u ON u.id=pr.created_by_user_id WHERE pr.production_id=:production_id " . ($admin ? '' : "AND pr.status='active' ") . "ORDER BY pr.status='active' DESC, pr.pinned DESC, pr.category, pr.title");
@@ -203,17 +222,13 @@ final class ResourceExperience
         $audiences=json_decode((string)$resource['audiences_json'],true);
         if (!is_array($audiences) || !$audiences) return false;
 
-        $stmt=$db->prepare("SELECT pm.audience_type,u.display_role FROM production_memberships pm JOIN users u ON u.id=pm.user_id WHERE pm.production_id=:production_id AND pm.user_id=:user_id AND pm.status='active' AND u.active=1");
-        $stmt->execute(['production_id'=>$productionId,'user_id'=>(int)$user['id']]);
-        $memberships=$stmt->fetchAll();
-        if (!$memberships) return false;
-
-        if (in_array('production_all',$audiences,true)) return true;
-        $types=array_unique(array_column($memberships,'audience_type'));
-        if (in_array('production_students',$audiences,true) && in_array('student',$types,true)) return true;
-        if (in_array('production_guardians',$audiences,true) && in_array('guardian',$types,true)) return true;
-        if (in_array('production_staff',$audiences,true) && in_array('staff',$types,true)) return true;
-        if (in_array('production_adults',$audiences,true) && !AccessPolicy::isStudent($user)) return true;
+        $role=ProductionContext::audienceType($db,(int)$user['id'],$productionId);
+        if($role===null)return false;
+        if(in_array('production_all',$audiences,true))return true;
+        if(in_array('production_students',$audiences,true)&&$role==='student')return true;
+        if(in_array('production_guardians',$audiences,true)&&$role==='guardian')return true;
+        if(in_array('production_staff',$audiences,true)&&$role==='staff')return true;
+        if(in_array('production_adults',$audiences,true)&&$role!=='student')return true;
         return false;
     }
 
@@ -260,7 +275,7 @@ final class ResourceExperience
             <?php if(!$resource):?><section class="resource-empty"><b>Resource not available.</b><p>It may belong to another production, be archived, or not be visible to your role.</p><a class="button" href="<?= $url('/resources') ?>">Back to resources</a></section><?php else:?><section class="resource-detail"><div class="resource-detail-top"><span><?= $resource['resource_type']==='link'?'↗':'▤' ?></span><div><small><?= $esc(strtoupper($resource['category'])) ?><?= $resource['pinned']?' · PINNED':'' ?></small><h2><?= $esc($resource['title']) ?></h2><p><?= $esc((string)$resource['description']) ?></p></div></div><?php if($resource['resource_type']==='link'):?><a class="button" href="<?= $esc((string)$resource['resource_url']) ?>" target="_blank" rel="noopener noreferrer">Open resource ↗</a><?php else:?><article class="resource-note"><?= nl2br($esc((string)$resource['body'])) ?></article><?php endif;?><footer><a href="<?= $url('/resources') ?>">← All resources</a><?php if($staff):?><a href="<?= $url('/admin/resources/edit?id='.(int)$resource['id']) ?>">Edit resource</a><?php endif;?></footer></section><?php endif;?>
         <?php else:?>
             <section class="resource-hero"><div><small><?= $esc(strtoupper($production['title'])) ?></small><h2>Everything worth finding twice.</h2><p>Production references, guides, links and standing information—kept out of the message stream and organized for the people who need them.</p></div><?php if($staff):?><a class="button" href="<?= $url('/admin/resources') ?>">Manage resources</a><?php endif;?></section>
-            <?php if(!$resources):?><section class="resource-empty"><b>No resources available yet.</b><p>When staff publishes production resources for your audience, they’ll appear here.</p></section><?php else:$groups=[];foreach($resources as $row)$groups[$row['category']][]=$row;foreach($groups as $category=>$items):?><section class="resource-group"><header><small>RESOURCE SHELF</small><h3><?= $esc($category) ?></h3><span><?= count($items) ?> item<?= count($items)===1?'':'s' ?></span></header><div class="resource-grid"><?php foreach($items as $row):?><a class="resource-card<?= $row['pinned']?' pinned':'' ?>" href="<?= $url('/resources/view?id='.(int)$row['id']) ?>"><span><?= $row['resource_type']==='link'?'↗':'▤' ?></span><div><small><?= $row['pinned']?'PINNED · ':'' ?><?= $esc(strtoupper($row['resource_type'])) ?></small><h4><?= $esc($row['title']) ?></h4><p><?= $esc((string)($row['description']?:($row['resource_type']==='link'?'Open reference link':'Read reference note'))) ?></p></div><b>Open →</b></a><?php endforeach;?></div></section><?php endforeach;endif;?>
+            <?php if(!$resources):?><section class="resource-empty"><b>No resources available yet.</b><p>When staff publishes production resources for your audience, they’ll appear here.</p></section><?php else:$groups=[];foreach($resources as $row)$groups[$row['category']][]=$row;foreach($groups as $category=>$items):?><section class="resource-group"><header><small>RESOURCE SHELF</small><h3><?= $esc($category) ?></h3><span><?= count($items) ?> item<?= count($items)===1?'':'s' ?></span></header><div class="resource-grid"><?php foreach($items as $row):?><a class="resource-card<?= $row['pinned']?' pinned':'' ?>" href="<?= $url('/resources/view?id='.(int)$row['id']) ?>"><span><?= $row['resource_type']==='link'?'↗':'▤' ?></span><div><small><?= $row['pinned']?'PINNED · ':'' ?><?= $esc(strtoupper($row['resource_type'])) ?><?php if(!empty($row['production_title'])):?> · <?= $esc((string)$row['production_title']) ?><?php endif;?></small><h4><?= $esc($row['title']) ?></h4><p><?= $esc((string)($row['description']?:($row['resource_type']==='link'?'Open reference link':'Read reference note'))) ?></p></div><b>Open →</b></a><?php endforeach;?></div></section><?php endforeach;endif;?>
         <?php endif;?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php
         exit;
