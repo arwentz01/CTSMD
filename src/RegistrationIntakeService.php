@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/AuditionIntakeBridge.php';
 
 final class RegistrationIntakeService
 {
