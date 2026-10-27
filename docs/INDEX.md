@@ -16,6 +16,7 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | Production lifecycle | [PRODUCTION_LIFECYCLE_V2.md](PRODUCTION_LIFECYCLE_V2.md) | Stage, lifecycle and approval behavior |
 | Incident perspective requests | [SAFEGUARDING_STATEMENT_REQUESTS.md](SAFEGUARDING_STATEMENT_REQUESTS.md) | Confidential third-party case statements, invitation workflow and release gates |
 | Guardian safeguarded alerts | [GUARDIAN_SAFEGUARDED_NOTIFICATION_MUTE.md](GUARDIAN_SAFEGUARDED_NOTIFICATION_MUTE.md) | Guardian-only push mute, safeguarding boundaries and QA |
+| Rehearsal video library | [REHEARSAL_VIDEO_LIBRARY.md](REHEARSAL_VIDEO_LIBRARY.md) | Bluehost-local production video uploads, privacy and storage operations |
 | Production intake support needs | [PRODUCTION_INTAKE_SUPPORT_NEEDS.md](PRODUCTION_INTAKE_SUPPORT_NEEDS.md) | Private allergies/accommodations, permission-gated production summary, migration and QA |
 | Account DOB / audition age eligibility | [ACCOUNT_DOB_AUDITION_ELIGIBILITY.md](ACCOUNT_DOB_AUDITION_ELIGIBILITY.md) | Required contact fields, student DOB ownership, age rules, guest fallback and staging release gates |
 | Casting / published Playbill | [CASTING_ROLES_ROLLOUT.md](CASTING_ROLES_ROLLOUT.md), [CASTING_OFFER_WORKFLOW.md](CASTING_OFFER_WORKFLOW.md), [PLAYBILL_PUBLICATION.md](PLAYBILL_PUBLICATION.md), [MANUAL_PARTICIPANTS.md](MANUAL_PARTICIPANTS.md) | Roles, offers, publication and manual records |
