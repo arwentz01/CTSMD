@@ -19,7 +19,8 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | Attendance / late pickups | [LATE_PICKUP_WORKFLOW.md](LATE_PICKUP_WORKFLOW.md) | Current late-pickup design and acceptance |
 | Email operations | [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md), [EMAIL_AUTOMATION_ROLLOUT.md](EMAIL_AUTOMATION_ROLLOUT.md) | Mail queue, worker, opt-in activation, stale email safety |
 | Hosting incident | [HOST_INCIDENT_RESPONSE.md](HOST_INCIDENT_RESPONSE.md) | Incident response and disaster recovery work |
-| UX / IA | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [NAVIGATION_IA.md](NAVIGATION_IA.md), [UI_OPTIMIZATION_AUDIT.md](UI_OPTIMIZATION_AUDIT.md) | Design standards and historical UI findings |
+| UX direction — approved | [WARM_BACKSTAGE_DESIGN_STANDARD.md](WARM_BACKSTAGE_DESIGN_STANDARD.md) | B2 Warm Backstage decision; B3 accents; rules for feature-first, design-aware delivery |
+| UX / IA | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [NAVIGATION_IA.md](NAVIGATION_IA.md), [UI_OPTIMIZATION_AUDIT.md](UI_OPTIMIZATION_AUDIT.md) | Existing implemented tokens/primitives, navigation guidance and historical UI findings; read alongside approved B2 direction |
 
 ## Current delta relative to older notes
 
