@@ -21,3 +21,27 @@
 .rl-storage-breakdown th,.rl-storage-breakdown td{padding:9px;border-top:1px solid #eae1e3}
 .rl-storage-breakdown th{color:#725d65}
 .rl-inventory-link:focus-visible,.rl-download-original:focus-visible{outline:2px solid #a6192e;outline-offset:3px}
+
+
+.rl-upload-status{border:1px solid #d9cbd1;background:#faf6f7;border-radius:12px;padding:14px;display:grid;gap:9px}
+.rl-upload-status[hidden]{display:none}
+.rl-upload-status-head{display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:13px;color:#44363c}
+.rl-upload-status-head b{font-size:18px;color:#8f2442;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rl-upload-status progress{appearance:none;-webkit-appearance:none;width:100%;height:13px;border-radius:20px;overflow:hidden;border:0;background:#e9dfe3}
+.rl-upload-status progress::-webkit-progress-bar{background:#e9dfe3;border-radius:20px}
+.rl-upload-status progress::-webkit-progress-value{background:#9f2945;border-radius:20px;transition:width .18s ease}
+.rl-upload-status progress::-moz-progress-bar{background:#9f2945;border-radius:20px}
+.rl-upload-detail{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:#665860;font-variant-numeric:tabular-nums}
+.rl-upload-status p{font-size:12px;color:#685a62;line-height:1.45;margin:0}
+.rl-upload-status[data-state="processing"]{background:#f4f6fb;border-color:#becbdf}
+.rl-upload-status[data-state="processing"] .rl-upload-status-head b{color:#304e7d}
+.rl-upload-status[data-state="success"]{background:#eef8f0;border-color:#b5d8bf}
+.rl-upload-status[data-state="success"] .rl-upload-status-head b{color:#246b3f}
+.rl-upload-status[data-state="error"]{background:#fff0f0;border-color:#e3b9be}
+.rl-upload-status[data-state="error"] .rl-upload-status-head b{font-size:13px;color:#a6192e}
+.rl-upload-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.rl-upload-actions button{min-height:38px}
+.rl-upload-actions #rl-upload-cancel{background:#fff;border:1px solid #d8c7ce;border-radius:8px;padding:8px 14px;color:#8d2140;cursor:pointer;font-weight:700}
+.rl-upload-actions #rl-upload-cancel[hidden]{display:none}
+.rl-upload-actions #rl-upload-submit:disabled{opacity:.67;cursor:progress}
+@media(max-width:560px){.rl-upload-actions{flex-direction:column;align-items:stretch}.rl-upload-detail{flex-direction:column;gap:3px}}
