@@ -67,10 +67,11 @@ final class RegistrationService
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'registration.submitted','registration_submission',:id,:summary,:meta)");$audit->execute(['id'=>$id,'summary'=>'Received a public registration.','meta'=>json_encode(['opportunity_id'=>(int)$current['id'],'status'=>$status],JSON_THROW_ON_ERROR)]);
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('Registration could not be submitted. Please try again.');}
-        if($linkedStudentId>0){try{AuditionIntakeBridge::claimWithToken($db,$token,$guardianId,$linkedStudentId);}catch(Throwable $e){error_log('Audition account linkage after registration: '.$e->getMessage());}}
+        $linked=false;
+        if($linkedStudentId>0){try{AuditionIntakeBridge::claimWithToken($db,$token,$guardianId,$linkedStudentId);$linked=true;}catch(Throwable $e){error_log('Audition account linkage after registration: '.$e->getMessage());}}
         self::queueConfirmation($db,$current,$first,$last,$email,$status,$token,$basePath);
         if($guardianEmail && $guardianEmail!==$email)self::queueConfirmation($db,$current,$first,$last,$guardianEmail,$status,$token,$basePath);
-        return ['id'=>$id,'status'=>$status,'token'=>$token];
+        return ['id'=>$id,'status'=>$status,'token'=>$token,'linked'=>$linked];
     }
 
     public static function submissionForToken(PDO $db,string $token): ?array
