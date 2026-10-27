@@ -48,6 +48,22 @@ final class PersonEligibility
         return $age<13?'under_13':($age<18?'13_17':'adult');
     }
 
+    public static function declaredAge(mixed $age):int
+    {
+        $value=trim((string)$age);
+        if($value===''||!ctype_digit($value)||(int)$value>120)throw new RuntimeException('Select the participant age (0–120).');
+        return (int)$value;
+    }
+
+    public static function evaluateDeclared(array $opportunity,int $age):array
+    {
+        if($age<0||$age>120)throw new RuntimeException('Choose a valid participant age.');
+        $min=isset($opportunity['minimum_age'])?(int)$opportunity['minimum_age']:null;
+        $max=isset($opportunity['maximum_age'])?(int)$opportunity['maximum_age']:null;
+        $ok=($min===null||$age >= $min)&&($max===null||$age <= $max);
+        return ['status'=>$ok?'self_reported_pending_verification':'ineligible','age'=>$age];
+    }
+
     public static function contact(array $input,bool $requireAddress=true):array
     {
         $fields=['contact_phone'=>40,'address_line1'=>190,'address_line2'=>190,'address_city'=>100,'address_state'=>60,'address_postal_code'=>20];
