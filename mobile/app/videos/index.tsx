@@ -19,7 +19,7 @@ export default function Videos(){
   {!busy&&!error&&!items.length?<Text style={styles.empty}>No videos are available for your account yet.</Text>:null}
   {items.map(video=><Pressable key={video.id} accessibilityRole="button" accessibilityLabel={'Play '+video.title} onPress={()=>router.push({pathname:'/videos/[id]',params:{id:String(video.id)}})} style={styles.card}>
    <View style={styles.icon}><Ionicons name="play-circle-outline" size={29} color={colors.primary}/></View>
-   <View style={{flex:1,gap:4}}><Text style={styles.label}>{video.category.toUpperCase()} · {video.audience_scope==='platform'?'CTSMD-wide':video.audience_scope==='group'?(video.group_name||'Production Group'):'Entire production'}</Text>
+   <View style={{flex:1,gap:4}}><Text style={styles.label}>{video.category.toUpperCase()} · {video.audience_scope==='platform'?'CTSMD-wide':(video.production_title||'Production')+' · '+(video.audience_scope==='group'?(video.group_name||'Production Group'):'Entire production')}</Text>
     <Text style={styles.title}>{video.title}</Text>{video.description?<Text style={styles.desc} numberOfLines={2}>{video.description}</Text>:null}
     <Text style={styles.label}>{Math.round(video.byte_size/1048576)} MB</Text>
    </View>
