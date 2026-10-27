@@ -50,8 +50,8 @@ final class RehearsalVideoExperience
     public static function canOpenVideo(PDO $db,array $user,array $video):bool
     {
         if(($video['status']??'')!=='active')return false;
-        return RehearsalVideoService::canView($db,$user,$video)
-            || RehearsalVideoService::canManage($user);
+        return RehearsalVideoService::canManage($user)
+            || RehearsalVideoService::canView($db,$user,$video);
     }
 
     private static function view(PDO $db,array $user,string $basePath):never
