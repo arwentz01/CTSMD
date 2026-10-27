@@ -10,7 +10,7 @@ require_once __DIR__.'/RehearsalVideoService.php';
 
 final class RehearsalVideoExperience
 {
-    public static function handles(string $route):bool{return in_array($route,['/videos','/videos/play','/videos','/production/rehearsal-video'],true);}
+    public static function handles(string $route):bool{return in_array($route,['/videos','/videos/play','/production/rehearsal-library','/production/rehearsal-video'],true);}
     public static function render(string $route,string $basePath):never
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));
