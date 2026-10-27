@@ -10,3 +10,14 @@
 .rl-hosting-limits strong{font-size:12px;color:#47353b}
 .rl-hosting-limits small{font-size:11px;color:#665c61;line-height:1.45}
 .rl-hosting-limits .rl-limit-warning{color:#9d2436;font-weight:750}
+
+
+.rl-inventory-link,.rl-download-original{display:inline-flex;align-items:center;text-decoration:none;background:#fff;border:1px solid #d3c6c9;color:#762339;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:750;white-space:nowrap}
+.rl-inventory-link:hover,.rl-download-original:hover{background:#fff2f5}
+.rl-storage-breakdown{border:1px solid #e6dce0;border-radius:11px;background:white;padding:11px 14px}
+.rl-storage-breakdown summary{cursor:pointer;font-size:13px;font-weight:750;color:#58464d}
+.rl-storage-table-wrap{overflow-x:auto;margin-top:10px}
+.rl-storage-breakdown table{border-collapse:collapse;width:100%;font-size:12px;text-align:left}
+.rl-storage-breakdown th,.rl-storage-breakdown td{padding:9px;border-top:1px solid #eae1e3}
+.rl-storage-breakdown th{color:#725d65}
+.rl-inventory-link:focus-visible,.rl-download-original:focus-visible{outline:2px solid #a6192e;outline-offset:3px}
