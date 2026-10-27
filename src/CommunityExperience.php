@@ -469,7 +469,7 @@ final class CommunityExperience
 document.querySelectorAll('[data-file-input]').forEach(function(input){input.addEventListener('change',function(){var form=input.closest('form');var label=form?form.querySelector('[data-file-name]'):null;if(label)label.textContent=input.files&&input.files[0]?input.files[0].name:'';});});
 document.querySelectorAll('[data-auto-grow]').forEach(function(textarea){var resize=function(){textarea.style.height='38px';textarea.style.height=Math.min(textarea.scrollHeight,112)+'px';};textarea.addEventListener('input',resize);resize();});
 document.querySelectorAll('[data-delete-post]').forEach(function(form){form.addEventListener('submit',function(event){if(!window.confirm('Delete this post from Community? The deletion will remain in the audit record.'))event.preventDefault();});});
-var feed=document.querySelector('.community-pane-feed');if(feed&&window.matchMedia('(max-width:780px)').matches){requestAnimationFrame(function(){feed.scrollTop=feed.scrollHeight;});}
+var feed=document.querySelector('.community-pane-feed');if(feed&&window.matchMedia('(max-width:780px)').matches){requestAnimationFrame(function(){var target=window.location.hash&&document.getElementById(window.location.hash.slice(1));if(target&&feed.contains(target)){target.scrollIntoView({block:'center'});}else{feed.scrollTop=feed.scrollHeight;}});}
 </script></body></html><?php exit;
     }
 }
