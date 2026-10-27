@@ -7,11 +7,13 @@ require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/SafeguardingConversationReviewService.php';
+require_once __DIR__.'/StorageService.php';
 
 final class SafeguardingConversationReviewExperience
 {
     private const ROUTE='/safeguarding/conversations';
-    public static function handles(string $route):bool{return $route===self::ROUTE;}
+    private const ATTACHMENT_ROUTE='/safeguarding/conversations/attachment';
+    public static function handles(string $route):bool{return in_array($route,[self::ROUTE,self::ATTACHMENT_ROUTE],true);}
 
     public static function render(string $route,string $basePath):never
     {
@@ -23,6 +25,15 @@ final class SafeguardingConversationReviewExperience
         header('X-Robots-Tag: noindex, nofollow, noarchive');
         header('Referrer-Policy: no-referrer');
         $_SESSION['safeguarding_dm_csrf']??=bin2hex(random_bytes(24));
+        if($route===self::ATTACHMENT_ROUTE){
+            $conversationId=filter_var($_GET['conversation_id']??null,FILTER_VALIDATE_INT)?:0;
+            $attachmentId=filter_var($_GET['attachment_id']??null,FILTER_VALIDATE_INT)?:0;
+            $review=$_SESSION['safeguarding_dm_review']??null;
+            if(!is_array($review)||(int)($review['id']??0)!==$conversationId||(int)($review['reviewer_id']??0)!==(int)$user['id']||(int)($review['authorized_at']??0)<time()-900){http_response_code(403);exit('Begin an audited safeguarding review first.');}
+            try{$file=SafeguardingConversationReviewService::reviewAttachment($db,$user,$conversationId,$attachmentId,(string)$review['reason'],$review['case_id']);}
+            catch(RuntimeException){http_response_code(404);exit('Attachment unavailable.');}
+            StorageService::stream(dirname(__DIR__),$file,true);
+        }
         $error=null;
         if($_SERVER['REQUEST_METHOD']==='POST'){
             if(!hash_equals((string)$_SESSION['safeguarding_dm_csrf'],(string)($_POST['csrf_token']??''))){http_response_code(403);exit('Your session expired.');}
@@ -68,7 +79,7 @@ final class SafeguardingConversationReviewExperience
         <?php if($error):?><div class="sgdm-error" role="alert"><?=$e($error)?></div><?php endif;?>
         <section class="sgdm-panel"><h2>Find conversations</h2><form method="get" action="<?=$u(self::ROUTE)?>" class="sgdm-filters"><label>Participant 1 name or email<input type="search" name="participant_a" maxlength="100" value="<?=$e($a)?>" placeholder="Optional"></label><label>Participant 2 name or email<input type="search" name="participant_b" maxlength="100" value="<?=$e($b)?>" placeholder="Optional"></label><label>Participant 1 user ID<input type="number" name="user_a" min="1" value="<?=$idA?:''?>" placeholder="Optional"></label><label>Participant 2 user ID<input type="number" name="user_b" min="1" value="<?=$idB?:''?>" placeholder="Optional"></label><button type="submit">Search conversations</button></form><p class="sgdm-help">Both participant filters must match when supplied. Searches return at most 50 conversations per page.</p></section>
         <section class="sgdm-panel"><h2>Matching conversations</h2><?php if(!$search['rows']):?><p>No conversations match these filters.</p><?php endif;?><?php foreach($search['rows'] as $row):?><article class="sgdm-result"><div><small>Conversation #<?=(int)$row['id']?> · <?=$e((string)$row['conversation_type'])?> · <?=isset($row['last_message_at'])&&$row['last_message_at']?$e(date('M j, Y',strtotime($row['last_message_at']))):'No messages'?></small><h3><?=$e((string)($row['subject']?:'Direct conversation'))?></h3><p><?=$e((string)$row['participant_names'])?></p><span><?=(int)$row['message_count']?> messages</span></div><details><summary>Review conversation</summary><form method="post" action="<?=$u(self::ROUTE)?>"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['safeguarding_dm_csrf'])?>"><input type="hidden" name="conversation_id" value="<?=(int)$row['id']?>"><label>Safeguarding reason<textarea name="reason" required minlength="12" maxlength="1000" rows="3" placeholder="Describe the report, safety concern, or specific review purpose"></textarea></label><label>Related safeguarding case ID (optional)<input name="case_id" type="number" min="1"></label><button type="submit">Open audited review</button></form></details></article><?php endforeach;?><?php if($search['page']>1||$search['has_more']):?><nav class="sgdm-pagination"><?php if($search['page']>1):?><a href="<?=$u(self::ROUTE.'?'.$query.'&page='.($search['page']-1))?>">Previous</a><?php endif;?><?php if($search['has_more']):?><a href="<?=$u(self::ROUTE.'?'.$query.'&page='.($search['page']+1))?>">Next 50</a><?php endif;?></nav><?php endif;?></section>
-        <?php if($selected):?><section class="sgdm-panel sgdm-thread"><header><div><small>AUDITED CONTENT REVIEW · #<?=(int)$selected['id']?></small><h2><?=$e((string)($selected['subject']?:'Conversation'))?></h2><p><?php foreach($selected['participants'] as $i=>$participant):?><?=$i?', ':''?><?=$e((string)$participant['name'])?> (<?=$e((string)$participant['participant_role'])?><?=$participant['access_revoked_at']?' · access revoked':''?>)<?php endforeach;?></p></div></header><div class="sgdm-messages"><?php foreach($selected['messages'] as $message):?><article><small>#<?=(int)$message['id']?> · <?=$e((string)$message['sender_name'])?> · <?=$e(date('M j, Y · g:i A',strtotime($message['created_at'])))?><?=$message['hidden_at']?' · Hidden':''?></small><p><?=nl2br($e((string)$message['body']))?></p></article><?php endforeach;?></div><?php if($selected['has_older']):?><a href="<?=$u(self::ROUTE.'?conversation_id='.(int)$selected['id'].'&message_page='.($selected['page']+1))?>">Review 50 older messages (audited)</a><?php endif;?></section><?php endif;?>
+        <?php if($selected):?><section class="sgdm-panel sgdm-thread"><header><div><small>AUDITED CONTENT REVIEW · #<?=(int)$selected['id']?></small><h2><?=$e((string)($selected['subject']?:'Conversation'))?></h2><p><?php foreach($selected['participants'] as $i=>$participant):?><?=$i?', ':''?><?=$e((string)$participant['name'])?> (<?=$e((string)$participant['participant_role'])?><?=$participant['access_revoked_at']?' · access revoked':''?>)<?php endforeach;?></p></div></header><div class="sgdm-messages"><?php foreach($selected['messages'] as $message):?><article><small>#<?=(int)$message['id']?> · <?=$e((string)$message['sender_name'])?> · <?=$e(date('M j, Y · g:i A',strtotime($message['created_at'])))?><?=$message['hidden_at']?' · Hidden':''?></small><p><?=nl2br($e((string)$message['body']))?></p><?php foreach(($message['attachments']??[]) as $attachment):?><a href="<?=$u(self::ATTACHMENT_ROUTE.'?conversation_id='.(int)$selected['id'].'&attachment_id='.(int)$attachment['id'])?>">Attachment: <?=$e((string)$attachment['original_name'])?> (audited download)</a><?php endforeach;?></article><?php endforeach;?></div><?php if($selected['has_older']):?><a href="<?=$u(self::ROUTE.'?conversation_id='.(int)$selected['id'].'&message_page='.($selected['page']+1))?>">Review 50 older messages (audited)</a><?php endif;?></section><?php endif;?>
         </div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
 }
