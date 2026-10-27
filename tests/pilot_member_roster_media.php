@@ -24,11 +24,14 @@ class RosterStatement extends PDOStatement {
             return [['id'=>17,'title'=>'Beauty and the Beast'],['id'=>23,'title'=>'Christmas Carol']];
         }
         if(str_contains($this->query,'FROM rehearsal_videos rv')){
-            return [
-                ['id'=>1,'status'=>'active','audience_scope'=>'platform','production_id'=>null,'group_id'=>null],
-                ['id'=>2,'status'=>'active','audience_scope'=>'production','production_id'=>17,'group_id'=>null],
-                ['id'=>3,'status'=>'active','audience_scope'=>'production','production_id'=>23,'group_id'=>null],
+            $production=(int)($this->params['production']??0);
+            $all=[
+                ['id'=>1,'status'=>'active','audience_scope'=>'platform','production_id'=>null,'group_id'=>null,'created_at'=>'2026-10-25 12:00:00'],
+                ['id'=>2,'status'=>'active','audience_scope'=>'production','production_id'=>17,'group_id'=>null,'created_at'=>'2026-10-26 12:00:00'],
+                ['id'=>3,'status'=>'active','audience_scope'=>'production','production_id'=>23,'group_id'=>null,'created_at'=>'2026-10-27 12:00:00'],
             ];
+            return array_values(array_filter($all,static fn(array $v):bool=>
+                $v['audience_scope']==='platform'||(int)$v['production_id']===$production));
         }
         return [];
     }
@@ -46,7 +49,8 @@ assertRoster(!str_contains($rosterSql,'selected_production_id'),'member roster i
 $videos=RehearsalVideoService::visibleAcrossProductions($db,$member);
 assertRoster(count($videos)===3,'student sees global videos and all rostered production videos');
 $listing=implode("\n",$db->queries);
-assertRoster(str_contains($listing,'rv.production_id IN (:p0,:p1)'),'combined video query selects multiple production IDs');
+assertRoster(substr_count($listing,"WHERE (rv.production_id=:production OR rv.audience_scope='platform')")===3,'member video aggregation reuses known-safe production query for platform and both shows');
+assertRoster(array_column($videos,'id')===[3,2,1],'aggregated video list is deduplicated and newest-first');
 $guard=['id'=>432,'role'=>'guardian','roles'=>['guardian'],'permissions'=>[]];
 ProductionContext::clearRequestCache();
 assertRoster(count(ProductionContext::activeProductions($db,$guard))===2,'guardian also resolves combined roster access');
