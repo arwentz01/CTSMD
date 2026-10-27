@@ -36,7 +36,7 @@ final class RegistrationIntakeService
 
         $db->beginTransaction();
         try{
-            if($minor){self::assertActiveRelationship($db,$guardianUserId,$participantUserId);}
+            if($minor){self::assertActiveRelationship($db,$guardianUserId,$participantUserId);if(($submission['opportunity_type']??'')==='audition')AuditionIntakeBridge::assertStudentEligible($db,$submissionId,$participantUserId);}
             self::saveLink($db,$submissionId,$participantUserId,$guardianUserId,(int)$actor['id'],'existing');
             self::audit($db,(int)$actor['id'],'registration.records_linked',$submissionId,'Linked registration to existing CTSMD people.',['participant_user_id'=>$participantUserId,'guardian_user_id'=>$guardianUserId]);
             $db->commit();
