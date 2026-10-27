@@ -64,3 +64,27 @@ Apply `database/migrations/091_rehearsal_video_library.sql`. This adds one `rehe
 9. Monitor hosting disk usage, PHP worker saturation and buffering. Set an operational archive cadence after each production.
 
 **Deferred for V1:** automatic compression, chunked/resumable uploads, cloud delivery, automatic notifications, view acknowledgments, offline download, multiple target groups per video, and native-mobile-specific UI. The responsive web library is available to mobile browsers.
+
+## Video Library audience expansion (migration 092)
+
+The feature is now called **Video Library** at `/videos` (the old `/production/rehearsal-library` URL remains supported). CTSMD members can find it in the application navigation. **Staff upload/manage using existing `production.manage`; no choreographer role has been introduced.**
+
+Staff choose exactly one audience at upload time:
+
+1. **Everyone on CTSMD** — any authenticated, eligible CTSMD account can view the video, regardless of production. Do not place sensitive production-specific student footage in this audience.
+2. **Entire selected production** — active members of that show, including active guardians linked through a participating Student. This is broader than a Production Group.
+3. **Specific Production Group** — a narrower subset of the selected production, with authorized guardians of its Students. A group is an actual membership list within a production, not a synonym for the entire cast.
+
+Existing rehearsal videos keep their original access boundaries. Apply `092_video_library_audience_scope.sql` **after** `091_rehearsal_video_library.sql`. The migration allows a NULL `production_id` for organization-wide videos and sets `audience_scope`. It is designed to be rerunnable without rewriting the audiences of videos created after it.
+
+Organization videos are stored in:
+
+```text
+storage/private/rehearsal-videos/ctsmd-platform/2026/
+```
+
+Production videos continue to use the production-ID and name folder structure. The library shows separate organization-wide and selected-production logical usage totals for staff; those totals still depend on database metadata, not direct disk scans.
+
+Known V1 limitations: one target group per video, no automatic compression or upload progress recovery, and organization-wide content is visible to all eligible CTSMD accounts rather than anonymously to the internet. This is not public video hosting.
+
+**Release testing additions:** check accounts with no current production can still find and watch organization videos; verify whole-production content is inaccessible to other shows; group-specific videos are hidden from unrelated Students and former guardians; confirm SQL 092 applies after 091 without changing older group assignments; verify archive/restore/delete on NULL-production organization videos. These changes are committed but not runtime-verified.
