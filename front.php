@@ -104,6 +104,7 @@ $experienceRoutes=[
     ['ProductionWorkspaceExperience',['/production','/production/artwork-image'],'base'],
     ['ProductionGroupExperience',['/production/groups','/production/groups/view'],'route'],
     ['ProductionPeopleExperience',['/production/people'],'route'],
+    ['ProductionSupportNeedsExperience',['/production/support-needs'],'base'],
     ['AttendanceExperience',['/attendance','/attendance/take','/attendance/report'],'route'],
     ['LatePickupExperience',['/production/late-pickups'],'base'],
     ['ScheduleCreateExperience',['/production/schedule/new'],'route'],
