@@ -93,3 +93,6 @@
   body[data-native-route="channels-view"] .community-composer .button:after{content:'➤';font-size:14px;color:#fff;transform:translateX(1px)}
   body[data-native-route="channels-view"] .community-readonly{position:fixed!important;left:10px!important;right:10px!important;bottom:calc(64px + env(safe-area-inset-bottom))!important;z-index:40!important;background:#2b2225!important;color:#d7cdd0!important;border:1px solid rgba(255,255,255,.08)!important;padding:10px 12px!important;border-radius:14px!important;text-align:center!important}
 }
+
+.comm-post .community-video-link{color:#a6192e;font-weight:750;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.comm-post .community-video-link:focus-visible{outline:2px solid #a6192e;outline-offset:3px;border-radius:3px}
