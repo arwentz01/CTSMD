@@ -136,3 +136,9 @@ The aggregated student/parent design has been propagated to the following curren
 The `/production/select` POST endpoint is now explicitly staff-only; sidebar switcher was already staff-only. Historical/archived productions remain in their dedicated archive experiences, not the current-show member lists.
 
 **Important validation limit:** PHP lint, roster-query stubs, and video privacy regression checks pass in GitHub Actions. End-to-end database and UI testing with real families rostered in two shows still needs to be performed. The unrelated existing volunteer-cancellation test continues failing the overall PHP job. Never treat unit stubs as proof of database schema/runtime behavior.
+
+## Student My Videos HTTP 500 regression hotfix
+
+A cross-production member listing query introduced an unverified SQL path, while staff continued using the established per-production listing query. `RehearsalVideoService::visibleAcrossProductions` now reuses that existing SQL for the CTSMD platform and each current rostered show, deduplicates by video ID, and sorts newest-first. It rechecks the video audience and guardian/group permissions before returning results. Student/guardian portals remain cross-production; the staff switcher is unaffected.
+
+`tests/pilot_member_roster_media.php` now asserts that the member library aggregates both rostered shows and one platform video through those queries, deduplicated and ordered. PHP lint, member roster regression, and video privacy checks passed in GitHub Actions. **The specific Bluehost 500 root cause has not been verified using production error logs or a live database.** Deploy and retest the student `/videos` page; if the error persists, capture the relevant Bluehost PHP error log line (without credentials or personal data) before making further database changes.
