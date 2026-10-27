@@ -75,27 +75,31 @@ final class RehearsalVideoService
      */
     public static function visibleAcrossProductions(PDO $db,array $user):array
     {
-        $productions=ProductionContext::activeProductions($db,$user);
-        $ids=array_values(array_unique(array_map(static fn(array $p):int=>(int)$p['id'],$productions)));
-        $where="rv.audience_scope='platform'";
-        $params=[];
-        if($ids){
-            $holders=[];
-            foreach($ids as $i=>$id){$key='p'.$i;$holders[]=':'.$key;$params[$key]=$id;}
-            $where.=" OR rv.production_id IN (".implode(',',$holders).")";
+        // Reuse the established per-production listing SQL instead of introducing
+        // a separate dynamic IN query for member accounts on shared Bluehost MySQL.
+        // Each record still passes a fresh student/guardian/group permission check.
+        $shows=ProductionContext::activeProductions($db,$user);
+        $seen=[];
+        $contexts=[['id'=>0,'title'=>'CTSMD']];
+        foreach($shows as $show){
+            $id=(int)$show['id'];
+            if($id>0)$contexts[]=['id'=>$id,'title'=>(string)$show['title']];
         }
-        $stmt=$db->prepare("SELECT rv.*,pg.name group_name,p.title production_title,
-                CONCAT(u.first_name,' ',u.last_name) uploader
-            FROM rehearsal_videos rv
-            LEFT JOIN production_groups pg ON pg.id=rv.group_id
-            LEFT JOIN productions p ON p.id=rv.production_id
-            LEFT JOIN users u ON u.id=rv.uploaded_by_user_id
-            WHERE rv.status='active' AND (".$where.")
-            ORDER BY rv.created_at DESC,rv.id DESC");
-        $stmt->execute($params);
-        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
-            static fn(array $video):bool=>self::canView($db,$user,$video)
-                || (self::canManage($user) && $video['status']==='active')));
+        foreach($contexts as $context){
+            foreach(self::listings($db,(int)$context['id']) as $video){
+                $id=(int)$video['id'];
+                if(isset($seen[$id]))continue;
+                if(!self::canView($db,$user,$video)
+                    && !(self::canManage($user)&&$video['status']==='active'))continue;
+                $video['production_title']=$video['audience_scope']==='platform'
+                    ?'CTSMD':$context['title'];
+                $seen[$id]=$video;
+            }
+        }
+        $videos=array_values($seen);
+        usort($videos,static fn(array $a,array $b):int=>
+            strcmp((string)$b['created_at'],(string)$a['created_at'])?:((int)$b['id']<=>(int)$a['id']));
+        return $videos;
     }
 
     public static function upload(PDO $db,array $actor,?array $production,array $post,array $file):int
