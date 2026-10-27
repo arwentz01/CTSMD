@@ -31,7 +31,7 @@ final class SafeguardingConversationReviewExperience
             $caseId=filter_var($_POST['case_id']??null,FILTER_VALIDATE_INT)?:null;
             // Persist the reason only in this authenticated session, not the URL.
             if($id>0&&mb_strlen($reason)>=12&&mb_strlen($reason)<=1000){
-                $_SESSION['safeguarding_dm_review']=['id'=>$id,'reason'=>$reason,'case_id'=>$caseId,'reviewer_id'=>(int)$user['id']];
+                $_SESSION['safeguarding_dm_review']=['id'=>$id,'reason'=>$reason,'case_id'=>$caseId,'reviewer_id'=>(int)$user['id'],'authorized_at'=>time()];
                 header('Location: '.($basePath?:'').self::ROUTE.'?conversation_id='.$id,true,303);exit;
             }
             $error='Provide a valid conversation and a review reason of at least 12 characters.';
@@ -45,7 +45,7 @@ final class SafeguardingConversationReviewExperience
         $selected=null;$viewId=filter_var($_GET['conversation_id']??null,FILTER_VALIDATE_INT)?:0;
         $sessionReview=$_SESSION['safeguarding_dm_review']??null;
         if($viewId>0){
-            if(!is_array($sessionReview)||(int)($sessionReview['id']??0)!==$viewId||(int)($sessionReview['reviewer_id']??0)!==(int)$user['id']){
+            if(!is_array($sessionReview)||(int)($sessionReview['id']??0)!==$viewId||(int)($sessionReview['reviewer_id']??0)!==(int)$user['id']||(int)($sessionReview['authorized_at']??0)<time()-900){
                 $error='Choose Review and provide a reason to open conversation content.';
             }else{
                 try{$selected=SafeguardingConversationReviewService::review($db,$user,$viewId,(string)$sessionReview['reason'],$sessionReview['case_id'],max(1,(int)($_GET['message_page']??1)));}
