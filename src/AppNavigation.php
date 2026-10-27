@@ -98,6 +98,7 @@ final class AppNavigation
 
                 <?php if ($communicationsAvailable): ?>
                     <a class="unified-nav-item<?=$active('community')?>" href="<?=$url('/channels')?>"><i>#</i><span><b>Community<?php if((int)$unread['community']>0):?><strong class="unified-unread"><?=(int)$unread['community']?></strong><?php endif;?></b><small><?=$approved?'CTSMD + production channels':'Production channels'?></small></span></a>
+                    <a class="unified-nav-item<?=$route==='/videos'?' active':''?>" href="<?=$url('/videos')?>"><i>▶</i><span><b>Video Library</b><small>CTSMD &amp; rehearsal videos</small></span></a>
                     <a class="unified-nav-item<?=$active('messages')?>" href="<?=$url('/messages')?>"><i>✉</i><span><b>Messages<?php if((int)$unread['messages']>0):?><strong class="unified-unread"><?=(int)$unread['messages']?></strong><?php endif;?></b><small>Your conversations</small></span></a>
                 <?php endif; ?>
 
@@ -203,6 +204,7 @@ final class AppNavigation
         $items[] = ['label'=>'Readiness','href'=>'/production/readiness','active'=>$active(['/production/readiness'])];
         $items[] = ['label'=>'Production day','href'=>'/production/day','active'=>$route==='/production/day'];
         $items[] = ['label'=>'Resources','href'=>'/resources','active'=>$active(['/resources','/admin/resources'])];
+        $items[] = ['label'=>'Videos','href'=>'/videos','active'=>$active(['/videos','/production/rehearsal-library'])];
 
         if ($canManageResources) {
             $items[] = ['label'=>'Files','href'=>'/files','active'=>$active(['/files','/admin/files'])];
