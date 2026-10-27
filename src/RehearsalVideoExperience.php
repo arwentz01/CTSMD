@@ -79,11 +79,29 @@ final class RehearsalVideoExperience
         fclose($stream);exit;
     }
 
+    private static function uploadAjax():bool
+    {
+        return (string)($_SERVER['HTTP_X_REQUESTED_WITH']??'')==='XMLHttpRequest'
+            && (string)($_POST['action']??'')==='upload';
+    }
+
+    private static function uploadResponse(string $type,string $message,string $basePath):never
+    {
+        if(self::uploadAjax()){
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: private, no-store');
+            http_response_code($type==='success'?200:($type==='error'?422:400));
+            echo json_encode(['ok'=>$type==='success','message'=>$message],JSON_THROW_ON_ERROR);
+            exit;
+        }
+        self::flash($type,$message);
+        self::redirect($basePath.'/videos');
+    }
+
     private static function post(PDO $db,array $user,?array $production,string $basePath):never
     {
         if(!hash_equals((string)($_SESSION['rehearsal_video_csrf']??''),(string)($_POST['csrf_token']??''))){
-            self::flash('error','Session expired. Reload and try again.');
-            self::redirect($basePath.'/videos');
+            self::uploadResponse('error','Session expired. Reload and try again.',$basePath);
         }
         if(!RehearsalVideoService::canManage($user)){
             http_response_code(403);exit('Production staff access required.');
@@ -92,7 +110,7 @@ final class RehearsalVideoExperience
             $action=(string)($_POST['action']??'');
             if($action==='upload'){
                 RehearsalVideoService::upload($db,$user,$production,$_POST,$_FILES['video']??[]);
-                self::flash('success','Video uploaded and published for the selected audience.');
+                self::uploadResponse('success','Video uploaded and published for the selected audience.',$basePath);
             }elseif($action==='archive'||$action==='restore'){
                 RehearsalVideoService::archive($db,$user,(int)($_POST['video_production_id']??0),(int)($_POST['video_id']??0),$action==='restore');
                 self::flash('success',$action==='archive'?'Video archived and hidden from students. The file remains on disk.':'Video restored to the library.');
@@ -102,7 +120,7 @@ final class RehearsalVideoExperience
                 self::flash('success','Video file and library record permanently deleted.');
             }else throw new RuntimeException('Unknown video action.');
         }catch(Throwable $e){
-            self::flash('error',$e instanceof RuntimeException?$e->getMessage():'Video action failed. Check server upload settings or storage permissions.');
+            self::uploadResponse('error',$e instanceof RuntimeException?$e->getMessage():'Video action failed. Check server upload settings or storage permissions.',$basePath);
         }
         self::redirect($basePath.'/videos');
     }
@@ -133,17 +151,23 @@ final class RehearsalVideoExperience
           <small><?php if($hosting['volume_free_bytes']!==null):?>Filesystem reports <?=RehearsalVideoService::humanSize((int)$hosting['volume_free_bytes'])?> free; this is <b>not</b> your Bluehost account quota.<?php else:?>Server free-space reporting is unavailable.<?php endif;?></small>
           <?php if($hosting['effective_bytes']<20*1048576):?><small class="rl-limit-warning">The hosting upload limit is restrictive for video. Adjust Bluehost PHP limits before testing large files.</small><?php endif;?>
         </div><?php endif;?>
-        <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="upload">
+        <form method="post" enctype="multipart/form-data" id="rl-video-upload"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="upload">
         <div class="rl-fields"><label>Title<input name="title" maxlength="190" required placeholder="Belle — Full choreography"></label><label>Category<select name="category"><?php foreach(RehearsalVideoService::CATEGORIES as $value=>$name):?><option value="<?=$e($value)?>"><?=$e($name)?></option><?php endforeach;?></select></label>
         <label>Who can watch?<select name="audience_scope" id="rl-audience-scope" required><option value="platform">Everyone on CTSMD (authenticated members)</option><?php if($production):?><option value="production" selected>Everyone in <?=$e($production['title'])?> (cast, guardians and staff)</option><option value="group">Specific Production Group</option><?php endif;?></select></label><label id="rl-group-field" hidden>Production Group<select name="group_id" id="rl-group-id" disabled><option value="">Choose a group</option><?php foreach($groups as $group):?><option value="<?=(int)$group['id']?>"><?=$e($group['name'])?></option><?php endforeach;?></select></label><label>Video file<input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" required></label></div>
-        <label>Description / practice instructions<textarea name="description" maxlength="2000" rows="3" placeholder="Practice counts 1–32 before Thursday."></textarea></label><button class="button" type="submit">Upload &amp; publish</button></form>
+        <label>Description / practice instructions<textarea name="description" maxlength="2000" rows="3" placeholder="Practice counts 1–32 before Thursday."></textarea></label><div class="rl-upload-status" id="rl-upload-status" hidden role="status" aria-live="polite" aria-atomic="true">
+            <div class="rl-upload-status-head"><strong id="rl-upload-phase">Preparing upload…</strong><b id="rl-upload-percent">0%</b></div>
+            <progress id="rl-upload-progress" max="100" value="0" aria-label="Video upload progress"></progress>
+            <div class="rl-upload-detail"><span id="rl-upload-bytes">0 MB transferred</span><span id="rl-upload-speed"></span></div>
+            <p id="rl-upload-message">Please keep this page open until the upload finishes.</p>
+          </div>
+          <div class="rl-upload-actions"><button class="button" type="submit" id="rl-upload-submit">Upload &amp; publish</button><button type="button" id="rl-upload-cancel" hidden>Cancel upload</button></div></form>
         </section><?php endif;?>
         <section class="rl-list"><div class="rl-section-head"><h2>Videos</h2><small><?=count($videos)?> shown</small></div>
         <?php if(!$videos):?><div class="rl-empty">No videos available for this audience yet.</div><?php endif;?>
         <?php foreach($videos as $video):?><article class="rl-card"><div class="rl-card-info"><small><?=$e(RehearsalVideoService::CATEGORIES[$video['category']]??$video['category'])?> · <?=$e($video['audience_scope']==='platform'?'All CTSMD members':($video['audience_scope']==='group'?($video['group_name']??'Production Group'):'Entire production'))?><?=$video['status']==='archived'?' · ARCHIVED':''?></small><h3><?=$e($video['title'])?></h3><?php if($video['description']):?><p><?=nl2br($e($video['description']))?></p><?php endif;?><span><?=RehearsalVideoService::humanSize((int)$video['byte_size'])?> · <?=$e(date('M j, Y',strtotime($video['created_at'])))?> · Uploaded by <?=$e($video['uploader']??'Production staff')?></span></div>
         <div class="rl-card-actions"><?php if($video['status']==='active'):?><video controls playsinline preload="none" controlsList="nodownload" poster="" src="<?=$url('/videos/play?id='.(int)$video['id'])?>" aria-label="<?=$e($video['title'])?>"></video><div class="rl-playback-tools" role="group" aria-label="Practice playback controls"><button type="button" data-video-rewind aria-label="Rewind 10 seconds">↶ 10s</button><label>Speed <select data-video-speed aria-label="Playback speed"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select></label><button type="button" data-loop-start>Loop start</button><button type="button" data-loop-end>Loop end</button><button type="button" data-loop-clear hidden>Clear loop</button></div><?php endif;?>
         <?php if($admin):?><div class="rl-manage"><a class="rl-download-original" href="<?=$url('/videos/archive-download?id='.(int)$video['id'])?>" aria-label="Download original video for archiving: <?=$e($video['title'])?>">Download original</a><?php if($video['status']==='active'):?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="archive"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit">Archive</button></form><?php else:?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="restore"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit">Restore</button></form><form method="post" onsubmit="return confirm('Permanently delete this archived video file from Bluehost? This cannot be undone.');"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm_delete" value="DELETE"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit" class="rl-danger">Delete from storage</button></form><?php endif;?></div><?php endif;?></div></article><?php endforeach;?></section>
-        <?php endif;?></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script><script>(function(){const b=document.getElementById('rl-upload-toggle'),p=document.getElementById('rl-upload-form');if(b&&p)b.addEventListener('click',()=>{p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));if(!p.hidden)p.querySelector('input[name=title]').focus();const scope=document.getElementById('rl-audience-scope'),group=document.getElementById('rl-group-field'),gid=document.getElementById('rl-group-id');if(scope&&group&&gid){const sync=()=>{group.hidden=scope.value!=='group';gid.disabled=scope.value!=='group';gid.required=scope.value==='group'};scope.addEventListener('change',sync);sync();}});})();</script><script src="<?=$url('/assets/js/video-library-player.js')?>"></script></body></html><?php exit;
+        <?php endif;?></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script><script>(function(){const b=document.getElementById('rl-upload-toggle'),p=document.getElementById('rl-upload-form');if(b&&p)b.addEventListener('click',()=>{p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));if(!p.hidden)p.querySelector('input[name=title]').focus();const scope=document.getElementById('rl-audience-scope'),group=document.getElementById('rl-group-field'),gid=document.getElementById('rl-group-id');if(scope&&group&&gid){const sync=()=>{group.hidden=scope.value!=='group';gid.disabled=scope.value!=='group';gid.required=scope.value==='group'};scope.addEventListener('change',sync);sync();}});})();</script><script src="<?=$url('/assets/js/video-library-player.js')?>"></script><script src="<?=$url('/assets/js/video-library-upload.js')?>"></script></body></html><?php exit;
     }
     private static function flash(string $type,string $message):void{$_SESSION['rehearsal_video_flash']=['type'=>$type,'message'=>$message];}
     private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
