@@ -44,6 +44,7 @@ if ($route === '/navigation' && Auth::localIdentitySwitchEnabled()) {require_onc
 require_once __DIR__ . '/src/RuntimeSchemaGuard.php';RuntimeSchemaGuard::requireCurrentSchema(__DIR__,$detectedBasePath);
 require_once __DIR__ . '/src/PublicProductionExperience.php';if(PublicProductionExperience::handles($route))PublicProductionExperience::render($route,$detectedBasePath);
 require_once __DIR__ . '/src/PublicExperience.php';if(PublicExperience::handles($route))PublicExperience::render($route,$detectedBasePath);
+require_once __DIR__ . '/src/SafeguardingStatementExperience.php';if(SafeguardingStatementExperience::handles($route))SafeguardingStatementExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/PublicCastingExperience.php';if(PublicCastingExperience::handles($route))PublicCastingExperience::render($detectedBasePath);
 require_once __DIR__ . '/src/AuthExperience.php';if(AuthExperience::handles($route))AuthExperience::render($route,$detectedBasePath);
 if($route==='/calendar/feed'){require_once __DIR__.'/src/CalendarExperience.php';CalendarExperience::render($route,$detectedBasePath);}
