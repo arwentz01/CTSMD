@@ -146,6 +146,12 @@ final class RehearsalVideoService
         $s->execute(['production'=>$productionId]);return $s->fetch(PDO::FETCH_ASSOC)?:['n'=>0,'bytes'=>0];
     }
 
+    public static function platformUsage(PDO $db):array
+    {
+        $s=$db->query("SELECT COUNT(*) n,COALESCE(SUM(byte_size),0) bytes FROM rehearsal_videos WHERE audience_scope='platform'");
+        return $s->fetch(PDO::FETCH_ASSOC)?:['n'=>0,'bytes'=>0];
+    }
+
     public static function absolute(string $key):string
     {
         if(!preg_match('~^rehearsal-videos/(?:[0-9]+-[a-z0-9-]+|ctsmd-platform)/[0-9]{4}/[a-z0-9.-]+\\.(mp4|webm|mov)$~D',$key))throw new RuntimeException('Invalid private video path.');
