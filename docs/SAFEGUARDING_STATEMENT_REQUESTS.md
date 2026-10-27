@@ -61,3 +61,20 @@ Statement responses are **not editable through the application**. A database adm
 - Preserve immutable responses during case status changes and across deployment.
 
 **Pilot go/no-go:** Do not rely on this for actual incident investigations until migrations, live email, security boundary checks and browser validation pass.
+
+
+## CTSMD recipient directory and delivery
+
+Staff may now search and select an existing CTSMD person directly on an individual case. The selector groups:
+
+- **Active, email-verified adults, guardians and staff:** selecting one uses the current name and email in the CTSMD `users` table. The form does not trust any client-supplied email/name for a selected account.
+- **Registered Students:** listed by name, but each selectable option explicitly says **via [guardian name]**. The email is sent to an active, verified guardian with a current parent/guardian relationship; the student’s own address is not used. Multiple eligible guardians may appear separately.
+- **External witness / non-member:** manual name and email remain available. Matching a registered Student email is explicitly rejected; staff must instead choose a guardian-delivery entry.
+
+The selector includes a search field and a live preview of the actual destination. Server-side rules re-resolve identity, account status, and the active relationship on every POST. Invitations record `recipient_user_id` when selecting a CTSMD account or guardian (the column already existed in migration 090). No additional schema migration is required.
+
+**Delivery:** The invitation is queued via `MailService::queue` using the existing CTSMD email worker. Sending the request does not itself prove that the mail was delivered or read. The case request list displays the `email_queue.status` alongside each invitation, including queued and sent states. The email intentionally contains a secure link but no incident facts; the full disclosure snapshot appears only after opening the private form.
+
+Staff can invite multiple people separately from the same case. Each recipient has a distinct expiring one-use token and their own non-editable statement record; responses are never exposed to other invited respondents.
+
+**Remaining considerations:** An email link remains a bearer credential; confirmation of its recipient’s real-world identity is limited. Staff should review guardian choice, recipient-facing description, and contextual metadata carefully. The recipient picker does not itself notify the person in-app; this is email-based delivery. PHP lint, real mailbox/worker delivery and browser QA remain release gates.
