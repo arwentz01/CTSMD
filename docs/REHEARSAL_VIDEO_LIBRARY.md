@@ -120,3 +120,19 @@ The web Video Library and native `/api/mobile/videos` now list organization-wide
 The shared calendar already aggregated `activeProductions`; its schedule audience check now resolves guardian role from the active child-roster relationship. Form/task/resource screens should follow this same contract and be rechecked during the pilot. Do not treat selected staff context as the member's production filter.
 
 **Required live integration testing:** Student simultaneously rostered for two productions; parent of children on different productions; guardian who has no direct production membership; staged/planning production; group-scoped video with an active guardian; former guardian and removed Student (must lose new access); archived production (not in current member views). Confirm consolidated schedule and action items across these cases.
+
+## Cross-production member portal remediation — follow-up
+
+The aggregated student/parent design has been propagated to the following current-member entry points:
+
+- **My Videos** (`/videos`) and mobile `/api/mobile/videos`: all rostered productions plus CTSMD-wide video; parent/guardian group access follows active child membership.
+- **Schedule / Calendar**: shared active-production enumeration and audience-type checks work across every current rostered show without a staff switcher.
+- **My Theatre**: already lists the member's active productions; now benefits from corrected production enumeration.
+- **Resources** (`/resources`): member listings aggregate all rostered productions, show the originating production, and check each resource's permitted audience. Staff management stays selected-production scoped.
+- **Files** (`/files`): member listings aggregate all rostered shows and check each private file's audience; staff file management stays selected-production scoped.
+- **Casting announcements** (`/cast`): member view displays published announcements from all rostered productions, while staff may focus their working show.
+- **Forms / household action items**: current implementation is already assignment-/account-based rather than filtered by staff selection. Keep it that way.
+
+The `/production/select` POST endpoint is now explicitly staff-only; sidebar switcher was already staff-only. Historical/archived productions remain in their dedicated archive experiences, not the current-show member lists.
+
+**Important validation limit:** PHP lint, roster-query stubs, and video privacy regression checks pass in GitHub Actions. End-to-end database and UI testing with real families rostered in two shows still needs to be performed. The unrelated existing volunteer-cancellation test continues failing the overall PHP job. Never treat unit stubs as proof of database schema/runtime behavior.
