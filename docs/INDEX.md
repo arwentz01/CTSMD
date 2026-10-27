@@ -14,6 +14,7 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | Architecture / product intent | [PRODUCT_CHARTER.md](PRODUCT_CHARTER.md), [VISUAL_FIRST_ARCHITECTURE.md](VISUAL_FIRST_ARCHITECTURE.md) | Product scope and implementation principles |
 | Mobile integration | [MOBILE_V1_FOLLOWUPS.md](MOBILE_V1_FOLLOWUPS.md), [mobile parity](../mobile/docs/CASTING_TASKS_PARITY.md) | Native scope and outstanding staff parity |
 | Production lifecycle | [PRODUCTION_LIFECYCLE_V2.md](PRODUCTION_LIFECYCLE_V2.md) | Stage, lifecycle and approval behavior |
+| Account DOB / audition age eligibility | [ACCOUNT_DOB_AUDITION_ELIGIBILITY.md](ACCOUNT_DOB_AUDITION_ELIGIBILITY.md) | Required contact fields, student DOB ownership, age rules, guest fallback and staging release gates |
 | Casting / published Playbill | [CASTING_ROLES_ROLLOUT.md](CASTING_ROLES_ROLLOUT.md), [CASTING_OFFER_WORKFLOW.md](CASTING_OFFER_WORKFLOW.md), [PLAYBILL_PUBLICATION.md](PLAYBILL_PUBLICATION.md), [MANUAL_PARTICIPANTS.md](MANUAL_PARTICIPANTS.md) | Roles, offers, publication and manual records |
 | Tasks / guardians / Volunteer Leads | [PRODUCTION_TASKS_EXTRACTION.md](PRODUCTION_TASKS_EXTRACTION.md), [PRODUCTION_TODO_ASSIGNMENTS.md](PRODUCTION_TODO_ASSIGNMENTS.md) | /production/tasks and individual completion |
 | Attendance / late pickups | [LATE_PICKUP_WORKFLOW.md](LATE_PICKUP_WORKFLOW.md) | Current late-pickup design and acceptance |
