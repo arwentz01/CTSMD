@@ -37,6 +37,7 @@ export default function More(){
   <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
   <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
   <Local title="Volunteer" detail="Shifts, signups and approvals" icon="hand-left-outline" path="/(tabs)/volunteer"/>
+  <Pressable accessibilityRole="button" onPress={()=>router.push('/videos')} style={s.item}><Ionicons name="play-circle-outline" size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>Video Library</Text><Text style={s.muted}>Rehearsals and CTSMD-wide videos</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>Tickets & resources</Text>
   <External title="Tickets" url={resources[0][1]}/>
   <Pressable accessibilityRole="button" accessibilityState={{expanded}} onPress={()=>setExpanded(v=>!v)} style={s.item}><Ionicons name="library-outline" color={colors.primary} size={22}/><Text style={[s.itemText,{flex:1}]}>CTSMD forms, policies & resources</Text><Ionicons name={expanded?'chevron-up':'chevron-down'} color={colors.muted} size={19}/></Pressable>
