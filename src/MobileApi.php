@@ -111,26 +111,25 @@ final class MobileApi
     private static function videos(PDO $db,array $user):never
     {
         self::requireMethod('GET');
-        $available=ProductionContext::activeProductions($db,$user);
-        $byId=[];
-        foreach(array_merge([['id'=>0]],$available) as $production){
-            foreach(RehearsalVideoService::visible($db,$user,(int)$production['id']) as $item){
-                if($item['status']!=='active')continue;
-                $byId[(int)$item['id']]=[
-                    'id'=>(int)$item['id'],
-                    'title'=>(string)$item['title'],
-                    'description'=>$item['description'],
-                    'category'=>(string)$item['category'],
-                    'audience_scope'=>(string)$item['audience_scope'],
-                    'production_id'=>$item['production_id']===null?null:(int)$item['production_id'],
-                    'group_name'=>$item['group_name'],
-                    'byte_size'=>(int)$item['byte_size'],
-                    'created_at'=>$item['created_at'],
-                ];
-            }
+        // Member-facing pages are always cross-production, even if staff have
+        // a different production selected in their web workspace.
+        $visible=RehearsalVideoService::visibleAcrossProductions($db,$user);
+        $items=[];
+        foreach($visible as $item){
+            $items[]=[
+                'id'=>(int)$item['id'],
+                'title'=>(string)$item['title'],
+                'description'=>$item['description'],
+                'category'=>(string)$item['category'],
+                'audience_scope'=>(string)$item['audience_scope'],
+                'production_id'=>$item['production_id']===null?null:(int)$item['production_id'],
+                'production_title'=>$item['production_title']??null,
+                'group_name'=>$item['group_name'],
+                'byte_size'=>(int)$item['byte_size'],
+                'created_at'=>$item['created_at'],
+            ];
         }
-        usort($byId,static fn(array $a,array $b):int=>strcmp((string)$b['created_at'],(string)$a['created_at']));
-        self::json(['videos'=>array_values($byId)]);
+        self::json(['videos'=>$items]);
     }
 
     private static function videoPlay(PDO $db,array $user):never
@@ -139,14 +138,7 @@ final class MobileApi
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
         $video=RehearsalVideoService::record($db,(int)$id);
         if(!$video||$video['status']!=='active'){self::json(['error'=>'Video unavailable.'],404);}
-        $scope=(string)($video['audience_scope']??'production');
-        if($scope!=='platform'){
-            $available=ProductionContext::activeProductions($db,$user);
-            $found=false;
-            foreach($available as $production)if((int)$production['id']===(int)$video['production_id']){$found=true;break;}
-            if(!$found){self::json(['error'=>'Video unavailable.'],404);}
-        }
-        if(!RehearsalVideoService::canView($db,$user,$video)&&!RehearsalVideoService::canManage($user)){
+        if(!RehearsalVideoService::canView($db,$user,$video)){
             self::json(['error'=>'Video unavailable.'],404);
         }
         header_remove('Content-Type');
