@@ -39,7 +39,11 @@ final class RehearsalVideoService
         if($video['status']!=='active')return false;
         if(($video['audience_scope']??'production')==='platform')return true;
         $productionId=(int)$video['production_id'];$id=(int)$user['id'];
+        if(($video['audience_scope']??'production')==='group'&&empty($video['group_id']))return false;
         if(!empty($video['group_id'])){
+            $v=$db->prepare('SELECT 1 FROM production_groups WHERE id=:id AND production_id=:production AND active=1');
+            $v->execute(['id'=>(int)$video['group_id'],'production'=>$productionId]);
+            if(!$v->fetchColumn())return false;
             if(!ProductionContext::isActiveMember($db,$id,$productionId))return false;
             $s=$db->prepare("SELECT 1 FROM production_group_members pgm JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
                 WHERE pgm.group_id=:group_id AND pgm.status='active' AND pm.production_id=:production AND pm.user_id=:viewer LIMIT 1");
