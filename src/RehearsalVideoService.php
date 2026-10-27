@@ -108,7 +108,8 @@ final class RehearsalVideoService
     public static function archive(PDO $db,array $actor,int $productionId,int $id,bool $restore=false):void
     {
         if(!self::canManage($actor))throw new RuntimeException('Production staff access required.');
-        ProductionLifecycleGuard::assertWritable($db,$productionId);
+        // Cleanup actions remain allowed after the production has finished.
+
         $s=$db->prepare("UPDATE rehearsal_videos SET status=:status,archived_at=".($restore?'NULL':'CURRENT_TIMESTAMP')." WHERE id=:id AND production_id=:production");
         $s->execute(['status'=>$restore?'active':'archived','id'=>$id,'production'=>$productionId]);
         if($s->rowCount()<1)throw new RuntimeException('Video is unavailable or already in that state.');
@@ -118,7 +119,8 @@ final class RehearsalVideoService
     public static function delete(PDO $db,array $actor,int $productionId,int $id):void
     {
         if(!self::canManage($actor))throw new RuntimeException('Production staff access required.');
-        ProductionLifecycleGuard::assertWritable($db,$productionId);
+        // Cleanup actions remain allowed after the production has finished.
+
         $record=self::record($db,$id);
         if(!$record||(int)$record['production_id']!==$productionId||$record['status']!=='archived')throw new RuntimeException('Archive the video before permanently deleting it.');
         $path=self::absolute($record['storage_key']);
