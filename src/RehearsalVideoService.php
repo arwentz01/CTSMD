@@ -24,19 +24,20 @@ final class RehearsalVideoService
 
     public static function listings(PDO $db,int $productionId,bool $includeArchived=false):array
     {
-        $s=$db->prepare("SELECT rv.*,pg.name group_name,CONCAT(u.first_name,' ',u.last_name) uploader FROM rehearsal_videos rv LEFT JOIN production_groups pg ON pg.id=rv.group_id LEFT JOIN users u ON u.id=rv.uploaded_by_user_id WHERE rv.production_id=:production".($includeArchived?"":" AND rv.status='active'")." ORDER BY rv.created_at DESC,rv.id DESC");
+        $s=$db->prepare("SELECT rv.*,pg.name group_name,CONCAT(u.first_name,' ',u.last_name) uploader FROM rehearsal_videos rv LEFT JOIN production_groups pg ON pg.id=rv.group_id LEFT JOIN users u ON u.id=rv.uploaded_by_user_id WHERE (rv.production_id=:production OR rv.audience_scope='platform')".($includeArchived?"":" AND rv.status='active'")." ORDER BY rv.created_at DESC,rv.id DESC");
         $s->execute(['production'=>$productionId]);return $s->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public static function record(PDO $db,int $id):?array
     {
-        $s=$db->prepare("SELECT rv.*,p.is_active production_active,p.lifecycle_stage FROM rehearsal_videos rv JOIN productions p ON p.id=rv.production_id WHERE rv.id=:id LIMIT 1");
+        $s=$db->prepare("SELECT rv.*,p.is_active production_active,p.lifecycle_stage FROM rehearsal_videos rv LEFT JOIN productions p ON p.id=rv.production_id WHERE rv.id=:id LIMIT 1");
         $s->execute(['id'=>$id]);return $s->fetch(PDO::FETCH_ASSOC)?:null;
     }
 
     public static function canView(PDO $db,array $user,array $video):bool
     {
         if($video['status']!=='active')return false;
+        if(($video['audience_scope']??'production')==='platform')return true;
         $productionId=(int)$video['production_id'];$id=(int)$user['id'];
         if(!empty($video['group_id'])){
             if(!ProductionContext::isActiveMember($db,$id,$productionId))return false;
@@ -58,21 +59,31 @@ final class RehearsalVideoService
     public static function visible(PDO $db,array $user,int $productionId):array
     {
         $all=self::listings($db,$productionId,self::canManage($user));
-        return array_values(array_filter($all,static fn(array $video):bool=>self::canManage($user)||self::canView($db,$user,$video)));
+        return array_values(array_filter($all,static fn(array $video):bool=>
+            ($video['status']==='active'&&self::canView($db,$user,$video))||
+            (self::canManage($user)&&($video['audience_scope']==='platform'||(int)$video['production_id']===$productionId))
+        ));
     }
 
-    public static function upload(PDO $db,array $actor,array $production,array $post,array $file):int
+    public static function upload(PDO $db,array $actor,?array $production,array $post,array $file):int
     {
         if(!self::canManage($actor))throw new RuntimeException('Production staff access is required.');
-        $productionId=(int)$production['id'];
-        ProductionLifecycleGuard::assertWritable($db,$productionId);
+        $scope=(string)($post['audience_scope']??'production');
+        if(!in_array($scope,['platform','production','group'],true))throw new RuntimeException('Choose a valid video audience.');
+        $productionId=$scope==='platform'?null:($production?(int)$production['id']:null);
+        if($scope!=='platform'){
+            if(!$productionId)throw new RuntimeException('Select a production before uploading a production video.');
+            ProductionLifecycleGuard::assertWritable($db,$productionId);
+        }
         $title=trim((string)($post['title']??''));$desc=trim((string)($post['description']??''));
         $category=(string)($post['category']??'choreography');
         $groupId=(int)($post['group_id']??0);
         if($title===''||mb_strlen($title)>190||mb_strlen($desc)>2000)throw new RuntimeException('Enter a title (up to 190 characters) and a short description.');
         if(!isset(self::CATEGORIES[$category]))throw new RuntimeException('Choose a valid video category.');
+        if($scope==='group'&&$groupId<1)throw new RuntimeException('Select the Production Group for this video.');
+        if($scope!=='group')$groupId=0;
         if($groupId>0){
-            $g=$db->prepare('SELECT 1 FROM production_groups WHERE id=:id AND production_id=:production AND active=1 LIMIT 1');
+            $g=$db->prepare('SELECT 1 FROM production_groups WHERE id=:id AND production_id <=> :production AND active=1 LIMIT 1');
             $g->execute(['id'=>$groupId,'production'=>$productionId]);
             if(!$g->fetchColumn())throw new RuntimeException('The selected Production Group is no longer available.');
         }
@@ -87,7 +98,7 @@ final class RehearsalVideoService
         $source=(string)($file['name']??'video.'.$extension);
         $name=preg_replace('/[^a-z0-9._-]+/i','-',basename($source))?:'video.'.$extension;
         $safeTitle=self::slug($title);
-        $folder=$productionId.'-'.self::slug((string)$production['title']);
+        $folder=$scope==='platform'?'ctsmd-platform':$productionId.'-'.self::slug((string)$production['title']);
         $key='rehearsal-videos/'.$folder.'/'.date('Y').'/'.date('Ymd-His').'-'.$safeTitle.'-'.bin2hex(random_bytes(6)).'.'.$extension;
         $absolute=self::absolute($key);
         $directory=dirname($absolute);
@@ -97,8 +108,8 @@ final class RehearsalVideoService
         @chmod($absolute,0640);
         try{
             $db->beginTransaction();
-            $s=$db->prepare("INSERT INTO rehearsal_videos (production_id,uploaded_by_user_id,title,category,description,group_id,original_filename,storage_key,mime_type,byte_size,status) VALUES (:production,:actor,:title,:category,:description,:group_id,:name,:storage,:mime,:size,'active')");
-            $s->execute(['production'=>$productionId,'actor'=>(int)$actor['id'],'title'=>$title,'category'=>$category,'description'=>$desc!==''?$desc:null,'group_id'=>$groupId?:null,'name'=>mb_substr($name,0,255),'storage'=>$key,'mime'=>$mime,'size'=>$size]);
+            $s=$db->prepare("INSERT INTO rehearsal_videos (production_id,uploaded_by_user_id,title,category,description,audience_scope,group_id,original_filename,storage_key,mime_type,byte_size,status) VALUES (:production,:actor,:title,:category,:description,:scope,:group_id,:name,:storage,:mime,:size,'active')");
+            $s->execute(['production'=>$productionId,'actor'=>(int)$actor['id'],'title'=>$title,'category'=>$category,'description'=>$desc!==''?$desc:null,'scope'=>$scope,'group_id'=>$groupId?:null,'name'=>mb_substr($name,0,255),'storage'=>$key,'mime'=>$mime,'size'=>$size]);
             $id=(int)$db->lastInsertId();
             self::audit($db,(int)$actor['id'],'rehearsal.video_uploaded',$id,$productionId);
             $db->commit();return $id;
@@ -122,10 +133,10 @@ final class RehearsalVideoService
         // Cleanup actions remain allowed after the production has finished.
 
         $record=self::record($db,$id);
-        if(!$record||(int)$record['production_id']!==$productionId||$record['status']!=='archived')throw new RuntimeException('Archive the video before permanently deleting it.');
+        if(!$record||($record['production_id']===null?0:(int)$record['production_id'])!==$productionId||$record['status']!=='archived')throw new RuntimeException('Archive the video before permanently deleting it.');
         $path=self::absolute($record['storage_key']);
         if(is_file($path)&&!unlink($path))throw new RuntimeException('Unable to remove the video from disk. Check permissions.');
-        $db->prepare("DELETE FROM rehearsal_videos WHERE id=:id AND production_id=:production AND status='archived'")->execute(['id'=>$id,'production'=>$productionId]);
+        $db->prepare("DELETE FROM rehearsal_videos WHERE id=:id AND production_id <=> :production AND status='archived'")->execute(['id'=>$id,'production'=>$productionId]);
         self::audit($db,(int)$actor['id'],'rehearsal.video_deleted',$id,$productionId);
     }
 
@@ -137,7 +148,7 @@ final class RehearsalVideoService
 
     public static function absolute(string $key):string
     {
-        if(!preg_match('~^rehearsal-videos/[0-9]+-[a-z0-9-]+/[0-9]{4}/[a-z0-9.-]+\\.(mp4|webm|mov)$~D',$key))throw new RuntimeException('Invalid private video path.');
+        if(!preg_match('~^rehearsal-videos/(?:[0-9]+-[a-z0-9-]+|ctsmd-platform)/[0-9]{4}/[a-z0-9.-]+\\.(mp4|webm|mov)$~D',$key))throw new RuntimeException('Invalid private video path.');
         return dirname(__DIR__).'/storage/private/'.$key;
     }
 
