@@ -94,7 +94,8 @@ final class RehearsalVideoService
             ORDER BY rv.created_at DESC,rv.id DESC");
         $stmt->execute($params);
         return array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
-            static fn(array $video):bool=>self::canView($db,$user,$video)));
+            static fn(array $video):bool=>self::canView($db,$user,$video)
+                || (self::canManage($user) && $video['status']==='active')));
     }
 
     public static function upload(PDO $db,array $actor,?array $production,array $post,array $file):int
