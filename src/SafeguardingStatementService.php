@@ -26,6 +26,8 @@ final class SafeguardingStatementService
         $name=trim((string)($input['recipient_name']??''));
         $email=mb_strtolower(trim((string)($input['recipient_email']??'')));
         $description=trim((string)($input['shared_description']??''));
+        $publicTitle=trim((string)($input['shared_title']??''));
+        if($publicTitle===''||mb_strlen($publicTitle)>190)throw new RuntimeException('Enter a recipient-facing case name up to 190 characters.');
         if($name===''||mb_strlen($name)>190)throw new RuntimeException('Enter the recipient’s name.');
         if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)throw new RuntimeException('Enter a valid recipient email address.');
         if($description===''||mb_strlen($description)>2000)throw new RuntimeException('Write a brief, shareable incident description before sending.');
@@ -41,7 +43,7 @@ final class SafeguardingStatementService
         $db->beginTransaction();
         try{
             $stmt=$db->prepare("INSERT INTO safeguarding_statement_requests (case_id,recipient_name,recipient_email,token_hash,shared_title,shared_description,shared_occurred_at,shared_production_title,expires_at,invited_by_user_id) VALUES (:case,:name,:email,:hash,:title,:description,:occurred,:production,:expiry,:actor)");
-            $stmt->execute(['case'=>$caseId,'name'=>$name,'email'=>$email,'hash'=>$hash,'title'=>$row['title'],'description'=>$description,'occurred'=>$row['occurred_at'],'production'=>$row['production_title'],'expiry'=>$expiry,'actor'=>(int)$actor['id']]);
+            $stmt->execute(['case'=>$caseId,'name'=>$name,'email'=>$email,'hash'=>$hash,'title'=>$publicTitle,'description'=>$description,'occurred'=>$row['occurred_at'],'production'=>$row['production_title'],'expiry'=>$expiry,'actor'=>(int)$actor['id']]);
             $id=(int)$db->lastInsertId();
             $body="CTSMD has requested your individual account of an incident.\n\nOpen your private statement form:\n".$link."\n\nThis link expires in ".$days." days. Please do not forward it. Your response will become read-only once submitted.\n\nIf you believe you received this request in error, contact CTSMD directly.\n\nChildren’s Theatre of Southern Maryland";
             // Avoid subject lines or email body revealing case names or confidential facts.
