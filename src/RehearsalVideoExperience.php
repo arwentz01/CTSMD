@@ -46,11 +46,19 @@ final class RehearsalVideoExperience
         self::page($db,$user,$production,$basePath);
     }
 
+    /** Shared authorization for a published video page and its stream. */
+    public static function canOpenVideo(PDO $db,array $user,array $video):bool
+    {
+        if(($video['status']??'')!=='active')return false;
+        return RehearsalVideoService::canView($db,$user,$video)
+            || RehearsalVideoService::canManage($user);
+    }
+
     private static function view(PDO $db,array $user,string $basePath):never
     {
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
         $video=RehearsalVideoService::record($db,(int)$id);
-        if(!$video||!RehearsalVideoService::canView($db,$user,$video)){
+        if(!$video||!self::canOpenVideo($db,$user,$video)){
             http_response_code(404);
             header('Content-Type: text/html; charset=utf-8');
             echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video unavailable · CTSMD</title><main style="max-width:40rem;margin:5rem auto;font:16px system-ui;padding:1rem"><h1>Video unavailable</h1><p>This video is archived or your account does not have access to it.</p><a href="/videos">Back to Video Library</a></main></html>';
@@ -72,7 +80,7 @@ final class RehearsalVideoExperience
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
         $video=RehearsalVideoService::record($db,(int)$id);
         if(!$video){http_response_code(404);exit;}
-        if(!RehearsalVideoService::canView($db,$user,$video)&&!(RehearsalVideoService::canManage($user)&&$video['status']==='active')){http_response_code(404);exit;}
+        if(!self::canOpenVideo($db,$user,$video)){http_response_code(404);exit;}
         RehearsalVideoService::stream($video);
     }
 
