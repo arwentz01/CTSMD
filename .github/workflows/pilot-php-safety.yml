@@ -34,6 +34,8 @@ jobs:
           set -euo pipefail
           find src tests -name '*.php' -type f -print0 | xargs -0 -n1 php -l
           php -l front.php
+      - name: Validate Video Library browser upload JavaScript
+        run: node --check assets/js/video-library-upload.js
       - name: Video Library permissions and storage-path regression
         run: php tests/pilot_video_privacy.php
       - name: Isolated pilot regressions (no database/network)
