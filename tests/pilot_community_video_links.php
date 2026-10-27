@@ -14,3 +14,12 @@ expectLink(CommunityExperience::renderPostBody('[Blocking](/videos/view?id=7)')=
 $unsafe=CommunityExperience::renderPostBody('[Click](https://example.com/videos/view?id=1) <script>alert(1)</script>');
 expectLink(!str_contains($unsafe,'<a class=')&&str_contains($unsafe,'&lt;script&gt;'),'external links and HTML remain non-executable');
 expectLink(RehearsalVideoExperience::handles('/videos/view'),'video detail route is recognized');
+
+$pdo=new class extends PDO {public function __construct() {}};
+$staff=['id'=>1,'role'=>'administrator','roles'=>['administrator'],'permissions'=>['production.manage']];
+$student=['id'=>2,'role'=>'student','roles'=>['student'],'permissions'=>[]];
+$restricted=['status'=>'active','audience_scope'=>'group','production_id'=>7,'group_id'=>123];
+expectLink(RehearsalVideoExperience::canOpenVideo($pdo,$staff,$restricted),'authorized staff can open group video without separate student roster membership');
+expectLink(!RehearsalVideoExperience::canOpenVideo($pdo,$staff,['status'=>'archived']+$restricted),'archived video remains unavailable from shared link');
+expectLink(RehearsalVideoExperience::canOpenVideo($pdo,$student,['status'=>'active','audience_scope'=>'platform']+$restricted),'student can open active organization-wide video');
+expectLink(!RehearsalVideoExperience::canOpenVideo($pdo,$student,['status'=>'archived','audience_scope'=>'platform']+$restricted),'student cannot open archived shared video');
