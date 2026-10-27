@@ -45,3 +45,10 @@
 .rl-upload-actions #rl-upload-cancel[hidden]{display:none}
 .rl-upload-actions #rl-upload-submit:disabled{opacity:.67;cursor:progress}
 @media(max-width:560px){.rl-upload-actions{flex-direction:column;align-items:stretch}.rl-upload-detail{flex-direction:column;gap:3px}}
+
+.rl-share-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:9px}
+.rl-share-actions a,.rl-share-actions button{font:inherit;font-size:12px;font-weight:700;color:#802741;border:1px solid #cdbfc5;background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer;text-decoration:none}
+.rl-share-actions a:hover,.rl-share-actions button:hover{background:#f8eef1}
+.rl-share-actions a:focus-visible,.rl-share-actions button:focus-visible{outline:2px solid #a6192e;outline-offset:2px}
+.rl-video-detail{max-width:850px;margin-inline:auto}
+.rl-video-detail .rl-card-actions video{width:100%}
