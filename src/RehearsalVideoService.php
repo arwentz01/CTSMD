@@ -121,8 +121,8 @@ final class RehearsalVideoService
         if(!self::canManage($actor))throw new RuntimeException('Production staff access required.');
         // Cleanup actions remain allowed after the production has finished.
 
-        $s=$db->prepare("UPDATE rehearsal_videos SET status=:status,archived_at=".($restore?'NULL':'CURRENT_TIMESTAMP')." WHERE id=:id AND production_id=:production");
-        $s->execute(['status'=>$restore?'active':'archived','id'=>$id,'production'=>$productionId]);
+        $s=$db->prepare("UPDATE rehearsal_videos SET status=:status,archived_at=".($restore?'NULL':'CURRENT_TIMESTAMP')." WHERE id=:id AND production_id <=> :production");
+        $s->execute(['status'=>$restore?'active':'archived','id'=>$id,'production'=>$productionId?:null]);
         if($s->rowCount()<1)throw new RuntimeException('Video is unavailable or already in that state.');
         self::audit($db,(int)$actor['id'],$restore?'rehearsal.video_restored':'rehearsal.video_archived',$id,$productionId);
     }
@@ -136,7 +136,7 @@ final class RehearsalVideoService
         if(!$record||($record['production_id']===null?0:(int)$record['production_id'])!==$productionId||$record['status']!=='archived')throw new RuntimeException('Archive the video before permanently deleting it.');
         $path=self::absolute($record['storage_key']);
         if(is_file($path)&&!unlink($path))throw new RuntimeException('Unable to remove the video from disk. Check permissions.');
-        $db->prepare("DELETE FROM rehearsal_videos WHERE id=:id AND production_id <=> :production AND status='archived'")->execute(['id'=>$id,'production'=>$productionId]);
+        $db->prepare("DELETE FROM rehearsal_videos WHERE id=:id AND production_id <=> :production AND status='archived'")->execute(['id'=>$id,'production'=>$productionId?:null]);
         self::audit($db,(int)$actor['id'],'rehearsal.video_deleted',$id,$productionId);
     }
 
