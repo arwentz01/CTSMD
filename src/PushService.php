@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/SafeguardedConversationPolicy.php';
+require_once __DIR__.'/SafeguardedNotificationPreference.php';
 require_once __DIR__.'/CommunicationReadStateService.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/ProductionContext.php';
@@ -54,6 +55,11 @@ final class PushService
                 }
             }
             if((string)$row['category']==='messages'&&(!preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)||!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id']))){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            // Honor guardian mute changes even for already queued conversation alerts.
+            if((string)$row['category']==='messages'&&preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$muteMatch)&&!SafeguardedNotificationPreference::alertsEnabled($db,(int)$row['user_id'],(int)$muteMatch[1])){
+                $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Safeguarded conversation alerts muted by guardian.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                continue;
+            }
             // A queued Community post may outlive a user's channel membership. Recheck
             // effective access just before delivery; failed lookups fail closed.
             if((string)$row['category']==='community'){
