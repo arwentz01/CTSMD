@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/MailService.php';
 require_once __DIR__ . '/AuditionIntakeBridge.php';
+require_once __DIR__ . '/PersonEligibility.php';
+require_once __DIR__ . '/Auth.php';
 
 final class RegistrationService
 {
@@ -31,6 +33,21 @@ final class RegistrationService
     {
         if(!in_array((string)($opportunity['opportunity_type']??''),self::CONNECT_PUBLIC_TYPES,true))throw new RuntimeException('This opportunity is not registered through CTSMD Connect.');
         $first=trim((string)($input['participant_first_name']??''));$last=trim((string)($input['participant_last_name']??''));$age=(string)($input['participant_age_group']??'');$email=strtolower(trim((string)($input['registrant_email']??'')));$phone=trim((string)($input['registrant_phone']??''));$guardianName=trim((string)($input['guardian_name']??''));$guardianEmail=strtolower(trim((string)($input['guardian_email']??'')));$guardianPhone=trim((string)($input['guardian_phone']??''));$notes=trim((string)($input['notes']??''));
+        $linkedStudentId=0;$guardianId=Auth::userId()?:0;
+        if(($opportunity['opportunity_type']??'')==='audition'&&$guardianId>0&&(int)($input['student_user_id']??0)>0){
+            $linkedStudentId=(int)$input['student_user_id'];
+            $child=$db->prepare("SELECT u.first_name,u.last_name,u.date_of_birth,g.email guardian_email,CONCAT(g.first_name,' ',g.last_name) guardian_name,g.contact_phone guardian_phone FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status='active' AND g.email_verified_at IS NOT NULL WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
+            $child->execute(['guardian'=>$guardianId,'student'=>$linkedStudentId]);$linked=$child->fetch(PDO::FETCH_ASSOC);
+            if(!$linked)throw new RuntimeException('The selected child is not linked to your verified guardian account.');
+            $assessment=PersonEligibility::evaluate($opportunity,$linked['date_of_birth']?:null);
+            if($assessment['status']==='ineligible')throw new RuntimeException('This child does not meet the age requirements for this audition.');
+            if($assessment['status']==='needs_review')throw new RuntimeException('Add your child’s date of birth before registering for this audition.');
+            $first=(string)$linked['first_name'];$last=(string)$linked['last_name'];
+            $asOf=PersonEligibility::cutoff($opportunity)?:date('Y-m-d');
+            if($linked['date_of_birth'])$age=PersonEligibility::group((string)$linked['date_of_birth'],$asOf);
+            $guardianEmail=mb_strtolower((string)$linked['guardian_email']);$guardianName=(string)$linked['guardian_name'];$guardianPhone=(string)($linked['guardian_phone']?:$phone);
+            $email=$guardianEmail;
+        }
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter the participant’s first and last name.');
         if(!in_array($age,['under_13','13_17','adult'],true))throw new RuntimeException('Choose the participant age group.');
         if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid contact email address.');
@@ -50,6 +67,7 @@ final class RegistrationService
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'registration.submitted','registration_submission',:id,:summary,:meta)");$audit->execute(['id'=>$id,'summary'=>'Received a public registration.','meta'=>json_encode(['opportunity_id'=>(int)$current['id'],'status'=>$status],JSON_THROW_ON_ERROR)]);
             $db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($e instanceof RuntimeException)throw $e;throw new RuntimeException('Registration could not be submitted. Please try again.');}
+        if($linkedStudentId>0){try{AuditionIntakeBridge::claimWithToken($db,$token,$guardianId,$linkedStudentId);}catch(Throwable $e){error_log('Audition account linkage after registration: '.$e->getMessage());}}
         self::queueConfirmation($db,$current,$first,$last,$email,$status,$token,$basePath);
         if($guardianEmail && $guardianEmail!==$email)self::queueConfirmation($db,$current,$first,$last,$guardianEmail,$status,$token,$basePath);
         return ['id'=>$id,'status'=>$status,'token'=>$token];
