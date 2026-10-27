@@ -10,7 +10,7 @@ require_once __DIR__.'/RehearsalVideoService.php';
 
 final class RehearsalVideoExperience
 {
-    public static function handles(string $route):bool{return in_array($route,['/production/rehearsal-library','/production/rehearsal-video'],true);}
+    public static function handles(string $route):bool{return in_array($route,['/videos','/videos/play','/videos','/production/rehearsal-video'],true);}
     public static function render(string $route,string $basePath):never
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));
@@ -18,7 +18,7 @@ final class RehearsalVideoExperience
         if(!$user){header('Location: '.($basePath?:'').'/login',true,303);exit;}
         $production=ProductionContext::selected($db,$user);
         $_SESSION['rehearsal_video_csrf']??=bin2hex(random_bytes(24));
-        if($route==='/production/rehearsal-video')self::play($db,$user,$production);
+        if(in_array($route,['/videos/play','/production/rehearsal-video'],true))self::play($db,$user,$production);
         if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$user,$production,$basePath);
         self::page($db,$user,$production,$basePath);
     }
@@ -38,7 +38,7 @@ final class RehearsalVideoExperience
     {
         if(!hash_equals((string)($_SESSION['rehearsal_video_csrf']??''),(string)($_POST['csrf_token']??''))){
             self::flash('error','Session expired. Reload and try again.');
-            self::redirect($basePath.'/production/rehearsal-library');
+            self::redirect($basePath.'/videos');
         }
         if(!RehearsalVideoService::canManage($user)){
             http_response_code(403);exit('Production staff access required.');
@@ -59,7 +59,7 @@ final class RehearsalVideoExperience
         }catch(Throwable $e){
             self::flash('error',$e instanceof RuntimeException?$e->getMessage():'Video action failed. Check server upload settings or storage permissions.');
         }
-        self::redirect($basePath.'/production/rehearsal-library');
+        self::redirect($basePath.'/videos');
     }
 
     private static function page(PDO $db,array $user,?array $production,string $basePath):never
@@ -71,7 +71,7 @@ final class RehearsalVideoExperience
         $usage=$production?RehearsalVideoService::usage($db,(int)$production['id']):['n'=>0,'bytes'=>0];
         $flash=$_SESSION['rehearsal_video_flash']??null;unset($_SESSION['rehearsal_video_flash']);
         header('Cache-Control: private, no-store');header('X-Robots-Tag: noindex,nofollow');header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Library · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/rehearsal-library.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production/rehearsal-library',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production','Video Library',$basePath,AppNavigation::productionSubnav('/production/rehearsal-library',$user));?><div class="rl-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Library · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/rehearsal-library.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/videos',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production','Video Library',$basePath,AppNavigation::productionSubnav('/videos',$user));?><div class="rl-page">
         <?php if($flash):?><div class="rl-flash <?=$e($flash['type'])?>" role="status"><?=$e($flash['message'])?></div><?php endif;?>
         <header class="rl-hero"><div><small>CTSMD MEDIA</small><h1>Video Library</h1><p><?=$production?$e($production['title']):'Select a current production'?> · Videos for all CTSMD members and production-specific rehearsal resources.</p></div><?php if($admin):?><button class="button" type="button" id="rl-upload-toggle" aria-expanded="false" aria-controls="rl-upload-form">+ Add video</button><?php endif;?></header>
         <?php if(!$production&&!$admin&&!$videos):?><div class="rl-empty">No videos are currently available for this account.</div><?php else:?>
@@ -85,7 +85,7 @@ final class RehearsalVideoExperience
         <section class="rl-list"><div class="rl-section-head"><h2>Videos</h2><small><?=count($videos)?> shown</small></div>
         <?php if(!$videos):?><div class="rl-empty">No rehearsal videos available yet.</div><?php endif;?>
         <?php foreach($videos as $video):?><article class="rl-card"><div class="rl-card-info"><small><?=$e(RehearsalVideoService::CATEGORIES[$video['category']]??$video['category'])?> · <?=$e($video['audience_scope']==='platform'?'All CTSMD members':($video['audience_scope']==='group'?($video['group_name']??'Production Group'):'Entire production'))?><?=$video['status']==='archived'?' · ARCHIVED':''?></small><h3><?=$e($video['title'])?></h3><?php if($video['description']):?><p><?=nl2br($e($video['description']))?></p><?php endif;?><span><?=RehearsalVideoService::humanSize((int)$video['byte_size'])?> · <?=$e(date('M j, Y',strtotime($video['created_at'])))?> · Uploaded by <?=$e($video['uploader']??'Production staff')?></span></div>
-        <div class="rl-card-actions"><?php if($video['status']==='active'):?><video controls playsinline preload="none" controlsList="nodownload" poster="" src="<?=$url('/production/rehearsal-video?id='.(int)$video['id'])?>" aria-label="<?=$e($video['title'])?>"></video><?php endif;?>
+        <div class="rl-card-actions"><?php if($video['status']==='active'):?><video controls playsinline preload="none" controlsList="nodownload" poster="" src="<?=$url('/videos/play?id='.(int)$video['id'])?>" aria-label="<?=$e($video['title'])?>"></video><?php endif;?>
         <?php if($admin):?><div class="rl-manage"><?php if($video['status']==='active'):?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="archive"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit">Archive</button></form><?php else:?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="restore"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit">Restore</button></form><form method="post" onsubmit="return confirm('Permanently delete this archived video file from Bluehost? This cannot be undone.');"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['rehearsal_video_csrf'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm_delete" value="DELETE"><input type="hidden" name="video_id" value="<?=(int)$video['id']?>"><input type="hidden" name="video_production_id" value="<?=(int)($video['production_id']??0)?>"><button type="submit" class="rl-danger">Delete from storage</button></form><?php endif;?></div><?php endif;?></div></article><?php endforeach;?></section>
         <?php endif;?></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script><script>(function(){const b=document.getElementById('rl-upload-toggle'),p=document.getElementById('rl-upload-form');if(b&&p)b.addEventListener('click',()=>{p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));if(!p.hidden)p.querySelector('input[name=title]').focus();const scope=document.getElementById('rl-audience-scope'),group=document.getElementById('rl-group-field'),gid=document.getElementById('rl-group-id');if(scope&&group&&gid){const sync=()=>{group.hidden=scope.value!=='group';gid.disabled=scope.value!=='group';gid.required=scope.value==='group'};scope.addEventListener('change',sync);sync();}});})();</script></body></html><?php exit;
     }
