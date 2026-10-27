@@ -36,18 +36,21 @@ final class ProductionFileExperience
 
         if ($route === '/files/download') self::download($db,$user);
 
-        $production = ProductionContext::selected($db,$user);
+        $memberProductions = $admin ? [] : ProductionContext::activeProductions($db,$user);
+        $production = $admin ? ProductionContext::selected($db,$user)
+            : ($memberProductions ? ['id'=>0,'title'=>'All your productions'] : null);
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $admin) self::handlePost($db,$user,$production,$route,$basePath);
 
         $id = filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT) ?: 0;
         $file = null;
         if ($id > 0 && in_array($route,['/files/view','/admin/files/edit'],true)) {
             $file = self::file($db,(int)$id);
-            if ($file && (!$production || (int)$file['production_id'] !== (int)$production['id'])) $file = null;
+            if ($file && $admin && (!$production || (int)$file['production_id'] !== (int)$production['id'])) $file = null;
             if ($file && !$admin && !self::canRead($db,$user,$file)) $file = null;
             if ($file) $file['versions'] = StorageService::versions($db,(int)$file['stored_file_id']);
         }
-        $files = $production ? self::files($db,$user,(int)$production['id'],$admin) : [];
+        $files = $admin ? ($production ? self::files($db,$user,(int)$production['id'],$admin) : [])
+            : self::filesAcrossProductions($db,$user,$memberProductions);
         self::page($route,$basePath,$user,$production,$files,$file,$admin);
     }
 
@@ -156,6 +159,26 @@ final class ProductionFileExperience
         StorageService::stream(dirname(__DIR__),$version,true);
     }
 
+    private static function filesAcrossProductions(PDO $db,array $user,array $productions):array
+    {
+        if(!$productions)return [];
+        $ids=array_values(array_unique(array_map(static fn(array $p):int=>(int)$p['id'],$productions)));
+        $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $stmt=$db->prepare("SELECT pf.*,p.title production_title,p.is_active production_active,
+            CONCAT(u.first_name,' ',u.last_name) creator,
+            v.id version_id,v.version_number,v.original_name,v.mime_type,v.byte_size,v.created_at version_created_at
+            FROM production_files pf
+            JOIN productions p ON p.id=pf.production_id AND p.is_active=1
+            LEFT JOIN users u ON u.id=pf.created_by_user_id
+            LEFT JOIN stored_file_versions v ON v.id=(SELECT v2.id FROM stored_file_versions v2
+                WHERE v2.stored_file_id=pf.stored_file_id ORDER BY v2.version_number DESC LIMIT 1)
+            WHERE pf.production_id IN ($placeholders) AND pf.status='active'
+            ORDER BY pf.pinned DESC,p.title,pf.category,pf.title");
+        $stmt->execute($ids);
+        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
+            static fn(array $row):bool=>self::canRead($db,$user,$row)));
+    }
+
     private static function files(PDO $db,array $user,int $productionId,bool $admin): array
     {
         $stmt = $db->prepare("SELECT pf.*,CONCAT(u.first_name,' ',u.last_name) creator,v.id version_id,v.version_number,v.original_name,v.mime_type,v.byte_size,v.created_at version_created_at FROM production_files pf LEFT JOIN users u ON u.id=pf.created_by_user_id LEFT JOIN stored_file_versions v ON v.id=(SELECT v2.id FROM stored_file_versions v2 WHERE v2.stored_file_id=pf.stored_file_id ORDER BY v2.version_number DESC LIMIT 1) WHERE pf.production_id=:production " . ($admin ? '' : "AND pf.status='active' ") . "ORDER BY pf.status='active' DESC,pf.pinned DESC,pf.category,pf.title");
@@ -181,15 +204,13 @@ final class ProductionFileExperience
         if (!ProductionContext::isActiveMember($db,(int)$user['id'],(int)$file['production_id'])) return false;
         $audiences = json_decode((string)$file['audiences_json'],true);
         if (!is_array($audiences) || !$audiences) return false;
-        $stmt = $db->prepare("SELECT audience_type FROM production_memberships WHERE production_id=:production AND user_id=:user AND status='active'");
-        $stmt->execute(['production'=>(int)$file['production_id'],'user'=>(int)$user['id']]);
-        $types = array_values(array_unique($stmt->fetchAll(PDO::FETCH_COLUMN)));
-        if (!$types) return false;
-        if (in_array('production_all',$audiences,true)) return true;
-        if (in_array('production_students',$audiences,true) && in_array('student',$types,true)) return true;
-        if (in_array('production_guardians',$audiences,true) && in_array('guardian',$types,true)) return true;
-        if (in_array('production_staff',$audiences,true) && in_array('staff',$types,true)) return true;
-        if (in_array('production_adults',$audiences,true) && !AccessPolicy::isStudent($user)) return true;
+        $role=ProductionContext::audienceType($db,(int)$user['id'],(int)$file['production_id']);
+        if($role===null)return false;
+        if(in_array('production_all',$audiences,true))return true;
+        if(in_array('production_students',$audiences,true)&&$role==='student')return true;
+        if(in_array('production_guardians',$audiences,true)&&$role==='guardian')return true;
+        if(in_array('production_staff',$audiences,true)&&$role==='staff')return true;
+        if(in_array('production_adults',$audiences,true)&&$role!=='student')return true;
         return false;
     }
 
@@ -214,7 +235,7 @@ final class ProductionFileExperience
         <?php elseif($admin && !$editing):?><section class="file-hero"><div><small><?= $e(strtoupper($production['title'])) ?> · PRIVATE FILE STORAGE</small><h2>Documents people can actually find.</h2><p>Files are stored privately and served only after CTSMD re-checks production and audience access.</p></div><a class="button" href="<?= $url('/admin/files/edit') ?>">Upload file</a></section><div class="file-list"><?php foreach($files as $row):?><a class="file-row<?= $row['status']==='archived'?' archived':'' ?>" href="<?= $url('/admin/files/edit?id='.(int)$row['id']) ?>"><div class="file-icon"><?= $e(strtoupper((string)pathinfo($row['original_name'] ?? 'FILE',PATHINFO_EXTENSION))) ?></div><div><small><?= $e(strtoupper($row['category'])) ?> · V<?= (int)$row['version_number'] ?></small><h3><?= $e($row['title']) ?></h3><p><?= $e($row['original_name'] ?? 'Stored file') ?> · <?= $e(StorageService::humanSize((int)($row['byte_size'] ?? 0))) ?></p></div><span><?= $row['status']==='active'?'Manage →':'Archived' ?></span></a><?php endforeach;?><?php if(!$files):?><section class="file-empty"><b>No production files yet.</b><p>Upload the first document, image, or reference file.</p></section><?php endif;?></div>
         <?php elseif($admin):?><?php if(!$file && filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)):?><section class="file-empty"><h2>File not found.</h2></section><?php else:$f=$file??['id'=>0,'title'=>'','category'=>'','description'=>'','audiences_json'=>'["production_all"]','pinned'=>0,'status'=>'active','versions'=>[]];?><section class="file-edit-head"><div><small><?= $file?'FILE SETTINGS':'NEW FILE' ?></small><h2><?= $file?$e($file['title']):'Upload production file' ?></h2><p><?= $file?'Uploading a replacement creates a new immutable version; old versions remain in history.':'Choose who can see the file before publishing it.' ?></p></div><a href="<?= $url('/admin/files') ?>">← File library</a></section><form class="file-form" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['file_library_csrf']) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="production_file_id" value="<?= (int)$f['id'] ?>"><label>Title<input name="title" maxlength="190" required value="<?= $e($f['title']) ?>"></label><div class="file-pair"><label>Category<input name="category" maxlength="100" required value="<?= $e($f['category']) ?>" placeholder="Rehearsal materials"></label><label>File <?= $file?'<span>optional replacement</span>':'' ?><input type="file" name="file_upload" <?= $file?'':'required' ?> accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.webp"></label></div><label>Description<textarea name="description" maxlength="500" rows="3"><?= $e((string)$f['description']) ?></textarea></label><fieldset><legend>Who can access this file?</legend><?php foreach(self::AUDIENCES as $key=>$label):?><label class="file-check"><input type="checkbox" name="audiences[]" value="<?= $e($key) ?>"<?= in_array($key,$selected,true)?' checked':'' ?>><span><?= $e($label) ?></span></label><?php endforeach;?></fieldset><label class="file-check"><input type="checkbox" name="pinned" value="1"<?= (bool)$f['pinned']?' checked':'' ?>><span>Pin near the top of the file library</span></label><button class="button" type="submit"><?= $file?'Save file':'Upload file' ?></button></form><?php if($file):?><section class="file-history"><header><div><small>VERSION HISTORY</small><h3><?= count($file['versions']) ?> stored version<?= count($file['versions'])===1?'':'s' ?></h3></div><form method="post"><input type="hidden" name="csrf_token" value="<?= $e((string)$_SESSION['file_library_csrf']) ?>"><input type="hidden" name="action" value="archive"><input type="hidden" name="production_file_id" value="<?= (int)$file['id'] ?>"><button type="submit"><?= $file['status']==='active'?'Archive file':'Restore file' ?></button></form></header><?php foreach($file['versions'] as $v):?><article><div><b>Version <?= (int)$v['version_number'] ?> · <?= $e($v['original_name']) ?></b><small><?= $e(StorageService::humanSize((int)$v['byte_size'])) ?> · <?= $e(date('M j, Y · g:i A',strtotime($v['created_at']))) ?><?= $v['uploader']?' · '.$e($v['uploader']):'' ?></small></div><a href="<?= $url('/files/download?id='.(int)$file['id'].'&version='.(int)$v['id']) ?>">Download</a></article><?php endforeach;?></section><?php endif;?><?php endif;?>
         <?php elseif($detail):?><?php if(!$file):?><section class="file-empty"><h2>File unavailable.</h2><p>It may be archived or outside your production access.</p></section><?php else:?><section class="file-detail"><small><?= $e(strtoupper($file['category'])) ?></small><h2><?= $e($file['title']) ?></h2><p><?= $e((string)$file['description']) ?></p><div class="file-current"><div class="file-icon large"><?= $e(strtoupper((string)pathinfo($file['original_name'] ?? 'FILE',PATHINFO_EXTENSION))) ?></div><div><b><?= $e($file['original_name']) ?></b><span>Version <?= (int)$file['version_number'] ?> · <?= $e(StorageService::humanSize((int)$file['byte_size'])) ?></span></div><a class="button" href="<?= $url('/files/download?id='.(int)$file['id']) ?>">Download</a></div><div class="file-audience"><?php foreach(self::labels((string)$file['audiences_json']) as $label):?><span><?= $e($label) ?></span><?php endforeach;?></div></section><?php endif;?>
-        <?php else:?><section class="file-hero"><div><small><?= $e(strtoupper($production['title'])) ?> · FILES</small><h2>Your production documents, without the scavenger hunt.</h2><p>Only files available to your production role appear here.</p></div></section><div class="file-list"><?php foreach($files as $row):?><a class="file-row" href="<?= $url('/files/view?id='.(int)$row['id']) ?>"><div class="file-icon"><?= $e(strtoupper((string)pathinfo($row['original_name'] ?? 'FILE',PATHINFO_EXTENSION))) ?></div><div><small><?= $e(strtoupper($row['category'])) ?></small><h3><?= $e($row['title']) ?></h3><p><?= $e($row['original_name'] ?? 'Stored file') ?> · <?= $e(StorageService::humanSize((int)($row['byte_size'] ?? 0))) ?></p></div><span>Open →</span></a><?php endforeach;?><?php if(!$files):?><section class="file-empty"><b>No files are available to you yet.</b></section><?php endif;?></div><?php endif;?>
+        <?php else:?><section class="file-hero"><div><small><?= $e(strtoupper($production['title'])) ?> · FILES</small><h2>Your production documents, without the scavenger hunt.</h2><p>Only files available to your production role appear here.</p></div></section><div class="file-list"><?php foreach($files as $row):?><a class="file-row" href="<?= $url('/files/view?id='.(int)$row['id']) ?>"><div class="file-icon"><?= $e(strtoupper((string)pathinfo($row['original_name'] ?? 'FILE',PATHINFO_EXTENSION))) ?></div><div><small><?= $e(strtoupper($row['category'])) ?><?php if(!empty($row['production_title'])):?> · <?= $e((string)$row['production_title']) ?><?php endif;?></small><h3><?= $e($row['title']) ?></h3><p><?= $e($row['original_name'] ?? 'Stored file') ?> · <?= $e(StorageService::humanSize((int)($row['byte_size'] ?? 0))) ?></p></div><span>Open →</span></a><?php endforeach;?><?php if(!$files):?><section class="file-empty"><b>No files are available to you yet.</b></section><?php endif;?></div><?php endif;?>
         </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script></body></html><?php exit;
     }
 
