@@ -166,38 +166,29 @@ final class ProductionContext
 
     public static function audienceType(PDO $db, int $userId, int $productionId): ?string
     {
-        if ($productionId < 1) return null;
-        $stmt = $db->prepare("SELECT pm.audience_type
-            FROM production_memberships pm
-            JOIN productions p ON p.id = pm.production_id
-            JOIN users u ON u.id = pm.user_id AND u.active = 1 AND u.account_status <> 'disabled'
-            WHERE pm.production_id = :production_id
-              AND pm.user_id = :user_id
-              AND pm.status = 'active'
-              AND p.is_active = 1
-              AND p.lifecycle_stage IN ('in_production','performing')
-              AND (
-                  pm.audience_type <> 'guardian'
-                  OR EXISTS (
-                      SELECT 1
-                      FROM family_relationships fr
-                      JOIN production_memberships spm
-                        ON spm.user_id=fr.student_user_id
-                       AND spm.audience_type='student'
-                       AND spm.status='active'
-                      JOIN users student
-                        ON student.id=spm.user_id
-                       AND student.active=1
-                       AND student.account_status<>'disabled'
-                      WHERE spm.production_id=pm.production_id
-                        AND fr.guardian_user_id=pm.user_id
-                        AND fr.status='active'
-                  )
-              )
-            ORDER BY FIELD(pm.audience_type,'staff','guardian','student')
-            LIMIT 1");
-        $stmt->execute(['production_id' => $productionId, 'user_id' => $userId]);
-        $value = $stmt->fetchColumn();
-        return $value !== false ? (string)$value : null;
+        if($productionId<1)return null;
+        // Direct staff/student roster entries take precedence; guardian eligibility
+        // is independently derived from active parent/guardian -> student links.
+        $direct=$db->prepare("SELECT pm.audience_type FROM production_memberships pm
+            JOIN productions p ON p.id=pm.production_id AND p.is_active=1
+            JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
+            WHERE pm.production_id=:production AND pm.user_id=:user AND pm.status='active'
+            AND pm.audience_type<>'guardian'
+            ORDER BY FIELD(pm.audience_type,'staff','student') LIMIT 1");
+        $direct->execute(['production'=>$productionId,'user'=>$userId]);
+        $type=$direct->fetchColumn();
+        if($type!==false)return (string)$type;
+        $guardian=$db->prepare("SELECT 1 FROM productions p
+            JOIN production_memberships child_pm ON child_pm.production_id=p.id
+                AND child_pm.audience_type='student' AND child_pm.status='active'
+            JOIN users student ON student.id=child_pm.user_id AND student.active=1
+                AND student.account_status<>'disabled'
+            JOIN family_relationships fr ON fr.student_user_id=student.id
+                AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+            JOIN users adult ON adult.id=fr.guardian_user_id AND adult.active=1
+                AND adult.account_status<>'disabled'
+            WHERE p.id=:production AND p.is_active=1 AND fr.guardian_user_id=:user LIMIT 1");
+        $guardian->execute(['production'=>$productionId,'user'=>$userId]);
+        return $guardian->fetchColumn()?'guardian':null;
     }
 }
