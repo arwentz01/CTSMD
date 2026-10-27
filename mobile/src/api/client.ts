@@ -64,7 +64,7 @@ export const markNotificationRead=(notification_id:number)=>api<{ok:boolean}>('n
 
 export type LibraryVideo={
  id:number;title:string;description:string|null;category:string;audience_scope:'platform'|'production'|'group';
- production_id:number|null;group_name:string|null;byte_size:number;created_at:string
+ production_id:number|null;production_title:string|null;group_name:string|null;byte_size:number;created_at:string
 };
 export const videoLibrary=()=>api<{videos:LibraryVideo[]}>('videos');
 export async function authorizedVideoSource(id:number){
