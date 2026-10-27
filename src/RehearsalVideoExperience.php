@@ -70,6 +70,7 @@ final class RehearsalVideoExperience
         $groups=$production&&$admin?RehearsalVideoService::groups($db,(int)$production['id']):[];
         $usage=$production?RehearsalVideoService::usage($db,(int)$production['id']):['n'=>0,'bytes'=>0];
         $globalUsage=$admin?RehearsalVideoService::platformUsage($db):['n'=>0,'bytes'=>0];
+        $totalUsage=$admin?RehearsalVideoService::totalUsage($db):['n'=>0,'bytes'=>0];
         $hosting=$admin?RehearsalVideoService::hostingLimits():null;
         $flash=$_SESSION['rehearsal_video_flash']??null;unset($_SESSION['rehearsal_video_flash']);
         header('Cache-Control: private, no-store');header('X-Robots-Tag: noindex,nofollow');header('Content-Type: text/html; charset=utf-8');
@@ -77,7 +78,7 @@ final class RehearsalVideoExperience
         <?php if($flash):?><div class="rl-flash <?=$e($flash['type'])?>" role="status"><?=$e($flash['message'])?></div><?php endif;?>
         <header class="rl-hero"><div><small>CTSMD MEDIA</small><h1>Video Library</h1><p><?=$production?$e($production['title']):'Select a current production'?> · Videos for all CTSMD members and production-specific rehearsal resources.</p></div><?php if($admin):?><button class="button" type="button" id="rl-upload-toggle" aria-expanded="false" aria-controls="rl-upload-form">+ Add video</button><?php endif;?></header>
         <?php if(!$production&&!$admin&&!$videos):?><div class="rl-empty">No videos are currently available for this account.</div><?php else:?>
-        <?php if($admin):?><div class="rl-usage"><span><b><?=count($videos)?> available entries</b></span><span><b><?=RehearsalVideoService::humanSize((int)$usage['bytes'])?></b> stored for selected production</span><span><b><?=RehearsalVideoService::humanSize((int)$globalUsage['bytes'])?></b> CTSMD-wide videos</span><small>Bluehost private storage: <code>storage/private/rehearsal-videos/<?=$production?(int)$production['id'].'-'.$e(preg_replace('/[^a-z0-9]+/i','-',strtolower($production['title']))):'ctsmd-platform'?>/</code>. Organization videos are in <code>ctsmd-platform/</code>. Archived videos still use disk space.</small></div>
+        <?php if($admin):?><div class="rl-usage"><span><b><?=count($videos)?> available entries</b></span><span><b><?=RehearsalVideoService::humanSize((int)$usage['bytes'])?></b> stored for selected production</span><span><b><?=RehearsalVideoService::humanSize((int)$globalUsage['bytes'])?></b> CTSMD-wide videos</span><span><b><?=RehearsalVideoService::humanSize((int)$totalUsage['bytes'])?></b> all videos stored</span><small>Bluehost private storage: <code>storage/private/rehearsal-videos/<?=$production?(int)$production['id'].'-'.$e(preg_replace('/[^a-z0-9]+/i','-',strtolower($production['title']))):'ctsmd-platform'?>/</code>. Organization videos are in <code>ctsmd-platform/</code>. Archived videos still use disk space. These numbers do not include other Bluehost files, email or databases.</small></div>
         <section class="rl-upload" id="rl-upload-form" hidden><h2>Upload video</h2><p>Available to all production staff. Upload an MP4 (recommended), WebM or MOV. Bluehost PHP upload limits also apply.</p>
         <?php if($hosting):?><div class="rl-hosting-limits" role="note">
           <strong>Current server upload allowance: <?=RehearsalVideoService::humanSize((int)$hosting['effective_bytes'])?> per video</strong>
