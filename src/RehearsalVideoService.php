@@ -173,7 +173,12 @@ final class RehearsalVideoService
         self::assertPrivateStorage();
         $path=self::absolute((string)$video['storage_key']);
         if(!is_file($path)||!is_readable($path)){http_response_code(404);exit('Video not available');}
-        $size=filesize($path);$start=0;$end=$size-1;$status=200;
+        $size=filesize($path);
+        if($size===false||$size<1){http_response_code(404);exit('Video not available');}
+        // A browser can navigate CTSMD during playback; do not hold its session lock
+        // while streaming hundreds of MB through a shared-host PHP worker.
+        if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
+        $start=0;$end=$size-1;$status=200;
         header('Content-Type: '.$video['mime_type']);
         header('Accept-Ranges: bytes');
         header('Cache-Control: private, no-store, max-age=0');
@@ -182,7 +187,7 @@ final class RehearsalVideoService
         $range=(string)($_SERVER['HTTP_RANGE']??'');
         if($range!==''){
             if(!preg_match('/^bytes=(\\d*)-(\\d*)$/D',$range,$m)||($m[1]===''&&$m[2]==='')){header('Content-Range: bytes */'.$size);http_response_code(416);exit;}
-            if($m[1]===''){$length=(int)$m[2];$start=max(0,$size-$length);}
+            if($m[1]===''){$length=(int)$m[2];if($length<1){header('Content-Range: bytes */'.$size);http_response_code(416);exit;}$start=max(0,$size-$length);}
             else{$start=(int)$m[1];if($m[2]!=='')$end=min($end,(int)$m[2]);}
             if($start>$end||$start >= $size){header('Content-Range: bytes */'.$size);http_response_code(416);exit;}
             $status=206;header('Content-Range: bytes '.$start.'-'.$end.'/'.$size);
