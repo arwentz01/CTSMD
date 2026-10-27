@@ -1,8 +1,20 @@
 SET NAMES utf8mb4;
 
 -- Staff-controlled, recipient-safe narrative; never reuse the private case summary.
-ALTER TABLE safeguarding_cases
-  ADD COLUMN shared_incident_description TEXT NULL AFTER summary;
+SET @ctsmd_shared_description_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'safeguarding_cases'
+    AND COLUMN_NAME = 'shared_incident_description'
+);
+SET @ctsmd_statement_description_ddl = IF(
+  @ctsmd_shared_description_exists = 0,
+  'ALTER TABLE safeguarding_cases ADD COLUMN shared_incident_description TEXT NULL AFTER summary',
+  'SELECT 1'
+);
+PREPARE ctsmd_statement_description_stmt FROM @ctsmd_statement_description_ddl;
+EXECUTE ctsmd_statement_description_stmt;
+DEALLOCATE PREPARE ctsmd_statement_description_stmt;
 
 -- One request / one immutable submitted statement. This is a child entity of a case,
 -- not another generic forms system or a separate table per migration.
