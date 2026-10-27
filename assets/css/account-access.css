@@ -22,3 +22,38 @@
 .acct-view-links a{display:inline-flex;align-items:center;min-height:36px}
 @media(max-width:1050px){.acct-search{grid-template-columns:1fr minmax(100px,max-content)}.acct-search label{grid-column:1/-1}.acct-search input{grid-column:1}.acct-search small{grid-column:2;align-self:center}}
 @media(max-width:600px){.acct-search{grid-template-columns:1fr;gap:9px}.acct-search label,.acct-search input,.acct-search small{grid-column:1}.acct-search small{text-align:left}.acct-view-links{align-items:flex-start}}
+
+
+/* B2 Warm Backstage — compact account detail editor; scoped away from other admin forms. */
+.acct-contact-panel{padding:16px 20px;margin:0;display:grid;gap:12px}
+.acct-contact-heading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:5px 18px;margin:0}
+.acct-contact-heading small{display:block;color:var(--brand-primary,#a6192e);font-size:10px;font-weight:800;letter-spacing:.075em}
+.acct-contact-heading h3{margin:2px 0 0;font-size:18px;line-height:1.22}
+.acct-contact-heading p{margin:0;font-size:12px;line-height:1.4;color:var(--text-muted,#6f6872)}
+.acct-panel .acct-contact-form{display:grid;gap:10px;margin:0}
+.acct-contact-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:9px 12px;align-items:start}
+.acct-contact-grid .acct-contact-field{min-width:0;display:grid;gap:4px;font-size:12px;font-weight:700;line-height:1.3}
+.acct-contact-grid .acct-contact-field input{min-width:0;width:100%;height:36px;min-height:36px;padding:7px 10px;font-size:13px;border-radius:8px}
+.acct-c-first,.acct-c-last,.acct-c-dob,.acct-c-phone{grid-column:span 3}
+.acct-c-street{grid-column:span 4}
+.acct-c-line2,.acct-c-city,.acct-c-state,.acct-c-zip{grid-column:span 2}
+.acct-contact-actions{display:flex;justify-content:flex-end;align-items:center}
+.acct-panel .acct-contact-actions button{width:auto;min-width:142px;min-height:36px;padding:8px 16px;font-size:13px;border-radius:8px}
+@media(max-width:1250px){
+  .acct-c-first,.acct-c-last,.acct-c-dob,.acct-c-phone{grid-column:span 6}
+  .acct-c-street,.acct-c-line2{grid-column:span 6}
+  .acct-c-city,.acct-c-state,.acct-c-zip{grid-column:span 4}
+}
+@media(max-width:650px){
+  .acct-contact-panel{padding:16px}
+  .acct-contact-grid{gap:10px}
+  .acct-c-first,.acct-c-last,.acct-c-dob,.acct-c-phone,.acct-c-street,.acct-c-line2{grid-column:span 6}
+  .acct-c-city{grid-column:span 6}
+  .acct-c-state,.acct-c-zip{grid-column:span 3}
+  .acct-contact-heading p{flex-basis:100%}
+}
+@media(max-width:430px){
+  .acct-contact-grid .acct-contact-field{grid-column:span 12}
+  .acct-c-state,.acct-c-zip{grid-column:span 6!important}
+  .acct-contact-actions button{width:100%!important}
+}
