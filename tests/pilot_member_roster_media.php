@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__).'/src/ProductionContext.php';
 require_once dirname(__DIR__).'/src/RehearsalVideoService.php';
+require_once dirname(__DIR__).'/src/RehearsalVideoExperience.php';
 
 function assertRoster(bool $value,string $label):void{
     if(!$value)throw new RuntimeException('Member roster visibility: '.$label);
@@ -54,3 +55,5 @@ assertRoster(array_column($videos,'id')===[3,2,1],'aggregated video list is dedu
 $guard=['id'=>432,'role'=>'guardian','roles'=>['guardian'],'permissions'=>[]];
 ProductionContext::clearRequestCache();
 assertRoster(count(ProductionContext::activeProductions($db,$guard))===2,'guardian also resolves combined roster access');
+
+assertRoster(RehearsalVideoExperience::handles('/videos'),'video route remains registered');
