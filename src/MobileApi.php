@@ -128,7 +128,7 @@ final class MobileApi
 
     private static function videoPlay(PDO $db,array $user):never
     {
-        self::requireMethod('GET');
+        if(!in_array((string)($_SERVER['REQUEST_METHOD']??'GET'),['GET','HEAD'],true))self::json(['error'=>'Method not allowed.'],405);
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
         $video=RehearsalVideoService::record($db,(int)$id);
         if(!$video||$video['status']!=='active'){self::json(['error'=>'Video unavailable.'],404);}
