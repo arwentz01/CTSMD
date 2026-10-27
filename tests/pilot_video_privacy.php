@@ -49,3 +49,9 @@ foreach(['../../.env','rehearsal-videos/ctsmd-platform/2026/../../.env','rehears
     catch(RuntimeException $e){if(str_starts_with($e->getMessage(),'Unsafe path accepted'))throw $e;}
 }
 videoAssert(true,'path traversal and disallowed extensions rejected');
+
+$limits=RehearsalVideoService::hostingLimits();
+videoAssert(isset($limits['effective_bytes'])&&is_int($limits['effective_bytes'])&&$limits['effective_bytes']>=0,'hosting diagnostics report effective byte limits');
+$logAudit=new ReflectionMethod(RehearsalVideoService::class,'audit');
+$logAudit->invoke(null,$db,77,'rehearsal.video_uploaded',15,null);
+videoAssert(true,'CTSMD-wide uploads support a null production ID in audit events');
