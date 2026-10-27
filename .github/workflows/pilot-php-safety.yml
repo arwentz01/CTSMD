@@ -36,6 +36,8 @@ jobs:
           php -l front.php
       - name: Validate Video Library browser upload JavaScript
         run: node --check assets/js/video-library-upload.js
+      - name: Member roster aggregation and cross-production videos
+        run: php tests/pilot_member_roster_media.php
       - name: Video Library permissions and storage-path regression
         run: php tests/pilot_video_privacy.php
       - name: Isolated pilot regressions (no database/network)
