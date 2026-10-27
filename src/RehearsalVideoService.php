@@ -154,6 +154,12 @@ final class RehearsalVideoService
      * Upload diagnostics for staff. Filesystem free bytes are informational only:
      * shared Bluehost account quotas may be lower than the volume's free space.
      */
+    public static function totalUsage(PDO $db):array
+    {
+        $result=$db->query('SELECT COUNT(*) n,COALESCE(SUM(byte_size),0) bytes FROM rehearsal_videos');
+        return $result->fetch(PDO::FETCH_ASSOC)?:['n'=>0,'bytes'=>0];
+    }
+
     public static function hostingLimits():array
     {
         $parse=static function(string $value):int{
