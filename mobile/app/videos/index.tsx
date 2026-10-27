@@ -2,9 +2,9 @@ import React,{useEffect,useState} from 'react';
 import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Screen} from '../src/components/Screen';
-import {colors} from '../src/theme/colors';
-import {videoLibrary,type LibraryVideo} from '../src/api/client';
+import {Screen} from '../../src/components/Screen';
+import {colors} from '../../src/theme/colors';
+import {videoLibrary,type LibraryVideo} from '../../src/api/client';
 
 export default function Videos(){
  const [items,setItems]=useState<LibraryVideo[]>([]);
