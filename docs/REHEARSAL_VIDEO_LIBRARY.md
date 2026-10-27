@@ -108,3 +108,15 @@ The staff upload form at `/videos` now sends multipart uploads via `XMLHttpReque
 The form disables edits to avoid duplicate sends while in flight, provides **Cancel upload**, restores the form after a failed upload, and shows actionable messages for rejected files, network errors, upload limits and timeouts. Server-side CSRF, permission, upload-type and size checks remain authoritative. Without JavaScript the standard POST-and-flash flow remains supported.
 
 This does not introduce chunked or resumable uploads. Cancelling or closing the browser while the server is finalizing may not undo processing already underway; check the library before retrying an uncertain upload. The transfer percentage is client-reported and does not measure Bluehost's remaining processing time. Test this specifically with realistic ~50–200 MB files and a deliberately slow connection.
+
+## Member experience — all rostered productions (October 27, 2026)
+
+**Core architecture rule:** Staff manage an explicitly selected production. Students and parents/guardians must instead see one combined member experience for *every current show in their roster*, regardless of the production selected in a staff session. No member-facing production switcher or hidden active-production filter.
+
+The web Video Library and native `/api/mobile/videos` now list organization-wide content plus videos from all productions returned by `ProductionContext::activeProductions` for the signed-in Student or guardian. Results include the originating production title so identical rehearsal titles are distinguishable. Browser and native playback authorization no longer require the video to match the selected staff production; access is checked against its actual assigned production and group.
+
+`ProductionContext::activeProductions`, `isActiveMember`, `userHasActiveProduction`, and `audienceType` now recognize directly rostered users and active parent/guardian relationships to rostered Students without requiring a redundant guardian production membership. Lifecycle stage changes (e.g. planning → in-production) must not hide an otherwise current and active roster entry. Inactive productions remain outside current-member views; historical productions belong in Archive.
+
+The shared calendar already aggregated `activeProductions`; its schedule audience check now resolves guardian role from the active child-roster relationship. Form/task/resource screens should follow this same contract and be rechecked during the pilot. Do not treat selected staff context as the member's production filter.
+
+**Required live integration testing:** Student simultaneously rostered for two productions; parent of children on different productions; guardian who has no direct production membership; staged/planning production; group-scoped video with an active guardian; former guardian and removed Student (must lose new access); archived production (not in current member views). Confirm consolidated schedule and action items across these cases.
