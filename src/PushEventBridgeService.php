@@ -6,6 +6,7 @@ require_once __DIR__.'/PushService.php';
 require_once __DIR__.'/CommunicationReadStateService.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/SafeguardedConversationPolicy.php';
+require_once __DIR__.'/SafeguardedNotificationPreference.php';
 
 final class PushEventBridgeService
 {
@@ -23,7 +24,7 @@ final class PushEventBridgeService
         $cursor=self::cursor($db,'messages');
         $s=$db->prepare("SELECT m.id,m.conversation_id,m.sender_user_id,c.subject,CONCAT(u.first_name,' ',u.last_name) sender FROM messages m JOIN conversations c ON c.id=m.conversation_id JOIN users u ON u.id=m.sender_user_id WHERE m.id>:cursor AND m.hidden_at IS NULL ORDER BY m.id LIMIT 250");
         $s->execute(['cursor'=>$cursor]);$count=0;$last=$cursor;
-        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$p=$db->prepare("SELECT cp.user_id FROM conversation_participants cp JOIN users recipient ON recipient.id=cp.user_id AND recipient.active=1 AND recipient.account_status='active' WHERE cp.conversation_id=:conversation AND cp.user_id<>:sender AND cp.access_revoked_at IS NULL");$p->execute(['conversation'=>$row['conversation_id'],'sender'=>$row['sender_user_id']]);foreach($p->fetchAll(PDO::FETCH_COLUMN) as $recipient){if(!SafeguardedConversationPolicy::canReceiveLive($db,(int)$row['conversation_id'],(int)$recipient))continue;$id=PushService::queue($db,(int)$recipient,'messages','New message from '.$row['sender'],(string)($row['subject']?:'CTSMD conversation'),'/messages/thread?id='.(int)$row['conversation_id'],'normal','msg-'.$row['conversation_id'],'message-'.$row['id'].'-user-'.$recipient);if($id)$count++;}}
+        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$p=$db->prepare("SELECT cp.user_id FROM conversation_participants cp JOIN users recipient ON recipient.id=cp.user_id AND recipient.active=1 AND recipient.account_status='active' WHERE cp.conversation_id=:conversation AND cp.user_id<>:sender AND cp.access_revoked_at IS NULL");$p->execute(['conversation'=>$row['conversation_id'],'sender'=>$row['sender_user_id']]);foreach($p->fetchAll(PDO::FETCH_COLUMN) as $recipient){if(!SafeguardedConversationPolicy::canReceiveLive($db,(int)$row['conversation_id'],(int)$recipient))continue;if(!SafeguardedNotificationPreference::alertsEnabled($db,(int)$recipient,(int)$row['conversation_id']))continue;$id=PushService::queue($db,(int)$recipient,'messages','New message from '.$row['sender'],(string)($row['subject']?:'CTSMD conversation'),'/messages/thread?id='.(int)$row['conversation_id'],'normal','msg-'.$row['conversation_id'],'message-'.$row['id'].'-user-'.$recipient);if($id)$count++;}}
         if($last>$cursor)self::advance($db,'messages',$last);return$count;
     }
 
@@ -40,7 +41,7 @@ final class PushEventBridgeService
     {
         $cursor=self::cursor($db,'app_notifications');
         $s=$db->prepare("SELECT n.id,n.recipient_user_id,n.title,n.body,n.action_path FROM app_notifications n JOIN users recipient ON recipient.id=n.recipient_user_id AND recipient.active=1 AND recipient.account_status='active' WHERE n.id>:cursor ORDER BY n.id LIMIT 250");$s->execute(['cursor'=>$cursor]);$count=0;$last=$cursor;
-        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$path=(string)($row['action_path']??'');$category=match(true){str_starts_with($path,'/calendar'),str_starts_with($path,'/schedule'),str_starts_with($path,'/production')=>'schedule',str_starts_with($path,'/forms')=>'forms',str_starts_with($path,'/volunteer')=>'volunteer',str_starts_with($path,'/channels')=>'community',str_starts_with($path,'/messages')=>'messages',default=>'general'};$id=PushService::queue($db,(int)$row['recipient_user_id'],$category,(string)$row['title'],mb_substr(trim(strip_tags((string)$row['body'])),0,240),$path?:'/notifications',$category==='schedule'?'high':'normal','notice-'.$row['id'],'notification-'.$row['id']);if($id)$count++;}
+        foreach($s->fetchAll() as $row){$last=max($last,(int)$row['id']);$path=(string)($row['action_path']??'');$category=match(true){str_starts_with($path,'/calendar'),str_starts_with($path,'/schedule'),str_starts_with($path,'/production')=>'schedule',str_starts_with($path,'/forms')=>'forms',str_starts_with($path,'/volunteer')=>'volunteer',str_starts_with($path,'/channels')=>'community',str_starts_with($path,'/messages')=>'messages',default=>'general'};if($category==='messages'&&preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',$path,$m)&&!SafeguardedNotificationPreference::alertsEnabled($db,(int)$row['recipient_user_id'],(int)$m[1]))continue;$id=PushService::queue($db,(int)$row['recipient_user_id'],$category,(string)$row['title'],mb_substr(trim(strip_tags((string)$row['body'])),0,240),$path?:'/notifications',$category==='schedule'?'high':'normal','notice-'.$row['id'],'notification-'.$row['id']);if($id)$count++;}
         if($last>$cursor)self::advance($db,'app_notifications',$last);return$count;
     }
 
