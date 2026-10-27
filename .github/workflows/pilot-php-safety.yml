@@ -38,6 +38,8 @@ jobs:
         run: node --check assets/js/video-library-upload.js
       - name: Member roster aggregation and cross-production videos
         run: php tests/pilot_member_roster_media.php
+      - name: Named video links in Community posts
+        run: php tests/pilot_community_video_links.php
       - name: Video Library permissions and storage-path regression
         run: php tests/pilot_video_privacy.php
       - name: Isolated pilot regressions (no database/network)
