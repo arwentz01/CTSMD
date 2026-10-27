@@ -61,3 +61,14 @@ export const productionCasting=(productionId:number)=>api<{cast:PublishedCasting
 export type MobileNotification={id:number;source_type:string;source_id:number|null;title:string;body:string;action_path:string|null;read_at:string|null;created_at:string};
 export const notifications=()=>api<{notifications:MobileNotification[];unread_count:number}>('notifications');
 export const markNotificationRead=(notification_id:number)=>api<{ok:boolean}>('notification-read',{method:'POST',body:{notification_id}});
+
+export type LibraryVideo={
+ id:number;title:string;description:string|null;category:string;audience_scope:'platform'|'production'|'group';
+ production_id:number|null;group_name:string|null;byte_size:number;created_at:string
+};
+export const videoLibrary=()=>api<{videos:LibraryVideo[]}>('videos');
+export async function authorizedVideoSource(id:number){
+ const token=await readToken();
+ if(!token)throw new ApiError('Sign in to watch videos.',401);
+ return {uri:BASE+'/api/mobile/video-play?id='+encodeURIComponent(String(id)),headers:{Authorization:'Bearer '+token},useCaching:false};
+}
