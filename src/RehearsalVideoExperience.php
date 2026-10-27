@@ -13,6 +13,26 @@ final class RehearsalVideoExperience
     public static function handles(string $route):bool{return in_array($route,['/videos','/videos/play','/videos/archive-download','/videos/inventory','/production/rehearsal-library','/production/rehearsal-video'],true);}
     public static function render(string $route,string $basePath):never
     {
+        try{
+            self::renderAuthorized($route,$basePath);
+        }catch(Throwable $error){
+            // Log detailed failure only on the server; never expose SQL or paths
+            // in the student/guardian browser. A short reference makes it findable.
+            $reference=bin2hex(random_bytes(5));
+            error_log('[CTSMD Video Library '.$reference.'] '.$error::class.': '.$error->getMessage().' at '.$error->getFile().':'.$error->getLine().' route='.$route);
+            if(!headers_sent()){
+                http_response_code(500);
+                header('Content-Type: text/html; charset=utf-8');
+                header('Cache-Control: no-store');
+            }
+            $ref=htmlspecialchars($reference,ENT_QUOTES,'UTF-8');
+            echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Library temporarily unavailable</title></head><body style="font:16px system-ui,sans-serif;margin:8vh auto;max-width:540px;padding:20px"><h1>Video Library could not load</h1><p>Your account has not lost access. A server error prevented the library from opening.</p><p>Please give CTSMD support this error reference: <strong>'.$ref.'</strong></p><p><a href="/my-theatre">Back to My Theatre</a></p></body></html>';
+            exit;
+        }
+    }
+
+    private static function renderAuthorized(string $route,string $basePath):never
+    {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));
         $user=Auth::currentUser($db);
         if(!$user){header('Location: '.($basePath?:'').'/login',true,303);exit;}
