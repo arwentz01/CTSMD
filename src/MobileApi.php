@@ -52,6 +52,13 @@ final class MobileApi
             if($caregiverOnly && !in_array($route,['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
+            // Mirror the web membership gate: a pending account without an active
+            // production must not gain access to organization-wide video content.
+            if(in_array($route,['/api/mobile/videos','/api/mobile/video-play'],true)
+               &&!Auth::isApprovedMember($user)
+               &&!ProductionContext::activeProductions($db,$user)){
+                self::json(['error'=>'Video Library access requires approved membership or active production participation.'],403);
+            }
             match ($route) {
                 '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
                 '/api/mobile/my-family' => self::myFamily($db, $user),
