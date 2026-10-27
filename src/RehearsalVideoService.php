@@ -210,7 +210,7 @@ final class RehearsalVideoService
         $v=strtolower(trim(preg_replace('/[^a-z0-9]+/i','-',$value)??'','-'));
         return mb_substr($v!==''?$v:'production',0,54);
     }
-    private static function audit(PDO $db,int $user,string $event,int $id,int $production):void
+    private static function audit(PDO $db,int $user,string $event,int $id,?int $production):void
     {
         $s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:user,:event,'rehearsal_video',:id,'Rehearsal video library action.',:meta)");
         $s->execute(['user'=>$user,'event'=>$event,'id'=>$id,'meta'=>json_encode(['production_id'=>$production],JSON_THROW_ON_ERROR)]);
