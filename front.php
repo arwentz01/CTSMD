@@ -110,7 +110,7 @@ $experienceRoutes=[
     ['LatePickupExperience',['/production/late-pickups'],'base'],
     ['ScheduleCreateExperience',['/production/schedule/new'],'route'],
     ['ScheduleNoticeExperience',['/production/notices','/production/notice'],'route'],
-    ['RehearsalVideoExperience',['/production/rehearsal-library','/production/rehearsal-video'],'route'],
+    ['RehearsalVideoExperience',['/videos','/videos/play','/production/rehearsal-library','/production/rehearsal-video'],'route'],
     ['ProductionFileExperience',['/files','/files/view','/files/download','/admin/files','/admin/files/edit'],'route'],
     ['ResourceExperience',['/resources','/resources/view','/admin/resources','/admin/resources/edit'],'route'],
     ['Playbill2Experience',['/playbill','/playbill/asset','/playbill/qr','/playbill/sign','/admin/playbill/media'],'route'],
