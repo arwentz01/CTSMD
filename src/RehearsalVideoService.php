@@ -150,6 +150,28 @@ final class RehearsalVideoService
         $s->execute(['production'=>$productionId]);return $s->fetch(PDO::FETCH_ASSOC)?:['n'=>0,'bytes'=>0];
     }
 
+    /**
+     * Upload diagnostics for staff. Filesystem free bytes are informational only:
+     * shared Bluehost account quotas may be lower than the volume's free space.
+     */
+    public static function hostingLimits():array
+    {
+        $parse=static function(string $value):int{
+            $value=trim($value);
+            if($value==='')return 0;
+            if(!preg_match('/^([0-9]+(?:\\.[0-9]+)?)\\s*([KMG]?)B?$/i',$value,$matches))return (int)$value;
+            $factor=match(strtoupper($matches[2])){'G'=>1073741824,'M'=>1048576,'K'=>1024,default=>1};
+            return (int)floor((float)$matches[1]*$factor);
+        };
+        $phpUpload=$parse((string)ini_get('upload_max_filesize'));
+        $phpPost=$parse((string)ini_get('post_max_size'));
+        $appMax=max(1,min(1024,(int)(getenv('CTSMD_VIDEO_MAX_MB')?:200)))*1048576;
+        $effective=min($appMax,$phpUpload>0?$phpUpload:$appMax,$phpPost>0?max(0,$phpPost-1048576):$appMax);
+        $storage=dirname(__DIR__).'/storage/private';
+        $free=is_dir($storage)?@disk_free_space($storage):false;
+        return ['app_bytes'=>$appMax,'php_upload_bytes'=>$phpUpload,'php_post_bytes'=>$phpPost,'effective_bytes'=>$effective,'volume_free_bytes'=>$free===false?null:(int)$free];
+    }
+
     public static function platformUsage(PDO $db):array
     {
         $s=$db->query("SELECT COUNT(*) n,COALESCE(SUM(byte_size),0) bytes FROM rehearsal_videos WHERE audience_scope='platform'");
