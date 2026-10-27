@@ -118,31 +118,11 @@ final class ProductionContext
 
     public static function isActiveMember(PDO $db, int $userId, int $productionId): bool
     {
-        if($productionId<1)return false;
-        $stmt=$db->prepare("SELECT 1 FROM productions p WHERE p.id=:production_id AND p.is_active=1
-           AND (EXISTS (
-               SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id
-                 AND pm.user_id=:user_id AND pm.status='active'
-                 AND (pm.audience_type<>'guardian' OR EXISTS (
-                    SELECT 1 FROM family_relationships fr
-                    JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id
-                      AND cpm.production_id=p.id AND cpm.audience_type='student' AND cpm.status='active'
-                    JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                      AND child.account_status<>'disabled'
-                    WHERE fr.guardian_user_id=:guardian AND fr.status='active'
-                      AND fr.relationship_type IN ('parent','guardian')
-                 ))
-           ) OR EXISTS (
-               SELECT 1 FROM family_relationships fr
-               JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id
-                 AND cpm.production_id=p.id AND cpm.audience_type='student' AND cpm.status='active'
-               JOIN users child ON child.id=fr.student_user_id AND child.active=1
-                 AND child.account_status<>'disabled'
-               WHERE fr.guardian_user_id=:family AND fr.status='active'
-                 AND fr.relationship_type IN ('parent','guardian')
-           )) LIMIT 1");
-        $stmt->execute(['production_id'=>$productionId,'user_id'=>$userId,'guardian'=>$userId,'family'=>$userId]);
-        return (bool)$stmt->fetchColumn();
+        // Use the exact same active student/guardian roster policy as schedules,
+        // files and resources. The previous correlated JOIN referred to p.id
+        // from an inner ON clause, which MySQL rejects during PDO::prepare().
+        if($productionId<1||$userId<1)return false;
+        return self::audienceType($db,$userId,$productionId)!==null;
     }
 
     public static function audienceType(PDO $db, int $userId, int $productionId): ?string
