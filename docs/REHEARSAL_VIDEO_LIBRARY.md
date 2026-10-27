@@ -88,3 +88,15 @@ Production videos continue to use the production-ID and name folder structure. T
 Known V1 limitations: one target group per video, no automatic compression or upload progress recovery, and organization-wide content is visible to all eligible CTSMD accounts rather than anonymously to the internet. This is not public video hosting.
 
 **Release testing additions:** check accounts with no current production can still find and watch organization videos; verify whole-production content is inaccessible to other shows; group-specific videos are hidden from unrelated Students and former guardians; confirm SQL 092 applies after 091 without changing older group assignments; verify archive/restore/delete on NULL-production organization videos. These changes are committed but not runtime-verified.
+
+## Bluehost storage export and archive operations
+
+A staff-only Video Library storage summary now shows per-production video counts, stored bytes, and archived bytes. The totals are based on database records rather than scanning the physical disk. Archived videos continue consuming space until permanently deleted.
+
+- **Download original** appears alongside staff controls on both active and archived videos. It uses `/videos/archive-download?id=<id>`, verifies the staff account and selected production context before streaming, and responds with an attachment filename derived from the identifiable private file path. Students and guardians cannot use this archive download.
+- **Export inventory CSV** uses `/videos/inventory` for authorized staff and lists all productions and CTSMD-wide videos, including relative storage keys, creation timestamps, statuses, size and category. This helps match downloaded originals or SFTP/Bluehost File Manager copies to records before deletion. CSV text fields are escaped against spreadsheet formula interpretation.
+- For efficient whole-production backups, copy the entire folder directly using Bluehost File Manager or SFTP and save the accompanying CSV. Downloading individual files through PHP is suitable for occasional backup but is **not** a substitute for bulk filesystem access on a shared hosting plan.
+- Retention workflow: export inventory → back up the relevant production folder → verify copied files → archive videos in CTSMD → permanently delete archived videos through CTSMD when safe to reclaim space. Keep any youth media in a restricted archive.
+- Physical deletion directly through Bluehost without updating CTSMD leaves stale database metadata and storage totals. Use CTSMD's Delete from storage where possible.
+
+**Verification pending:** Staff download of active/archived originals, CSV export contents, quota and PHP streaming behavior, and denied access for non-staff accounts on real Bluehost hosting.
