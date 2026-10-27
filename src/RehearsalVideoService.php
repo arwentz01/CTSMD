@@ -69,6 +69,34 @@ final class RehearsalVideoService
         ));
     }
 
+    /**
+     * Unified student/guardian Video Library. Never use the staff production switcher.
+     * Restrict candidates to the user's current rostered shows and recheck each row.
+     */
+    public static function visibleAcrossProductions(PDO $db,array $user):array
+    {
+        $productions=ProductionContext::activeProductions($db,$user);
+        $ids=array_values(array_unique(array_map(static fn(array $p):int=>(int)$p['id'],$productions)));
+        $where="rv.audience_scope='platform'";
+        $params=[];
+        if($ids){
+            $holders=[];
+            foreach($ids as $i=>$id){$key='p'.$i;$holders[]=':'.$key;$params[$key]=$id;}
+            $where.=" OR rv.production_id IN (".implode(',',$holders).")";
+        }
+        $stmt=$db->prepare("SELECT rv.*,pg.name group_name,p.title production_title,
+                CONCAT(u.first_name,' ',u.last_name) uploader
+            FROM rehearsal_videos rv
+            LEFT JOIN production_groups pg ON pg.id=rv.group_id
+            LEFT JOIN productions p ON p.id=rv.production_id
+            LEFT JOIN users u ON u.id=rv.uploaded_by_user_id
+            WHERE rv.status='active' AND (".$where.")
+            ORDER BY rv.created_at DESC,rv.id DESC");
+        $stmt->execute($params);
+        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
+            static fn(array $video):bool=>self::canView($db,$user,$video)));
+    }
+
     public static function upload(PDO $db,array $actor,?array $production,array $post,array $file):int
     {
         if(!self::canManage($actor))throw new RuntimeException('Production staff access is required.');
