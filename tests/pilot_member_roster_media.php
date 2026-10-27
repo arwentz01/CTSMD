@@ -58,3 +58,12 @@ ProductionContext::clearRequestCache();
 assertRoster(count(ProductionContext::activeProductions($db,$guard))===2,'guardian also resolves combined roster access');
 
 assertRoster(RehearsalVideoExperience::handles('/videos'),'video route remains registered');
+
+$before=count($db->queries);
+assertRoster(ProductionContext::isActiveMember($db,431,17),'active-member authorization reuses the audience role resolution');
+$newQueries=array_slice($db->queries,$before);
+assertRoster(!array_filter($newQueries,static fn(string $sql):bool=>str_contains($sql,'JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id')
+    &&str_contains($sql,'cpm.production_id=p.id')),'active-member read has no out-of-scope outer production join');
+assertRoster(ProductionContext::userHasActiveProduction($db,431),'member production existence query prepares with the flat membership join');
+$last=end($db->queries);
+assertRoster(str_contains((string)$last,'eligible ON eligible.production_id=p.id'),'member existence uses an eligible-production derived table');
