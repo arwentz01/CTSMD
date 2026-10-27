@@ -22,7 +22,7 @@ final class ProductionContextExperience
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
         if (!$user) self::redirect(($basePath ?: '') . '/login');
-        if (!AccessPolicy::canManageProduction($user)) { http_response_code(403); exit('The working production selector is only available to production staff.'); }
+        if (!AccessPolicy::isStaff($user)) { http_response_code(403); exit('The working production selector is only available to production staff.'); }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             self::redirect($basePath . '/production');
