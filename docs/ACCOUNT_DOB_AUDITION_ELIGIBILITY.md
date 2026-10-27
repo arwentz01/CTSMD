@@ -18,7 +18,7 @@ Staff can configure an audition's inclusive `minimum_age` and/or `maximum_age` i
 
 Calculation uses completed birthdays on the cutoff date, not a rough current-year subtraction.
 
-A logged-in verified guardian can select a Student from an active guardian household relationship on the public audition registration. The form then uses Student name and DOB (and guardian contact), not a user-submitted guest age group. On successful public registration, the application attempts to claim/link the registration to the Student; original public manage-token recovery remains available.
+A logged-in verified guardian can select a Student from an active guardian household relationship on the public audition registration. The form then uses Student name and DOB (and guardian contact), not a user-submitted guest exact age. On successful public registration, the application attempts to claim/link the registration to the Student; original public manage-token recovery remains available.
 
 If no Student is selected, the public form retains the existing age group: Under 13, 13–17, or adult. The age group **cannot establish exact-age eligibility**. For an age-restricted audition, unresolved DOB remains a staff-review requirement before account linkage and automatic casting intake.
 
@@ -29,7 +29,7 @@ If no Student is selected, the public form retains the existing age group: Under
 - Do not render full DOB, home address or phone on publicly accessible cast or Playbill pages.
 - Never use the guardian's DOB to determine the child's audition age.
 - Date of birth belongs to the Student account, including guardian-managed children who cannot yet sign in.
-- A registration's submitted guest age group is retained as historical information; linking to an existing student consults current profile DOB.
+- A registration's submitted guest exact age is retained as historical information; linking to an existing student consults current profile DOB.
 - Do not put raw DOB/address into audit metadata or public URLs.
 - Existing accounts need a profile-completion path before joining age-restricted productions.
 - Age eligibility is distinct from casting suitability and final role assignment.
@@ -39,7 +39,7 @@ If no Student is selected, the public form retains the existing age group: Under
 1. Apply migration 086 in migrated staging and verify both adult account registration and guardian-managed Student creation.
 2. Register as a verified guardian, select one of two Student accounts, and confirm identity and DOB reference the **child**.
 3. Confirm under/over-boundary Student selection rejects the audition, including tampered POSTs.
-4. Confirm guest registrations still accept age groups and require manual resolution when exact DOB is necessary.
+4. Confirm guest registrations still accept age groups and are evaluated from the declared exact age.
 5. Test staff linking, duplicate submission processing, and already-approved registration syncing.
 6. Test DOB updates by guardian, staff, and Student; Student must not be able to alter DOB in theatre profile.
 7. Test unauthenticated visitor, unverified guardian, disabled account and revoked family relationship.
