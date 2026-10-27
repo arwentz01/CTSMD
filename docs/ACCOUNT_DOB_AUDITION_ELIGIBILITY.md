@@ -49,3 +49,13 @@ If no Student is selected, the public form retains the existing age group: Under
 11. Verify deployment uses the correct current schema before accepting registrations.
 
 **Status:** Code and regression tests committed. No migrated staging database, PHP CLI, or end-to-end browser verification was executed through the GitHub connection. Do not mark this feature production-ready until the above checks pass.
+
+## Exact self-reported ages and account-management fields (follow-up)
+
+Migration `087_signup_declared_age.sql` adds `participant_declared_age` and `age_evidence` to submissions while preserving legacy age groups for historical records. A guest chooses an exact age from a dropdown (0–120) as of the displayed eligibility date; the server rejects values below the minimum or above any configured maximum, including when the form is tampered with. Staff set a minimum age for every new/edited audition, event, or interest signup. A signup needs an explicit eligibility cutoff date or start date.
+
+**No additional DOB/age verification process is required.** The guest age is self-reported and is sufficient for screening; the previous proposed review and verification workflow was removed. A logged-in, eligible household Student instead has age computed from their account DOB. Account DOB itself is self-reported, not independently verified.
+
+Authorized account managers can view and edit first/last name, DOB, phone and mailing address on `/admin/accounts/view?id=...`. Saves require existing account-management permissions and CSRF protection and record a non-sensitive audit entry. Existing accounts with missing DOB/contact fields are supported; staff can complete them later.
+
+Additional regression: `php tests/signup_age_eligibility.php` (minimum and maximum inclusive boundaries, invalid guest values, exact birthday cutoff, unknown linked DOB). Run with the current DB migrations before treating the change as staged or deployed. Do not record documents or other proofs of age; self-report is intentionally sufficient.
