@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/MailService.php';
 require_once __DIR__ . '/AuditionIntakeBridge.php';
+require_once __DIR__ . '/PersonEligibility.php';
 
 final class PlatformRegistrationService
 {
@@ -16,6 +17,8 @@ final class PlatformRegistrationService
         $password=(string)($input['password']??'');
         $confirm=(string)($input['password_confirm']??'');
         $relationship=(string)($input['relationship_type']??'parent');
+        $dob=PersonEligibility::birthDate((string)($input['date_of_birth']??''));
+        $contact=PersonEligibility::contact($input);
 
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter your first and last name.');
         if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid email address.');
@@ -34,8 +37,8 @@ final class PlatformRegistrationService
         $initials=mb_strtoupper(mb_substr($first,0,1).mb_substr($last,0,1));
         $db->beginTransaction();
         try{
-            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,email_verified_at,self_registered_at,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,:email,:password,'pending_verification',NULL,CURRENT_TIMESTAMP,:initials,'Parent / Guardian',0,1)");
-            $insert->execute(['first'=>$first,'last'=>$last,'email'=>$email,'password'=>password_hash($password,PASSWORD_DEFAULT),'initials'=>$initials]);
+            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,email_verified_at,self_registered_at,initials,display_role,is_demo_current_user,active,date_of_birth,contact_phone,address_line1,address_line2,address_city,address_state,address_postal_code) VALUES (:first,:last,:email,:password,'pending_verification',NULL,CURRENT_TIMESTAMP,:initials,'Parent / Guardian',0,1,:dob,:phone,:address1,:address2,:city,:state,:postal)");
+            $insert->execute(['first'=>$first,'last'=>$last,'email'=>$email,'password'=>password_hash($password,PASSWORD_DEFAULT),'initials'=>$initials,'dob'=>$dob,'phone'=>$contact['contact_phone'],'address1'=>$contact['address_line1'],'address2'=>$contact['address_line2'],'city'=>$contact['address_city'],'state'=>$contact['address_state'],'postal'=>$contact['address_postal_code']]);
             $userId=(int)$db->lastInsertId();
             $role=$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id) SELECT :user,id FROM auth_roles WHERE code='member' AND active=1 LIMIT 1");
             $role->execute(['user'=>$userId]);
@@ -77,6 +80,8 @@ final class PlatformRegistrationService
         if(Auth::hasRole($guardian,'student'))throw new RuntimeException('Student accounts cannot create household profiles.');
         $first=trim((string)($input['first_name']??''));$last=trim((string)($input['last_name']??''));$relationship=(string)($input['relationship_type']??'parent');
         $email=mb_strtolower(trim((string)($input['email']??'')));
+        $dob=PersonEligibility::birthDate((string)($input['date_of_birth']??''));
+        // Child contact details are inherited from the guardian until separately updated.
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter the child’s first and last name.');
         if(!in_array($relationship,['parent','guardian'],true))throw new RuntimeException('Only a parent or legal guardian may create a child profile. Staff can help link other caregivers.');
         if($email!==''&&!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid child email address.');
@@ -84,8 +89,8 @@ final class PlatformRegistrationService
         $initials=mb_strtoupper(mb_substr($first,0,1).mb_substr($last,0,1));
         $db->beginTransaction();
         try{
-            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,initials,display_role,is_demo_current_user,active) VALUES (:first,:last,:email,NULL,'managed',:initials,'Student',0,1)");
-            $insert->execute(['first'=>$first,'last'=>$last,'email'=>$email?:null,'initials'=>$initials]);$childId=(int)$db->lastInsertId();
+            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,initials,display_role,is_demo_current_user,active,date_of_birth,contact_phone,address_line1,address_line2,address_city,address_state,address_postal_code) SELECT :first,:last,:email,NULL,'managed',:initials,'Student',0,1,:dob,contact_phone,address_line1,address_line2,address_city,address_state,address_postal_code FROM users WHERE id=:guardian_id");
+            $insert->execute(['first'=>$first,'last'=>$last,'email'=>$email?:null,'initials'=>$initials,'dob'=>$dob,'guardian_id'=>(int)$guardian['id']]);$childId=(int)$db->lastInsertId();
             $role=$db->prepare("INSERT IGNORE INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :user,id,:actor FROM auth_roles WHERE code='student' AND active=1 LIMIT 1");
             $role->execute(['user'=>$childId,'actor'=>(int)$guardian['id']]);
             $relation=$db->prepare("INSERT INTO family_relationships (guardian_user_id,student_user_id,relationship_type,is_primary,status,created_by_user_id) VALUES (:guardian,:student,:relationship,1,'active',:creator)");
