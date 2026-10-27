@@ -39,3 +39,14 @@ This is a dependency-free improvement rather than integrating a CDN-hosted Video
 8. Check no stale CDN caching and monitor Bluehost PHP worker usage. Local video streaming can be expensive on shared hosting.
 
 **Deferred:** adaptive bitrate HLS, offline sync, automatic video transcoding, caption uploads and reliable video analytics.
+
+## October 27, 2026 validation and fixes
+
+- The Expo video screen now has A–B segment looping as well as speed controls, rewind, fullscreen, and visible loading/playback failure feedback.
+- PHP video streaming closes any active PHP session lock before delivering media bytes, so seeking/watching does not needlessly block other CTSMD browser requests.
+- `tests/pilot_video_privacy.php` now runs as its own GitHub Actions step and passed in the latest PHP safety workflow.
+- PHP lint passed for the backend, and Expo TypeScript and `expo install --check` both passed after aligning `expo` and `expo-router` versions. [Expo workflow](https://github.com/arwentz01/CTSMD/actions/runs/40566301056).
+- The overall PHP safety workflow still fails in **pre-existing** `tests/pilot_volunteer_cancellation.php`, which reports a transaction rollback assertion. The video-specific step passed; this unrelated failure must be resolved before claiming full pilot suite green. [PHP workflow](https://github.com/arwentz01/CTSMD/actions/runs/40566332917).
+- `mobile/package-lock.json` is not synchronized with the changed package manifest. The current GitHub mobile workflow uses `npm install`, which successfully regenerated dependencies temporarily on the CI runner and passed checks. A reproducible `npm ci` build requires running `npm install` locally and committing the updated lockfile.
+
+**Not yet validated:** physical iOS and Android playback, mobile bearer-header handling on both devices, Bluehost upload limits, real concurrent streaming, and real database access restrictions. Do not count CI success as production verification.
