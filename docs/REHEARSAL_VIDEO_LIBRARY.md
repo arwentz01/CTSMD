@@ -142,3 +142,15 @@ The `/production/select` POST endpoint is now explicitly staff-only; sidebar swi
 A cross-production member listing query introduced an unverified SQL path, while staff continued using the established per-production listing query. `RehearsalVideoService::visibleAcrossProductions` now reuses that existing SQL for the CTSMD platform and each current rostered show, deduplicates by video ID, and sorts newest-first. It rechecks the video audience and guardian/group permissions before returning results. Student/guardian portals remain cross-production; the staff switcher is unaffected.
 
 `tests/pilot_member_roster_media.php` now asserts that the member library aggregates both rostered shows and one platform video through those queries, deduplicated and ordered. PHP lint, member roster regression, and video privacy checks passed in GitHub Actions. **The specific Bluehost 500 root cause has not been verified using production error logs or a live database.** Deploy and retest the student `/videos` page; if the error persists, capture the relevant Bluehost PHP error log line (without credentials or personal data) before making further database changes.
+
+## Share a video in Community (October 27, 2026)
+
+Staff can select **Copy link for Community** next to an active video in `/videos`. This copies a named hyperlink in the format `[Belle — Full choreography](https://ctsmd.me/videos/view?id=42)`. Paste it directly into a Community channel post. Community displays the clean, clickable title rather than a long URL. Staff can also use **Open video** to verify the destination.
+
+`/videos/view?id=42` is a stable web permalink with a dedicated player and practice controls, not the raw MP4 streaming endpoint. It requires CTSMD login and checks current production, group, and family/guardian permissions for every request. A student without access receives a generic unavailable screen. Community posts do **not** grant additional permissions; avoid posting group-only videos in channels where most members cannot watch them.
+
+The native Expo Community feed, channel and post pages render the same linked title and navigate directly to `/videos/[id]` in the app, where bearer-authenticated video playback is used.
+
+Only the CTSMD video-link format is converted to a clickable hyperlink in Community; other text stays HTML-escaped. The copy control is shown to production staff. Archived videos cannot be shared from the library. Raw stream URLs must not be shared.
+
+**Still to verify after deployment:** clicking a shared link while signed in with authorized and unauthorized Student/guardian accounts; behavior of a logged-out member (login required, then revisit the link); Android/iOS native navigation; archiving a linked video; and copy/paste from desktop and mobile web.
