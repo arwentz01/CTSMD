@@ -100,3 +100,11 @@ A staff-only Video Library storage summary now shows per-production video counts
 - Physical deletion directly through Bluehost without updating CTSMD leaves stale database metadata and storage totals. Use CTSMD's Delete from storage where possible.
 
 **Verification pending:** Staff download of active/archived originals, CSV export contents, quota and PHP streaming behavior, and denied access for non-staff accounts on real Bluehost hosting.
+
+## Upload progress UX (October 27, 2026)
+
+The staff upload form at `/videos` now sends multipart uploads via `XMLHttpRequest` rather than a silent full-page form submission. It shows actual browser-to-Bluehost transfer progress (percent, transferred bytes, measured average rate, and approximate remaining time). Once the bytes have transferred, the UI changes to **Transfer complete — saving video** and waits for the server to confirm database/file success; 100% transfer is not presented as a successful upload. A completed server response shows **Video saved successfully** and refreshes the library to display the new video.
+
+The form disables edits to avoid duplicate sends while in flight, provides **Cancel upload**, restores the form after a failed upload, and shows actionable messages for rejected files, network errors, upload limits and timeouts. Server-side CSRF, permission, upload-type and size checks remain authoritative. Without JavaScript the standard POST-and-flash flow remains supported.
+
+This does not introduce chunked or resumable uploads. Cancelling or closing the browser while the server is finalizing may not undo processing already underway; check the library before retrying an uncertain upload. The transfer percentage is client-reported and does not measure Bluehost's remaining processing time. Test this specifically with realistic ~50–200 MB files and a deliberately slow connection.
