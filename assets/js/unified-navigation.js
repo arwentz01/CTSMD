@@ -179,6 +179,8 @@
   };
 
   const trimDemoCopy = () => {
+    // Modernized messaging keeps the server's safeguarding and paused-send context visible.
+    if (document.body.classList.contains('ux-messages')) return;
     const path=relativePath();
     if(path==='/messages'){
       const intro=document.querySelector('.comm-message-intro');
