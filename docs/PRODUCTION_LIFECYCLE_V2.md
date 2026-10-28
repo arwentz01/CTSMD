@@ -225,3 +225,8 @@
 - The native daily-tasks endpoint now excludes completed form assignments and production-scoped forms/shifts when the linked production is inactive, completed, archived, missing, or at an unknown lifecycle stage. Organization-wide actions and other active productions remain unaffected.
 - Mobile heart reactions now use ProductionLifecycleGuard inside the locked reaction transaction, matching the web Community mutation boundary. Closed production posts can remain readable under existing authorization but cannot receive new reactions through this endpoint.
 - Source regression assertions added. Other mobile endpoints and multi-production live integration tests remain pending.
+
+### Archival readiness follow-up (October 27)
+- Separate archival readiness reports pending casting offers and volunteer approvals as blockers, and unpublished schedule notices, incomplete form assignments, and unfinished checklist tasks as preserved-history warnings.
+- Staff archive confirmation is disabled when blockers exist; service recalculates inside row-locked transaction and rejects blocked archival with an audit-safe rollback. Successful archives include readiness snapshot in audit metadata.
+- No records are silently resolved or deleted. Further checks for unsent mail/push and volunteer-hour verification, full database-backed acceptance, historical access and mobile personas are still required.
