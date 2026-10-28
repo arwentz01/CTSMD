@@ -230,3 +230,7 @@
 - Separate archival readiness reports pending casting offers and volunteer approvals as blockers, and unpublished schedule notices, incomplete form assignments, and unfinished checklist tasks as preserved-history warnings.
 - Staff archive confirmation is disabled when blockers exist; service recalculates inside row-locked transaction and rejects blocked archival with an audit-safe rollback. Successful archives include readiness snapshot in audit metadata.
 - No records are silently resolved or deleted. Further checks for unsent mail/push and volunteer-hour verification, full database-backed acceptance, historical access and mobile personas are still required.
+
+### Archive history linked-student authorization (October 27 follow-up)
+- The archive directory's parent/guardian discovery and archived production detail/file/channel historical audience checks now require a current active parent/guardian family relationship tied to an active student account. Previously revoked/disabled student accounts cannot grant guardian archival access simply through retained production membership records.
+- Archived records remain preserved. Direct historical access for past non-guardian production members is unchanged; guardian/student historical access, roster privacy and multi-show authorization need database-backed persona tests.
