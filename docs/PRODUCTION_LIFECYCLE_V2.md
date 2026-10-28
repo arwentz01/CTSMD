@@ -186,3 +186,7 @@
 - The unscheduled date worker previously transitioned Performing → Completed and Completed → Archived without a readiness review. It now only advances In Production → Performing when the performance start date has arrived and the end date has not passed. It never automatically closes or archives an operational workspace.
 - Completion and archival counters remain in worker output for compatibility but stay zero until controlled transitions are implemented. Existing manual lifecycle editor still allows stage selection and requires integration into the upcoming confirmation workflow; it must not be treated as readiness-reviewed.
 - Coordinate date-worker deployment with manual stage-guard closure before enabling cron. Earlier documentation describing automatic completion and archival is superseded by this safety restriction.
+
+### Temporary terminal-stage editor gate
+- The old admin stage dropdown now rejects transitions into or out of Completed/Archived. Editing nonterminal dates and staying on the same terminal stage remains possible. This prevents bypass of the future controlled readiness and audit confirmations, but temporarily means staff cannot complete, archive or reopen through that editor.
+- Finish dedicated staff-confirmed completion, archive and restore services promptly before CTSMD performs actual closure. The new checks are a protection, not the requested finished workflow.
