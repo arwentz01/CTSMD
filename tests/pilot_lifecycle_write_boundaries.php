@@ -32,6 +32,9 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'ProductionLifecycleExperience.php'=>[
+  'Completion, archival, and reopening require a separate authorized lifecycle confirmation workflow.',
+ ],
  'ProductionLifecycleAutomation.php'=>[
   "FROM productions WHERE lifecycle_stage='in_production' FOR UPDATE",
   'if($stage===\'in_production\'&&$start!==\'\'&&$time>=$start&&!$finished)$target=\'performing\';',
