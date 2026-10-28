@@ -34,7 +34,7 @@ foreach(['completed','archived','unknown-stage'] as $stage){
             else $method->invoke(null,$db,$actor,7,5);
             throw new RuntimeException('Closed roster unexpectedly accepted '.$action);
         }catch(RuntimeException $e){
-            assertClosedRoster(str_contains($e->getMessage(),'production')&&!str_contains($e->getMessage(),'unexpectedly accepted'),
+            assertClosedRoster(str_contains(strtolower($e->getMessage()),'production')&&!str_contains($e->getMessage(),'unexpectedly accepted'),
                 $stage.' '.$action.' rejected');
         }
         assertClosedRoster($db->writes===0,$stage.' '.$action.' had no downstream queries');
