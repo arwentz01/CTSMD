@@ -32,6 +32,12 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'ProductionArchivalWorkflow.php'=>[
+  "lifecycle_stage='archived'",
+  "production.archived",
+  "FOR UPDATE",
+  "Only completed productions can be archived.",
+ ],
  'ProductionCompletionService.php'=>[
   "lifecycle_stage='completed'",
   "production.completed",
@@ -40,6 +46,8 @@ $cases=[
  ],
  'ProductionLifecycleExperience.php'=>[
   "complete_production",
+  "archive_production",
+  "Closed productions cannot be reactivated through legacy controls.",
   "acknowledge_outstanding",
   'Completion, archival, and reopening require a separate authorized lifecycle confirmation workflow.',
  ],
