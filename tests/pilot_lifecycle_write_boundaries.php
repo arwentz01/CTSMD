@@ -32,6 +32,12 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'NotificationReminderService.php'=>[
+  "fa.production_id IS NULL OR EXISTS",
+  "vs.production_id IS NULL OR EXISTS",
+  "fr.relationship_type IN ('parent','guardian')",
+  "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
+ ],
  'ProductionNotificationAccess.php'=>[
   "relationship_type IN ('parent','guardian')",
  ],
