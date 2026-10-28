@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Volunteer email delivery-time gate:** queued shift-reminder and shift-eligibility messages now revalidate signup owner, status and writable production lifecycle prior to sending (1e51e96, 50f3cce). Add database-backed tests and remaining origin checks; no live delivery tests performed.
+
+
 - [ ] **Delivery reauthorization partial (Oct 27):** form-due email jobs recheck assignment, production stage and parent/guardian access at send time; push bridge and push worker recheck source notification access (0ceca9a, 873a53f, 177a991, tests c1e0d84/4752f5d). Still required: production-scoped volunteer email dedupe recheck, push without source ID, notification origin metadata coverage, cross-process races, live test and mobile token delivery.
 
 
