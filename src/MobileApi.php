@@ -379,12 +379,12 @@ final class MobileApi
         self::requireMethod('GET');
         $id=(int)$user['id'];
         // Same assignee + active form boundary used by the member Forms page.
-        $forms=$db->prepare("SELECT fa.id,fa.status,fa.due_at,f.title,fs.status submission_status FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.user_id=:user ORDER BY fa.due_at,fa.id LIMIT 100");
+        $forms=$db->prepare("SELECT fa.id,fa.status,fa.due_at,f.title,fs.status submission_status FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.user_id=:user AND fa.status<>'completed' AND (fa.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=fa.production_id AND p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) ORDER BY fa.due_at,fa.id LIMIT 100");
         $forms->execute(['user'=>$id]);
         $live=VolunteerCoverageService::isLiveVolunteer($db,$id);
         $rows=[];
         if($live){
-        $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.id my_request_id,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at,vs.id LIMIT 100");
+        $shifts=$db->prepare("SELECT vs.id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,vs.required_slots,vs.approval_required,mine.status my_status,req.id my_request_id,req.status my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id=vs.id AND mine.user_id=:mine LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request WHERE vs.starts_at>NOW() AND (vs.production_id IS NULL OR EXISTS(SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) ORDER BY vs.starts_at,vs.id LIMIT 100");
         $shifts->execute(['mine'=>$id,'request'=>$id]);
         $rows=$shifts->fetchAll();
         $missingMap=VolunteerCoverageService::missingRequirementsForShifts($db,$id,array_column($rows,'id'));
@@ -590,9 +590,11 @@ final class MobileApi
         $db->beginTransaction();
         try{
             // Serialize first reactions too; a missing reaction row cannot be locked.
-            $lock=$db->prepare("SELECT id FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' AND hidden_at IS NULL AND deleted_at IS NULL FOR UPDATE");
+            $lock=$db->prepare("SELECT cp.id,c.production_id FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id WHERE cp.id=:post AND cp.channel_id=:channel AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL FOR UPDATE");
             $lock->execute(['post'=>$postId,'channel'=>$channelId]);
-            if(!$lock->fetchColumn())throw new RuntimeException('Post unavailable.');
+            $lockedPost=$lock->fetch(PDO::FETCH_ASSOC);
+            if(!$lockedPost)throw new RuntimeException('Post unavailable.');
+            if($lockedPost['production_id']!==null)ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost['production_id']);
             $check=$db->prepare("SELECT 1 FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart' FOR UPDATE");
             $check->execute(['post'=>$postId,'user'=>(int)$user['id']]);
             $liked=(bool)$check->fetchColumn();
