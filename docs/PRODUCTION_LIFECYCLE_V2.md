@@ -220,3 +220,8 @@
 ### Volunteer email delivery reauthorization (October 27 follow-up)
 - The email worker now checks the signup ID encoded in queued shift reminder and eligibility-warning dedupe keys against current user ownership, signed-up/checked-in status and production lifecycle at send time. It suppresses cancelled commitments and completed/archived/inactive production shifts, preserving organization-wide shifts.
 - Source contract checks added. This is limited to identified shift reminder types; historical queued mail with unrecognized keys, other email sources, and delivery concurrency still require separate tests and authorization checks.
+
+### Mobile current-action and Community write parity (October 27 continuation)
+- The native daily-tasks endpoint now excludes completed form assignments and production-scoped forms/shifts when the linked production is inactive, completed, archived, missing, or at an unknown lifecycle stage. Organization-wide actions and other active productions remain unaffected.
+- Mobile heart reactions now use ProductionLifecycleGuard inside the locked reaction transaction, matching the web Community mutation boundary. Closed production posts can remain readable under existing authorization but cannot receive new reactions through this endpoint.
+- Source regression assertions added. Other mobile endpoints and multi-production live integration tests remain pending.
