@@ -42,6 +42,7 @@ $cases=[
   "pending_casting_offers",
   "unmarked_attendance",
   "draft_notices",
+  "incomplete_production_tasks",
   "Completion blocked by unresolved casting offers.",
   "lifecycle_stage='completed'",
   "production.completed",
