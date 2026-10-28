@@ -32,7 +32,15 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'ProductionCompletionService.php'=>[
+  "lifecycle_stage='completed'",
+  "production.completed",
+  "FOR UPDATE",
+  "Production management permission is required.",
+ ],
  'ProductionLifecycleExperience.php'=>[
+  "complete_production",
+  "acknowledge_outstanding",
   'Completion, archival, and reopening require a separate authorized lifecycle confirmation workflow.',
  ],
  'ProductionLifecycleAutomation.php'=>[
