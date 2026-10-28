@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Family/current-view lifecycle filtering:** Family and Home actionable forms and volunteer commitments, Family active production summaries, and shared Calendar current events now individually exclude closed production records while retaining organization-wide and separate active-production data (05d9f87, a3ffe79, 177b004, eb4699a). Need database-backed Student/Guardian/multiple simultaneous show regression and native API parity.
+
+
 - [ ] **Completion readiness expansion (Oct 27 source):** pending casting offers now block completion, with server-side recheck; unmarked attendance and draft schedule notices are warnings. Commits 5ffb37f, d65dfa0, 02fc783. Still expand production tasks, service-hour readiness and unsent messages; perform database-backed and family persona tests before closure acceptance.
 
 
