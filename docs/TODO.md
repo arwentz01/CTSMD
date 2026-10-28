@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Completion readiness expansion (Oct 27 source):** pending casting offers now block completion, with server-side recheck; unmarked attendance and draft schedule notices are warnings. Commits 5ffb37f, d65dfa0, 02fc783. Still expand production tasks, service-hour readiness and unsent messages; perform database-backed and family persona tests before closure acceptance.
+
+
 - [ ] **Archive Production V1 source (Oct 27):** explicit completed-only archive confirmation, transaction, audit and legacy is_active/status closure added (f6c6cf6, 90c978a); legacy archived reactivation blocked (7ac735e); source regression contracts (44d6995). Needs full readiness checklist, queue filtering, mixed-production family checks, database tests, live deployment and release approval. Do not archive real-family shows until verified.
 
 
