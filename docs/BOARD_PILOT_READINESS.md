@@ -1,5 +1,7 @@
 # Executive Summary
 
+**October 28 RC1 preparation:** see [RC1 evidence](RC1_ACCEPTANCE.md) and [release/recovery runbook](RC1_RELEASE_RUNBOOK.md) for current manifest/preflight and isolated role-test evidence. This work does not deploy or alter production, activate workers, replace historical acceptance evidence, change owner-reported percentages or grant pilot GO. Active gates remain in [TODO.md](TODO.md).
+
 Overall readiness:
 
 - **Board demo: 92%**

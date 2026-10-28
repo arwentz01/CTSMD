@@ -56,7 +56,8 @@ final class ReleaseCandidate
         }
         foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $required)if(!isset($seen[$required]))throw new RuntimeException('Incomplete web manifest.');
         // Detect the class of unmanaged executable involved in the earlier host incident.
-        foreach(array_merge(glob($root.'/*.php')?:[],self::phpFiles($root.'/assets'),self::phpFiles($root.'/public'),self::phpFiles($root.'/src'),self::phpFiles($root.'/cgi-bin')) as $full){
+        $rootExecutables=array_filter(glob($root.'/*')?:[],static fn(string $file):bool=>is_file($file)&&(bool)preg_match('/\.(?:php\d*|phtml|phar)$/i',$file));
+        foreach(array_merge($rootExecutables,self::phpFiles($root.'/assets'),self::phpFiles($root.'/public'),self::phpFiles($root.'/src'),self::phpFiles($root.'/cgi-bin'),self::phpFiles($root.'/production'),self::phpFiles($root.'/my-theatre')) as $full){
             $relative=substr($full,strlen($root)+1);if(!isset($seen[$relative]))$errors[]='unmanaged executable: '.$relative;
         }
         return array_values(array_unique($errors));
@@ -66,7 +67,7 @@ final class ReleaseCandidate
     {
         if(!is_dir($directory))return [];$files=[];
         $walk=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory,FilesystemIterator::SKIP_DOTS));
-        foreach($walk as $file)if($file->isFile()&&strtolower($file->getExtension())==='php')$files[]=$file->getPathname();
+        foreach($walk as $file)if($file->isFile()&&preg_match('/^(?:php\d*|phtml|phar)$/i',$file->getExtension()))$files[]=$file->getPathname();
         return $files;
     }
 

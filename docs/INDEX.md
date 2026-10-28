@@ -9,6 +9,7 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | Area | Document | Purpose |
 |---|---|---|
 | Release / pilot decision | [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md) | Historical evidence and pilot gates; dates matter, not automatic signoff |
+| RC1 preparation / recovery | [RC1 evidence](RC1_ACCEPTANCE.md), [release runbook](RC1_RELEASE_RUNBOOK.md) | Revision-bound manifest, read-only migration/schema preflight, isolated acceptance and rollback/restore; no deployment authorization |
 | Platform launch reference | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | Supporting audit rationale; actionable priorities live only in TODO.md |
 | **Single work tracker and roadmap** | [TODO.md](TODO.md) | **Only maintained actionable To-Do**: pilot gates, verification, and future backlog |
 | Architecture / product intent | [PRODUCT_CHARTER.md](PRODUCT_CHARTER.md), [VISUAL_FIRST_ARCHITECTURE.md](VISUAL_FIRST_ARCHITECTURE.md) | Product scope and implementation principles |

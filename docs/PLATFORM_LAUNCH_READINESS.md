@@ -4,6 +4,8 @@ Updated 2026-10-26. **Supporting launch-audit reference, not a second maintained
 
 **Evidence rule:** "In code" is not "verified live". Mark production-ready only after acceptance with date, environment, tester, and evidence. This checklist does not supersede the pilot NO-GO in [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md).
 
+October 28 RC1 preparation: [release/recovery runbook](RC1_RELEASE_RUNBOOK.md) and [dated RC1 evidence](RC1_ACCEPTANCE.md) now define revision-bound manifests, read-only hosted migration/schema checks and isolated seven-persona/two-production acceptance. Hosted/device/recovery approvals are not implied; active blockers are maintained only in TODO.md.
+
 | Work item | Priority | Repository assessment | Next action |
 |---|---|---|---|
 | Privacy notice: student, guardian, photos, messages, retention and app use | Release gate | Not verified | Legal/policy owner approve published privacy text and placement |

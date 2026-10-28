@@ -1,10 +1,27 @@
 # CTSMD Connect — Single Source of Truth: To-Do & Product Backlog
 
-**Updated:** October 26, 2026 · **Working branch:** `audit/board-pilot-readiness`
+**Updated:** October 28, 2026 · **Working branch:** `audit/board-pilot-readiness`
 
 **This is the ONE maintained list of active work, pilot gates, and approved feature backlog.** Checkboxes represent verification or implementation remaining; a merged commit is not proof of production deployment. Keep status/owner/evidence here, link details elsewhere, and do not create new competing active to-do documents.
 
 **Release stance:** The most recent [board pilot report](BOARD_PILOT_READINESS.md) remains **NO-GO for a real-family pilot** until its open gates are accepted. Older percentages are dated evidence, not current calculated coverage.
+
+## RC1 signoff blockers — October 28, 2026
+
+Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
+
+- [ ] **RC1-01:** Review exact hosted migration/trigger/permission/index/FK/type/backfill state and checksum-bound statement plan; staging restore/rehearsal and DBA approval. New preflight detects local demo gaps through 092; 062/base overlap and duplicate 069 numbers forbid blind batch imports.
+- [ ] **RC1-02:** Complete mixed-family/guardian/caregiver, group/attachment/search/casting/task/notice/queue safeguarding and saved-session/device matrix; safeguarding signoff.
+- [ ] **RC1-03:** Resolve retention/cascade risk on roster removal; prove completion/archive/history preservation for offers/credits/forms/resources/messages/audit on isolated restored data before real-family use.
+- [ ] **RC1-04:** Execute concurrent close/form/review/assignment, last-guardian, volunteer-capacity and dispatch/revocation race tests; verify lock/retry behavior.
+- [ ] **RC1-05:** Verify password/admin/session revocation, concurrent native account switch, offline logout retry and credential reconciliation after restore.
+- [ ] **RC1-06:** Obtain signed physical-device builds and native parity/cache/privacy acceptance, with explicit launch scope for missing workflows.
+- [ ] **RC1-07:** Close in-scope Web Push OS/tap and native provider/delivery authorization gates; approve old queue disposition separately. No worker activation in RC1 preparation.
+- [ ] **RC1-08:** Name backup/incident/storage owners; approve retention/RPO/RTO and run a new matched code/DB/private-file restore with hash/access/queue/credential reconciliation evidence.
+- [ ] **RC1-09:** Verify candidate hosting deny rules, private files/logs, TLS/cookies/proxy, credential rotation/incident closure and clean-profile startup.
+- [ ] **RC1-10:** Obtain privacy/terms/guardian consent/retention/media and supported-student-cohort policy approvals.
+- [ ] **RC1-11:** Complete browser/mobile keyboard, focus, long-table, screen-reader and readability acceptance with dated devices and resolved defects.
+- [ ] **RC1-12:** Resolve/review SDK tooling advisories with SDK-compatible changes and release-owner security decision; do not infer closure from bundle exports.
 
 ## Phase 4 native acceptance follow-up — October 28, 2026
 
@@ -32,8 +49,8 @@ Source evidence: `c00a91a` native integration and `07a96f2` current-stage form l
 
 ## P0 — Pilot blockers and release gates
 
-- [ ] Phase 3 source finding: FamilyFormsExperience submission/review, FormManagementExperience and DynamicFormExperience do not consistently invoke the existing production lifecycle guard. Review backend enforcement for closed-production direct POSTs before release. Presentation-only read-only treatment is not a security fix. No handler/schema change is authorized in this UX phase.
-- [ ] Local Phase 3 Family & Pickup acceptance is blocked: demo schema lacks `users.date_of_birth`, required by StudentProfileService. Reconcile schema through the approved migration process separately; no migration/schema edit in this UX phase. The route now gives a safe unavailable state instead of leaking a stack trace.
+- [x] Phase 3 closed-form source gap addressed in Phase 4 with shared transaction guards. RC1 adds migrated real-HTTP closed submit/review/definition/toggle/builder rejection and state fingerprints. Hosted scope/concurrency acceptance remains RC1-01/04; no production deployment claimed.
+- [x] Local Phase 3 `users.date_of_birth` dependency reconciled with reviewed existing 086 in Phase 4; Family & Pickup local smoke passed. Broader RC1 preflight now detects missing local 087–092 state, tracked under RC1-01, not silently applied.
 
 Phase 2 UX: Family, personal/student Today, Community, Messaging and Action Center implemented on the existing branch. See [implementation and verification](UX_MODERNIZATION_AUDIT.md) and subordinate [cosmetic refinement notes](UX_POLISH_BACKLOG.md). Local browser and safeguarding evidence does not close the live-pilot gates below or imply deployment.
 

@@ -1,0 +1,66 @@
+name: CTSMD RC1 isolated acceptance
+on:
+  push:
+    branches: [audit/board-pilot-readiness]
+    paths: ["src/**", "bin/**", "database/**", "tests/**", "mobile/**", ".github/workflows/rc1-acceptance.yml"]
+  pull_request:
+    paths: ["src/**", "bin/**", "database/**", "tests/**", "mobile/**", ".github/workflows/rc1-acceptance.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-mysql-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rc1-disposable-ci-only
+          MYSQL_DATABASE: ctsmd_rc1_ci
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -prc1-disposable-ci-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      APP_ENV: rc1-test
+      APP_DEBUG: "false"
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: ctsmd_rc1_ci
+      DB_USERNAME: root
+      DB_PASSWORD: rc1-disposable-ci-only
+      MAIL_TRANSPORT: log
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, mbstring, dom, fileinfo, openssl, curl
+          coverage: none
+          tools: none
+      - name: Install local MySQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y mysql-client
+      - name: RC1 tooling contracts and syntax
+        run: |
+          php tests/rc1_tooling.php
+          find bin src tests -name '*.php' -type f -print0 | xargs -0 -n1 php -l
+      - name: Build revision-bound manifest (not deployment)
+        run: php bin/rc1-manifest.php > "$RUNNER_TEMP/rc1-manifest.json"
+      - name: Bootstrap new isolated schema only, no demo reset
+        run: php tests/rc1_bootstrap.php
+      - name: Read-only candidate schema and file preflight
+        run: php bin/rc1-preflight.php --target=local --manifest="$RUNNER_TEMP/rc1-manifest.json" > "$RUNNER_TEMP/rc1-schema.json"
+      - name: Seven-persona two-production real HTTP acceptance
+        run: php tests/rc1_acceptance.php > "$RUNNER_TEMP/rc1-acceptance.json"
+      - name: Existing transactional safeguarding suite
+        run: php tests/safeguarded_conversation.php
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rc1-evidence-${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/rc1-manifest.json
+            ${{ runner.temp }}/rc1-schema.json
+            ${{ runner.temp }}/rc1-acceptance.json

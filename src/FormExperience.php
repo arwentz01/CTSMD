@@ -82,7 +82,7 @@ final class FormExperience
 
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("SELECT fa.id, fa.form_id, fa.user_id, fa.production_id, fa.status, f.title, f.completion_mode, f.review_required FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.id = :id AND fa.user_id = :user_id AND f.active = 1 FOR UPDATE");
+            $stmt = $db->prepare("SELECT fa.id, fa.form_id, fa.user_id, COALESCE(fa.subject_user_id,fa.user_id) subject_user_id, fa.production_id, fa.status, f.title, f.completion_mode, f.review_required FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.id = :id AND fa.user_id = :user_id AND f.active = 1 FOR UPDATE");
             $stmt->execute(['id' => $assignmentId, 'user_id' => (int)$user['id']]);
             $assignment = $stmt->fetch();
             if ($assignment) FormWriteGuard::assignment($db,$assignmentId);
@@ -118,19 +118,22 @@ final class FormExperience
             $submissionId = (int)($existing->fetchColumn() ?: 0);
 
             if ($submissionId > 0) {
-                $update = $db->prepare("UPDATE form_submissions SET acknowledgment = :ack, typed_signature = :signature, response_text = :response, status = 'submitted', reviewer_user_id = NULL, reviewer_note = NULL, submitted_at = CURRENT_TIMESTAMP, reviewed_at = NULL WHERE id = :id");
+                $update = $db->prepare("UPDATE form_submissions SET submitted_by_user_id=:by_user, submitted_for_user_id=:for_user, acknowledgment = :ack, typed_signature = :signature, response_text = :response, status = 'submitted', reviewer_user_id = NULL, reviewer_note = NULL, submitted_at = CURRENT_TIMESTAMP, reviewed_at = NULL WHERE id = :id");
                 $update->execute([
+                    'by_user' => (int)$user['id'],
+                    'for_user' => (int)$assignment['subject_user_id'],
                     'ack' => $acknowledgment,
                     'signature' => $signature !== '' ? $signature : null,
                     'response' => $response !== '' ? $response : null,
                     'id' => $submissionId,
                 ]);
             } else {
-                $insert = $db->prepare("INSERT INTO form_submissions (assignment_id, form_id, submitted_by_user_id, acknowledgment, typed_signature, response_text, status) VALUES (:assignment_id, :form_id, :user_id, :ack, :signature, :response, 'submitted')");
+                $insert = $db->prepare("INSERT INTO form_submissions (assignment_id, form_id, submitted_by_user_id, submitted_for_user_id, acknowledgment, typed_signature, response_text, status) VALUES (:assignment_id, :form_id, :user_id, :for_user, :ack, :signature, :response, 'submitted')");
                 $insert->execute([
                     'assignment_id' => $assignmentId,
                     'form_id' => (int)$assignment['form_id'],
                     'user_id' => (int)$user['id'],
+                    'for_user' => (int)$assignment['subject_user_id'],
                     'ack' => $acknowledgment,
                     'signature' => $signature !== '' ? $signature : null,
                     'response' => $response !== '' ? $response : null,
