@@ -14,6 +14,17 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db,(int)$shift[\'production_id\']);',
   "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
  ],
+ 'FormExperience.php'=>[
+  "require_once __DIR__ . '/ProductionLifecycleGuard.php';",
+  'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
+  'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
+ ],
+ 'ProductionNotificationAccess.php'=>[
+  "relationship_type IN ('parent','guardian')",
+ ],
+ 'ProductionArchiveService.php'=>[
+  "fr.relationship_type IN ('parent','guardian')",
+ ],
  'FamilyFormService.php'=>[
   'ProductionLifecycleGuard::assertWritable($db,(int)$context[\'production_id\']);',
  ],
