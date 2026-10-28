@@ -134,6 +134,7 @@
 .ux-workspace .cast-summary b { font-family: inherit; font-size: 24px; color: var(--ux-ink); }
 .ux-workspace .cast-summary span { color: var(--ux-muted); font-size: 12px; }
 .ux-workspace .cast-drawer { background: var(--ux-paper); color: var(--ux-ink); }
+.ux-workspace .cast-drawer .cast-decision button[type="submit"] { background: var(--ux-wine); color: #fff; border-color: var(--ux-wine); }
 .ux-workspace .cast-drawer :is(input,select,textarea) { width: 100%; }
 .ux-workspace .cast-drawer :is(input[type=checkbox],input[type=radio]) { width: auto; accent-color: var(--ux-wine); }
 .ux-workspace .cast-drawer :is(.cast-working-role-options,fieldset) { min-width: 0; border-color: var(--ux-line); }
@@ -163,9 +164,12 @@
   .ux-workspace .unified-sidebar .unified-close { background: var(--ux-paper); color: var(--ux-ink); }
   .ux-workspace :is(.staffdash-page,.pw-page,.cast-page) { padding: 20px 16px calc(28px + env(safe-area-inset-bottom)); }
   .ux-workspace .unified-title h1 { font-size: 20px; }
+  .ux-workspace .unified-header .unified-title, .ux-workspace .unified-header .unified-title h1 { display: block !important; visibility: visible; }
   .ux-workspace :is(button,.button,.ux-context-action,.unified-subnav a) { min-height: 44px; }
   .ux-workspace .unified-header, .ux-workspace .mobile-app-tabs { background: var(--ux-paper); backdrop-filter: none; box-shadow: none; }
-  .ux-workspace .mobile-app-tab-label { font-size: 11px; }
+  .ux-workspace .mobile-app-tabs .mobile-app-tab { color: var(--ux-muted) !important; }
+  .ux-workspace .mobile-app-tabs .mobile-app-tab.active { color: var(--ux-wine) !important; }
+  .ux-workspace .mobile-app-tabs .mobile-app-tab-label { font-size: 11px !important; }
   .ux-page-header { flex-direction: column; gap: 12px; }
   .ux-page-header h2 { font-size: 20px; }
   .ux-workflow { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }

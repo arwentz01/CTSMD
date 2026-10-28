@@ -34,8 +34,11 @@ jobs:
           set -euo pipefail
           find src tests -name '*.php' -type f -print0 | xargs -0 -n1 php -l
           php -l front.php
-      - name: Validate Video Library browser upload JavaScript
-        run: node --check assets/js/video-library-upload.js
+      - name: Validate browser JavaScript
+        run: |
+          node --check assets/js/video-library-upload.js
+          node --check assets/js/unified-navigation.js
+          node --check assets/js/ux-workspaces.js
       - name: Staff production directory ordering and past grouping
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract
