@@ -11,6 +11,7 @@ final class ProductionArchiveService
     public static function productionsForViewer(PDO $db, array $viewer): array
     {
         $viewerId = (int)$viewer['id'];
+        if (!self::activeViewer($db,$viewerId)) return [];
         if (AccessPolicy::canManageProduction($viewer)) {
             $stmt = $db->query("SELECT p.id,p.title,p.season,p.status,p.deactivated_at,p.created_at,
                 (SELECT COUNT(*) FROM production_memberships pm WHERE pm.production_id=p.id AND pm.audience_type='student') student_count,
@@ -77,7 +78,7 @@ final class ProductionArchiveService
 
     public static function canViewProduction(PDO $db, array $viewer, int $productionId): bool
     {
-        if ($productionId < 1) return false;
+        if ($productionId < 1 || !self::activeViewer($db,(int)$viewer['id'])) return false;
         $p = $db->prepare("SELECT 1 FROM productions WHERE id=:id AND lifecycle_stage='archived' LIMIT 1");
         $p->execute(['id'=>$productionId]);
         if (!$p->fetchColumn()) return false;
@@ -105,6 +106,14 @@ final class ProductionArchiveService
         if (!AccessPolicy::canManageProduction($viewer) && !self::audienceAllows((string)$file['audiences_json'],$viewer,$audiences)) return null;
         $version = StorageService::currentVersion($db,(int)$file['stored_file_id']);
         return $version ? ['file'=>$file,'version'=>$version] : null;
+    }
+
+    private static function activeViewer(PDO $db,int $viewerId):bool
+    {
+        if($viewerId<1)return false;
+        $s=$db->prepare("SELECT 1 FROM users WHERE id=:viewer AND active=1 AND account_status='active' LIMIT 1");
+        $s->execute(['viewer'=>$viewerId]);
+        return (bool)$s->fetchColumn();
     }
 
     private static function historicalAudiences(PDO $db, int $viewerId, int $productionId): array
