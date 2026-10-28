@@ -81,6 +81,11 @@
 - [ ] Accessibility/responsive QA for desktop, mobile drawers, forms, attendance and keyboard navigation.
 - [ ] Run link checks, performance baseline, media upload/optimization and server-side form validation audit.
 
+### Production directory organization — October 27
+
+- [x] Staff `/admin/productions` now shows Current & Upcoming first, sorted by production dates (performing/in-production before future shows), with Completed/Archived in a collapsed Past Productions section sorted newest to oldest. Legacy `is_active` alone cannot keep closed shows in the current list.
+- [ ] Verify the date ordering and collapsible behavior in the deployed desktop/mobile browser with real show data, including missing date fields and conflicting historical status flags.
+
 ### Production lifecycle closure — October 27 source changes
 
 - [x] Added source-level closed-production guards for direct People roster additions/removals, volunteer shift creation/edit and roster-status changes, volunteer-facing signup and closed-show opportunity filtering, and Production Group form assignment; completed/archived and unknown-stage roster writes are blocked and rolled back in regression stubs. Historical read paths were not changed.
