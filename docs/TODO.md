@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Archived viewer revocation:** historical memberships no longer grant archive access to disabled/inactive viewers; active managed student accounts remain eligible (9a2b3b4, 4189333, assertion a526bac). Add database-backed inactive/member/managed student/guardian tests before pilot sign-off.
+
+
 - [ ] **Archived guardian history linked-student safety:** require active linked student account for guardian archive listing, detail and historical audience checks (b1bfb59; source regression bcbed85). Verify direct membership and child activation/deactivation cases with database-backed multi-persona integration tests.
 
 
