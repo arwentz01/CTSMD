@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/FormWriteGuard.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
@@ -84,12 +85,16 @@ final class FormExperience
             $stmt = $db->prepare("SELECT fa.id, fa.form_id, fa.user_id, fa.production_id, fa.status, f.title, f.completion_mode, f.review_required FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.id = :id AND fa.user_id = :user_id AND f.active = 1 FOR UPDATE");
             $stmt->execute(['id' => $assignmentId, 'user_id' => (int)$user['id']]);
             $assignment = $stmt->fetch();
+            if ($assignment) FormWriteGuard::assignment($db,$assignmentId);
             if (!$assignment) {
                 throw new RuntimeException('That form is not assigned to you.');
             }
             if ($assignment['production_id'] !== null) {
                 ProductionLifecycleGuard::assertWritable($db, (int)$assignment['production_id']);
             }
+            $fields=$db->prepare('SELECT COUNT(*) FROM form_fields WHERE form_id=:form AND active=1');
+            $fields->execute(['form'=>(int)$assignment['form_id']]);
+            if ((int)$fields->fetchColumn()>0) throw new RuntimeException('This structured form must be completed on the CTSMD website.');
             if ($assignment['status'] === 'completed') {
                 throw new RuntimeException('This form is already complete.');
             }
@@ -201,6 +206,7 @@ final class FormExperience
             if (!$submission || $submission['status'] !== 'submitted') {
                 throw new RuntimeException('That form is no longer waiting for review.');
             }
+            FormWriteGuard::assignment($db,(int)$submission['assignment_id']);
             if ($submission['production_id'] !== null) {
                 ProductionLifecycleGuard::assertWritable($db, (int)$submission['production_id']);
             }

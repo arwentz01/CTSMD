@@ -25,6 +25,7 @@ require_once __DIR__ . '/CommunityExperience.php';
 require_once __DIR__ . '/FormExperience.php';
 require_once __DIR__ . '/VolunteerExperience.php';
 require_once __DIR__ . '/VolunteerApprovalExperience.php';
+require_once __DIR__.'/WorkspaceUI.php';
 
 final class MobileApi
 {
@@ -368,10 +369,15 @@ final class MobileApi
         if(!$id||$id<1) self::json(['error'=>'A form assignment ID is required.'],400);
         // Match the web Forms page: only the authenticated assignee can read
         // an active assignment. Do not expose arbitrary form definitions.
-        $s=$db->prepare("SELECT fa.id,fa.status,fa.due_at,fa.completed_at,f.title,f.form_type,f.instructions,f.completion_mode,f.review_required,fs.status AS submission_status,fs.submitted_at,fs.reviewed_at,fs.reviewer_note FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.id=:id AND fa.user_id=:user LIMIT 1");
+        $s=$db->prepare("SELECT fa.id,fa.production_id,fa.status,fa.due_at,fa.completed_at,f.id form_id,f.production_id definition_production_id,f.title,f.form_type,f.instructions,f.completion_mode,f.review_required,fs.status AS submission_status,fs.submitted_at,fs.reviewed_at,fs.reviewer_note FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id WHERE fa.id=:id AND fa.user_id=:user LIMIT 1");
         $s->execute(['id'=>$id,'user'=>(int)$user['id']]);
         $assignment=$s->fetch(PDO::FETCH_ASSOC);
         if(!$assignment) self::json(['error'=>'This form is not available to your account.'],404);
+        $fields=$db->prepare('SELECT COUNT(*) FROM form_fields WHERE form_id=:form AND active=1');
+        $fields->execute(['form'=>(int)$assignment['form_id']]);
+        $assignment['requires_web']=(int)$fields->fetchColumn()>0;
+        $assignment['read_only']=WorkspaceUI::productionReadOnly($db,$assignment['production_id']===null?null:(int)$assignment['production_id'])
+            || WorkspaceUI::productionReadOnly($db,$assignment['definition_production_id']===null?null:(int)$assignment['definition_production_id']);
         self::json(['form'=>$assignment]);
     }
 
@@ -471,6 +477,7 @@ final class MobileApi
         $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
         $m->execute(['id'=>$id,'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
+        $conversation['send_allowed']=true;$conversation['safety_issue']=null;try{SafeguardedConversationPolicy::enforceForSend($db,$id,(int)$user['id']);}catch(RuntimeException $error){$conversation['send_allowed']=false;$conversation['safety_issue']=$error->getMessage();}
         $people=$p->fetchAll();$visible=array_values(array_map(static fn(array $person):string=>(string)$person['name'],array_filter($people,static fn(array $person):bool=>(int)$person['user_id']!==(int)$user['id']&&$person['participant_role']!=='guardian')));$conversation['display_name']=$conversation['conversation_type']==='group'?($conversation['subject']?:'Group conversation'):(implode(', ',$visible)?:$conversation['subject']);self::json(['conversation'=>$conversation,'participants'=>$people,'messages'=>$m->fetchAll()]);
     }
 
@@ -661,7 +668,7 @@ final class MobileApi
             $sub=$input['subscription']??null;
             if(!is_array($sub))throw new RuntimeException('Push subscription is required.');
             $identity=trim((string)($sub['endpoint']??$sub['fcmToken']??$sub['apnsToken']??''));
-            if($identity==='')throw new RuntimeException('Push subscription identity is missing.');
+            if($identity===''||strlen($identity)>2048||preg_match('/[\x00-\x20]/',$identity))throw new RuntimeException('A valid push subscription identity is required.');
             $previous=trim((string)($input['previous_identity']??''));
             // A standards-based browser Web Push subscription has endpoint + encryption keys.
             // Native APNs/FCM tokens are NOT Web Push endpoints and need a distinct sender.

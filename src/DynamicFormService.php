@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/FormWriteGuard.php';
 
 final class DynamicFormService
 {
@@ -29,6 +30,7 @@ final class DynamicFormService
 
     public static function saveField(PDO $db,int $formId,int $fieldId,array $input):int
     {
+        FormWriteGuard::form($db,$formId);
         $label=trim((string)($input['label']??''));$type=(string)($input['field_type']??'short_text');$help=trim((string)($input['help_text']??''));$required=isset($input['required'])?1:0;$sort=(int)($input['sort_order']??0);
         if($label===''||mb_strlen($label)>255)throw new RuntimeException('Enter a field label no longer than 255 characters.');
         if(!in_array($type,self::FIELD_TYPES,true))throw new RuntimeException('Choose a valid field type.');
@@ -84,12 +86,14 @@ final class DynamicFormService
 
     public static function toggleField(PDO $db,int $formId,int $fieldId):void
     {
+        FormWriteGuard::form($db,$formId);
         $stmt=$db->prepare('SELECT active FROM form_fields WHERE id=:id AND form_id=:form FOR UPDATE');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$active=$stmt->fetchColumn();if($active===false)throw new RuntimeException('That field no longer exists.');
         $db->prepare('UPDATE form_fields SET active=:active WHERE id=:id')->execute(['active'=>(int)$active?0:1,'id'=>$fieldId]);
     }
 
     public static function bumpVersion(PDO $db,int $formId):int
     {
+        FormWriteGuard::form($db,$formId);
         $db->prepare('UPDATE forms SET definition_version=definition_version+1 WHERE id=:id')->execute(['id'=>$formId]);
         $stmt=$db->prepare('SELECT definition_version FROM forms WHERE id=:id');$stmt->execute(['id'=>$formId]);return (int)$stmt->fetchColumn();
     }

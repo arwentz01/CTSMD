@@ -14,6 +14,7 @@ export default function ThreadScreen(){
  const {user}=useAuth();
  const {bottom}=useSafeAreaInsets();
  const threadId=Number(id);
+ const [participantsOpen,setParticipantsOpen]=useState(false);
  const [version,setVersion]=useState(0),[draft,setDraft]=useState(''),[busy,setBusy]=useState(false);
  const load=useCallback(()=>Number.isSafeInteger(threadId)&&threadId>0?thread(threadId):Promise.reject(new Error('Invalid conversation.')),[threadId,version]);
  const {data,error,loading,retry}=useScreenData(load);
@@ -24,7 +25,7 @@ export default function ThreadScreen(){
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>router.back()} hitSlop={12}><Ionicons name="chevron-back" size={26} color={colors.navy}/></Pressable>
     <View style={styles.flex}><Text style={styles.name} numberOfLines={1}>{data?.conversation.display_name||'Conversation'}</Text>{data?.conversation.conversation_type==='safeguarded'&&<Text style={styles.safeguarded}>Safeguarded</Text>}</View>
    </View>
-   <LoadState loading={loading} error={error} onRetry={retry}/>
+   <LoadState loading={loading} error={error} onRetry={retry}/><View style={{paddingHorizontal:16,gap:8}}><Text style={{color:colors.muted}}>CTSMD messaging is monitored for safeguarding.</Text>{data&&<><Pressable accessibilityState={{expanded:participantsOpen}} onPress={()=>setParticipantsOpen(value=>!value)}><Text style={{color:colors.primary}}>Who can see this conversation</Text></Pressable>{participantsOpen&&data.participants.map(person=><Text key={person.user_id} style={{color:colors.text}}>{person.name} · {person.participant_role}</Text>)}</>}</View>
    <FlatList style={styles.flex} contentContainerStyle={styles.messages} data={data?.messages||[]} keyExtractor={m=>String(m.id)} renderItem={({item:m})=>{
     const mine=m.sender_user_id===user?.id;
     const intended=(data?.participants||[]).filter(p=>p.user_id!==user?.id&&p.participant_role!=='guardian');
@@ -42,7 +43,7 @@ export default function ThreadScreen(){
      </View>
     </View>;
    }} ListEmptyComponent={!loading&&!error?<Text style={styles.empty}>No messages yet.</Text>:undefined}/>
-   {data&&<View style={[styles.composer,{paddingBottom:Math.max(8,bottom>0?8:16)}]}>
+   {data&&!data.conversation.send_allowed&&<View style={{padding:16}}><Text accessibilityRole="alert" style={{color:colors.text}}>Sending is paused. {data.conversation.safety_issue}</Text></View>}{data?.conversation.send_allowed&&<View style={[styles.composer,{paddingBottom:Math.max(8,bottom>0?8:16)}]}>
     <TextInput accessibilityLabel="Message" placeholder="Message" multiline maxLength={4000} value={draft} onChangeText={setDraft} style={styles.input}/>
     <Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={busy||!draft.trim()} onPress={()=>void send()} style={[styles.send,(busy||!draft.trim())&&styles.disabled]}><Ionicons name="arrow-up" color="#fff" size={22}/></Pressable>
    </View>}

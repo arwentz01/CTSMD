@@ -23,4 +23,6 @@ Backend base URL: `EXPO_PUBLIC_CTSMD_API_BASE_URL=https://ctsmd.me` (HTTPS only;
 
 ## Safety and release gates
 
+See [Phase 4 parity and acceptance evidence](../docs/NATIVE_PHASE4_ACCEPTANCE.md). Run `npm ci`, `npm run typecheck`, `npm run test:integration`, and `npx expo install --check`. CI also exports Android/iOS bundles; those are not device tests. Native notification registration remains `native_pending`: APNs/FCM delivery is not configured or verified. Use Settings to explicitly register/remove this device; do not infer delivery from a successful registration.
+
 This is not yet a released or security-accepted app. Use disposable accounts in staging; do not test on actual student records. Guardian relationship revocation, staff role removal, push delivery, message visibility and active device-session invalidation require end-to-end native acceptance. App-generated requests must use backend authorization, not client role display logic.

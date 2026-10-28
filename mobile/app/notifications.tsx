@@ -1,26 +1,29 @@
 import {TouchTarget as Pressable} from '../src/components/TouchTarget';
-import React,{useCallback,useEffect,useState} from 'react';
+import React,{useCallback,useState} from 'react';
 import {Alert,StyleSheet,Text,View} from 'react-native';
-import {router} from 'expo-router';
+import {router,useFocusEffect,type Href} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
 import {notifications,markNotificationRead} from '../src/api/client';
 import type {MobileNotification} from '../src/api/client';
 import {colors} from '../src/theme/colors';
+import {notificationDestination} from '../src/notifications/destination';
 
 export default function NotificationsScreen(){
  const [items,setItems]=useState<MobileNotification[]>([]);
  const [historyOpen,setHistoryOpen]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
- const load=useCallback(async()=>{try{setError('');const result=await notifications();setItems(result.notifications);}catch(e){setError(e instanceof Error?e.message:'Unable to load notifications.');}finally{setLoading(false);}},[]);
- useEffect(()=>{void load();},[load]);
+ const load=useCallback(async()=>{try{setError('');setItems([]);setLoading(true);const result=await notifications();setItems(result.notifications);}catch(e){setError(e instanceof Error?e.message:'Unable to load notifications.');}finally{setLoading(false);}},[]);
+ useFocusEffect(useCallback(()=>{void load();return()=>setItems([])},[load]));
  const unread=items.filter(n=>!n.read_at);
  const past=items.filter(n=>!!n.read_at);
  const mark=async(id:number)=>{try{await markNotificationRead(id);setItems(old=>old.map(n=>n.id===id?{...n,read_at:new Date().toISOString()}:n));}catch(e){Alert.alert('Unable to mark as read',e instanceof Error?e.message:'Try again.');}};
  const open=async(n:MobileNotification)=>{
   if(!n.read_at)await mark(n.id);
   if(n.source_type==='casting_offer'){router.push('/action-center');return;}
+  const destination=notificationDestination({action_path:n.action_path});
+  if(destination!=='/notifications'){router.push(destination as Href);return;}
   // The backend stores web routes, not native deep links. Never open an
   // authenticated PHP web URL with a mobile bearer token.
   if(n.source_type==='form_assignment'){router.push('/(tabs)/forms');return;}

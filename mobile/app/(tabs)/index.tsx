@@ -14,7 +14,7 @@ import type {TheatreEvent} from '../../src/types/ctsmd';
 const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
 function EventRow({event,featured=false,hasArtwork=false}:{event:TheatreEvent;featured?:boolean;hasArtwork?:boolean}){
-  return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push('/(tabs)/theatre')} style={featured?styles.hero:styles.event}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={'View theatre schedule for '+event.title} onPress={()=>router.push({pathname:'/events/[id]',params:{id:String(event.id)}})} style={featured?styles.hero:styles.event}>
     {featured&&<ProductionArtwork productionId={event.production_id} enabled={hasArtwork}/>}
     <View style={featured?styles.heroContent:styles.eventContent}>
       {featured&&<View style={styles.heroHeader}><Ionicons name="sparkles-outline" size={18} color={colors.gold}/><Text style={styles.heroEyebrow}>UP NEXT</Text></View>}
@@ -41,7 +41,7 @@ export default function Home(){
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
     <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
-      <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/(tabs)/theatre')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
+      <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/calendar')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
       {openForms.length>0&&<View style={styles.panel}><Text style={styles.sectionTitle}>Needs Your Attention</Text>{openForms.slice(0,3).map(f=><Pressable key={f.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/forms/[id]',params:{id:String(f.id)}})} style={styles.task}><Ionicons name="document-text-outline" color={colors.primary} size={21}/><View style={{flex:1}}><Text style={styles.rowTitle}>{f.title}</Text><Text style={styles.sub}>Assigned form · Action required</Text></View><Ionicons name="chevron-forward" color={colors.muted}/></Pressable>)}{openForms.length>3&&<Pressable onPress={()=>router.push('/(tabs)/forms')} accessibilityRole="button"><Text style={styles.link}>View all {openForms.length} forms →</Text></Pressable>}</View>}
       {!!data.a.casting_offers.length&&<View style={styles.panel}>

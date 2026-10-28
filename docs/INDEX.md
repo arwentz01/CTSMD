@@ -12,7 +12,7 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | Platform launch reference | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | Supporting audit rationale; actionable priorities live only in TODO.md |
 | **Single work tracker and roadmap** | [TODO.md](TODO.md) | **Only maintained actionable To-Do**: pilot gates, verification, and future backlog |
 | Architecture / product intent | [PRODUCT_CHARTER.md](PRODUCT_CHARTER.md), [VISUAL_FIRST_ARCHITECTURE.md](VISUAL_FIRST_ARCHITECTURE.md) | Product scope and implementation principles |
-| Mobile integration | [MOBILE_V1_FOLLOWUPS.md](MOBILE_V1_FOLLOWUPS.md), [mobile parity](../mobile/docs/CASTING_TASKS_PARITY.md) | Native scope and outstanding staff parity |
+| Mobile integration | [Phase 4 acceptance](NATIVE_PHASE4_ACCEPTANCE.md), [MOBILE_V1_FOLLOWUPS.md](MOBILE_V1_FOLLOWUPS.md), [mobile parity](../mobile/docs/CASTING_TASKS_PARITY.md) | Native parity, actual test evidence and explicit device/push limitations |
 | Production lifecycle | [PRODUCTION_LIFECYCLE_V2.md](PRODUCTION_LIFECYCLE_V2.md) | Stage, lifecycle and approval behavior |
 | Incident perspective requests | [SAFEGUARDING_STATEMENT_REQUESTS.md](SAFEGUARDING_STATEMENT_REQUESTS.md) | Confidential third-party case statements, invitation workflow and release gates |
 | Guardian safeguarded alerts | [GUARDIAN_SAFEGUARDED_NOTIFICATION_MUTE.md](GUARDIAN_SAFEGUARDED_NOTIFICATION_MUTE.md) | Guardian-only push mute, safeguarding boundaries and QA |

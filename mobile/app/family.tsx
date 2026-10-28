@@ -17,7 +17,7 @@ export default function MyFamily(){
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&<>
    <Text style={s.heading}>My students</Text>
-   {data.students.map(student=><View key={student.id} style={s.card}><Ionicons name="school-outline" size={22} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.name}>{student.name}</Text><Text style={s.label}>{student.is_primary?'Primary guardian relationship':'Active family relationship'}</Text></View></View>)}
+   {data.students.map((student,index)=><View key={student.id??'logistics-'+index} style={s.card}><Ionicons name="school-outline" size={22} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.name}>{student.name||student.first_name||'Family connection'}</Text><Text style={s.label}>{student.relationship_type==='caregiver'?'Caregiver relationship · logistics only':student.is_primary?'Primary guardian relationship':'Active family relationship'}</Text></View></View>)}
    {data.students.length===0&&<Text style={s.empty}>No linked students are currently available to your account.</Text>}
    <Text style={s.heading}>My guardians</Text>
    {data.guardians.map(guardian=><View key={guardian.id} style={s.card}><Ionicons name="people-outline" size={22} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.name}>{guardian.name}</Text><Text style={s.label}>{guardian.is_primary?'Primary guardian':'Active guardian'}</Text></View></View>)}

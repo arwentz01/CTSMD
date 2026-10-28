@@ -58,7 +58,7 @@ $paths=[
 ];
 foreach($paths as [$category,$path]){
     $db=new PushGuardDatabase();
-    $db->queue=['id'=>9,'user_id'=>7,'category'=>$category,'action_path'=>$path,'attempt_count'=>0];
+    $db->queue=['id'=>9,'user_id'=>7,'category'=>$category,'action_path'=>$path,'attempt_count'=>0,'production_id'=>null];
     $result=PushService::processQueue($db,1);
     if(!$db->suppressed||$result!==['sent'=>0,'failed'=>0]){
         throw new RuntimeException("Malformed {$category} destination was not suppressed.");

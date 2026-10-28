@@ -33,7 +33,7 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
  'ProductionArchiveService.php'=>[
-  "if (!self::activeViewer($db,$viewerId)) return [];",
+  'if (!self::activeViewer($db,$viewerId)) return [];',
   'if ($productionId < 1 || !self::activeViewer($db,(int)$viewer[\'id\'])) return false;',
   "account_status<>'disabled'",
 

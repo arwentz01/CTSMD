@@ -53,6 +53,8 @@ jobs:
         run: php tests/pilot_lifecycle_write_boundaries.php
       - name: Closed-production roster write guards
         run: php tests/pilot_closed_production_roster.php
+      - name: Closed-production form write guards
+        run: php tests/pilot_closed_forms.php
       - name: Member roster aggregation and cross-production videos
         run: php tests/pilot_member_roster_media.php
       - name: Named video links in Community posts

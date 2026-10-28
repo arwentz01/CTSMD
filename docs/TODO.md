@@ -6,6 +6,17 @@
 
 **Release stance:** The most recent [board pilot report](BOARD_PILOT_READINESS.md) remains **NO-GO for a real-family pilot** until its open gates are accepted. Older percentages are dated evidence, not current calculated coverage.
 
+## Phase 4 native acceptance follow-up — October 28, 2026
+
+Evidence and dated acceptance checklist: [Native Phase 4](NATIVE_PHASE4_ACCEPTANCE.md). Existing Expo app extended; no production deployment or new identity system.
+
+- [ ] **Device / safeguarding acceptance:** physical iOS/Android parent/student/staff tests for cold start, session replacement/revocation, multiple shows, former guardians, closed resources, notifications, upload/video, large text, VoiceOver/TalkBack and keyboard/safe areas. Local API and mocked native tests are not device signoff.
+- [ ] **Native push remains blocked:** APNs/FCM sender/credentials/build configuration, shared delivery-time authorization/preferences, receipt/token cleanup, offline logout retry and OS-permission revocation. Registration is `native_pending`, not delivery.
+- [ ] **Backend/native parity:** prioritize guardian-on-child structured forms, secure profile/contact and Family & Pickup workflows, caregiver logistics and staff workflows. Do not relax server policy to achieve parity.
+- [ ] **Closed forms acceptance:** shared transaction guards and legacy structured-submit rejection now in source; local closed-submit HTTP and lifecycle tests pass. Verify staff edit/review/assignment, mixed production scopes and concurrent closure in staging before closing the release gate.
+- [ ] **Schema 086 hosting preflight:** existing additive DOB/contact/age migration applied only to local demo; Family & Pickup now loads. Read-only preflight checks its ten columns. Independently inspect/back up/review hosting migration state; no production schema changes authorized or performed in Phase 4.
+- [ ] **SDK tooling advisories / distribution:** review 8 npm advisories (3 high, 5 low), use SDK-compatible patches rather than forced downgrade, then signed internal builds and owner approval. Existing pilot operational gates remain open.
+
 ## How to use
 
 - **P0**: security, safeguarding and live release blockers.

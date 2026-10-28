@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__.'/FormWriteGuard.php';
 
 final class FamilyFormService
 {
@@ -53,6 +54,7 @@ final class FamilyFormService
         $members->execute(['group'=>$groupId]);$userIds=array_map(static fn(array $r):int=>(int)$r['user_id'],$members->fetchAll());if(!$userIds)throw new RuntimeException('That Production Group has no live Student members.');
         $db->beginTransaction();$count=0;
         try{
+            FormWriteGuard::form($db,$formId);
             ProductionLifecycleGuard::assertWritable($db,(int)$context['production_id']);
             foreach($userIds as $studentId){
                 $existing=$db->prepare("SELECT id,status FROM form_assignments WHERE form_id=:form AND user_id=:user AND production_id=:production ORDER BY id DESC LIMIT 1 FOR UPDATE");$existing->execute(['form'=>$formId,'user'=>$studentId,'production'=>(int)$context['production_id']]);$row=$existing->fetch();

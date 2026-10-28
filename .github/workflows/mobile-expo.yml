@@ -28,8 +28,12 @@ jobs:
         with:
           node-version: "22"
       - name: Install Expo app dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Validate Expo TypeScript
         run: npm run typecheck
       - name: Check Expo dependency compatibility
         run: npx expo install --check
+      - name: Native API and notification navigation contracts
+        run: npm run test:integration
+      - name: Export Android and iOS bundles (not device verification)
+        run: npx expo export --platform android --platform ios --output-dir /tmp/ctsmd-native-export

@@ -42,13 +42,19 @@ try {
     if (!(int)$colStmt->fetchColumn()) {
         $missing[] = '083 attendance arrival time: attendance_records.arrived_at';
     }
+    foreach (['users'=>['date_of_birth','contact_phone','address_line1','address_line2','address_city','address_state','address_postal_code'],'registration_opportunities'=>['minimum_age','maximum_age','age_eligibility_date']] as $table=>$columns) {
+        foreach ($columns as $column) {
+            $colStmt->execute(['table'=>$table,'column'=>$column]);
+            if (!(int)$colStmt->fetchColumn()) $missing[] = '086 account contact / age eligibility: '.$table.'.'.$column;
+        }
+    }
     if ($missing) {
         fwrite(STDERR, "CTSMD schema preflight FAILED. Missing required schema:\n");
         foreach ($missing as $item) fwrite(STDERR, " - {$item}\n");
         fwrite(STDERR, "Review and apply the appropriate migrations with the established deployment procedure.\n");
         exit(1);
     }
-    fwrite(STDOUT, "CTSMD schema preflight passed: migrations 079–085 feature tables and attendance arrival column exist.\n");
+    fwrite(STDOUT, "CTSMD schema preflight passed: checked migrations 079–086 feature tables and columns exist (not a complete schema audit).\n");
     exit(0);
 } catch (Throwable $error) {
     fwrite(STDERR, "CTSMD schema preflight FAILED: could not inspect database schema. Check connection, permissions and server logs.\n");

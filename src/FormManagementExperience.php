@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/FormWriteGuard.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
@@ -95,7 +96,9 @@ final class FormManagementExperience
 
         $db->beginTransaction();
         try {
+            FormWriteGuard::production($db,$productionId);
             if ($formId > 0) {
+                FormWriteGuard::form($db,$formId);
                 $beforeStmt = $db->prepare('SELECT id,production_id,title,form_type,instructions,completion_mode,review_required,active FROM forms WHERE id=:id FOR UPDATE');
                 $beforeStmt->execute(['id'=>$formId]);
                 $before = $beforeStmt->fetch();
@@ -128,6 +131,7 @@ final class FormManagementExperience
         if ($formId < 1) throw new RuntimeException('That form could not be found.');
         $db->beginTransaction();
         try {
+            FormWriteGuard::form($db,$formId);
             $stmt = $db->prepare('SELECT id,title,active FROM forms WHERE id=:id FOR UPDATE');
             $stmt->execute(['id'=>$formId]);
             $form = $stmt->fetch();
@@ -177,6 +181,8 @@ final class FormManagementExperience
 
         $db->beginTransaction();
         try {
+            FormWriteGuard::form($db,$formId);
+            FormWriteGuard::production($db,$productionId);
             $created = 0;
             $existing = $db->prepare('SELECT id FROM form_assignments WHERE form_id=:form_id AND user_id=:user_id AND ((production_id IS NULL AND :production_id_null IS NULL) OR production_id=:production_id) LIMIT 1');
             $insert = $db->prepare("INSERT INTO form_assignments (form_id,production_id,user_id,status,due_at,completed_at,assigned_by_user_id) VALUES (:form_id,:production_id,:user_id,'missing',:due_at,NULL,:assigner)");
