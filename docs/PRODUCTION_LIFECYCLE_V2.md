@@ -175,3 +175,9 @@
 - Production guardian Community audience eligibility now requires active parent/guardian relationships, not caregiver links. Historical channel visibility and group/team membership authorization still require broader persona testing.
 - Channel edit/create revalidates both relevant production lifecycle scopes inside the database transaction, in addition to its earlier input validation. This is not a proof against all concurrent stage transition races and requires database-level integration verification.
 - Source regression contracts added; hosted access and mobile behavior are unverified.
+
+### Operational email reminder closure (October 27)
+- NotificationReminderService now excludes form-assignment reminders when the associated production is completed, archived, missing or at an unknown stage. Organization-wide assignments with a null production ID are unaffected.
+- Production-specific volunteer shift reminders and eligibility-warning email jobs likewise require a writable lifecycle stage. Organization-wide shifts remain eligible.
+- Student form reminders are addressed only to current active parent/guardian relationships; caregivers are excluded. Recipient revocation for previously queued emails still requires a distinct delivery-time authorization mechanism.
+- Regression source checks added. PHP safety CI passed. This does **not** resolve old queued emails, all production notification origins, native/web push, or delivered-message verification.
