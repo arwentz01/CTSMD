@@ -49,7 +49,7 @@ function checkCancel(bool $shouldPass,CancelDatabase $db,int $user=12,int $shift
     if($shouldPass && $db->signup['status']!=='cancelled')throw new RuntimeException('Accepted cancellation did not update status.');
     if($db->inTransaction())throw new RuntimeException('Transaction left open.');
     if($shouldPass && $db->commits!==1)throw new RuntimeException('Successful transaction not committed.');
-    if(!$shouldPass && $db->rollbacks!==1)throw new RuntimeException('Rejected transaction not rolled back.');
+    if(!$shouldPass && $db->rollbacks!==($shift<1?0:1))throw new RuntimeException($shift<1?'Invalid shift should reject before opening a transaction.':'Rejected in-transaction cancellation not rolled back.');
 }
 $checks=0;
 $db=new CancelDatabase();checkCancel(true,$db);$checks++;
