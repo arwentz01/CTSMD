@@ -94,6 +94,10 @@ final class CommunityManagementExperience
         $legacyRead=self::legacyScope($read); $legacyPost=self::legacyScope($post);
         $db->beginTransaction();
         try{
+            // Revalidate under the write transaction; a channel may have closed
+            // since the editor first loaded its production context.
+            if($id && $existing['production_id']!==null)ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
+            if($productionId!==null)ProductionLifecycleGuard::assertWritable($db,(int)$productionId);
             if($id){
                 $before=self::channel($db,$id); if(!$before) throw new RuntimeException('That channel no longer exists.');
                 $accessMode=$productionGroupId?'selected':((!empty($before['production_group_id'])&&$before['access_mode']==='selected')?'audience':(string)($before['access_mode']??'audience'));
