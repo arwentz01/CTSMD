@@ -34,7 +34,7 @@ $cases=[
  ],
  'ProductionArchiveService.php'=>[
   "if (!self::activeViewer($db,$viewerId)) return [];",
-  "if ($productionId < 1 || !self::activeViewer($db,(int)$viewer['id'])) return false;",
+  'if ($productionId < 1 || !self::activeViewer($db,(int)$viewer[\'id\'])) return false;',
   "account_status<>'disabled'",
 
   "JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'",
