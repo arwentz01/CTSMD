@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 
@@ -298,7 +299,7 @@ final class FormManagementExperience
             ['label'=>'Manage forms','href'=>'/admin/forms/manage','active'=>true],
         ];
         header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/form-management.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$title,$basePath,$subnav); ?><div class="fm-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/form-management.css') ?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-operational ux-forms"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Operations',$title,$basePath,$subnav); ?><div class="fm-page">
         <?php if($flash):?><div class="fm-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <?php if($route==='/admin/forms/manage'):?>
         <section class="fm-hero"><div><small>FORM LIBRARY</small><h2>Create once. Assign with context.</h2><p>Reusable organization forms can be assigned globally or inside a working production. Production-specific forms stay permanently attached to one show.</p></div><a class="button" href="<?= $url('/admin/forms/manage/edit') ?>">Create form</a></section>
@@ -322,6 +323,6 @@ final class FormManagementExperience
     {
         $url=static fn(string $path):string=>($basePath?:'').$path;
         http_response_code(403);header('Content-Type:text/html; charset=utf-8');
-        ?><!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/forms',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Forms','Restricted',$basePath);?></main></div></body></html><?php exit;
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-operational ux-forms"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar('/forms',$basePath,$user);?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Forms','Restricted',$basePath);?></main></div></body></html><?php exit;
     }
 }

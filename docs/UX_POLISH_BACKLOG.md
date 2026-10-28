@@ -14,3 +14,5 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Messaging | Richer attachment thumbnails and upload progress require an independently reviewed delivery/storage change | Medium |
 | Notifications | Broader notification deduplication needs an API/service design review; this phase keeps delivery and queue processing unchanged | Medium |
 | Accessibility | Physical devices, Safari/Firefox and assistive-technology validation remain follow-up testing | Medium |
+| Forms | No draft/save model or template library is invented; only the existing submission and builder capabilities are presented | Medium |
+| Forms | Closed-production backend enforcement is a release blocker in TODO, not cosmetic backlog work | P0 dependency |

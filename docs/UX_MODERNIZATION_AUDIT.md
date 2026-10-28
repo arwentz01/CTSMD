@@ -1,5 +1,23 @@
 # UX modernization audit
 
+## Phase 3 — operational and native adoption
+
+Baseline: remote-synchronized `abedbd4`, existing `audit/board-pilot-readiness`, October 27, 2026. Phase 2 templates, scoped tokens, viewer-filtered feeds and CI evidence were inspected before extension.
+
+### Build 1 — Forms
+
+Adopted the existing shell/tokens on the active FamilyFormsExperience routes (`/forms`, detail, staff review and group assignment), form management/edit/assignment, builder and builder index. No dormant legacy FormExperience rewrite. Subject/production, actual assignment/submission states, staff review and historical responses remain distinct. Returned-response notes are now visible; dynamically generated text/date fields receive names from their field legends. Closed/unsupported productions use the existing lifecycle guard only for a presentation read-only lock on family forms.
+
+**Pre-existing release blocker:** active FamilyFormsExperience submission/review and management/builder handlers lack consistent lifecycle write enforcement. The legacy FormExperience source-contract test does not prove these active handlers safe. This phase does not repair backend rules or claim that hiding controls secures direct POSTs. Track in TODO's P0 gates.
+
+| Before | After | Why |
+| --- | --- | --- |
+| Dark promotional form headings and tiny metadata | Compact form/task headings, shared warm surfaces and readable subject/production context | The assignment and next decision lead |
+| Text/date field group legend without a control name | Legend-associated accessible name | Assistive technology can identify the field |
+| Returned response lacked its reviewer explanation in the fill view | Existing reviewer note displayed without changing review status | User understands the requested correction |
+
+Verification and subsequent build records follow as each batch lands. This phase never implies deployment or complete WCAG certification.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.

@@ -9,6 +9,8 @@ final class WorkspaceUI
     {
         $href = htmlspecialchars(($basePath ?: '') . '/assets/css/ux-workspaces.css?v=20261027', ENT_QUOTES, 'UTF-8');
         echo '<link rel="stylesheet" data-ux-workspaces href="' . $href . '">';
+        $operational = htmlspecialchars(($basePath ?: '') . '/assets/css/ux-operational.css?v=20261027', ENT_QUOTES, 'UTF-8');
+        echo '<link rel="stylesheet" data-ux-operational href="' . $operational . '">';
         $script = htmlspecialchars(($basePath ?: '') . '/assets/js/ux-workspaces.js?v=20261027', ENT_QUOTES, 'UTF-8');
         echo '<script defer src="' . $script . '"></script>';
     }
@@ -21,6 +23,15 @@ final class WorkspaceUI
             echo '<a class="ux-context-action" href="' . $e($action['href']) . '">' . $e($action['label']) . '</a>';
         }
         echo '</header>';
+    }
+
+    /** Presentation-only lock. Does not replace the write handler's lifecycle enforcement. */
+    public static function productionReadOnly(PDO $db, ?int $productionId): bool
+    {
+        if (!$productionId) return false;
+        require_once __DIR__.'/ProductionLifecycleGuard.php';
+        try { ProductionLifecycleGuard::assertWritable($db, $productionId); return false; }
+        catch (RuntimeException $error) { return true; }
     }
 
     public static function workflow(array $stages): void

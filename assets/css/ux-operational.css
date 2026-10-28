@@ -1,0 +1,40 @@
+/* Phase 3 adopts the existing --ux-* tokens. Only opted-in operational routes. */
+body.ux-workspace.ux-operational .unified-main :is(.ff-page,.fm-page,.df-page,.vol-page,.vsm-page,.va-page,.vd-page,.vv-page,.vsr-page,.cal-page,.att-page,.pt-page,.pl-page,.fp-page,.ap-page,.accounts-page) { width:100%; max-width:1440px; min-width:0; margin-inline:auto; padding:28px 32px 48px; background:var(--ux-ground); }
+body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.ff-form-head,.df-head,.att-head) { background:transparent!important; color:var(--ux-ink)!important; border:0!important; box-shadow:none!important; border-radius:0!important; padding:0 0 24px!important; margin-bottom:0!important; }
+body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.ff-form-head,.df-head,.att-head) h2 { color:var(--ux-ink)!important; font:650 26px/1.25 system-ui,sans-serif!important; letter-spacing:-.025em!important; margin:0 0 8px!important; }
+body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.ff-form-head,.df-head,.att-head) p { color:var(--ux-muted)!important; font-size:14px!important; line-height:1.55!important; max-width:75ch; display:block!important; }
+body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.df-head) > div > small { display:none!important; }
+body.ux-operational .unified-main :is(h3,h4) { font-family:inherit!important; color:var(--ux-ink); line-height:1.35; }
+body.ux-operational .unified-main h3 { font-size:18px; }
+body.ux-operational .unified-main :is(small,legend,label) { font-size:13px; letter-spacing:0; text-transform:none; }
+body.ux-operational .unified-main :is(.ff-form,.ff-review article,.ff-row,.fm-card,.fm-form,.fm-side,.fm-roster,.df-form-card,.df-field,.df-editor,.df-preview) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:var(--ux-radius)!important; box-shadow:none!important; }
+body.ux-operational .unified-main :is(.ff-person small,.ff-main small,.ff-main p,.fm-card small,.fm-card p,.fm-side p,.fm-roster small,.fm-roster time,.df-form-card p) { color:var(--ux-muted)!important; font-size:13px!important; text-transform:none!important; letter-spacing:0!important; }
+body.ux-operational .unified-main :is(.ff-row.done,.fm-card.inactive) { opacity:1; }
+body.ux-operational .unified-main :is(.ff-status,.fm-roster article > span) { background:var(--ux-ivory)!important; color:var(--ux-ink)!important; border-radius:4px!important; font-size:12px!important; padding:5px 8px!important; text-transform:none!important; white-space:normal; }
+body.ux-operational .unified-main .ff-row { gap:16px; padding:16px!important; }
+body.ux-operational .unified-main .ff-main h3 { font:600 17px/1.35 system-ui,sans-serif!important; }
+body.ux-operational .unified-main .ff-hero > div:last-child { border:0!important; background:var(--ux-ivory)!important; color:var(--ux-ink)!important; border-radius:6px!important; padding:12px 16px!important; }
+body.ux-operational .unified-main .ff-hero > div:last-child b { color:var(--ux-ink)!important; font-size:24px!important; }
+body.ux-operational .unified-main .ff-hero > div:last-child span { color:var(--ux-muted)!important; font-size:13px!important; text-transform:none!important; letter-spacing:0!important; }
+body.ux-operational .unified-main :is(.ff-guardian-note,.ff-submitted,.ff-complete) { background:var(--ux-ivory)!important; color:var(--ux-ink)!important; border:0!important; }
+body.ux-operational .unified-main :is(.ff-guardian-note span,.ff-complete span,.ff-form-head > small) { color:var(--ux-muted)!important; font-size:13px!important; letter-spacing:0!important; text-transform:none!important; }
+body.ux-operational .unified-main :is(form label,form legend) { font-size:14px!important; }
+body.ux-operational .unified-main :is(input,textarea,select):not([type=checkbox]):not([type=radio]):not([type=hidden]) { border:1px solid var(--ux-control)!important; background:var(--ux-paper)!important; color:var(--ux-ink)!important; font:inherit!important; min-height:44px; }
+body.ux-operational .unified-main :is(.ff-flash,.fm-flash,.df-flash,.ux-record-note) { padding:14px 16px; border-radius:8px; font-size:14px; background:var(--ux-ivory); color:var(--ux-ink); margin-bottom:20px; }
+body.ux-operational .unified-main :is(.fm-grid,.df-form-grid) { gap:24px; }
+body.ux-operational .unified-main :is(.fm-card footer,.fm-form footer,.ff-form footer) { flex-wrap:wrap; gap:12px; }
+body.ux-operational .unified-main :is(.fm-card footer a,.fm-card footer button,.fm-head>a) { font-size:13px; color:var(--ux-wine); min-height:44px; display:inline-flex; align-items:center; }
+body.ux-operational .unified-main :is(.ff-empty,.fm-empty,.df-empty) { background:var(--ux-paper); border:1px solid var(--ux-line); box-shadow:none; text-align:left; border-radius:12px; padding:24px; }
+body.ux-operational .unified-main :is(.df-hero>a,.df-form-card>small) { color:var(--ux-wine)!important; font-size:13px!important; letter-spacing:0!important; text-transform:none!important; }
+@media(max-width:780px) {
+ body.ux-workspace.ux-operational .unified-main :is(.ff-page,.fm-page,.df-page,.vol-page,.vsm-page,.va-page,.vd-page,.vv-page,.vsr-page,.cal-page,.att-page,.pt-page,.pl-page,.fp-page,.ap-page,.accounts-page) { padding:20px 16px 32px!important; background:var(--ux-ground)!important; }
+ body.ux-operational .unified-main .ff-hero { display:flex!important; align-items:start!important; gap:16px!important; }
+ body.ux-operational .unified-main .ff-hero > div:last-child { min-width:88px!important; margin:0!important; }
+ body.ux-operational .unified-main .ff-row { display:grid!important; grid-template-columns:minmax(0,1fr) auto!important; }
+ body.ux-operational .unified-main .ff-person { grid-column:1/-1!important; }
+ body.ux-operational .unified-main .ff-main { grid-column:1/-1!important; }
+ body.ux-operational .unified-main .ff-status { grid-column:1/-1!important; grid-row:auto!important; justify-self:start!important; }
+ body.ux-operational .unified-main :is(.fm-grid,.df-form-grid,.df-layout) { grid-template-columns:minmax(0,1fr)!important; }
+ body.ux-operational .unified-main :is(button,.button,a[class*="-action"]) { min-height:44px; }
+ body.ux-operational .unified-main :is(.ff-form,.fm-form) { padding:16px!important; }
+}
