@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Notification lifecycle (Oct 27 source partial):** reminder generator excludes closed/unknown production form assignments and volunteer shifts while retaining organization-wide reminders; active parent/guardian relationship required for student form-reminder recipients. Commits 319c51d and 59b318e. PHP CI passed. Outstanding: queue delivery-time reauthorization, existing queued mail, app/web/native push parity and other production notification origins. No deployed/real-member delivery validation.
+
+
 - [ ] **Community lifecycle hardening (Oct 27 follow-up):** block posting capability for closed/unknown production stages, filter production-guardian audiences by active parent/guardian roles, and recheck channel write scopes inside save transactions. Source changes bbd8f9c, d373dcd, regression 695b215. Pending: group/team membership history, concurrency, former-guardian integration, mobile persona tests and hosted acceptance.
 
 
