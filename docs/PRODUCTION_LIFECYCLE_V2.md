@@ -211,3 +211,8 @@
 - FamilyDashboardService and HomeDashboardService now exclude completed, archived, inactive, and unknown production stages from actionable form assignments and upcoming volunteer commitments while preserving organization-wide records. Household production summaries likewise include only current production memberships.
 - CalendarService's current visible events list now checks each joined production lifecycle and active flag, preventing a newly completed show from leaving stale current schedule events on Home or Family. Historical schedules are not deleted.
 - Each item is filtered using its own production ID; closing one show does not select or hide another active show. This is source-level validation only, and guardian/student/multi-show staging acceptance remains required.
+
+### Notification delivery-time partial reauthorization (October 27)
+- Form reminder email jobs generated with form-due assignment dedupe keys now check active production stage, assignment existence, recipient identity and current parent/guardian relationship before sending; revoked or closed reminders are suppressed rather than sent.
+- The push event bridge checks ProductionNotificationAccess for casting-offer and casting-release source notifications before creating push jobs. The push delivery worker also rechecks the original app_notifications source for notification-ID dedupe jobs immediately before sending.
+- Existing checks for conversation and Community device pushes remain intact. Other email source types, other push dedupe categories, previously queued jobs without identifying source metadata, and race-free delivery locking still require a broader audit and database-backed tests. No real delivery testing performed.
