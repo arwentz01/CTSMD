@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ProductionListOrganizer.php';
@@ -301,7 +302,7 @@ final class ProductionLifecycleExperience
         $inactive = count($productions) - count($active) - $planning;
         $title = $route === '/admin/productions/view' ? ($selected['title'] ?? 'Production') : 'Productions & seasons';
         header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-lifecycle.css') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath); ?><div class="pl-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-lifecycle.css') ?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-operational ux-tasks"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Production',$title,$basePath); ?><div class="pl-page">
         <?php if ($flash): ?><div class="pl-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <?php if ($route === '/admin/productions'): ?>
         <section class="pl-hero"><div><small>CONCURRENT PRODUCTIONS</small><h2>More than one show can be live.</h2><p>Active productions coexist. Selecting a workspace chooses which show this browser session is editing; it never changes another staff member’s workspace.</p></div><div class="pl-current"><small>YOUR WORKING PRODUCTION</small><b><?= $workspace ? $esc($workspace['title']) : 'None selected' ?></b><span><?= count($active) ?> active production<?= count($active)===1?'':'s' ?></span></div></section>
@@ -313,7 +314,7 @@ final class ProductionLifecycleExperience
         <?php if((string)$selected['lifecycle_stage']==='completed'): $archiveReadiness=ProductionArchivalWorkflow::readiness($db,(int)$selected['id']); $archiveBlocked=count(array_filter($archiveReadiness,static fn(array $item):bool=>$item['severity']==='blocker'&&$item['count']>0))>0; ?>
         <section class="pl-panel"><small>CONTROLLED ARCHIVAL</small><h3>Archive this completed production</h3>
         <p>Archival closes the active production workspace, removes current volunteer opportunities and preserves casting, roster, forms, attendance, Theatre History, historical files and communications subject to authorization.</p>
-        <h4>Archive readiness</h4><ul><?php foreach($archiveReadiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= $esc($item['severity']) ?>)</li><?php endforeach; ?></ul>
+        <h4>Archive readiness</h4><ul><?php foreach($archiveReadiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= WorkspaceUI::readinessLabel($item) ?>)</li><?php endforeach; ?></ul>
         <?php if($archiveBlocked): ?><p role="alert"><b>Archival blocked.</b> Resolve pending casting offers and volunteer approvals before proceeding.</p><?php endif; ?>
         <form method="post" class="pl-detail-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_lifecycle_csrf']) ?>"><input type="hidden" name="production_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="archive_production">
         <label>Type the production title to confirm<input name="confirm_title" required autocomplete="off"></label><label>Archive note (optional)<textarea name="archive_note" maxlength="500"></textarea></label>
@@ -322,7 +323,7 @@ final class ProductionLifecycleExperience
         <?php endif; ?>
         <?php if(in_array((string)$selected['lifecycle_stage'],['in_production','performing'],true)): $readiness=ProductionCompletionService::readiness($db,(int)$selected['id']); ?>
         <section class="pl-panel"><small>CONTROLLED COMPLETION</small><h3>Review completion readiness</h3><p>Completion makes this production's operational records read-only. Historical records are preserved.</p>
-        <ul><?php foreach($readiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= $esc($item['severity']) ?>)</li><?php endforeach; ?></ul><?php $blocked=count(array_filter($readiness,static fn(array $item):bool=>$item['severity']==='blocker' && $item['count']>0))>0; if($blocked): ?><p role="alert"><b>Completion is blocked.</b> Resolve the blocking items before confirming.</p><?php endif; ?>
+        <ul><?php foreach($readiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= WorkspaceUI::readinessLabel($item) ?>)</li><?php endforeach; ?></ul><?php $blocked=count(array_filter($readiness,static fn(array $item):bool=>$item['severity']==='blocker' && $item['count']>0))>0; if($blocked): ?><p role="alert"><b>Completion is blocked.</b> Resolve the blocking items before confirming.</p><?php endif; ?>
         <form method="post" class="pl-detail-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_lifecycle_csrf']) ?>"><input type="hidden" name="production_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="complete_production">
         <label>Type the production title to confirm<input name="confirm_title" required autocomplete="off"></label>
         <label>Completion note (optional)<textarea name="completion_note" maxlength="500"></textarea></label>

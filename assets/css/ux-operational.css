@@ -1,4 +1,23 @@
 /* Phase 3 adopts the existing --ux-* tokens. Only opted-in operational routes. */
+body.ux-operational .unified-main .pr-page { padding:28px 32px 48px; max-width:1440px; margin-inline:auto; }
+body.ux-operational .unified-main :is(.pr-section,.pr-item,.pr-composer,.pr-signal,.pl-panel,.pl-row,.pr-task-drawer) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; }
+body.ux-operational .unified-main :is(.pr-section,.pl-panel) { padding:20px; margin-bottom:24px; }
+body.ux-operational .unified-main :is(.pr-item,.pr-signal,.pl-row,.pl-panel) :is(small,p,em) { color:var(--ux-muted); font-size:13px; text-transform:none; letter-spacing:0; }
+body.ux-operational .unified-main :is(.pr-section header small,.pl-panel>small,.pl-panel header small) { display:none; }
+body.ux-operational .unified-main :is(.pr-score,.pr-summary article,.pl-stats article,.pl-current) { background:var(--ux-ivory)!important; color:var(--ux-ink)!important; border:0; box-shadow:none; }
+body.ux-operational .unified-main :is(.pr-score b,.pr-summary b,.pl-stats b) { color:var(--ux-ink)!important; font:600 26px/1.3 system-ui,sans-serif; }
+body.ux-operational .unified-main :is(.pr-score span,.pr-summary span,.pl-stats span,.pl-current small) { color:var(--ux-muted)!important; font-size:13px; text-transform:none; letter-spacing:0; }
+body.ux-operational .unified-main .pl-detail-head { background:var(--ux-ivory); color:var(--ux-ink); box-shadow:none; border:0; }
+body.ux-operational .unified-main .pl-detail-head :is(h2,p,small,a) { color:var(--ux-ink); }
+body.ux-operational .unified-main .pl-detail-head h2 { font:650 26px/1.3 system-ui,sans-serif; }
+body.ux-operational .unified-main .ux-readiness { display:inline-block; padding:4px 8px; border-radius:4px; background:var(--ux-ivory); color:var(--ux-ink); font-size:13px; font-weight:600; }
+body.ux-operational .unified-main .pl-panel li { margin-block:10px; line-height:1.6; }
+@media(max-width:780px) {
+ body.ux-operational .unified-main .pr-page { padding:20px 16px 32px!important; background:var(--ux-ground)!important; }
+ body.ux-operational .unified-main :is(.pr-layout,.pl-layout,.pl-detail-layout) { grid-template-columns:minmax(0,1fr)!important; }
+ body.ux-operational .unified-main :is(.pr-summary,.pl-stats) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ body.ux-operational .unified-main .pr-item-meta { flex-wrap:wrap; }
+}
 body.ux-operational .unified-main :is(.sc-page,.notice-page,.pd-page,.lp-page) { max-width:1440px; margin-inline:auto; min-width:0; padding:28px 32px 48px; }
 body.ux-operational .unified-main :is(.cal-event,.cal-subscribe,.att-item,.att-person,.att-report-form,.att-report-history,.sc-form,.sc-side,.notice-card,.notice-row,.pd-section,.pd-panel,.lp-row,.lp-settings) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; box-shadow:none!important; border-radius:12px!important; }
 body.ux-operational .unified-main :is(.cal-event,.att-item,.sc-side,.notice-card,.pd-panel) :is(p,small,time) { color:var(--ux-muted); font-size:13px; letter-spacing:0; text-transform:none; }

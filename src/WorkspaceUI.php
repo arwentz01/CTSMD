@@ -34,6 +34,12 @@ final class WorkspaceUI
         catch (RuntimeException $error) { return true; }
     }
 
+    public static function readinessLabel(array $finding): string
+    {
+        if ((int)($finding['count'] ?? 0) < 1) return 'Ready';
+        return ($finding['severity'] ?? '') === 'blocker' ? 'Blocked' : 'Warning';
+    }
+
     public static function workflow(array $stages): void
     {
         echo '<ol class="ux-workflow" aria-label="Casting workflow">';

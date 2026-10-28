@@ -26,6 +26,10 @@ Routes: readiness, opportunities/detail, shift management/new/detail, requests/s
 
 Routes: Calendar month/week/agenda, Attendance list/take/report, schedule creation, schedule notices, Production Day and late-pickup review. Shared heading, date/context, form/control and warm-surface patterns preserve every event/audience filter, attendance status, absence report and pickup record. Existing phone quick attendance and detailed drawer remain the interaction model; no replacement table or new status. Focus indication also covers radio-backed status labels. Lifecycle source-contract and late-pickup workflow tests pass; responsive renders are recorded in the final verification section.
 
+### Build 4 — Tasks and operational readiness
+
+Routes: `/production/tasks`, `/production/readiness`, production directory/detail and existing completion/archive panels. Shared task rows, owners/dates, summary typography and readable readiness findings. Finding text is derived only from existing severity/count: positive blocker = Blocked, positive nonblocker = Warning, zero = Ready. This does not decide eligibility; existing service readiness arrays, button disabling, typed confirmations, acknowledgments, transactions and audit records remain untouched. Completion and archival stay separate. Lifecycle and directory tests cover retained source contracts.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.
