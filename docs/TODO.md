@@ -83,7 +83,7 @@
 
 ### Production lifecycle closure — October 27 source changes
 
-- [x] Added source-level closed-production guards for direct People roster additions/removals, volunteer shift creation/edit and roster-status changes, and Production Group form assignment; completed/archived and unknown-stage roster writes are blocked and rolled back in regression stubs. Historical read paths were not changed.
+- [x] Added source-level closed-production guards for direct People roster additions/removals, volunteer shift creation/edit and roster-status changes, volunteer-facing signup and closed-show opportunity filtering, and Production Group form assignment; completed/archived and unknown-stage roster writes are blocked and rolled back in regression stubs. Historical read paths were not changed.
 - [ ] Run migrated-database integration checks for each new boundary and verify on CTSMD.me with a disposable completed and archived production, including direct POST attempts, preserved historical casting/credits, and account-wide student/guardian access.
 - [ ] Finish the remaining write-boundary audit for existing form submissions/reviews, volunteer member signup/cancel and approval routes, community replies/reactions, notifications, file archives, production announcements, and other writes that may require narrowly defined post-close exceptions.
 - [ ] Decide and implement a controlled closeout process with pre-close readiness warnings, pending offers/forms/shifts review, archival handoff, and reversible stage changes only where policy allows.
