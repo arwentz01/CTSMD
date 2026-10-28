@@ -10,6 +10,10 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db,(int)$production[\'id\']);',
   'ProductionLifecycleGuard::assertWritable($db,(int)$signup[\'production_id\']);',
  ],
+ 'VolunteerExperience.php'=>[
+  'ProductionLifecycleGuard::assertWritable($db,(int)$shift[\'production_id\']);',
+  "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
+ ],
  'FamilyFormService.php'=>[
   'ProductionLifecycleGuard::assertWritable($db,(int)$context[\'production_id\']);',
  ],
