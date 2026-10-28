@@ -131,21 +131,21 @@ final class FamilyDashboardService
 
     private static function productionsForUser(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare("SELECT DISTINCT p.id,p.title,p.season,pm.participation_role,pm.audience_type FROM production_memberships pm JOIN productions p ON p.id=pm.production_id WHERE pm.user_id=:user AND pm.status='active' AND p.is_active=1 ORDER BY p.title");
+        $stmt = $db->prepare("SELECT DISTINCT p.id,p.title,p.season,pm.participation_role,pm.audience_type FROM production_memberships pm JOIN productions p ON p.id=pm.production_id WHERE pm.user_id=:user AND pm.status='active' AND p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing') ORDER BY p.title");
         $stmt->execute(['user' => $userId]);
         return $stmt->fetchAll();
     }
 
     private static function formsForSubject(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE COALESCE(fa.subject_user_id,fa.user_id)=:user AND fa.status<>'completed' ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
+        $stmt = $db->prepare("SELECT fa.id assignment_id,fa.form_id,fa.production_id,fa.status,fa.due_at,f.title,f.form_type,p.title production_title FROM form_assignments fa JOIN forms f ON f.id=fa.form_id AND f.active=1 LEFT JOIN productions p ON p.id=fa.production_id WHERE COALESCE(fa.subject_user_id,fa.user_id)=:user AND fa.status<>'completed' AND (fa.production_id IS NULL OR (p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) ORDER BY fa.due_at IS NULL,fa.due_at,f.title");
         $stmt->execute(['user' => $userId]);
         return $stmt->fetchAll();
     }
 
     private static function volunteerCommitments(PDO $db, int $userId, DateTimeImmutable $from, DateTimeImmutable $to): array
     {
-        $stmt = $db->prepare("SELECT vss.id signup_id,vss.status,vs.id shift_id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,p.title production_title FROM volunteer_shift_signups vss JOIN volunteer_shifts vs ON vs.id=vss.shift_id LEFT JOIN productions p ON p.id=vs.production_id WHERE vss.user_id=:user AND vss.status IN ('signed_up','checked_in','waitlisted') AND vs.starts_at>=:from_date AND vs.starts_at<:to_date ORDER BY vs.starts_at");
+        $stmt = $db->prepare("SELECT vss.id signup_id,vss.status,vs.id shift_id,vs.title,vs.category,vs.starts_at,vs.ends_at,vs.location,p.title production_title FROM volunteer_shift_signups vss JOIN volunteer_shifts vs ON vs.id=vss.shift_id LEFT JOIN productions p ON p.id=vs.production_id WHERE vss.user_id=:user AND (vs.production_id IS NULL OR (p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) AND vss.status IN ('signed_up','checked_in','waitlisted') AND vs.starts_at>=:from_date AND vs.starts_at<:to_date ORDER BY vs.starts_at");
         $stmt->execute(['user' => $userId, 'from_date' => $from->format('Y-m-d H:i:s'), 'to_date' => $to->format('Y-m-d H:i:s')]);
         return $stmt->fetchAll();
     }
