@@ -16,7 +16,7 @@ final class ProductionLifecycleAutomation
         $db->beginTransaction();
         try {
             $rows=$db->query("SELECT id,lifecycle_stage,performance_starts_at,performance_ends_at,archive_after_at,lifecycle_automation_paused
-              FROM productions WHERE lifecycle_stage IN ('in_production','performing','completed') FOR UPDATE")->fetchAll();
+              FROM productions WHERE lifecycle_stage='in_production' FOR UPDATE")->fetchAll();
             foreach($rows as $p){
                 if((int)$p['lifecycle_automation_paused']===1)continue;
                 $stage=(string)$p['lifecycle_stage'];
@@ -28,9 +28,9 @@ final class ProductionLifecycleAutomation
                 $finished=$end!==''&&$time>=date('Y-m-d H:i:s',strtotime(substr($end,0,10).' +1 day'));
                 $archive=(string)($p['archive_after_at']??'');
                 if($archive===''&&$end!=='')$archive=date('Y-m-d H:i:s',strtotime(substr($end,0,10).' +31 days'));
-                if($stage==='completed'&&$archive!==''&&$time>=$archive)$target='archived';
-                elseif($stage==='performing'&&$finished)$target='completed';
-                elseif($stage==='in_production'&&$start!==''&&$time>=$start)$target=$finished?'completed':'performing';
+                // Completion and archival require a separate, staff-confirmed
+                // readiness review; the cron must not silently close operations.
+                if($stage==='in_production'&&$start!==''&&$time>=$start&&!$finished)$target='performing';
                 if($target===null)continue;
                 $update=$db->prepare("UPDATE productions SET lifecycle_stage=:stage,completed_at=CASE WHEN :completed=1 THEN COALESCE(completed_at,CURRENT_TIMESTAMP) ELSE completed_at END WHERE id=:id");
                 $update->execute(['stage'=>$target,'completed'=>in_array($target,['completed','archived'],true)?1:0,'id'=>$p['id']]);
