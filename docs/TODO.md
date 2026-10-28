@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Production completion/archival workflow (Oct 27 partial source hardening):** transactional form submission/review closure guard added; casting notification and archive family access now require active parent/guardian relationship. Source-boundary checks added. Pending: comprehensive Forms, volunteer, Community and notification mutation audit; manual/automated stage transition controls; readiness review and explicit complete/archive confirmations; cross-production family UI; database/persona tests and deployed validation. Evidence: commits 725498e, ff77f3b, 8f2d426, 99e4d5a. No production deployment claimed.
+
+
 - [ ] **Caregiver mobile schedule response minimization (Oct 26 source):** `/api/mobile/caregiver-schedule` no longer returns internal `student_id` or `schedule_item_id`; intended keys are `student_first_name`, `production_title`, `title`, `starts_at`, `ends_at`, `location`. Verify native client field expectations and rerun mixed-role, active/revoked relationship, student-only item visibility, and cached-token authorization tests. Caregiver approval stays blocked.
 
 
