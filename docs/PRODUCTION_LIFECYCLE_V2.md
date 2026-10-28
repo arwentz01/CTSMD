@@ -181,3 +181,8 @@
 - Production-specific volunteer shift reminders and eligibility-warning email jobs likewise require a writable lifecycle stage. Organization-wide shifts remain eligible.
 - Student form reminders are addressed only to current active parent/guardian relationships; caregivers are excluded. Recipient revocation for previously queued emails still requires a distinct delivery-time authorization mechanism.
 - Regression source checks added. PHP safety CI passed. This does **not** resolve old queued emails, all production notification origins, native/web push, or delivered-message verification.
+
+### Critical temporary guard: automated terminal transitions (October 27)
+- The unscheduled date worker previously transitioned Performing → Completed and Completed → Archived without a readiness review. It now only advances In Production → Performing when the performance start date has arrived and the end date has not passed. It never automatically closes or archives an operational workspace.
+- Completion and archival counters remain in worker output for compatibility but stay zero until controlled transitions are implemented. Existing manual lifecycle editor still allows stage selection and requires integration into the upcoming confirmation workflow; it must not be treated as readiness-reviewed.
+- Coordinate date-worker deployment with manual stage-guard closure before enabling cron. Earlier documentation describing automatic completion and archival is superseded by this safety restriction.
