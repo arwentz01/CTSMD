@@ -216,3 +216,7 @@
 - Form reminder email jobs generated with form-due assignment dedupe keys now check active production stage, assignment existence, recipient identity and current parent/guardian relationship before sending; revoked or closed reminders are suppressed rather than sent.
 - The push event bridge checks ProductionNotificationAccess for casting-offer and casting-release source notifications before creating push jobs. The push delivery worker also rechecks the original app_notifications source for notification-ID dedupe jobs immediately before sending.
 - Existing checks for conversation and Community device pushes remain intact. Other email source types, other push dedupe categories, previously queued jobs without identifying source metadata, and race-free delivery locking still require a broader audit and database-backed tests. No real delivery testing performed.
+
+### Volunteer email delivery reauthorization (October 27 follow-up)
+- The email worker now checks the signup ID encoded in queued shift reminder and eligibility-warning dedupe keys against current user ownership, signed-up/checked-in status and production lifecycle at send time. It suppresses cancelled commitments and completed/archived/inactive production shifts, preserving organization-wide shifts.
+- Source contract checks added. This is limited to identified shift reminder types; historical queued mail with unrecognized keys, other email sources, and delivery concurrency still require separate tests and authorization checks.
