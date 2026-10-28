@@ -298,9 +298,11 @@ final class CommunityExperience
         $db->beginTransaction();
         try{
             // Lock the parent post to serialize reactions even when no reaction row exists yet.
-            $lock=$db->prepare("SELECT id FROM channel_posts WHERE id=:post AND channel_id=:channel AND moderation_status='published' AND hidden_at IS NULL AND deleted_at IS NULL FOR UPDATE");
+            $lock=$db->prepare("SELECT cp.id,c.production_id FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id WHERE cp.id=:post AND cp.channel_id=:channel AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL FOR UPDATE");
             $lock->execute(['post'=>$postId,'channel'=>$channelId]);
-            if(!$lock->fetchColumn())throw new RuntimeException('Post unavailable.');
+            $lockedPost=$lock->fetch(PDO::FETCH_ASSOC);
+            if(!$lockedPost)throw new RuntimeException('Post unavailable.');
+            if($lockedPost['production_id']!==null)ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost['production_id']);
             $check=$db->prepare("SELECT 1 FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart' FOR UPDATE");
             $check->execute($params);
             if($check->fetchColumn())$db->prepare("DELETE FROM channel_post_reactions WHERE post_id=:post AND user_id=:user AND reaction='heart'")->execute($params);
