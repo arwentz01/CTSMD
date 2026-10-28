@@ -1,5 +1,11 @@
 # CTSMD Connect UX design system
 
+## Phase 2 adoption
+
+Family, personal home, Community, Messaging and Notifications adopt the existing `.ux-workspace` shell with route-specific `.ux-family`, `.ux-student`, `.ux-community`, `.ux-messages`, and `.ux-notifications` scopes. These reuse the same `--ux-*` values; they do not replace authorization, delivery or lifecycle services. The personal-home scope applies to the existing role-aware `/app` renderer, with student and guardian controls determined by its existing role data.
+
+Family attention places forms and pending offers before child summaries. Detailed tasks appear once; child summaries give context and counts. Households keep all authorized children and productions. Forms link by assignment ID to the existing viewer-authorized form route. The default is a complete household, not a selected-show filter.
+
 ## Direction and adoption
 
 Calm Backstage Operations uses the existing warm CTSMD foundation. This first implementation is scoped to `.ux-workspace` on Staff Overview, Production Workspace and Casting. Other routes and native `mobile/` keep their current presentation. The global navigation destinations, permissions and working-production selector remain intact.

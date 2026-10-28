@@ -5,7 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__ . '/FamilyDashboardService.php';
+require_once __DIR__ . '/CastingOfferService.php';
 require_once __DIR__ . '/PlatformOnboardingExperience.php';
 
 final class FamilyDashboardExperience
@@ -34,6 +36,7 @@ final class FamilyDashboardExperience
             if($caregiver->fetchColumn())self::redirect(($basePath?:'').'/family/caregiver-schedule');
         }
         $data = FamilyDashboardService::build($db, $user);
+        $data['casting_offers'] = CastingOfferService::pendingForUser($db, (int)$user['id']);
         self::page($route, $basePath, $user, $data);
     }
 
@@ -68,21 +71,14 @@ final class FamilyDashboardExperience
     <link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>">
     <link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>">
     <link rel="stylesheet" href="<?= $url('/assets/css/family-dashboard.css') ?>">
-</head>
-<body class="app-body">
+<?php WorkspaceUI::styles($basePath); ?></head>
+<body class="app-body ux-workspace ux-family"><a class="ux-skip" href="#ux-main">Skip to main content</a>
 <div class="unified-shell">
 <?php AppNavigation::renderSidebar($route,$basePath,$user); ?>
-<main class="unified-main">
+<main class="unified-main" id="ux-main" tabindex="-1">
 <?php AppNavigation::renderHeader('Home','My family',$basePath,$subnav); ?>
 <div class="family-dashboard">
-    <section class="fd-hero">
-        <div>
-            <small>YOUR CTSMD HOUSEHOLD</small>
-            <h2><?= $children ? 'Everything your family needs, in one place.' : 'Your family dashboard is ready.' ?></h2>
-            <p><?= $children ? 'Calls, forms, volunteer commitments and updates across every active production.' : 'Add your child profiles to your household, then CTSMD staff can connect verified students to the appropriate production when ready.' ?></p>
-        </div>
-        <div><a class="fd-calendar-link" href="<?= $url('/family/manage') ?>">Manage household →</a> <a class="fd-calendar-link" href="<?= $url('/calendar') ?>">Open full calendar →</a></div>
-    </section>
+    <?php WorkspaceUI::pageHeader('Your household', 'Forms, offers and upcoming calls for every linked child and active production.', ['label'=>'Manage household', 'href'=>$url('/family/manage')]); ?>
 
     <section class="fd-stats" aria-label="Family summary">
         <article><strong><?= (int)$summary['children'] ?></strong><span>linked student<?= (int)$summary['children']===1?'':'s' ?></span></article>
@@ -92,6 +88,19 @@ final class FamilyDashboardExperience
         <article><strong><?= (int)$summary['volunteer_commitments'] ?></strong><span>volunteer commitment<?= (int)$summary['volunteer_commitments']===1?'':'s' ?></span></article>
         <article class="<?= $summary['unread_notifications'] ? 'attention' : '' ?>"><strong><?= (int)$summary['unread_notifications'] ?></strong><span>unread update<?= (int)$summary['unread_notifications']===1?'':'s' ?></span></article>
     </section>
+
+    <div class="fd-attention-grid" aria-label="Household attention">
+            <section class="fd-panel">
+                <header class="fd-section-head"><div><small>NEEDS YOU</small><h3>Forms</h3></div><a href="<?= $url('/forms') ?>">All forms</a></header>
+                <?php if ($forms): foreach (array_slice($forms,0,6) as $form): ?>
+                <article class="fd-action-row <?= in_array($form['status'],['missing','due_soon'],true) ? 'urgent' : '' ?>"><span class="fd-avatar small"><?= $e((string)$form['person_initials']) ?></span><div><b><?= $e((string)$form['title']) ?></b><span><?= $e((string)$form['person_name']) ?><?= $form['production_title'] ? ' · '.$e((string)$form['production_title']) : '' ?></span><small><?= $e(ucwords(str_replace('_',' ',(string)$form['status']))) ?><?= $form['due_at'] ? ' · Due '. $e(date('M j',strtotime((string)$form['due_at']))) : '' ?></small><a class="ux-inline-action" href="<?= $url('/forms/view?id='.(int)$form['assignment_id']) ?>">Open form →</a></div></article>
+                <?php endforeach; else: ?><div class="fd-empty"><b>Forms are caught up.</b><span>No open assignments for you or your linked students.</span></div><?php endif; ?>
+            </section>
+<section class="fd-panel fd-offers"><header class="fd-section-head"><h3>Casting offers</h3><a href="<?= $url('/notifications#casting-offers') ?>">Action center</a></header>
+<?php if ($data['casting_offers']): foreach ($data['casting_offers'] as $offer): ?>
+<a class="fd-offer" href="<?= $url('/notifications?offer='.(int)$offer['id'].'#casting-offer-'.(int)$offer['id']) ?>"><strong><?= $e((string)$offer['first_name'].' '.(string)$offer['last_name']) ?></strong><span><?= $e((string)$offer['production_title']) ?> · <?= $e((string)$offer['role_snapshot']) ?></span><b>Review offer →</b></a>
+<?php endforeach; else: ?><div class="fd-empty"><b>No offers awaiting a response.</b><span>New casting offers for you or your linked students will appear here.</span></div><?php endif; ?>
+</section></div>
 
     <?php if ($children): ?>
     <section class="fd-section">
@@ -140,12 +149,7 @@ final class FamilyDashboardExperience
         </section>
 
         <aside class="fd-side-stack">
-            <section class="fd-panel">
-                <header class="fd-section-head"><div><small>NEEDS YOU</small><h3>Forms</h3></div><a href="<?= $url('/forms') ?>">All forms</a></header>
-                <?php if ($forms): foreach (array_slice($forms,0,6) as $form): ?>
-                <article class="fd-action-row <?= in_array($form['status'],['missing','due_soon'],true) ? 'urgent' : '' ?>"><span class="fd-avatar small"><?= $e((string)$form['person_initials']) ?></span><div><b><?= $e((string)$form['title']) ?></b><span><?= $e((string)$form['person_name']) ?><?= $form['production_title'] ? ' · '.$e((string)$form['production_title']) : '' ?></span><small><?= $e(ucwords(str_replace('_',' ',(string)$form['status']))) ?><?= $form['due_at'] ? ' · Due '. $e(date('M j',strtotime((string)$form['due_at']))) : '' ?></small></div></article>
-                <?php endforeach; else: ?><div class="fd-empty"><b>Forms are caught up.</b><span>No open assignments for you or your linked students.</span></div><?php endif; ?>
-            </section>
+
 
             <section class="fd-panel">
                 <header class="fd-section-head"><div><small>YOUR COMMITMENTS</small><h3>Volunteer</h3></div><a href="<?= $url('/volunteer-shifts') ?>">Volunteer hub</a></header>

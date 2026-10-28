@@ -1,5 +1,15 @@
 # UX modernization audit
 
+## Phase 2 implementation record
+
+Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.
+
+### Build 1 — Family
+
+Routes: `/family-hub`, `/parent`. Shared warm shell, compact household header, forms and authorized casting offers before child summaries, deep links to individual assignments, combined schedule, volunteer commitments and updates. No relationship, pickup, offer-response or permission rules changed. Casting data comes from the same `CastingOfferService::pendingForUser()` used by the existing Action Center.
+
+Verification: parent account rendered in authenticated Chromium at 1440/390px; no document overflow, no blocking DOM-probe findings after removing an inherited mobile gradient. PHP lint, member roster/media and lifecycle-boundary suites pass. Existing permission conditions remain intact. Multi-child data is still iterated across all active productions with no selected-production filter. Per-child filtering and physical-device review are deferred.
+
 Baseline: `d72cfd7`, branch `audit/board-pilot-readiness`, 2026-10-27. The checkout was fast-forwarded from `5bec6ae` after fetching the branch, before edits.
 
 ## Approved direction
