@@ -302,6 +302,18 @@
       screen=document.createElement('section');
       screen.className='comm-thread-screen';
       head.before(screen);
+      if (document.body.classList.contains('ux-messages')) {
+        const safety = page.querySelectorAll('.comm-safety-banner,.comm-guardian-notifications');
+        if (safety.length) {
+          const details = document.createElement('details');
+          details.className = 'ux-message-safety';
+          const summary = document.createElement('summary');
+          summary.textContent = 'Safeguarding and privacy';
+          details.appendChild(summary);
+          safety.forEach(notice => details.appendChild(notice));
+          head.appendChild(details);
+        }
+      }
       screen.appendChild(head);
       if(participants) screen.appendChild(participants);
       screen.appendChild(layout);

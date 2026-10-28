@@ -49,6 +49,12 @@ jobs:
         run: php tests/pilot_member_roster_media.php
       - name: Named video links in Community posts
         run: php tests/pilot_community_video_links.php
+      - name: UX Action Center viewer and lifecycle boundaries
+        run: php tests/ux_action_visibility.php
+      - name: Community search and safeguarding presentation regressions
+        run: |
+          php tests/community_search.php
+          php tests/safeguarding_conversation_review.php
       - name: Video Library permissions and storage-path regression
         run: php tests/pilot_video_privacy.php
       - name: Isolated pilot regressions (no database/network)

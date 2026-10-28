@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/ProductionNotificationAccess.php';
 
 final class FamilyDashboardService
 {
@@ -152,12 +153,12 @@ final class FamilyDashboardService
 
     private static function notifications(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare("SELECT id,title,body,action_path,source_type,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC LIMIT 12");
+        $stmt = $db->prepare("SELECT id,title,body,action_path,source_type,source_id,read_at,created_at FROM app_notifications WHERE recipient_user_id=:user ORDER BY created_at DESC LIMIT 12");
         $stmt->execute(['user' => $userId]);
-        $items = $stmt->fetchAll();
-        $count = $db->prepare('SELECT COUNT(*) FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
+        $items = ProductionNotificationAccess::filter($db, $userId, $stmt->fetchAll());
+        $count = $db->prepare('SELECT id,source_type,source_id FROM app_notifications WHERE recipient_user_id=:user AND read_at IS NULL');
         $count->execute(['user'=>$userId]);
-        return ['items' => $items, 'unread_count' => (int)$count->fetchColumn()];
+        return ['items' => $items, 'unread_count' => count(ProductionNotificationAccess::filter($db, $userId, $count->fetchAll()))];
     }
 
     private static function householdLogisticsConflicts(array $events): array

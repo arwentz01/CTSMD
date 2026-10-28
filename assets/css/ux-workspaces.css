@@ -248,6 +248,10 @@ body.ux-workspace.ux-community .community-page button { box-shadow: none !import
 .ux-messages :is(.comm-message-intro,.comm-channel-head) h2 { font: 650 22px/1.3 var(--font-sans,system-ui,sans-serif); margin: 0 0 6px; color: var(--ux-ink); }
 .ux-messages :is(.comm-message-intro,.comm-channel-head) p { font-size: 14px; color: var(--ux-muted); }
 .ux-messages .comm-safety-banner { background: var(--ux-ivory); color: var(--ux-ink); border: 1px solid var(--ux-line); border-radius: 8px; box-shadow: none; padding: 14px 16px; margin-bottom: 20px; }
+body.ux-workspace.ux-messages .ux-message-safety .comm-safety-banner { display: flex !important; }
+.ux-messages .ux-message-safety { flex-basis: 100%; font-size: 13px; }
+.ux-messages .ux-message-safety summary { min-height: 44px; display: list-item; align-content: center; color: var(--ux-wine); cursor: pointer; }
+.ux-messages .comm-thread-head:has(.ux-message-safety) { flex-wrap: wrap; }
 .ux-messages .comm-safety-banner :is(span,strong) { color: var(--ux-muted); font-size: 13px; letter-spacing: 0; }
 .ux-messages .comm-conversation-list { background: var(--ux-paper); border: 1px solid var(--ux-line); border-radius: var(--ux-radius); overflow: hidden; }
 .ux-messages .comm-conversation { background: transparent; color: var(--ux-ink); border: 0; border-bottom: 1px solid var(--ux-line); border-radius: 0; box-shadow: none; padding: 20px; min-width: 0; }
@@ -367,6 +371,18 @@ body.ux-workspace.ux-community, body.ux-workspace.ux-community .community-page {
 .ux-notifications .persisted-notification h3 { font: 600 16px/1.4 var(--font-sans,system-ui,sans-serif); }
 @media(max-width:780px) {
  body.ux-workspace.ux-notifications .notification-page { background: var(--ux-ground) !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-hero { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 0 20px !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-hero h2 { font: 650 24px/1.2 system-ui,sans-serif !important; color: var(--ux-ink) !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-hero p { display: block !important; color: var(--ux-muted) !important; font-size: 14px !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-card { background: var(--ux-paper) !important; border: 1px solid var(--ux-line) !important; border-radius: 12px !important; box-shadow: none !important; padding: 16px !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-section-head { padding: 0 0 12px !important; background: transparent !important; }
+ body.ux-workspace.ux-notifications .notification-page .home-section-head h3 { font: 650 18px/1.3 system-ui,sans-serif !important; }
+ body.ux-workspace.ux-notifications .notification-page .notification-row { display: flex !important; flex-wrap: wrap !important; padding: 16px 0 !important; }
+ body.ux-workspace.ux-notifications .notification-page .notification-row > i { display: none !important; }
+ body.ux-workspace.ux-notifications .notification-page :is(.notification-row span,.persisted-notification small,.persisted-notification p) { color: var(--ux-muted) !important; font-size: 13px !important; }
+ body.ux-workspace.ux-notifications .notification-page :is(.notification-summary article,.notification-summary) { border-radius: 0 !important; background: var(--ux-paper) !important; box-shadow: none !important; }
+ body.ux-workspace.ux-notifications .notification-page .notification-summary strong { font: 600 26px/1.2 system-ui,sans-serif !important; color: var(--ux-ink) !important; }
+ body.ux-workspace.ux-notifications .notification-page .notification-summary span { font-size: 13px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--ux-muted) !important; }
  .ux-notifications .notification-columns { display: grid; grid-template-columns: minmax(0,1fr); }
  .ux-notifications .home-hero { flex-wrap: wrap; gap: 16px; }
 }
