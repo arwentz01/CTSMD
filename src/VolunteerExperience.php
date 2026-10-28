@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
+require_once __DIR__ . '/ProductionLifecycleGuard.php';
 require_once __DIR__ . '/VolunteerApprovalExperience.php';
 
 final class VolunteerExperience
@@ -84,10 +85,11 @@ final class VolunteerExperience
     {
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare('SELECT id, required_slots, approval_required, starts_at FROM volunteer_shifts WHERE id = :id FOR UPDATE');
+            $stmt = $db->prepare('SELECT id, production_id, required_slots, approval_required, starts_at FROM volunteer_shifts WHERE id = :id FOR UPDATE');
             $stmt->execute(['id' => $shiftId]);
             $shift = $stmt->fetch();
             if (!$shift) throw new RuntimeException('That volunteer shift no longer exists.');
+            if(!empty($shift['production_id']))ProductionLifecycleGuard::assertWritable($db,(int)$shift['production_id']);
             if (strtotime((string)$shift['starts_at']) <= time()) throw new RuntimeException('This volunteer shift has already started and can no longer accept signups.');
             if ((bool)$shift['approval_required']) throw new RuntimeException('This role requires coordinator approval. Submit it through Approval requests.');
             if (!VolunteerCoverageService::isLiveVolunteer($db,$userId)) throw new RuntimeException('Your volunteer profile is not currently available for shift signup.');
@@ -155,7 +157,7 @@ final class VolunteerExperience
 
     private static function shifts(PDO $db, int $userId): array
     {
-        $stmt = $db->prepare("SELECT vs.id, vs.title, vs.category, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, vs.approval_required, mine.id AS my_signup_id, mine.status AS my_status, req.id AS my_request_id, req.status AS my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id = vs.id AND mine.user_id = :user_id LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request_user WHERE vs.ends_at >= NOW() AND (vs.production_id IS NULL OR EXISTS (SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1)) ORDER BY vs.starts_at ASC");
+        $stmt = $db->prepare("SELECT vs.id, vs.title, vs.category, vs.starts_at, vs.ends_at, vs.location, vs.required_slots, vs.approval_required, mine.id AS my_signup_id, mine.status AS my_status, req.id AS my_request_id, req.status AS my_request_status FROM volunteer_shifts vs LEFT JOIN volunteer_shift_signups mine ON mine.shift_id = vs.id AND mine.user_id = :user_id LEFT JOIN volunteer_shift_approval_requests req ON req.shift_id=vs.id AND req.user_id=:request_user WHERE vs.ends_at >= NOW() AND (vs.production_id IS NULL OR EXISTS (SELECT 1 FROM productions p WHERE p.id=vs.production_id AND p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) ORDER BY vs.starts_at ASC");
         $stmt->execute(['user_id' => $userId,'request_user'=>$userId]);
         $rows = $stmt->fetchAll();
         $liveVolunteer=VolunteerCoverageService::isLiveVolunteer($db,$userId);
