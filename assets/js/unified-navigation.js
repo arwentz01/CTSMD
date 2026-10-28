@@ -24,6 +24,9 @@
     });
   };
   loadShellStyles();
+  // Keep the opt-in workspace system after legacy shell layers; also ships in HTML without JS.
+  const workspaceStyles = document.querySelector('link[data-ux-workspaces]');
+  if (workspaceStyles) document.head.appendChild(workspaceStyles);
 
   const sidebar = document.querySelector('[data-unified-sidebar]');
   const scrim = document.querySelector('[data-nav-scrim]');
