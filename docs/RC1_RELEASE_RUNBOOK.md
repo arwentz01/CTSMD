@@ -11,9 +11,10 @@ From a clean reviewed checkout, run `php bin/rc1-manifest.php` and save stdout t
 | `web_runtime` | Coherent versioned web code/assets, including protected `src` and `.htaccess`; not a claim every file should be HTTP-readable |
 | `operator_only_not_public` | CLI tools, including existing workers; retain in a denied/private operator location, never activate them as part of copying code |
 | `migration_review_only` | Exact filename/hash inventory for DBA review, **never auto-import** |
+| `schema_reference_not_executable` | Base-schema hash binds preflight declarations; private review reference only, never a deployment/reset/import instruction |
 | `native_source_not_distributable` | Expo source reference only, not a signed app or device acceptance |
 | `evidence_not_public` | Docs/tests/workflows/design explorations: do not publish under web root |
-| Excluded | `.env*`, Git metadata, dependencies, logs, storage/private files, base/reset/demo SQL; no secrets or real data in release artifacts |
+| Excluded | `.env*`, Git metadata, dependencies, logs, storage/private files and reset/demo seeds; no secrets or real data in release artifacts. Base SQL is a hashed private reference, excluded from the deployable payload |
 
 Manifest files must be copied as one coherent revision, not a mixture of individual experiences and APIs. Retain the prior verified revision, PHP/config requirements and asset hashes. Do not use copied/corrupt hosting `.git` metadata as deployment evidence. Do not delete unmanaged host files automatically: an unexpected executable is an incident stop condition, not permission to remove evidence.
 

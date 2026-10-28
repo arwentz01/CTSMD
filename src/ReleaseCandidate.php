@@ -8,6 +8,7 @@ final class ReleaseCandidate
     {
         if(preg_match('#(^|/)(\.env(?:\..*)?|\.git|node_modules|error_log|storage)(/|$)#',$path))return 'excluded';
         if(str_starts_with($path,'database/migrations/'))return 'migration_review_only';
+        if($path==='database/schema.sql')return 'schema_reference_not_executable';
         if(str_starts_with($path,'database/'))return 'excluded'; // Never package reset/demo SQL.
         if(str_starts_with($path,'mobile/'))return 'native_source_not_distributable';
         if(str_starts_with($path,'bin/'))return 'operator_only_not_public';
@@ -50,11 +51,12 @@ final class ReleaseCandidate
             $seen[$path]=true;
             if($file['category']==='excluded'||!preg_match('/^[a-f0-9]{64}$/',(string)($file['sha256']??'')))throw new RuntimeException('Invalid manifest entry.');
             if($webOnly&&$file['category']!=='web_runtime')continue;
-            if(!in_array($file['category'],['web_runtime','operator_only_not_public','migration_review_only'],true))continue;
+            if(!in_array($file['category'],['web_runtime','operator_only_not_public','migration_review_only','schema_reference_not_executable'],true))continue;
             $full=$root.'/'.$path;$resolved=realpath($full);
             if(!$resolved||!str_starts_with($resolved,realpath($root).DIRECTORY_SEPARATOR)||is_link($full)||!is_file($full)||!hash_equals((string)$file['sha256'],hash_file('sha256',$full)))$errors[]=$path;
         }
         foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $required)if(!isset($seen[$required]))throw new RuntimeException('Incomplete web manifest.');
+        if(!$webOnly&&!isset($seen['database/schema.sql']))throw new RuntimeException('Missing source schema reference.');
         // Detect the class of unmanaged executable involved in the earlier host incident.
         $rootExecutables=[];
         foreach(new DirectoryIterator($root) as $file)if($file->isFile()&&preg_match('/^(?:php\d*|phtml|phar)$/i',$file->getExtension()))$rootExecutables[]=$file->getPathname();

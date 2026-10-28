@@ -6,6 +6,7 @@ $assert=static function(bool $ok,string $label)use(&$checks):void{if(!$ok)throw 
 foreach(['.env','.env.example','storage/private/a.txt','database/seeds/001_demo.sql','mobile/node_modules/example/index.js'] as $path)$assert(ReleaseCandidate::category($path)==='excluded','Sensitive/reset file excluded: '.$path);
 $assert(ReleaseCandidate::category('bin/process-push-queue.php')==='operator_only_not_public','Worker is not web payload');
 $assert(ReleaseCandidate::category('mobile/app/login.tsx')==='native_source_not_distributable','Native source is not signed build');
+$assert(ReleaseCandidate::category('database/schema.sql')==='schema_reference_not_executable','Source schema contract is hashed, not deployed/imported');
 $inventory=ReleaseCandidate::inventory(dirname(__DIR__));
 $assert(isset($inventory['columns']['users']['date_of_birth']),'086 included');
 $assert(isset($inventory['tables']['rehearsal_videos']),'091 included');
@@ -16,16 +17,16 @@ $assert(ReleaseCandidate::normalizeSql("SET value='a b';")!==ReleaseCandidate::n
 $assert(ReleaseCandidate::normalizeSql("SET value='--literal';")!==ReleaseCandidate::normalizeSql("SET value='';"),'Comment-looking literal remains significant');
 $assert(ReleaseCandidate::normalizeSql("SET value='Guardian';")!==ReleaseCandidate::normalizeSql("SET value='guardian';"),'Trigger literal case remains significant');
 $entries=[];
-foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $path)$entries[]=['path'=>$path,'category'=>'web_runtime','sha256'=>$path==='front.php'?str_repeat('0',64):hash_file('sha256',dirname(__DIR__).'/'.$path)];
+foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php','database/schema.sql'] as $path)$entries[]=['path'=>$path,'category'=>ReleaseCandidate::category($path),'sha256'=>$path==='front.php'?str_repeat('0',64):hash_file('sha256',dirname(__DIR__).'/'.$path)];
 $assert(in_array('front.php',ReleaseCandidate::verifyFiles(dirname(__DIR__),['format'=>1,'revision'=>str_repeat('a',40),'files'=>$entries]),true),'Payload hash mismatch is detected');
 $fixtureRoot=sys_get_temp_dir().'/ctsmd_rc1_tooling_'.bin2hex(random_bytes(8));$created=[];
-mkdir($fixtureRoot,0700);mkdir($fixtureRoot.'/src',0700);
+mkdir($fixtureRoot,0700);mkdir($fixtureRoot.'/src',0700);mkdir($fixtureRoot.'/database',0700);
 try{
  $fixtureEntries=[];
- foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $path){$created[]=$fixtureRoot.'/'.$path;file_put_contents($fixtureRoot.'/'.$path,'synthetic fixture');$fixtureEntries[]=['path'=>$path,'category'=>'web_runtime','sha256'=>hash_file('sha256',$fixtureRoot.'/'.$path)];}
+ foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php','database/schema.sql'] as $path){$created[]=$fixtureRoot.'/'.$path;file_put_contents($fixtureRoot.'/'.$path,'synthetic fixture');$fixtureEntries[]=['path'=>$path,'category'=>ReleaseCandidate::category($path),'sha256'=>hash_file('sha256',$fixtureRoot.'/'.$path)];}
  $created[]=$fixtureRoot.'/.unexpected.phtml';file_put_contents($fixtureRoot.'/.unexpected.phtml','synthetic fixture');
  $assert(in_array('unmanaged executable: .unexpected.phtml',ReleaseCandidate::verifyFiles($fixtureRoot,['format'=>1,'revision'=>str_repeat('a',40),'files'=>$fixtureEntries]),true),'Hidden unmanaged executable detected');
-}finally{foreach($created as $file)unlink($file);rmdir($fixtureRoot.'/src');rmdir($fixtureRoot);}
+}finally{foreach($created as $file)unlink($file);rmdir($fixtureRoot.'/src');rmdir($fixtureRoot.'/database');rmdir($fixtureRoot);}
 final class Rc1MetadataPDO extends PDO {
  public function __construct(private array $contract,private bool $broken=false){}
  public function query(string $query,?int $fetchMode=null,mixed ...$fetchModeArgs):PDOStatement|false{
