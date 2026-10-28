@@ -40,6 +40,15 @@ final class WorkspaceUI
         return ($finding['severity'] ?? '') === 'blocker' ? 'Blocked' : 'Warning';
     }
 
+    public static function formReadOnly(PDO $db, int $formId): bool
+    {
+        $query=$db->prepare('SELECT production_id FROM forms WHERE id=:id LIMIT 1');
+        $query->execute(['id'=>$formId]);
+        $productionId=$query->fetchColumn();
+        if ($productionId === false) return true;
+        return self::productionReadOnly($db,$productionId===null?null:(int)$productionId);
+    }
+
     public static function workflow(array $stages): void
     {
         echo '<ol class="ux-workflow" aria-label="Casting workflow">';

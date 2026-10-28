@@ -26,7 +26,9 @@ final class FamilyPickupExperience {
             self::reviewPage($db,$viewer,$basePath);
         }
         $student=(int)($_POST['student_id']??$_GET['student']??0);
-        if(!FamilyPickupService::canManage($db,$viewer,$student)){http_response_code(404);exit('Student family settings unavailable.');}
+        try { $canManage=FamilyPickupService::canManage($db,$viewer,$student); }
+        catch (PDOException $error) { self::unavailable($basePath,$viewer); }
+        if(!$canManage){http_response_code(404);exit('Student family settings unavailable.');}
         $_SESSION['family_pickup_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST'){
             if(!hash_equals((string)$_SESSION['family_pickup_csrf'],(string)($_POST['csrf_token']??''))){http_response_code(403);exit('Invalid session token.');}
@@ -79,6 +81,12 @@ final class FamilyPickupExperience {
 <?php if(!$requests):?><p class="fp-tip">No requests yet.</p><?php endif;?>
 <?php foreach($requests as $request):?><div class="fp-entry"><div><strong><?=$e($request['adult_email'])?></strong><small><?=$e($request['relationship_label'])?> · <?=$e(ucfirst($request['status']))?><?=$request['pickup_authorized']?' · Pickup requested':''?></small></div><?php if($request['status']==='pending'):?><form method="post"><?=$hidden?><input type="hidden" name="action" value="request_cancel"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Cancel request</button></form><?php endif;?><?php if($staff&&$request['status']==='pending'):?><div><form method="post"><?=$hidden?><input type="hidden" name="action" value="request_approve"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Approve</button></form> <form method="post"><?=$hidden?><input type="hidden" name="action" value="request_reject"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit">Reject</button></form></div><?php endif;?></div><?php endforeach;?>
 </section></div></div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+    private static function unavailable(string $basePath,array $viewer):never {
+        http_response_code(503);
+        $u=static fn(string $path):string=>htmlspecialchars(($basePath?:'').$path,ENT_QUOTES,'UTF-8');
+        header('Content-Type: text/html; charset=utf-8'); ?>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Family settings unavailable · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-operational ux-family-settings"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar('/student-profile',$basePath,$viewer);?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Family','Family & pickup',$basePath,[]);?><div class="fp-wrap"><section class="fp-card" role="alert"><h2>Family settings are unavailable</h2><p>CTSMD could not load this record. No relationship or pickup change has been made. Please contact CTSMD staff if this continues.</p><a href="<?=$u('/family-hub')?>">Return to your household</a></section></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
     private static function reviewPage(PDO $db,array $viewer,string $basePath):never {
         $rows=FamilyPickupService::pendingForStaff($db);

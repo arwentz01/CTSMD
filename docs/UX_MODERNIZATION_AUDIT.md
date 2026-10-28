@@ -42,6 +42,22 @@ Inspected SDK `~58.0.20`, React Native `0.88.0`, Expo Router and existing depend
 
 Native verification limitation: `xcrun simctl` is unavailable and no `adb` executable/device is configured. No native screenshot, simulator, tablet, TalkBack/VoiceOver, keyboard or hardware claim is made. TypeScript checks and hosted Expo CI are recorded separately. Existing structured-form support gaps, pickup administration, staff attendance/readiness tooling, complete dark-mode theming and expanded tablet navigation are not invented as frontend-only behavior; these remain documented follow-up acceptance/API work.
 
+### Phase 3 verification and visual judgment
+
+- All source/test PHP syntax and browser JavaScript syntax checks pass. Existing pilot suites, Action Center regression, new operational presentation regression, and 14 late-pickup workflow contracts pass. The lifecycle source-contract test retains its two existing interpolation warnings and does not cover the active FamilyForms handler gap.
+- MAMP safeguarding integration: 36 checks pass in a rolled-back transaction. No schema/migration, authentication, delivery queue or policy service changed.
+- Authenticated Chromium captures for 17 representative operational routes at 1440/768/390px, plus populated attendance detail and guardian form detail. Final DOM probes and viewport width measurements are scoped checks, not WCAG certification. The failed Family & Pickup success path is explicitly recorded above, not counted as successful workflow coverage.
+- Browser assertions cover parent/student denials on staff forms, volunteer management, tasks, family review and accounts; populated attendance CSRF/action contract, drawer opening and Escape focus return; guardian form subject context. No communicating/destructive POST, approval, cancellation, attendance save or family mutation was sent.
+- Native TypeScript and `expo install --check` pass after refreshing ignored local dependencies. Initial local typecheck lacked expo-video; `npm ci` also found a pre-existing optional-package lock inconsistency. An install without lockfile writes restored local dependencies; package.json/package-lock.json versions are unchanged.
+- Hosted [Expo run 40624585409](https://github.com/arwentz01/CTSMD/actions/runs/40624585409) passed for `44a5976`. Hosted [web run 40624077274](https://github.com/arwentz01/CTSMD/actions/runs/40624077274) passed for `0c52563`; final follow-up run is recorded after push.
+- Captures/measurement JSON in `/tmp/ctsmd-phase3-before`, `-after`, `-final`, `-verified` are local only because they contain demo account data and calendar subscription context.
+
+Visual review (subjective, app-screen rubric): the operational question now leads, with subject/production and actual states carrying meaning rather than decorative hero panels. Warm CTSMD shell and familiar task controls persist. Remaining weak spots are inherited layer complexity, duplicated headings on a few deep views, thin empty demo accounts, and inconsistent small screen-specific metadata. Optional cosmetics are deferred rather than presented as inaccessible workflow exceptions.
+
+ROUND 1: shared operational system, actual tasks and history. Question: what needs doing for this person/production? Design 7 · usability 7 · creativity 7 · content 8 → 7.1. Top issues in first captures: inherited light-on-light labels, mobile detail header colors, and Family & Pickup fatal response. Corrected the contrast/header cases and replaced the fatal response with an honest unavailable state; schema dependency remains.
+
+ROUND 2: operational headers and forms remain coherent at three widths; no new sample/proof content, imagery or animation added. Native receives source/type/build checks only and is not visually scored. Successful pickup workflow, real-device accessibility and backend lifecycle enforcement remain acceptance blockers, not a completed Phase 3 claim.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.

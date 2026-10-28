@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "tests/**"
       - "assets/css/ux-workspaces.css"
+      - "assets/css/ux-operational.css"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -15,6 +16,7 @@ on:
       - "src/**"
       - "tests/**"
       - "assets/css/ux-workspaces.css"
+      - "assets/css/ux-operational.css"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -56,7 +58,9 @@ jobs:
       - name: Named video links in Community posts
         run: php tests/pilot_community_video_links.php
       - name: UX Action Center viewer and lifecycle boundaries
-        run: php tests/ux_action_visibility.php
+        run: |
+          php tests/ux_action_visibility.php
+          php tests/ux_operational_presentation.php
       - name: Community search and safeguarding presentation regressions
         run: |
           php tests/community_search.php

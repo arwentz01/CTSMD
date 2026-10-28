@@ -1,5 +1,15 @@
 # CTSMD Connect UX design system
 
+## Phase 3 operational and native adoption
+
+Operational routes add `.ux-operational` and a domain scope to `.ux-workspace`. `ux-operational.css` consumes the same `--ux-*` values; it is an adoption layer, not another palette or design system. Both shared stylesheets are kept after inherited shell layers. Operational headings are compact sans, forms retain visible labels/control edges, status is expressed in text, and phone controls keep 44px targets. Existing information/data/POST boundaries remain authoritative.
+
+Forms preserve subject, production, assignment and submission meanings. Closed-production family/detail, management and builder controls receive presentation locks from the existing lifecycle guard; review actions are suppressed for closed form definitions. These locks do not secure direct POSTs. Missing lifecycle enforcement is explicitly tracked as a backend release blocker.
+
+Completion and archival are separate deliberate decisions. Readiness wording describes the existing finding's count/severity: Blocked for a positive blocker, Warning for positive nonblocking unfinished work, Ready for zero. It never computes new eligibility or turns warnings into blockers.
+
+Native uses the matching semantic values in `mobile/src/theme/colors.ts`, system UI type, Expo tab/stack navigation, shared Screen/Item/LoadState/TouchTarget components, 48dp minimum pressable targets and explicit retry. No desktop sidebar is copied. Production artwork remains domain content rather than decorative chrome. Native APIs, auth and policy are not owned by these components. Device acceptance, expanded tablet navigation and full dark-mode mapping remain open; TypeScript is not a native visual test.
+
 ## Phase 2 adoption
 
 Family, personal home, Community, Messaging and Notifications adopt the existing `.ux-workspace` shell with route-specific `.ux-family`, `.ux-student`, `.ux-community`, `.ux-messages`, and `.ux-notifications` scopes. These reuse the same `--ux-*` values; they do not replace authorization, delivery or lifecycle services. The personal-home scope applies to the existing role-aware `/app` renderer, with student and guardian controls determined by its existing role data.

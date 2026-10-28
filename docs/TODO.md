@@ -20,8 +20,11 @@
 ## P0 — Pilot blockers and release gates
 
 - [ ] Phase 3 source finding: FamilyFormsExperience submission/review, FormManagementExperience and DynamicFormExperience do not consistently invoke the existing production lifecycle guard. Review backend enforcement for closed-production direct POSTs before release. Presentation-only read-only treatment is not a security fix. No handler/schema change is authorized in this UX phase.
+- [ ] Local Phase 3 Family & Pickup acceptance is blocked: demo schema lacks `users.date_of_birth`, required by StudentProfileService. Reconcile schema through the approved migration process separately; no migration/schema edit in this UX phase. The route now gives a safe unavailable state instead of leaking a stack trace.
 
 Phase 2 UX: Family, personal/student Today, Community, Messaging and Action Center implemented on the existing branch. See [implementation and verification](UX_MODERNIZATION_AUDIT.md) and subordinate [cosmetic refinement notes](UX_POLISH_BACKLOG.md). Local browser and safeguarding evidence does not close the live-pilot gates below or imply deployment.
+
+Phase 3: six implementation areas addressed and pushed in focused batches. See the same audit for source/browser/native distinctions. Acceptance remains open for closed-form backend enforcement, local Family & Pickup schema reconciliation and native device testing. Do not mark the pilot or full Phase 3 acceptance complete from presentation commits.
 
 - [ ] Verify safeguarding revocation across web/mobile, including former guardians, casting offers, student tasks and notices.
 - [ ] Complete live email and push acceptance: actual delivery, deep links, retries, recipient authorization and queue operation.
