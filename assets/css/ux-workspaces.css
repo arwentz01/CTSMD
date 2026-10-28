@@ -252,6 +252,8 @@ body.ux-workspace.ux-messages .ux-message-safety .comm-safety-banner { display: 
 .ux-messages .ux-message-safety { flex-basis: 100%; font-size: 13px; }
 .ux-messages .ux-message-safety summary { min-height: 44px; display: list-item; align-content: center; color: var(--ux-wine); cursor: pointer; }
 .ux-messages .comm-thread-head:has(.ux-message-safety) { flex-wrap: wrap; }
+body.ux-workspace.ux-messages .comm-thread-screen .comm-bubble.mine { background: var(--ux-ivory) !important; color: var(--ux-ink) !important; }
+body.ux-workspace.ux-messages .comm-thread-screen .comm-bubble.mine :is(p,time,small) { color: var(--ux-ink) !important; }
 .ux-messages .comm-safety-banner :is(span,strong) { color: var(--ux-muted); font-size: 13px; letter-spacing: 0; }
 .ux-messages .comm-conversation-list { background: var(--ux-paper); border: 1px solid var(--ux-line); border-radius: var(--ux-radius); overflow: hidden; }
 .ux-messages .comm-conversation { background: transparent; color: var(--ux-ink); border: 0; border-bottom: 1px solid var(--ux-line); border-radius: 0; box-shadow: none; padding: 20px; min-width: 0; }

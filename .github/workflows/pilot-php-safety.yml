@@ -6,11 +6,17 @@ on:
     paths:
       - "src/**"
       - "tests/**"
+      - "assets/css/ux-workspaces.css"
+      - "assets/js/unified-navigation.js"
+      - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   pull_request:
     paths:
       - "src/**"
       - "tests/**"
+      - "assets/css/ux-workspaces.css"
+      - "assets/js/unified-navigation.js"
+      - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   workflow_dispatch:
 

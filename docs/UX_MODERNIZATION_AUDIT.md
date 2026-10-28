@@ -39,6 +39,7 @@ Two narrow read-side corrections reuse existing authorization rather than introd
 - Parent, student, production-manager and administrator identities exercised on shared routes. Source review and existing regression suites cover multi-production aggregation, current guardian relationships and closed-production exclusion.
 - Local captures and probe JSON remain outside Git in `/tmp/ctsmd-phase2-before/`, `/tmp/ctsmd-phase2-after/` and `/tmp/ctsmd-phase2-final/`; they contain authenticated demo context.
 - Physical devices, Safari/Firefox, screen readers, live communicating POST/upload paths and production deployment are not claimed. Deferred refinements are in `UX_POLISH_BACKLOG.md`. GitHub CI evidence is recorded after push below.
+- Hosted CI: [run 40623076474](https://github.com/arwentz01/CTSMD/actions/runs/40623076474) passed for `81ca603`. Final thread review then caught and corrected an inherited mobile burgundy bubble/charcoal-text collision; the mine-bubble surface now stays ivory on phones. The workflow also watches the shared UX CSS/JS so presentation-only regressions trigger safety checks.
 
 ## Phase 1 historical record
 
