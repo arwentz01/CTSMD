@@ -7,11 +7,11 @@ $cases=[
   "'casting.removed_with_production_membership'",
  ],
  'VolunteerShiftManagementExperience.php'=>[
-  "ProductionLifecycleGuard::assertWritable($db,(int)$production['id']);",
-  "ProductionLifecycleGuard::assertWritable($db,(int)$signup['production_id']);",
+  'ProductionLifecycleGuard::assertWritable($db,(int)$production[\'id\']);',
+  'ProductionLifecycleGuard::assertWritable($db,(int)$signup[\'production_id\']);',
  ],
  'FamilyFormService.php'=>[
-  "ProductionLifecycleGuard::assertWritable($db,(int)$context['production_id']);",
+  'ProductionLifecycleGuard::assertWritable($db,(int)$context[\'production_id\']);',
  ],
 ];
 foreach($cases as $file=>$needles){
