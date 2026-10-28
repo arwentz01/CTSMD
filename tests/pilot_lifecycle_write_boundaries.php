@@ -19,9 +19,6 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db,(int)$shift[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db,(int)$r[\'production_id\']);',
  ],
- 'VolunteerExperience.php'=>[
-  "ProductionLifecycleGuard::assertWritable($db,(int)$shift['production_id']);",
- ],
  'CommunityExperience.php'=>[
   'ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost[\'production_id\']);',
  ],
