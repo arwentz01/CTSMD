@@ -2,6 +2,8 @@
 
 October 28, 2026 · `arwentz01/CTSMD` · `audit/board-pilot-readiness`.
 
+Verified candidate code: **`6a891e73d2889df36cd0ccd0fd15e91d02c84930`**. Later documentation-only evidence commits do not constitute a deployment or change the tested application source.
+
 **Decision: NO-GO for deployment/pilot signoff.** RC1 preparation is implemented; unresolved gates below remain. No live account, production data/schema, worker, notification delivery or deployment was exercised. [TODO.md](TODO.md) is the sole active tracker. [Release/recovery runbook](RC1_RELEASE_RUNBOOK.md) defines safe procedures, not authority to deploy. Prior [native acceptance](NATIVE_PHASE4_ACCEPTANCE.md), [pilot evidence](BOARD_PILOT_READINESS.md) and [launch assessment](PLATFORM_LAUNCH_READINESS.md) remain applicable; historical percentages are not coverage scores.
 
 ## Implemented release controls
@@ -25,6 +27,18 @@ October 28, 2026 · `arwentz01/CTSMD` · `audit/board-pilot-readiness`.
 | Web safety / native contracts / exports | Local pilot suites, native TypeScript, six native contracts, Expo compatibility and both platform exports passed. Remote CI evidence recorded below |
 | Hosting preflight / migration / restore | **Not run**. No hosting connection, migration or new restore drill claimed |
 | Physical-device, OS push, Apache/TLS/accessibility | **Not run**. Local PHP HTTP and Node mocks cannot establish these |
+
+### Final CI and artifact evidence
+
+- [RC1 isolated acceptance run 40691477305](https://github.com/arwentz01/CTSMD/actions/runs/40691477305): **PASS** on `6a891e7`; fresh MySQL bootstrap, 27 tooling safety contracts, trusted-manifest/read-only preflight, 120 real HTTP role checks, 36 transactional safeguarding checks and uploaded evidence. Artifact: `rc1-evidence-6a891e73d2889df36cd0ccd0fd15e91d02c84930`.
+- [Web safety run 40691477248](https://github.com/arwentz01/CTSMD/actions/runs/40691477248): **PASS** on `6a891e7`.
+- [Expo run 40690625869](https://github.com/arwentz01/CTSMD/actions/runs/40690625869): **PASS** on `3f25098`, including TypeScript, compatibility, six native contracts and both exports. `git diff 3f25098 6a891e7 -- mobile .github/workflows/mobile-expo.yml` is empty. Native checks and both exports also reran locally for RC1; no actual devices used.
+- Local manifest: `/tmp/ctsmd-rc1-manifest.json`, candidate `6a891e7`, **629 inventoried files**, SHA-256 `b1f94c33b9e344594497deee5fa8bcbe20fd77d97f6daf59e7dcb30630df1f98`. This includes private review/evidence/native categories; **not 629 deployable public files**.
+- Local read-only report `/tmp/ctsmd-rc1-schema.json`: zero file issues and zero declared-contract mismatches, **110 tables, 25 triggers, 94 exact migration filenames**. `/tmp/ctsmd-rc1-demo-schema.json` records the incomplete demo's expected blocking exit 2. Neither check applies SQL.
+- Local role evidence `/tmp/ctsmd-rc1-acceptance.json`: **120 PASS**, seven personas across two productions, and zero active fixture credentials after cleanup. Independent isolated-schema queries also found zero active accounts, unrevoked bearer rows, email delivery attempts and push delivery attempts.
+- RC1 `npm audit --omit=dev` rerun: **8 advisories (3 high, 5 low)** remain. Audit is not a passing security gate and is tracked under RC1-12; successful CI does not override it. Exported native bundles are only local QA artifacts at `/tmp/ctsmd-rc1-native-export`.
+
+Local artifacts are disposable copies, not an approved evidence-retention policy. Retain the revision-bound CI artifacts and hashes in the controlled release record before CI expiry. No hosted preflight or matched restore rehearsal was executed in RC1 preparation.
 
 Fresh bootstrap initially stopped correctly at duplicate revocation columns in 062 because current `database/schema.sql` already defines both columns and their index. The test-only bootstrap pins migration SHA-256 `d85a0fbdf240a0c47e08007a729c48128226005f7169d4cdfd0d2d12c3f91c4e`, omits that initial duplicate ALTER only in a new empty guarded test schema, and retains data reconciliation and latest triggers. It refuses a changed file hash. This is **not** a hosted migration recipe or proof an existing production schema needs the same adjustment. Exact per-statement hosted reconciliation requires independent review. Two `069_*` files mean “max migration number” is also insufficient evidence.
 

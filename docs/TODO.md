@@ -10,6 +10,8 @@
 
 Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
 
+Verified candidate code `6a891e7`: [RC1 CI](https://github.com/arwentz01/CTSMD/actions/runs/40691477305) and [web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40691477248) passed. 27 tooling contracts, 120 seven-persona/two-production real HTTP checks and 36 transactional safeguarding checks pass; Expo CI/local exports pass on unchanged native source. Read-only preflight correctly blocks incomplete demo schema. These results do not close the 13 gates below.
+
 - [ ] **RC1-01:** Review exact hosted migration/trigger/permission/index/FK/type/backfill state and checksum-bound statement plan; staging restore/rehearsal and DBA approval. New preflight detects local demo gaps through 092; 062/base overlap and duplicate 069 numbers forbid blind batch imports.
 - [ ] **RC1-02:** Complete mixed-family/guardian/caregiver, group/attachment/search/casting/task/notice/queue safeguarding and saved-session/device matrix; safeguarding signoff.
 - [ ] **RC1-03:** Resolve retention/cascade risk on roster removal; prove completion/archive/history preservation for offers/credits/forms/resources/messages/audit on isolated restored data before real-family use.
