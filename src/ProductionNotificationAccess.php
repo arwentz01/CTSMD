@@ -22,7 +22,7 @@ final class ProductionNotificationAccess
             if(!$offer)return false;
             if($source==='casting_offer'){
                 if($recipientId===(int)$offer['student_user_id'])return true;
-                $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' LIMIT 1");
+                $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' AND relationship_type IN ('parent','guardian') LIMIT 1");
                 $s->execute(['guardian'=>$recipientId,'student'=>(int)$offer['student_user_id']]);
                 return (bool)$s->fetchColumn();
             }
