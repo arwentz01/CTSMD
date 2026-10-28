@@ -32,6 +32,10 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'ProductionLifecycleAutomation.php'=>[
+  "FROM productions WHERE lifecycle_stage='in_production' FOR UPDATE",
+  "if($stage==='in_production'&&$start!==''&&$time>=$start&&!$finished)$target='performing';",
+ ],
  'NotificationReminderService.php'=>[
   "fa.production_id IS NULL OR EXISTS",
   "vs.production_id IS NULL OR EXISTS",
