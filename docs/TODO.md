@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Archive readiness extension:** pending casting offers and volunteer approvals now block archival with transactional recheck; notices/forms/checklist are visible retained warnings (38ff902, 0a86305, db32484). Full queue/service-hour/role checks and live integration remain outstanding.
+
+
 - [ ] **Mobile lifecycle parity (Oct 27 continuation):** daily tasks now filter completed/closed-production forms and future shifts; Community reaction endpoint uses a locked lifecycle write check (52ee0d7, de3b30e, regression e19ada9). Still audit mobile Community reply/moderation and other mutations, archived visibility, combined family actions and test on real database/native clients.
 
 
