@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Archive Production V1 source (Oct 27):** explicit completed-only archive confirmation, transaction, audit and legacy is_active/status closure added (f6c6cf6, 90c978a); legacy archived reactivation blocked (7ac735e); source regression contracts (44d6995). Needs full readiness checklist, queue filtering, mixed-production family checks, database tests, live deployment and release approval. Do not archive real-family shows until verified.
+
+
 - [ ] **Complete Production V1 source (Oct 27):** staff production detail has explicit title confirmation, outstanding-warning summary and acknowledgement; ProductionCompletionService locks and updates lifecycle, writes audit, and preserves records. Commits 486172e, bef1e70, 0c873b5. Still missing full readiness inventory and blockers, archive workflow, mobile/family lifecycle filtering, staging integration/rollback testing and deployed acceptance. Do not treat V1 as production-ready closure.
 
 
