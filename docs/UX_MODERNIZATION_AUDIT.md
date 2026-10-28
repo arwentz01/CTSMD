@@ -10,6 +10,12 @@ Routes: `/family-hub`, `/parent`. Shared warm shell, compact household header, f
 
 Verification: parent account rendered in authenticated Chromium at 1440/390px; no document overflow, no blocking DOM-probe findings after removing an inherited mobile gradient. PHP lint, member roster/media and lifecycle-boundary suites pass. Existing permission conditions remain intact. Multi-child data is still iterated across all active productions with no selected-production filter. Per-child filtering and physical-device review are deferred.
 
+### Build 2 — Student and personal Today
+
+Route: `/app`. Reused the role-aware renderer with a concise personal header, student Theatre History action, personal action and schedule sections, and explicit links to existing Messages, Community and casting announcements when membership/production access allows. Students no longer see a meaningless household-child count. Parent/staff versions retain their distinct household links and counts. No account, roster or schedule service changed.
+
+Verification: authenticated student desktop/phone rendering; PHP lint; inherited mobile Next up colors corrected after the contrast probe found light text on the new ivory surface. The final student probe has no blocking findings. Closed-production exclusion and cross-production roster suites pass. Optional timeline duplication is deferred.
+
 Baseline: `d72cfd7`, branch `audit/board-pilot-readiness`, 2026-10-27. The checkout was fast-forwarded from `5bec6ae` after fetching the branch, before edits.
 
 ## Approved direction

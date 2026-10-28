@@ -216,6 +216,8 @@
 .ux-community .comm-post { border: 0; border-bottom: 1px solid var(--ux-line); border-radius: 0; background: var(--ux-paper); padding: 20px; box-shadow: none; }
 .ux-community .comm-post.pinned { background: var(--ux-ground); border-color: var(--ux-line); }
 .ux-community .comm-post.pinned::before { content: 'Pinned announcement'; display: block; color: var(--ux-wine); font-size: 12px; font-weight: 650; margin-bottom: 10px; }
+.ux-community .comm-post.pinned::before { grid-column: 1 / -1; }
+.ux-community .comm-post.pinned header > div > b::after { content: none; }
 .ux-community .comm-post > p { font-size: 15px; line-height: 1.65; color: var(--ux-ink); overflow-wrap: anywhere; }
 .ux-community .comm-post header > i { background: var(--ux-ivory); color: var(--ux-wine); font-size: 12px; }
 .ux-community .comm-post header small { font-size: 12px; color: var(--ux-muted); }
@@ -231,6 +233,61 @@
 .ux-workspace :is(.comm-attachments,.msg-attachments) b { overflow-wrap: anywhere; }
 .ux-workspace :is(.comm-attachments,.msg-attachments) small { color: var(--ux-muted); font-size: 12px; }
 .ux-community .community-heart-form button { min-width: 44px; min-height: 44px; }
+.ux-workspace.ux-messages .comm-page { max-width: 1280px; margin-inline: auto; padding: 24px 32px 40px; }
+.ux-messages :is(.comm-message-intro,.comm-channel-head) { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; background: transparent; padding: 0; margin-bottom: 24px; color: var(--ux-ink); }
+.ux-messages :is(.comm-message-intro,.comm-channel-head) small { display: none; }
+.ux-messages :is(.comm-message-intro,.comm-channel-head) h2 { font: 650 22px/1.3 var(--font-sans,system-ui,sans-serif); margin: 0 0 6px; color: var(--ux-ink); }
+.ux-messages :is(.comm-message-intro,.comm-channel-head) p { font-size: 14px; color: var(--ux-muted); }
+.ux-messages .comm-safety-banner { background: var(--ux-ivory); color: var(--ux-ink); border: 1px solid var(--ux-line); border-radius: 8px; box-shadow: none; padding: 14px 16px; margin-bottom: 20px; }
+.ux-messages .comm-safety-banner :is(span,strong) { color: var(--ux-muted); font-size: 13px; letter-spacing: 0; }
+.ux-messages .comm-conversation-list { background: var(--ux-paper); border: 1px solid var(--ux-line); border-radius: var(--ux-radius); overflow: hidden; }
+.ux-messages .comm-conversation { background: transparent; color: var(--ux-ink); border: 0; border-bottom: 1px solid var(--ux-line); border-radius: 0; box-shadow: none; padding: 20px; min-width: 0; }
+.ux-messages .comm-conversation.unread { background: var(--ux-ground); }
+.ux-messages .comm-conversation-icon { background: var(--ux-ivory); color: var(--ux-wine); }
+.ux-messages .comm-conversation h3 { font-family: inherit; font-size: 16px; color: var(--ux-ink); }
+.ux-messages .comm-conversation :is(p,small,.comm-conversation-meta span) { color: var(--ux-muted); font-size: 13px; }
+.ux-messages .comm-conversation-meta b { color: var(--ux-wine); }
+.ux-messages .comm-unread { background: var(--ux-wine); color: #fff; font-size: 12px; }
+.ux-messages .msg-search { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+.ux-messages .msg-search input { flex: 1; min-width: 150px; }
+.ux-messages .comm-thread-head { background: var(--ux-paper); color: var(--ux-ink); padding: 16px 20px; border-bottom: 1px solid var(--ux-line); }
+.ux-messages .comm-thread-head h2 { color: var(--ux-ink); font-size: 18px; }
+.ux-messages .comm-thread-head small { color: var(--ux-wine); font-size: 13px; letter-spacing: 0; text-transform: none; }
+.ux-messages .comm-thread-head > a { color: var(--ux-wine); font-size: 13px; }
+.ux-messages :is(.comm-thread,.comm-thread-screen) { background: var(--ux-ground); }
+.ux-messages .comm-bubble { background: var(--ux-paper); color: var(--ux-ink); border: 1px solid var(--ux-line); border-radius: 12px; box-shadow: none; padding: 12px 16px; }
+.ux-messages .comm-bubble.mine { background: var(--ux-ivory); color: var(--ux-ink); border-color: transparent; }
+.ux-messages .comm-bubble p { color: var(--ux-ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.ux-messages .comm-bubble :is(time,header small) { color: var(--ux-muted); font-size: 12px; }
+.ux-messages :is(.comm-composer,.comm-participants) { background: var(--ux-paper); color: var(--ux-ink); border-color: var(--ux-line); }
+.ux-messages .comm-participants small { font-size: 12px; color: var(--ux-muted); }
+.ux-messages .comm-people-toggle { min-height: 40px; color: var(--ux-wine); }
+.ux-messages .comm-send-blocked { background: var(--ux-ivory); color: var(--ux-ink); padding: 16px; border-radius: 6px; }
+.ux-messages .comm-send-blocked p { color: var(--ux-muted); font-size: 14px; }
+.ux-messages .comm-new-form { max-width: 800px; background: var(--ux-paper); border: 1px solid var(--ux-line); border-radius: var(--ux-radius); padding: 24px; }
+.ux-messages .comm-new-form label { font-size: 14px; color: var(--ux-ink); }
+.ux-messages .comm-day-separator span { background: var(--ux-ground); color: var(--ux-muted); font-size: 12px; }
+@media(max-width:780px) {
+  body.ux-workspace.ux-community[data-native-route] .community-pane, body.ux-workspace.ux-community[data-native-route] .community-pane-feed { background: var(--ux-paper) !important; }
+  body.ux-workspace.ux-community[data-native-route] .community-rail-head :is(h2,p,a), body.ux-workspace.ux-community[data-native-route] .community-rail-item :is(b,small) { color: var(--ux-ink) !important; }
+  body.ux-workspace.ux-community[data-native-route] .community-pane-head :is(h2,p,small), body.ux-workspace.ux-community[data-native-route] .comm-post :is(p,b) { color: var(--ux-ink) !important; }
+  body.ux-workspace.ux-community[data-native-route] .comm-post header small { color: var(--ux-muted) !important; font-size: 12px !important; }
+  body.ux-workspace.ux-community[data-native-route] .community-composer { background: var(--ux-paper) !important; }
+  .ux-workspace.ux-community .community-composer :is(.comm-attach-compact,.button) { min-width: 44px !important; min-height: 44px !important; }
+  .ux-workspace.ux-messages .comm-page { padding: 16px !important; }
+  .ux-messages .comm-conversation { padding: 16px !important; background: var(--ux-paper) !important; }
+  .ux-messages .comm-conversation.unread { background: var(--ux-ground) !important; }
+  .ux-messages .comm-thread-screen, .ux-messages .comm-thread { background: var(--ux-ground) !important; }
+  .ux-messages .comm-bubble { background: var(--ux-paper) !important; color: var(--ux-ink) !important; }
+  .ux-messages .comm-bubble.mine { background: var(--ux-ivory) !important; color: var(--ux-ink) !important; }
+  .ux-messages .comm-bubble p { color: var(--ux-ink) !important; font-size: 15px !important; line-height: 1.6 !important; }
+  .ux-messages .comm-bubble :is(time,header small) { color: var(--ux-muted) !important; font-size: 12px !important; }
+  .ux-messages .comm-thread-head, .ux-messages .comm-composer { background: var(--ux-paper) !important; color: var(--ux-ink) !important; }
+  .ux-messages .comm-thread-head h2 { color: var(--ux-ink) !important; font-size: 18px !important; }
+  .ux-messages .comm-thread-head small { color: var(--ux-wine) !important; font-size: 12px !important; }
+  .ux-messages .comm-safety-banner { display: flex !important; background: var(--ux-ivory) !important; color: var(--ux-ink) !important; }
+  .ux-messages .comm-safety-banner :is(b,span,strong) { color: var(--ux-ink) !important; font-size: 12px !important; }
+}
 @media(max-width:780px) {
   .ux-community .community-page { padding: 0 !important; }
   .ux-community .community-shell { border: 0; border-radius: 0; }
