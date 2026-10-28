@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Delivery reauthorization partial (Oct 27):** form-due email jobs recheck assignment, production stage and parent/guardian access at send time; push bridge and push worker recheck source notification access (0ceca9a, 873a53f, 177a991, tests c1e0d84/4752f5d). Still required: production-scoped volunteer email dedupe recheck, push without source ID, notification origin metadata coverage, cross-process races, live test and mobile token delivery.
+
+
 - [ ] **Family/current-view lifecycle filtering:** Family and Home actionable forms and volunteer commitments, Family active production summaries, and shared Calendar current events now individually exclude closed production records while retaining organization-wide and separate active-production data (05d9f87, a3ffe79, 177b004, eb4699a). Need database-backed Student/Guardian/multiple simultaneous show regression and native API parity.
 
 
