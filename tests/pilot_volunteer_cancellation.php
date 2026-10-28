@@ -10,8 +10,8 @@ final class CancelStatement extends PDOStatement {
     public function __construct(private CancelDatabase $db, private string $sql) {}
     public function execute(?array $params=null):bool {
         $params??=[];
-        if(str_contains($this->sql,'SELECT starts_at FROM volunteer_shifts')){
-            $this->value=$this->db->shiftStart;
+        if(str_contains($this->sql,'SELECT starts_at,production_id FROM volunteer_shifts')){
+            $this->value=$this->db->shiftStart===false?false:['starts_at'=>$this->db->shiftStart,'production_id'=>null];
         } elseif(str_contains($this->sql,'SELECT id,status FROM volunteer_shift_signups')){
             $this->value=($params['user']===$this->db->ownerId && $params['shift']===$this->db->shiftId)
                 ? $this->db->signup : false;
