@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionLifecycleGuard.php';
 
 final class FormExperience
 {
@@ -80,11 +81,14 @@ final class FormExperience
 
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("SELECT fa.id, fa.form_id, fa.user_id, fa.status, f.title, f.completion_mode, f.review_required FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.id = :id AND fa.user_id = :user_id AND f.active = 1 FOR UPDATE");
+            $stmt = $db->prepare("SELECT fa.id, fa.form_id, fa.user_id, fa.production_id, fa.status, f.title, f.completion_mode, f.review_required FROM form_assignments fa JOIN forms f ON f.id = fa.form_id WHERE fa.id = :id AND fa.user_id = :user_id AND f.active = 1 FOR UPDATE");
             $stmt->execute(['id' => $assignmentId, 'user_id' => (int)$user['id']]);
             $assignment = $stmt->fetch();
             if (!$assignment) {
                 throw new RuntimeException('That form is not assigned to you.');
+            }
+            if ($assignment['production_id'] !== null) {
+                ProductionLifecycleGuard::assertWritable($db, (int)$assignment['production_id']);
             }
             if ($assignment['status'] === 'completed') {
                 throw new RuntimeException('This form is already complete.');
@@ -191,11 +195,14 @@ final class FormExperience
 
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("SELECT fs.id, fs.assignment_id, fs.submitted_by_user_id, fs.status, f.title FROM form_submissions fs JOIN forms f ON f.id = fs.form_id WHERE fs.id = :id FOR UPDATE");
+            $stmt = $db->prepare("SELECT fs.id, fs.assignment_id, fs.submitted_by_user_id, fs.status, fa.production_id, f.title FROM form_submissions fs JOIN form_assignments fa ON fa.id = fs.assignment_id JOIN forms f ON f.id = fs.form_id WHERE fs.id = :id FOR UPDATE");
             $stmt->execute(['id' => $submissionId]);
             $submission = $stmt->fetch();
             if (!$submission || $submission['status'] !== 'submitted') {
                 throw new RuntimeException('That form is no longer waiting for review.');
+            }
+            if ($submission['production_id'] !== null) {
+                ProductionLifecycleGuard::assertWritable($db, (int)$submission['production_id']);
             }
 
             $approved = $decision === 'approve';
