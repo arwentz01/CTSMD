@@ -190,3 +190,9 @@
 ### Temporary terminal-stage editor gate
 - The old admin stage dropdown now rejects transitions into or out of Completed/Archived. Editing nonterminal dates and staying on the same terminal stage remains possible. This prevents bypass of the future controlled readiness and audit confirmations, but temporarily means staff cannot complete, archive or reopen through that editor.
 - Finish dedicated staff-confirmed completion, archive and restore services promptly before CTSMD performs actual closure. The new checks are a protection, not the requested finished workflow.
+
+### Controlled completion V1 (October 27)
+- Production detail now offers a completion readiness panel for In Production and Performing shows. It reports future schedule entries, incomplete form assignments, and pending volunteer approval requests as warnings, preserving them without auto-resolution.
+- Staff must acknowledge read-only consequences and type the exact production title. CSRF is checked in the existing staff controller; the completion service independently checks production.manage authorization, locks the production row, recalculates readiness, transitions to Completed, sets completed_at and pauses automatic transitions, writes audit metadata, and commits atomically. Repeated completion is rejected.
+- This is an initial readiness subset, not a complete operational sign-off. Casting offers, attendance review, tasks, unsent notices, service-hour verification, queued messages, family-facing current views, and archive readiness must still be added before a real-family lifecycle acceptance.
+- No records are deleted. Bluehost database-backed verification has not been performed.
