@@ -38,7 +38,7 @@ This extends the existing Expo app, not a replacement. Reviewed the [modernizati
 
 ## Backend safeguards and local migration
 
-New `FormWriteGuard` locks relevant assignment/form/production rows inside callers' transactions and delegates to the unchanged lifecycle policy. Applied to family and legacy submit/review, definition save/toggle/assign, group assignment and dynamic field/version writes. Both assignment and definition production scopes are checked; organization-wide null scope remains supported. Existing actor permissions, relationships, CSRF, audit and history remain intact. This guard does not grant actor authorization.
+New `FormWriteGuard` locks relevant assignment/form/production rows inside callers' transactions and delegates to the unchanged lifecycle policy. The policy's optional locking-read mode reads the current stage rather than an older REPEATABLE READ snapshot; existing callers retain their previous default. Applied to family and legacy submit/review, definition save/toggle/assign, group assignment and dynamic field/version writes. Both assignment and definition production scopes are checked; organization-wide null scope remains supported. Existing actor permissions, relationships, CSRF, audit and history remain intact. This guard does not grant actor authorization.
 
 Legacy mobile submission also rejects active structured fields, preventing simple acknowledgments from bypassing required dynamic answers. Detail exposes `read_only` and `requires_web`. Tests cover closed/unknown/missing and supported lifecycle states, locking queries and call-site contracts. **Not proven:** concurrent completion/submission, lock-order deadlocks, all direct staff POSTs and mixed-production staging cases.
 
@@ -80,12 +80,14 @@ Online logout cleanup passed. Offline logout clears local credentials and warns 
 | `tests/pilot_closed_forms.php` | **18 pass**, stubbed locking/lifecycle and source boundaries |
 | `tests/safeguarded_conversation.php` | **36 pass**, real local DB transaction rolled back |
 | `tests/native_api_integration.php` | **29 pass**, local HTTP bearer/reads/forged IDs/push ownership/logout/closed and structured submit/cutoff/send rejection |
-| PHP syntax, browser JS syntax, diff whitespace | Pass; not runtime coverage |
+| PHP syntax (181 files), browser JS syntax, diff whitespace | Pass; not runtime coverage |
+| Person/signup age eligibility and Web Push click regression | Pass; isolated unit tests, not native delivery |
 | Local schema/profile and Family & Pickup browser smoke | Pass at 390px: no SQL error or horizontal overflow; no pickup mutation |
 | iOS simulator | **Not run**: `xcrun simctl list devices` failed, simctl unavailable |
 | Android emulator / physical devices | **Not run**: adb unavailable; no attached test device |
 | Push arrival/banner/tap/revocation | **Not run**: native provider/build/device infrastructure missing |
-| Remote web safety / Expo CI | Pending branch push; final evidence to be recorded |
+| Remote web safety CI | **Pass** on final backend commit `07a96f2`: [run 40686270573](https://github.com/arwentz01/CTSMD/actions/runs/40686270573) |
+| Remote Expo CI | **Pass** on native implementation `c00a91a`: [run 40686120022](https://github.com/arwentz01/CTSMD/actions/runs/40686120022), including TypeScript, dependency compatibility, six contracts and both bundle exports. Later `07a96f2` changed PHP/tests only; native source is identical |
 
 Local HTTP reproduction: `CTSMD_NATIVE_INTEGRATION=1 APP_ENV=local DB_PORT=8889 php tests/native_api_integration.php`, local PHP router on 8093. Uses demo personas 7/6/13 and disposable token/form/thread fixtures cleaned in `finally`; no delivery worker. Do not run on hosting/real family data. Local QA outputs outside Git: `/tmp/ctsmd-phase4-native-export-final` and `/tmp/ctsmd-phase4-family-390.jpg`.
 

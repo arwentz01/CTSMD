@@ -10,6 +10,8 @@
 
 Evidence and dated acceptance checklist: [Native Phase 4](NATIVE_PHASE4_ACCEPTANCE.md). Existing Expo app extended; no production deployment or new identity system.
 
+Source evidence: `c00a91a` native integration and `07a96f2` current-stage form locking. Remote [Expo CI](https://github.com/arwentz01/CTSMD/actions/runs/40686120022) and [web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40686270573) passed; six native contracts, 29 local bearer/API checks and 36 transactional safeguarding checks passed. These do not close the device/pilot gates below.
+
 - [ ] **Device / safeguarding acceptance:** physical iOS/Android parent/student/staff tests for cold start, session replacement/revocation, multiple shows, former guardians, closed resources, notifications, upload/video, large text, VoiceOver/TalkBack and keyboard/safe areas. Local API and mocked native tests are not device signoff.
 - [ ] **Native push remains blocked:** APNs/FCM sender/credentials/build configuration, shared delivery-time authorization/preferences, receipt/token cleanup, offline logout retry and OS-permission revocation. Registration is `native_pending`, not delivery.
 - [ ] **Backend/native parity:** prioritize guardian-on-child structured forms, secure profile/contact and Family & Pickup workflows, caregiver logistics and staff workflows. Do not relax server policy to achieve parity.

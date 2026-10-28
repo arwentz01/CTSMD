@@ -2,6 +2,8 @@
 
 ## Phase 3 operational and native adoption
 
+Phase 4 follow-up: closed-form backend guards and legacy structured-submit rejection are now implemented with local API/lifecycle evidence; see [Native Phase 4 acceptance](NATIVE_PHASE4_ACCEPTANCE.md). The Phase 3 findings below remain historical context, not a claim that device or hosted closure acceptance has passed.
+
 Operational routes add `.ux-operational` and a domain scope to `.ux-workspace`. `ux-operational.css` consumes the same `--ux-*` values; it is an adoption layer, not another palette or design system. Both shared stylesheets are kept after inherited shell layers. Operational headings are compact sans, forms retain visible labels/control edges, status is expressed in text, and phone controls keep 44px targets. Existing information/data/POST boundaries remain authoritative.
 
 Forms preserve subject, production, assignment and submission meanings. Closed-production family/detail, management and builder controls receive presentation locks from the existing lifecycle guard; review actions are suppressed for closed form definitions. These locks do not secure direct POSTs. Missing lifecycle enforcement is explicitly tracked as a backend release blocker.
