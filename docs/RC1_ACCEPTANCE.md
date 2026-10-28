@@ -19,10 +19,10 @@ October 28, 2026 · `arwentz01/CTSMD` · `audit/board-pilot-readiness`.
 | Source schema bootstrap | Fresh local MySQL schema, canonical base and every exact migration filename; no demo seed. Pass with pinned 062 fresh-base adjustment described below |
 | New read-only schema inspection on complete fixture | 110 tables, 25 triggers, no declared-contract mismatch; not proof every index/FK/backfill/type/default is correct |
 | Existing local demo inspection | **Blocked as expected**: missing 087–092 objects/columns including declared-age/support-needs, safeguarded preferences, statement requests and rehearsal video schema. Old runtime guard did not catch this. Demo was not upgraded as part of RC1 |
-| RC1 tooling contracts | **21 pass**, no database/network |
+| RC1 tooling contracts | **25 pass**, no database/network; covers excluded payloads, traversal/incomplete manifests, tampered hashes, hidden unmanaged executables and literal-sensitive trigger hashing |
 | Seven-persona/two-production HTTP suite | **120 pass**, real local HTTP and migrated MySQL. Includes a second Student to distinguish linked household aggregation from cross-production leakage; repeat runs independently disable accounts/revoke tokens and count zero active fixture credentials |
 | Existing safeguarding suite | **36 pass** on isolated migrated schema, transaction rolled back; never against live accounts in this work |
-| Web safety / native contracts / exports | To be verified for RC1 source; prior Phase 4 evidence is not automatically a new RC1 run |
+| Web safety / native contracts / exports | Local pilot suites, native TypeScript, six native contracts, Expo compatibility and both platform exports passed. Remote CI evidence recorded below |
 | Hosting preflight / migration / restore | **Not run**. No hosting connection, migration or new restore drill claimed |
 | Physical-device, OS push, Apache/TLS/accessibility | **Not run**. Local PHP HTTP and Node mocks cannot establish these |
 
@@ -62,6 +62,7 @@ These are dated assessment findings, not a second active work queue. Owners/appr
 | RC1-10 | Privacy/consent/retention decisions outstanding | Policy-owner approved privacy/terms/guardian consent, safeguarding/media/record retention and supported student login cohort; no invented legal acceptance |
 | RC1-11 | Browser/device usability/accessibility not accepted | Dated device/browser versions, keyboard focus/return, mobile long tables/forms, VoiceOver/TalkBack and visual/readability findings with defects resolved |
 | RC1-12 | Expo dependency advisory review unresolved | Review Phase 4's eight tooling advisories, SDK-compatible patch/exploitability decision and evidence; no blind forced downgrade or assertion bundle success resolves security |
+| RC1-13 | 062 historical enrollment backfill lacks parent/guardian relationship-type restriction | Do not replay it as-is on caregiver-populated data. Reviewed eligibility-safe statement plan and pre-populated caregiver/former-guardian migration regression with fixed history/cutoff checks; fresh empty-schema CI does not establish upgrade safety |
 
 ## Manual staging acceptance envelope
 

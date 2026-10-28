@@ -12,9 +12,20 @@ $assert(isset($inventory['tables']['rehearsal_videos']),'091 included');
 $assert(isset($inventory['triggers']['trg_family_conversation_guardian_update']),'Revised guardian trigger expected');
 $assert(isset($inventory['dropped']['trg_family_conversation_guardian_insert']),'Obsolete widening trigger forbidden');
 $assert(count(array_filter($inventory['migrations'],static fn(array $m):bool=>str_starts_with(basename($m['path']),'069_')))===2,'Both 069 migrations enumerated by filename');
+$assert(ReleaseCandidate::normalizeSql("SET value='a b';")!==ReleaseCandidate::normalizeSql("SET value='ab';"),'Trigger literal whitespace remains significant');
+$assert(ReleaseCandidate::normalizeSql("SET value='--literal';")!==ReleaseCandidate::normalizeSql("SET value='';"),'Comment-looking literal remains significant');
+$assert(ReleaseCandidate::normalizeSql("SET value='Guardian';")!==ReleaseCandidate::normalizeSql("SET value='guardian';"),'Trigger literal case remains significant');
 $entries=[];
 foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $path)$entries[]=['path'=>$path,'category'=>'web_runtime','sha256'=>$path==='front.php'?str_repeat('0',64):hash_file('sha256',dirname(__DIR__).'/'.$path)];
 $assert(in_array('front.php',ReleaseCandidate::verifyFiles(dirname(__DIR__),['format'=>1,'revision'=>str_repeat('a',40),'files'=>$entries]),true),'Payload hash mismatch is detected');
+$fixtureRoot=sys_get_temp_dir().'/ctsmd_rc1_tooling_'.bin2hex(random_bytes(8));$created=[];
+mkdir($fixtureRoot,0700);mkdir($fixtureRoot.'/src',0700);
+try{
+ $fixtureEntries=[];
+ foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $path){$created[]=$fixtureRoot.'/'.$path;file_put_contents($fixtureRoot.'/'.$path,'synthetic fixture');$fixtureEntries[]=['path'=>$path,'category'=>'web_runtime','sha256'=>hash_file('sha256',$fixtureRoot.'/'.$path)];}
+ $created[]=$fixtureRoot.'/.unexpected.phtml';file_put_contents($fixtureRoot.'/.unexpected.phtml','synthetic fixture');
+ $assert(in_array('unmanaged executable: .unexpected.phtml',ReleaseCandidate::verifyFiles($fixtureRoot,['format'=>1,'revision'=>str_repeat('a',40),'files'=>$fixtureEntries]),true),'Hidden unmanaged executable detected');
+}finally{foreach($created as $file)unlink($file);rmdir($fixtureRoot.'/src');rmdir($fixtureRoot);}
 final class Rc1MetadataPDO extends PDO {
  public function __construct(private array $contract,private bool $broken=false){}
  public function query(string $query,?int $fetchMode=null,mixed ...$fetchModeArgs):PDOStatement|false{

@@ -56,7 +56,8 @@ final class ReleaseCandidate
         }
         foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php'] as $required)if(!isset($seen[$required]))throw new RuntimeException('Incomplete web manifest.');
         // Detect the class of unmanaged executable involved in the earlier host incident.
-        $rootExecutables=array_filter(glob($root.'/*')?:[],static fn(string $file):bool=>is_file($file)&&(bool)preg_match('/\.(?:php\d*|phtml|phar)$/i',$file));
+        $rootExecutables=[];
+        foreach(new DirectoryIterator($root) as $file)if($file->isFile()&&preg_match('/^(?:php\d*|phtml|phar)$/i',$file->getExtension()))$rootExecutables[]=$file->getPathname();
         foreach(array_merge($rootExecutables,self::phpFiles($root.'/assets'),self::phpFiles($root.'/public'),self::phpFiles($root.'/src'),self::phpFiles($root.'/cgi-bin'),self::phpFiles($root.'/production'),self::phpFiles($root.'/my-theatre')) as $full){
             $relative=substr($full,strlen($root)+1);if(!isset($seen[$relative]))$errors[]='unmanaged executable: '.$relative;
         }
@@ -73,8 +74,15 @@ final class ReleaseCandidate
 
     public static function normalizeSql(string $sql):string
     {
-        $sql=preg_replace('/--[^\n]*|\/\*.*?\*\//s','',$sql);
-        return strtolower(preg_replace('/\s+/','',str_replace('`','',trim((string)$sql))));
+        // Normalize formatting only outside SQL string literals. Literal whitespace,
+        // case and comment-looking content can change semantics and must stay hashed.
+        $pattern=<<<'REGEX'
+/('(?:''|\\.|[^'\\])*'|"(?:""|\\.|[^"\\])*")/s
+REGEX;
+        $parts=preg_split($pattern,$sql,-1,PREG_SPLIT_DELIM_CAPTURE);
+        if($parts===false)throw new RuntimeException('Cannot normalize trigger SQL.');
+        foreach($parts as $index=>&$part)if($index%2===0){$part=preg_replace('/--[^\n]*|\/\*.*?\*\//s','',$part);$part=strtolower(preg_replace('/\s+/','',str_replace('`','',$part)));}
+        return implode('',$parts);
     }
 
     /** Source inventory is evidence of declarations, never proof a migration was applied. */

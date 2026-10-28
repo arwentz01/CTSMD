@@ -22,6 +22,7 @@ Release preparation is not approval to deploy. See [RC1 evidence and required si
 - [ ] **RC1-10:** Obtain privacy/terms/guardian consent/retention/media and supported-student-cohort policy approvals.
 - [ ] **RC1-11:** Complete browser/mobile keyboard, focus, long-table, screen-reader and readability acceptance with dated devices and resolved defects.
 - [ ] **RC1-12:** Resolve/review SDK tooling advisories with SDK-compatible changes and release-owner security decision; do not infer closure from bundle exports.
+- [ ] **RC1-13:** Do not replay 062's historical enrollment backfill on caregiver-populated data: it lacks a parent/guardian relationship-type filter. Require an eligibility-safe reviewed statement plan and populated migration regression preserving revoked cutoffs; empty-schema CI is insufficient.
 
 ## Phase 4 native acceptance follow-up — October 28, 2026
 
