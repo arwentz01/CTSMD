@@ -169,3 +169,9 @@
 - Self-service signup cancellation is blocked for completed or archived production shifts. Historical service corrections need a separate authorized, audited operation; regular volunteer cancellation must not be used for post-close changes.
 - Community heart reactions now check production lifecycle while holding the parent post in a transaction. Closed production posts remain readable only where existing authorization allows, but participant reactions no longer change. Organization-wide posts remain interactive.
 - Added source-contract regression checks. Database-backed concurrency, guardian revocation, mobile route parity, hosted deployment and manual acceptance are still outstanding.
+
+### Community lifecycle and relationship UI parity (October 27 follow-up)
+- Community post composer and mobile posting-capability checks now fail closed for completed, archived, missing, and unknown production lifecycle stages. The create-post service already enforces the transactional write boundary. Organization-wide channels continue using ordinary permissions.
+- Production guardian Community audience eligibility now requires active parent/guardian relationships, not caregiver links. Historical channel visibility and group/team membership authorization still require broader persona testing.
+- Channel edit/create revalidates both relevant production lifecycle scopes inside the database transaction, in addition to its earlier input validation. This is not a proof against all concurrent stage transition races and requires database-level integration verification.
+- Source regression contracts added; hosted access and mobile behavior are unverified.
