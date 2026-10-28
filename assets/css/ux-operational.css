@@ -9,6 +9,7 @@ body.ux-workspace.ux-operational .unified-main .cal-view-tabs a { color:var(--ux
 body.ux-workspace.ux-operational .unified-main .cal-view-tabs a.active { color:var(--ux-ink)!important; background:var(--ux-ivory)!important; }
 body.ux-operational .unified-main :is(.fp-wrap,.fr-wrap,.acct-page,.care-page) { max-width:1440px; min-width:0; margin-inline:auto; padding:28px 32px 48px; }
 body.ux-operational .unified-main :is(.fp-card,.fr-card,.acct-panel,.acct-list-row,.acct-verify-card) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; }
+body.ux-operational .unified-main .fp-card { padding:20px; }
 body.ux-operational .unified-main :is(.fp-hero h1,.fr-wrap h1) { font:650 26px/1.3 system-ui,sans-serif; color:var(--ux-ink); }
 body.ux-operational .unified-main .fp-hero>small { display:none; }
 body.ux-operational .unified-main .fp-card h2 { font:650 18px/1.3 system-ui,sans-serif; }
