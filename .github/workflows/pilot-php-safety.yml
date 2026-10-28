@@ -36,6 +36,8 @@ jobs:
           php -l front.php
       - name: Validate Video Library browser upload JavaScript
         run: node --check assets/js/video-library-upload.js
+      - name: Staff production directory ordering and past grouping
+        run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract
         run: php tests/pilot_lifecycle_write_boundaries.php
       - name: Closed-production roster write guards
