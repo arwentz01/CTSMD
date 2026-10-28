@@ -87,6 +87,18 @@ final class MailService
                     continue;
                 }
             }
+            // Reminder jobs carry an assignment identifier in their dedupe key.
+            // Recheck the production lifecycle and parent/guardian relationship
+            // at delivery time so previously queued reminders cannot escape closure.
+            if((string)$row['category']==='forms' && preg_match('/^form-due-(\\d+)-(\\d+)-\\d{4}-\\d{2}-\\d{2}$/',(string)($row['dedupe_key']??''),$formMatch)){
+                $eligible=$db->prepare("SELECT 1 FROM form_assignments fa LEFT JOIN productions p ON p.id=fa.production_id WHERE fa.id=:assignment AND (fa.production_id IS NULL OR (p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) AND (fa.user_id=:recipient OR (COALESCE(fa.subject_user_id,fa.user_id)<>fa.user_id AND EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))) OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.guardian_user_id=:guardian2 AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))) LIMIT 1");
+                $eligible->execute(['assignment'=>(int)$formMatch[1],'recipient'=>(int)$row['user_id'],'guardian'=>(int)$row['user_id'],'guardian2'=>(int)$row['user_id']]);
+                if((int)$formMatch[2] !== (int)$row['user_id'] || !$eligible->fetchColumn()){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Form or family access revoked before delivery.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Form or family access revoked before delivery.');
+                    $suppressed++;continue;
+                }
+            }
             try{$latePickup=$db->prepare("SELECT r.guardian_user_id,n.student_user_id FROM late_pickup_notice_recipients r JOIN late_pickup_notice_drafts n ON n.id=r.notice_id WHERE r.email_queue_id=:queue LIMIT 1");$latePickup->execute(['queue'=>(int)$row['id']]);$pickupRecipient=$latePickup->fetch();}catch(PDOException $e){$pickupRecipient=false;if(!str_contains($e->getMessage(),"doesn't exist"))throw$e;}
             if($pickupRecipient){$relationship=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status='active' WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active' LIMIT 1");$relationship->execute(['guardian'=>(int)$pickupRecipient['guardian_user_id'],'student'=>(int)$pickupRecipient['student_user_id']]);if(!$relationship->fetchColumn()){$db->prepare("UPDATE email_queue SET status='suppressed',last_error='Guardian relationship is no longer active.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);self::log($db,(int)$row['id'],self::driver(),'suppressed','Guardian relationship is no longer active.');$suppressed++;continue;}}
 
