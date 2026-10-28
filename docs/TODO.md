@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Additional closure gates (Oct 27):** production-scoped volunteer approval requests, coordinator decisions, signup cancellations, and Community heart reactions now call ProductionLifecycleGuard at service boundaries. Pending: authorized historical volunteer corrections, all Community mutations/membership and notification queues, plus full Complete/Archive workflows. Commits 91c70db, 1cab45f, 863ba07, 354f058. Treat CI as source verification only; staging and production remain unverified.
+
+
 - [ ] **Production completion/archival workflow (Oct 27 partial source hardening):** transactional form submission/review closure guard added; casting notification and archive family access now require active parent/guardian relationship. Source-boundary checks added. Pending: comprehensive Forms, volunteer, Community and notification mutation audit; manual/automated stage transition controls; readiness review and explicit complete/archive confirmations; cross-production family UI; database/persona tests and deployed validation. Evidence: commits 725498e, ff77f3b, 8f2d426, 99e4d5a. No production deployment claimed.
 
 
