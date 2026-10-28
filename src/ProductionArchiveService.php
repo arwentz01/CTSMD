@@ -30,6 +30,7 @@ final class ProductionArchiveService
                 EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer AND pm.audience_type<>'guardian')
                 OR EXISTS (
                     SELECT 1 FROM family_relationships fr
+                    JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
                     JOIN production_memberships child_pm ON child_pm.user_id=fr.student_user_id AND child_pm.production_id=p.id AND child_pm.audience_type='student'
                     WHERE fr.guardian_user_id=:viewer2 AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
                 )
@@ -87,7 +88,7 @@ final class ProductionArchiveService
         $s->execute(['production'=>$productionId,'viewer'=>$viewerId]);
         if ($s->fetchColumn()) return true;
 
-        $g = $db->prepare("SELECT 1 FROM family_relationships fr JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' WHERE fr.guardian_user_id=:viewer AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
+        $g = $db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active' JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' WHERE fr.guardian_user_id=:viewer AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
         $g->execute(['production'=>$productionId,'viewer'=>$viewerId]);
         return (bool)$g->fetchColumn();
     }
@@ -112,7 +113,7 @@ final class ProductionArchiveService
         $s->execute(['production'=>$productionId,'viewer'=>$viewerId]);
         $types = array_map(static fn(array $r): string => (string)$r['audience_type'],$s->fetchAll());
         if (!in_array('guardian',$types,true)) {
-            $g = $db->prepare("SELECT 1 FROM family_relationships fr JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' WHERE fr.guardian_user_id=:viewer AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
+            $g = $db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active' JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' WHERE fr.guardian_user_id=:viewer AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
             $g->execute(['production'=>$productionId,'viewer'=>$viewerId]);
             if ($g->fetchColumn()) $types[]='guardian';
         }
