@@ -33,4 +33,34 @@ No modifications to services, SQL, role/permission conditions, CSRF fields, POST
 
 ## Verification record
 
-Implementation and exact automated/visual results are recorded below after verification. This audit is source evidence, not a claim of full accessibility conformance or measured user-task improvement.
+The first pass implements the shared warm shell, an escaped presentation helper, compact staff queues, grouped production tools and a casting workflow guide. Casting releases are available in a native disclosure below the working board. When callbacks are empty and cast decisions exist, the populated Cast tab is initially selected. No POST handler or service changed.
+
+### Automated checks
+
+- PHP syntax lint passed for all `src/*.php`, `tests/*.php`, and `front.php` using MAMP PHP 8.3.30.
+- All nine suites from `pilot-php-safety.yml` passed: production directory, lifecycle boundaries, closed-production roster, member roster/media, community video links, video privacy, lifecycle, rate limiting, and volunteer cancellation.
+- The existing lifecycle boundary test emits two PHP warnings about interpolated `$db` / `$viewerId` on line 36. Its assertions pass. This pre-existing test issue was not changed in a presentation pass.
+- Node syntax checks passed for video upload, unified navigation and the new workspace script. The CI workflow now includes both shell scripts in its browser JavaScript step.
+- `git diff --check` passed. Design-taste app source lint reported zero failures; its warnings on `box-shadow: none` and `backdrop-filter: none` reflect deliberate removal of legacy effects. Impeccable's automatic design hook reported no deterministic findings on the new stylesheet.
+
+### Authenticated browser verification
+
+The local PHP server used the current repository, existing local identity flow and MAMP demo database. Only session identity/working-production context was changed; casting decisions, publications, roster access and database schema were not mutated.
+
+- Before/after Chromium captures for Staff Overview, Production Workspace and Casting at 1440, 768 and 390 CSS pixels. Final document width equals viewport width in all nine captures.
+- The design-taste DOM probe and rule judge were run inside the authenticated browser with the app-screen exclusions. Nine final viewport reports have zero blocking findings and no remaining sampled text-contrast warning. This is a scoped DOM check, not the full standalone inspector's geometry or a complete WCAG audit.
+- Remaining nonblocking design notes: the requested warm ivory palette is intentional; the inherited install prompt may retain a small uppercase label. No exception was taken for unreadable operational text.
+- Browser assertions confirm mobile navigation opens/closes, Escape dismisses it, casting arrow keys select the matching tab/panel, role drawers open and restore focus after Escape, and both release forms remain reachable through the disclosure.
+- The populated three-person casting board and candidate drawer were additionally rendered at desktop and phone widths. No save, send, finalize or publish operation was exercised.
+- Baseline and final inventories match all existing contextual destinations, form actions, methods and named field/type contracts on the three routes.
+- Parent and student identities receive 403 on `/staff` and `/production/casting`; staff management links remain absent from their production workspaces.
+
+### Visual judgment and next review
+
+Emil: the daily staff question is now answered by visible queues rather than a large greeting; production tools are grouped under two clear headings; private casting work precedes release. Impeccable: shared controls, focus, skip links, keyboard tabs and phone labels are consistent. Taste: burgundy is reserved for meaningful actions, artwork has one production-specific slot, and decorative metric/icon cards no longer dominate.
+
+The screen's data and counts come from the existing services. The editorial production title and warm shell provide identity without changing lifecycle semantics. Real production imagery still uses the authorized endpoint and retains a readable solid fallback when missing.
+
+Remaining validation: physical iOS/Android devices, Safari/Firefox, assistive technology, 200% zoom, image-present production samples, and destructive/communicating POST integration paths. Native Expo files and lifecycle/archival/completion screens were not altered. Hosted GitHub CI has not been run because these commits are local and were not pushed or deployed.
+
+Local review captures and measurement JSON are in `/tmp/ctsmd-ux-before/` and `/tmp/ctsmd-ux-final/`. They are intentionally outside the repository because they contain authenticated demo-account context.

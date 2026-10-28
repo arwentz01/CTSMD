@@ -17,7 +17,9 @@ Typography uses the current local/system sans stack for operating labels, forms,
 - `.ux-workspace` provides the shared application shell and interaction layer.
 - Staff review rows retain their permission-filtered data and real queue links.
 - `.pw-tool-group` groups existing production tools; tool descriptions remain visible and the same authorization checks stay at each link.
-- Casting keeps private decisions, roster finalization, family results and publication distinct. Guidance describes those existing boundaries, without inventing a new backend state machine.
+- Casting keeps private decisions, roster finalization, family results and publication distinct. Guidance describes those existing boundaries, without inventing a new backend state machine. Release forms use a native `details` disclosure after the working board; all submit contracts are retained.
+
+The new stylesheet is linked in the initial HTML and moved after existing dynamically loaded shell layers by `unified-navigation.js`. This avoids a JavaScript-only styling dependency while preserving the legacy layer order elsewhere. `ux-workspaces.js` progressively adds outline SVG icons to existing destinations, current-page semantics, keyboard tabs and selection of the populated Cast list when callbacks are empty. It never submits production changes.
 
 ## States and accessibility
 
