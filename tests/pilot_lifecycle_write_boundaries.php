@@ -73,6 +73,9 @@ $cases=[
   'if($stage===\'in_production\'&&$start!==\'\'&&$time>=$start&&!$finished)$target=\'performing\';',
  ],
  'MailService.php'=>[
+  "Volunteer shift access revoked or production closed.",
+  "shift-(?:reminder|eligibility)",
+
   "Form or family access revoked before delivery.",
   "form-due-",
   "fr.relationship_type IN ('parent','guardian')",
