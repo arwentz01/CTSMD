@@ -18,6 +18,10 @@ Adopted the existing shell/tokens on the active FamilyFormsExperience routes (`/
 
 Verification and subsequent build records follow as each batch lands. This phase never implies deployment or complete WCAG certification.
 
+### Build 2 — Volunteer
+
+Routes: readiness, opportunities/detail, shift management/new/detail, requests/staff review, training, verifications and verified service history. Reused shared tokens for headers, shift rows, eligibility reasons, approval context and service records. Existing eligibility, waitlist/approval, check-in/out, cancellation, verified-hour data and actions are unchanged. Print service records retain their print mode. Before/after authenticated Chromium at 1440/768/390; cancellation and lifecycle regression suites pass. Physical check-in/out and real-device testing remain open acceptance work.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.

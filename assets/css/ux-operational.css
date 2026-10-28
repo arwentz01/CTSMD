@@ -1,4 +1,22 @@
 /* Phase 3 adopts the existing --ux-* tokens. Only opted-in operational routes. */
+body.ux-operational .unified-main .approval-page { max-width:1440px; margin-inline:auto; padding:28px 32px 48px; }
+body.ux-operational .unified-main :is(.vol-panel,.vol-shift-card,.vsm-row,.vsm-form,.vsm-side,.vsm-roster,.approval-card,.approval-panel,.approval-queue,.vd-card,.vd-training,.vv-card,.vsr-panel) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; padding:20px; }
+body.ux-operational .unified-main :is(.vol-detail-hero,.vsm-head,.approval-admin-head,.approval-review-head) { background:var(--ux-ivory); color:var(--ux-ink); border:0; border-radius:12px; box-shadow:none; padding:20px; }
+body.ux-operational .unified-main :is(.vol-detail-hero,.vsm-head,.approval-admin-head,.approval-review-head) :is(h2,p,small) { color:var(--ux-ink); font-family:inherit; }
+body.ux-operational .unified-main :is(.vol-shift-card,.vsm-row,.approval-card,.vd-card,.vv-card,.vsr-panel) :is(p,small,time) { color:var(--ux-muted); font-size:13px; letter-spacing:0; text-transform:none; }
+body.ux-operational .unified-main :is(.vol-lock-reason,.vol-blocked,.approval-warning,.approval-status,.vol-shift-status,.vol-decision) { color:var(--ux-ink); background:var(--ux-ivory); font-size:13px; }
+body.ux-operational .unified-main :is(.vol-date,.vsm-date,.approval-date) { background:var(--ux-ivory); color:var(--ux-ink); box-shadow:none; border-radius:6px; }
+body.ux-operational .unified-main :is(.vol-credential,.vol-commitment,.vv-record,.vsr-row,.vsr-production) { border-color:var(--ux-line); background:transparent; box-shadow:none; }
+body.ux-operational .unified-main .vsr-hero h1 { font:650 26px/1.3 system-ui,sans-serif; color:var(--ux-ink); }
+body.ux-operational .unified-main :is(.vsr-panel h2,.vol-panel h3) { font:650 18px/1.3 system-ui,sans-serif; }
+body.ux-operational .unified-main :is(.vsr-metrics,.vol-score) { background:var(--ux-ivory); color:var(--ux-ink); border:0; box-shadow:none; }
+body.ux-operational .unified-main :is(.vsr-metrics span,.vsr-muted,.vol-panel p,.vol-panel small) { color:var(--ux-muted); font-size:13px; }
+@media(max-width:780px) {
+ body.ux-operational .unified-main .approval-page { padding:20px 16px 32px!important; }
+ body.ux-operational .unified-main :is(.vol-shift-card,.vsm-row,.approval-card,.vd-card,.vv-card,.vsr-panel) { padding:16px!important; }
+ body.ux-operational .unified-main :is(.vol-shift-list,.vol-detail-grid,.vol-readiness-layout,.vsm-layout,.approval-review-grid,.vd-grid,.vv-grid,.vsr-grid) { grid-template-columns:minmax(0,1fr); }
+ body.ux-operational .unified-main :is(.vol-shift-card,.vsm-row,.approval-card) :is(p,small,time) { font-size:13px!important; color:var(--ux-muted)!important; }
+}
 body.ux-workspace.ux-operational .unified-main :is(.ff-page,.fm-page,.df-page,.vol-page,.vsm-page,.va-page,.vd-page,.vv-page,.vsr-page,.cal-page,.att-page,.pt-page,.pl-page,.fp-page,.ap-page,.accounts-page) { width:100%; max-width:1440px; min-width:0; margin-inline:auto; padding:28px 32px 48px; background:var(--ux-ground); }
 body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.ff-form-head,.df-head,.att-head) { background:transparent!important; color:var(--ux-ink)!important; border:0!important; box-shadow:none!important; border-radius:0!important; padding:0 0 24px!important; margin-bottom:0!important; }
 body.ux-operational .unified-main :is([class$="-hero"],.fm-head,.ff-form-head,.df-head,.att-head) h2 { color:var(--ux-ink)!important; font:650 26px/1.25 system-ui,sans-serif!important; letter-spacing:-.025em!important; margin:0 0 8px!important; }
@@ -26,6 +44,9 @@ body.ux-operational .unified-main :is(.fm-card footer,.fm-form footer,.ff-form f
 body.ux-operational .unified-main :is(.fm-card footer a,.fm-card footer button,.fm-head>a) { font-size:13px; color:var(--ux-wine); min-height:44px; display:inline-flex; align-items:center; }
 body.ux-operational .unified-main :is(.ff-empty,.fm-empty,.df-empty) { background:var(--ux-paper); border:1px solid var(--ux-line); box-shadow:none; text-align:left; border-radius:12px; padding:24px; }
 body.ux-operational .unified-main :is(.df-hero>a,.df-form-card>small) { color:var(--ux-wine)!important; font-size:13px!important; letter-spacing:0!important; text-transform:none!important; }
+body.ux-operational .unified-main :is(.vol-heading h2,.vsr-hero h1) { font:650 26px/1.25 system-ui,sans-serif!important; color:var(--ux-ink)!important; }
+body.ux-operational .unified-main :is(.vol-heading small,.vv-hero>small,.vsr-panel header small) { display:none!important; }
+body.ux-operational .unified-main .vol-panel.accent :is(p,span) { color:var(--ux-muted)!important; }
 @media(max-width:780px) {
  body.ux-workspace.ux-operational .unified-main :is(.ff-page,.fm-page,.df-page,.vol-page,.vsm-page,.va-page,.vd-page,.vv-page,.vsr-page,.cal-page,.att-page,.pt-page,.pl-page,.fp-page,.ap-page,.accounts-page) { padding:20px 16px 32px!important; background:var(--ux-ground)!important; }
  body.ux-operational .unified-main .ff-hero { display:flex!important; align-items:start!important; gap:16px!important; }
