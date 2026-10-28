@@ -196,13 +196,15 @@ final class ProductionLifecycleExperience
     {
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare('SELECT id,title,status,is_active FROM productions WHERE id=:id FOR UPDATE');
+            $stmt = $db->prepare('SELECT id,title,status,is_active,lifecycle_stage FROM productions WHERE id=:id FOR UPDATE');
             $stmt->execute(['id'=>$id]);
             $production = $stmt->fetch();
             if (!$production) throw new RuntimeException('That production no longer exists.');
             if ((bool)$production['is_active'] === $active) { $db->commit(); return; }
 
             if ($active) {
+                if(!in_array((string)$production['lifecycle_stage'],['upcoming','planning','in_production','performing'],true))
+                    throw new RuntimeException('Closed productions cannot be reactivated through legacy controls.');
                 $hasLegacyCurrent = (bool)$db->query("SELECT 1 FROM productions WHERE is_active=1 AND status='current' LIMIT 1")->fetchColumn();
                 $status = $hasLegacyCurrent ? 'planning' : 'current';
                 $update = $db->prepare('UPDATE productions SET is_active=1, status=:status, activated_at=CURRENT_TIMESTAMP, deactivated_at=NULL WHERE id=:id');
@@ -238,6 +240,7 @@ final class ProductionLifecycleExperience
 
     private static function restorePlanning(PDO $db, array $actor, int $id): void
     {
+        throw new RuntimeException('Restoring an archived production requires a separate safeguarded, audited review.');
         $production = self::production($db, $id);
         if (!$production) throw new RuntimeException('That production no longer exists.');
         if ((bool)$production['is_active']) throw new RuntimeException('Deactivate the production before returning it to Planning.');
