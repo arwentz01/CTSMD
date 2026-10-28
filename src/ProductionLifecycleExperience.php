@@ -141,6 +141,10 @@ final class ProductionLifecycleExperience
         if(!in_array($stage,$stages,true))throw new RuntimeException('Choose a valid lifecycle stage.');
         $before=self::production($db,$id);
         if(!$before)throw new RuntimeException('Production not found.');
+        // Terminal transitions cannot bypass the forthcoming audited readiness
+        // workflow through the legacy stage/date editor.
+        if($stage!==(string)$before['lifecycle_stage'] && (in_array($stage,['completed','archived'],true) || in_array((string)$before['lifecycle_stage'],['completed','archived'],true)))
+            throw new RuntimeException('Completion, archival, and reopening require a separate authorized lifecycle confirmation workflow.');
         $dates=[];
         foreach(['audition_starts_at','audition_ends_at','performance_starts_at','performance_ends_at','archive_after_at'] as $field){
             $value=trim((string)($input[$field]??''));
