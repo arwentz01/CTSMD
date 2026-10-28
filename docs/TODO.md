@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Complete Production V1 source (Oct 27):** staff production detail has explicit title confirmation, outstanding-warning summary and acknowledgement; ProductionCompletionService locks and updates lifecycle, writes audit, and preserves records. Commits 486172e, bef1e70, 0c873b5. Still missing full readiness inventory and blockers, archive workflow, mobile/family lifecycle filtering, staging integration/rollback testing and deployed acceptance. Do not treat V1 as production-ready closure.
+
+
 - [ ] **CRITICAL lifecycle transition coordination:** date automation no longer directly completes or archives productions (c1ef61e). Controlled manual completion/archive confirmations remain unimplemented; current lifecycle stage editor still permits raw stage changes. Complete these together before allowing staff to transition real productions. Regression contract f18fcab; staging and cron verification pending.
 
 
