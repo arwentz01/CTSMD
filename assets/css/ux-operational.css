@@ -1,4 +1,20 @@
 /* Phase 3 adopts the existing --ux-* tokens. Only opted-in operational routes. */
+body.ux-operational .unified-main :is(.fp-wrap,.fr-wrap,.acct-page,.care-page) { max-width:1440px; min-width:0; margin-inline:auto; padding:28px 32px 48px; }
+body.ux-operational .unified-main :is(.fp-card,.fr-card,.acct-panel,.acct-list-row,.acct-verify-card) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; }
+body.ux-operational .unified-main :is(.fp-hero h1,.fr-wrap h1) { font:650 26px/1.3 system-ui,sans-serif; color:var(--ux-ink); }
+body.ux-operational .unified-main .fp-hero>small { display:none; }
+body.ux-operational .unified-main .fp-card h2 { font:650 18px/1.3 system-ui,sans-serif; }
+body.ux-operational .unified-main :is(.fp-entry small,.fr-card small,.acct-muted,.acct-record small) { color:var(--ux-muted); font-size:13px; }
+body.ux-operational .unified-main :is(.fp-entry,.acct-list-row) { overflow-wrap:anywhere; }
+body.ux-operational .unified-main :is(.fp-muted,.acct-disabled) { opacity:1; }
+body.ux-operational .unified-main .fp-card summary { min-height:44px; align-content:center; }
+body.ux-operational .unified-main .acct-invite code { overflow-wrap:anywhere; word-break:break-all; }
+@media(max-width:780px) {
+ body.ux-operational .unified-main :is(.fp-wrap,.fr-wrap,.acct-page,.care-page) { padding:20px 16px 32px!important; }
+ body.ux-operational .unified-main :is(.fp-grid,.acct-layout,.acct-contact-grid,.acct-readiness-grid) { grid-template-columns:minmax(0,1fr)!important; }
+ body.ux-operational .unified-main .fp-entry { flex-wrap:wrap; }
+ body.ux-operational .unified-main .fp-entry > div { min-width:0; }
+}
 body.ux-operational .unified-main .pr-page { padding:28px 32px 48px; max-width:1440px; margin-inline:auto; }
 body.ux-operational .unified-main :is(.pr-section,.pr-item,.pr-composer,.pr-signal,.pl-panel,.pl-row,.pr-task-drawer) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; }
 body.ux-operational .unified-main :is(.pr-section,.pl-panel) { padding:20px; margin-bottom:24px; }

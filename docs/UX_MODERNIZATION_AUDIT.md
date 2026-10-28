@@ -30,6 +30,10 @@ Routes: Calendar month/week/agenda, Attendance list/take/report, schedule creati
 
 Routes: `/production/tasks`, `/production/readiness`, production directory/detail and existing completion/archive panels. Shared task rows, owners/dates, summary typography and readable readiness findings. Finding text is derived only from existing severity/count: positive blocker = Blocked, positive nonblocker = Warning, zero = Ready. This does not decide eligibility; existing service readiness arrays, button disabling, typed confirmations, acknowledgments, transactions and audit records remain untouched. Completion and archival stay separate. Lifecycle and directory tests cover retained source contracts.
 
+### Build 5 — Family, pickup and accounts
+
+Routes: child-specific Family & Pickup, staff relationship review, caregiver logistics and account-management list/detail. Reused shell, readable relationship/pickup rows, forms and mobile stacking. Existing parent/guardian/caregiver explanations and separate pickup-only authorization are preserved, with no new permission claims. Primary guardian, automatic pickup authority, revocation, account invitation and relationship-review handlers are unchanged. A student ID is required for the child-specific route; browser coverage uses an authorized linked child rather than the parameterless error path.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.
