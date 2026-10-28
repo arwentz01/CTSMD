@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Archived guardian history linked-student safety:** require active linked student account for guardian archive listing, detail and historical audience checks (b1bfb59; source regression bcbed85). Verify direct membership and child activation/deactivation cases with database-backed multi-persona integration tests.
+
+
 - [ ] **Archive readiness extension:** pending casting offers and volunteer approvals now block archival with transactional recheck; notices/forms/checklist are visible retained warnings (38ff902, 0a86305, db32484). Full queue/service-hour/role checks and live integration remain outstanding.
 
 
