@@ -7,6 +7,7 @@ require_once __DIR__.'/SafeguardedNotificationPreference.php';
 require_once __DIR__.'/CommunicationReadStateService.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/ProductionNotificationAccess.php';
 
 final class PushService
 {
@@ -51,6 +52,18 @@ final class PushService
                 catch(Throwable $e){error_log('Production push authorization error: '.$e->getMessage());}
                 if(!$allowed){
                     $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Production access revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
+            // Notification bridge jobs retain the originating app notification ID.
+            // Recheck the source record and current recipient authorization at
+            // delivery, rather than trusting eligibility when the job was queued.
+            if(preg_match('/^notification-(\\d+)$/',(string)($row['dedupe_key']??''),$noticeMatch)){
+                $n=$db->prepare("SELECT id,recipient_user_id,source_type,source_id FROM app_notifications WHERE id=:id AND recipient_user_id=:user LIMIT 1");
+                $n->execute(['id'=>(int)$noticeMatch[1],'user'=>(int)$row['user_id']]);
+                $notification=$n->fetch(PDO::FETCH_ASSOC);
+                if(!$notification || !ProductionNotificationAccess::visible($db,(int)$row['user_id'],$notification)){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Notification access revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
                     continue;
                 }
             }
