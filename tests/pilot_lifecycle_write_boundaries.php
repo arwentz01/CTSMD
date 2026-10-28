@@ -32,6 +32,10 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
+ 'ProductionArchiveService.php'=>[
+  "JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'",
+  "fr.relationship_type IN ('parent','guardian')",
+ ],
  'ProductionArchivalWorkflow.php'=>[
   "pending_volunteer_approvals",
   "draft_schedule_notices",
