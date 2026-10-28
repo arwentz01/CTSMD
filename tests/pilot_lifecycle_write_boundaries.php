@@ -38,6 +38,12 @@ $cases=[
   "FOR UPDATE",
   "Only completed productions can be archived.",
  ],
+ 'MobileApi.php'=>[
+  "fa.status<>'completed'",
+  "fa.production_id IS NULL OR EXISTS",
+  "vs.production_id IS NULL OR EXISTS",
+  'ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost[\'production_id\']);',
+ ],
  'FamilyDashboardService.php'=>[
   "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
   "fa.production_id IS NULL",
