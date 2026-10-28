@@ -310,13 +310,15 @@ final class ProductionLifecycleExperience
         <?php else: ?>
         <?php if (!$selected): ?><section class="pl-empty"><b>Production not found.</b><a class="button" href="<?= $url('/admin/productions') ?>">Back to productions</a></section><?php else: $selectedIsWorkspace=$workspace&&(int)$workspace['id']===(int)$selected['id']; ?>
         <section class="pl-detail-head"><div><small><?= (bool)$selected['is_active'] ? (($selectedIsWorkspace?'YOUR WORKSPACE · ':'').'ACTIVE') : $esc(strtoupper($selected['status'])) ?> · <?= $esc((string)$selected['season']) ?></small><h2><?= $esc($selected['title']) ?></h2><p><?= (int)$selected['active_members'] ?> people · <?= (int)$selected['schedule_items'] ?> schedule items · <?= (int)$selected['volunteer_shifts'] ?> shifts · <?= (int)$selected['channels'] ?> channels</p></div><a href="<?= $url('/admin/productions') ?>">← All productions</a></section>
-        <?php if((string)$selected['lifecycle_stage']==='completed'): ?>
+        <?php if((string)$selected['lifecycle_stage']==='completed'): $archiveReadiness=ProductionArchivalWorkflow::readiness($db,(int)$selected['id']); $archiveBlocked=count(array_filter($archiveReadiness,static fn(array $item):bool=>$item['severity']==='blocker'&&$item['count']>0))>0; ?>
         <section class="pl-panel"><small>CONTROLLED ARCHIVAL</small><h3>Archive this completed production</h3>
         <p>Archival closes the active production workspace, removes current volunteer opportunities and preserves casting, roster, forms, attendance, Theatre History, historical files and communications subject to authorization.</p>
+        <h4>Archive readiness</h4><ul><?php foreach($archiveReadiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= $esc($item['severity']) ?>)</li><?php endforeach; ?></ul>
+        <?php if($archiveBlocked): ?><p role="alert"><b>Archival blocked.</b> Resolve pending casting offers and volunteer approvals before proceeding.</p><?php endif; ?>
         <form method="post" class="pl-detail-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_lifecycle_csrf']) ?>"><input type="hidden" name="production_id" value="<?= (int)$selected['id'] ?>"><input type="hidden" name="action" value="archive_production">
         <label>Type the production title to confirm<input name="confirm_title" required autocomplete="off"></label><label>Archive note (optional)<textarea name="archive_note" maxlength="500"></textarea></label>
         <label><input type="checkbox" name="acknowledge_archive" value="1" required> I understand this will close the active workspace while preserving authorized history.</label>
-        <button class="button" type="submit">Archive Production</button></form></section>
+        <button class="button" type="submit" <?= $archiveBlocked?'disabled':'' ?>>Archive Production</button></form></section>
         <?php endif; ?>
         <?php if(in_array((string)$selected['lifecycle_stage'],['in_production','performing'],true)): $readiness=ProductionCompletionService::readiness($db,(int)$selected['id']); ?>
         <section class="pl-panel"><small>CONTROLLED COMPLETION</small><h3>Review completion readiness</h3><p>Completion makes this production's operational records read-only. Historical records are preserved.</p>
