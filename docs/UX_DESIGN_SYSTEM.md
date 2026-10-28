@@ -6,9 +6,13 @@ Family, personal home, Community, Messaging and Notifications adopt the existing
 
 Family attention places forms and pending offers before child summaries. Detailed tasks appear once; child summaries give context and counts. Households keep all authorized children and productions. Forms link by assignment ID to the existing viewer-authorized form route. The default is a complete household, not a selected-show filter.
 
+Community keeps organization/production channel scope and permissioned composition. Reactions use Like/Liked text and pressed semantics; pinned posts have a text label. Messaging uses neutral bubbles and explicit participant context. Native safeguarding/privacy disclosure keeps monitoring and current-relationship explanations reachable on mobile without changing server-controlled send permission. Composers/search/file inputs have accessible names; attachment routes remain guarded.
+
+Notifications separate pending actions, unread/read informational updates and completed-form history. Always show subject/production and the stored due/status text. Never treat marking a notification read as completion. Closed-production forms do not belong in current work; historical completed forms must remain labeled as records.
+
 ## Direction and adoption
 
-Calm Backstage Operations uses the existing warm CTSMD foundation. This first implementation is scoped to `.ux-workspace` on Staff Overview, Production Workspace and Casting. Other routes and native `mobile/` keep their current presentation. The global navigation destinations, permissions and working-production selector remain intact.
+Calm Backstage Operations uses the existing warm CTSMD foundation. The scoped layer covers Staff Overview, Production Workspace, Casting and the five Phase 2 experiences above. Other routes and native `mobile/` keep their current presentation. The global navigation destinations, permissions and working-production selector remain intact.
 
 ## Shared tokens
 

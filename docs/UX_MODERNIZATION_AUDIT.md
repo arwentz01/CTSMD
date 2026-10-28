@@ -16,6 +16,32 @@ Route: `/app`. Reused the role-aware renderer with a concise personal header, st
 
 Verification: authenticated student desktop/phone rendering; PHP lint; inherited mobile Next up colors corrected after the contrast probe found light text on the new ivory surface. The final student probe has no blocking findings. Closed-production exclusion and cross-production roster suites pass. Optional timeline duplication is deferred.
 
+### Build 3 — Community
+
+Routes: `/channels` and existing channel selections. Warm rail and reading pane, readable author/time metadata, labeled composer and file input, selected-channel semantics, textual Like/Liked state and pinned-announcement label. Membership, search scope, moderation, downloads and historical access remain authoritative. Existing reactions work through unchanged POST contracts. Source inspection found no threaded reply service; replies and authenticated image thumbnails are explicitly deferred dependencies, not nonfunctional controls.
+
+### Build 4 — Messaging
+
+Routes: `/messages`, `/messages/new`, `/messages/thread`. Consistent lists, metadata, bubbles, labeled search/reply/file controls, participant disclosure association and mobile composer. The legacy shell previously removed safety banners; modernized threads instead retain them in a native Safeguarding and privacy disclosure. Paused sending remains explicit in the existing server-controlled composer. No conversation policy, recipient eligibility, attachment access or delivery service changed.
+
+### Build 5 — Notifications and actions
+
+Route: `/notifications`. Current actions, deadline/status text, subject and production context, unread updates, read-update history and a separate completed-form disclosure. Read never means completed. Existing CSRF-protected read/complete/offer response actions and deep links remain intact. Students no longer get a Family link in this page's subnavigation.
+
+Two narrow read-side corrections reuse existing authorization rather than introduce new rules: Family updates/unread totals now pass through `ProductionNotificationAccess`; Action Center forms now use `FamilyFormService::assignmentsForViewer`, then exclude completed/closed/unknown-production work from pending actions. Completed forms stay explicitly historical. Notification creation, delivery eligibility and queue processing are untouched.
+
+### Phase 2 verification — local, October 27, 2026
+
+- PHP syntax checks across all source/test files and front controller; Node checks for shared shell/workspace/upload scripts; all nine existing pilot safety suites pass. The lifecycle source-contract test retains its two pre-existing interpolation warnings.
+- Added `tests/ux_action_visibility.php`: viewer/guardian-scoped service delegation and completed/closed/unknown-production exclusion. Community search and safeguarding-review regression tests pass and are now included in CI.
+- Real MAMP database safeguarding regression: 36 checks pass, transaction rolled back. No schema change or persistent fixture write was needed.
+- Authenticated Chromium before/after captures at 1440 and 390px for all five screens. Final sampled DOM reports have no blocking findings; intentional warm-ivory palette warnings are not accessibility failures. Selected channel and message-thread views additionally checked. This is not a complete WCAG conformance audit.
+- Parent, student, production-manager and administrator identities exercised on shared routes. Source review and existing regression suites cover multi-production aggregation, current guardian relationships and closed-production exclusion.
+- Local captures and probe JSON remain outside Git in `/tmp/ctsmd-phase2-before/`, `/tmp/ctsmd-phase2-after/` and `/tmp/ctsmd-phase2-final/`; they contain authenticated demo context.
+- Physical devices, Safari/Firefox, screen readers, live communicating POST/upload paths and production deployment are not claimed. Deferred refinements are in `UX_POLISH_BACKLOG.md`. GitHub CI evidence is recorded after push below.
+
+## Phase 1 historical record
+
 Baseline: `d72cfd7`, branch `audit/board-pilot-readiness`, 2026-10-27. The checkout was fast-forwarded from `5bec6ae` after fetching the branch, before edits.
 
 ## Approved direction

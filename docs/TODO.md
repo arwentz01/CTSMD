@@ -19,6 +19,8 @@
 
 ## P0 — Pilot blockers and release gates
 
+Phase 2 UX: Family, personal/student Today, Community, Messaging and Action Center implemented on the existing branch. See [implementation and verification](UX_MODERNIZATION_AUDIT.md) and subordinate [cosmetic refinement notes](UX_POLISH_BACKLOG.md). Local browser and safeguarding evidence does not close the live-pilot gates below or imply deployment.
+
 - [ ] Verify safeguarding revocation across web/mobile, including former guardians, casting offers, student tasks and notices.
 - [ ] Complete live email and push acceptance: actual delivery, deep links, retries, recipient authorization and queue operation.
 - [ ] Validate HTTPS, secure cookies, secret-file protection, sensitive uploads and production hosting incident response.
