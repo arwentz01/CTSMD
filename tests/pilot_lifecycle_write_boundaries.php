@@ -33,6 +33,10 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db, (int)$submission[\'production_id\']);',
  ],
  'ProductionArchivalWorkflow.php'=>[
+  "pending_volunteer_approvals",
+  "draft_schedule_notices",
+  "Archival blocked by unresolved casting offers or volunteer approvals.",
+
   "lifecycle_stage='archived'",
   "production.archived",
   "FOR UPDATE",
@@ -70,6 +74,8 @@ $cases=[
  'ProductionLifecycleExperience.php'=>[
   "complete_production",
   "archive_production",
+  "archiveReadiness",
+  "archiveBlocked",
   "Closed productions cannot be reactivated through legacy controls.",
   "acknowledge_outstanding",
   'Completion, archival, and reopening require a separate authorized lifecycle confirmation workflow.',
