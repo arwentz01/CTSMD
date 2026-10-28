@@ -16,6 +16,9 @@ final class ProductionCompletionService
         $checks=[
             'future_schedule'=>["SELECT COUNT(*) FROM schedule_items WHERE production_id=:id AND starts_at>NOW()",'warning','Future schedule entries remain in history'],
             'pending_forms'=>["SELECT COUNT(*) FROM form_assignments WHERE production_id=:id AND status<>'completed'",'warning','Incomplete form assignments are preserved'],
+            'pending_casting_offers'=>["SELECT COUNT(*) FROM production_cast_offers WHERE production_id=:id AND status='pending'",'blocker','Pending casting offers must be resolved before closure'],
+            'unmarked_attendance'=>["SELECT COUNT(*) FROM attendance_records a JOIN schedule_items si ON si.id=a.schedule_item_id WHERE si.production_id=:id AND a.status='unmarked'",'warning','Unmarked attendance records remain in history'],
+            'draft_notices'=>["SELECT COUNT(*) FROM schedule_change_notices WHERE production_id=:id AND status='draft'",'warning','Draft schedule notices will not be published after closure'],
             'pending_volunteer_approvals'=>["SELECT COUNT(*) FROM volunteer_shift_approval_requests r JOIN volunteer_shifts s ON s.id=r.shift_id WHERE s.production_id=:id AND r.status='pending'",'warning','Pending volunteer requests are retained but cannot be approved after closure'],
         ];
         $items=[];
@@ -43,6 +46,10 @@ final class ProductionCompletionService
             if(!hash_equals((string)$production['title'],trim($confirmation)))
                 throw new RuntimeException('Type the exact production title to confirm completion.');
             $items=self::readiness($db,$productionId);
+            foreach($items as $item){
+                if($item['severity']==='blocker' && $item['count']>0)
+                    throw new RuntimeException('Completion blocked by unresolved casting offers. Resolve or revoke outstanding offers first.');
+            }
             $update=$db->prepare("UPDATE productions SET lifecycle_stage='completed',completed_at=CURRENT_TIMESTAMP,lifecycle_automation_paused=1 WHERE id=:id AND lifecycle_stage=:stage");
             $update->execute(['id'=>$productionId,'stage'=>$production['lifecycle_stage']]);
             if($update->rowCount()!==1)throw new RuntimeException('Production changed; review readiness again.');
