@@ -234,3 +234,7 @@
 ### Archive history linked-student authorization (October 27 follow-up)
 - The archive directory's parent/guardian discovery and archived production detail/file/channel historical audience checks now require a current active parent/guardian family relationship tied to an active student account. Previously revoked/disabled student accounts cannot grant guardian archival access simply through retained production membership records.
 - Archived records remain preserved. Direct historical access for past non-guardian production members is unchanged; guardian/student historical access, roster privacy and multi-show authorization need database-backed persona tests.
+
+### Archived viewer account-state enforcement (October 27 follow-up)
+- Archive list and detail/file/channel access now deny disabled/inactive viewer accounts even when historical membership rows remain. The account gate intentionally permits active managed student accounts so youth historical access is not lost solely because of their account type.
+- Parent/guardian historical access still requires the linked student and active family relationship checks introduced earlier. Source regression contracts added; integration persona and revoked-token tests remain pending.
