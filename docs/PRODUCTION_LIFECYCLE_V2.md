@@ -202,3 +202,7 @@
 - Existing roster, casting, attendance, form submissions, volunteer service history, files, and Community records are preserved, not deleted. Archive access continues to use the existing authorized historical viewer.
 - Legacy Activate and Return to Planning paths now reject reopening terminal lifecycle states; safeguarded restoration needs a separate reviewed service.
 - Remaining: comprehensive pre-archive checks, pending communications cleanup, current family dashboard cross-production behavior, live staging database transaction/persona tests and deployment verification. This is not authorization to archive a real production yet.
+
+### Completion readiness extension (October 27)
+- Readiness now includes unresolved pending casting offers (blocking), unmarked attendance (warning), and draft schedule notices (warning), in addition to future schedule entries, incomplete forms and pending volunteer approvals. Blocking offers are rechecked under the completion transaction before the lifecycle can change. The staff completion button is disabled while blockers exist.
+- Warning counts remain visible for acknowledgement, but no records are silently completed or deleted. The readiness inventory is not yet exhaustive: production tasks, service-hour verification, delivery queues, and cross-production family behavior still need coverage and integration testing.
