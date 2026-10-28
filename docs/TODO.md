@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **CRITICAL lifecycle transition coordination:** date automation no longer directly completes or archives productions (c1ef61e). Controlled manual completion/archive confirmations remain unimplemented; current lifecycle stage editor still permits raw stage changes. Complete these together before allowing staff to transition real productions. Regression contract f18fcab; staging and cron verification pending.
+
+
 - [ ] **Notification lifecycle (Oct 27 source partial):** reminder generator excludes closed/unknown production form assignments and volunteer shifts while retaining organization-wide reminders; active parent/guardian relationship required for student form-reminder recipients. Commits 319c51d and 59b318e. PHP CI passed. Outstanding: queue delivery-time reauthorization, existing queued mail, app/web/native push parity and other production notification origins. No deployed/real-member delivery validation.
 
 
