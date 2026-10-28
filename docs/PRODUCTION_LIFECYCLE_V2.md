@@ -196,3 +196,9 @@
 - Staff must acknowledge read-only consequences and type the exact production title. CSRF is checked in the existing staff controller; the completion service independently checks production.manage authorization, locks the production row, recalculates readiness, transitions to Completed, sets completed_at and pauses automatic transitions, writes audit metadata, and commits atomically. Repeated completion is rejected.
 - This is an initial readiness subset, not a complete operational sign-off. Casting offers, attendance review, tasks, unsent notices, service-hour verification, queued messages, family-facing current views, and archive readiness must still be added before a real-family lifecycle acceptance.
 - No records are deleted. Bluehost database-backed verification has not been performed.
+
+### Controlled archive V1 (October 27)
+- Staff now have a distinct Archive Production confirmation after completion. It requires the exact title, acknowledgement, staff production.manage authorization and existing CSRF token. A row-locked transaction changes lifecycle to archived, marks the legacy workspace inactive/archived, pauses automation, and writes an archive audit event with the previous active state.
+- Existing roster, casting, attendance, form submissions, volunteer service history, files, and Community records are preserved, not deleted. Archive access continues to use the existing authorized historical viewer.
+- Legacy Activate and Return to Planning paths now reject reopening terminal lifecycle states; safeguarded restoration needs a separate reviewed service.
+- Remaining: comprehensive pre-archive checks, pending communications cleanup, current family dashboard cross-production behavior, live staging database transaction/persona tests and deployment verification. This is not authorization to archive a real production yet.
