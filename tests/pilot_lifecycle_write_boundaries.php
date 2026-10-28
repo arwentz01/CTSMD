@@ -34,7 +34,7 @@ $cases=[
  ],
  'ProductionLifecycleAutomation.php'=>[
   "FROM productions WHERE lifecycle_stage='in_production' FOR UPDATE",
-  "if($stage==='in_production'&&$start!==''&&$time>=$start&&!$finished)$target='performing';",
+  'if($stage===\'in_production\'&&$start!==\'\'&&$time>=$start&&!$finished)$target=\'performing\';',
  ],
  'NotificationReminderService.php'=>[
   "fa.production_id IS NULL OR EXISTS",
