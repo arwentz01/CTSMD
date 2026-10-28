@@ -18,6 +18,7 @@ final class ProductionCompletionService
             'pending_forms'=>["SELECT COUNT(*) FROM form_assignments WHERE production_id=:id AND status<>'completed'",'warning','Incomplete form assignments are preserved'],
             'pending_casting_offers'=>["SELECT COUNT(*) FROM production_cast_offers WHERE production_id=:id AND status='pending'",'blocker','Pending casting offers must be resolved before closure'],
             'unmarked_attendance'=>["SELECT COUNT(*) FROM attendance_records a JOIN schedule_items si ON si.id=a.schedule_item_id WHERE si.production_id=:id AND a.status='unmarked'",'warning','Unmarked attendance records remain in history'],
+            'incomplete_production_tasks'=>["SELECT COUNT(*) FROM production_checklist_items WHERE production_id=:id AND status<>'done'",'warning','Incomplete production checklist tasks are retained'],
             'draft_notices'=>["SELECT COUNT(*) FROM schedule_change_notices WHERE production_id=:id AND status='draft'",'warning','Draft schedule notices will not be published after closure'],
             'pending_volunteer_approvals'=>["SELECT COUNT(*) FROM volunteer_shift_approval_requests r JOIN volunteer_shifts s ON s.id=r.shift_id WHERE s.production_id=:id AND r.status='pending'",'warning','Pending volunteer requests are retained but cannot be approved after closure'],
         ];
