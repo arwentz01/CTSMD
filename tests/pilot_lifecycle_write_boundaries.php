@@ -77,6 +77,10 @@ $cases=[
   "form-due-",
   "fr.relationship_type IN ('parent','guardian')",
  ],
+ 'PushService.php'=>[
+  "Notification access revoked before delivery.",
+  "ProductionNotificationAccess::visible",
+ ],
  'PushEventBridgeService.php'=>[
   "ProductionNotificationAccess::visible",
   "n.source_type,n.source_id",
