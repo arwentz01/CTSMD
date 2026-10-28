@@ -8,6 +8,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionLifecycleGuard.php';
 require_once __DIR__ . '/RehearsalVideoService.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
