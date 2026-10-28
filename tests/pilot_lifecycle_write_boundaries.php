@@ -39,6 +39,10 @@ $cases=[
   "Only completed productions can be archived.",
  ],
  'ProductionCompletionService.php'=>[
+  "pending_casting_offers",
+  "unmarked_attendance",
+  "draft_notices",
+  "Completion blocked by unresolved casting offers.",
   "lifecycle_stage='completed'",
   "production.completed",
   "FOR UPDATE",
