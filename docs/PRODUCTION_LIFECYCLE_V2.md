@@ -163,3 +163,9 @@
 - ProductionArchiveService historical parent/guardian access now requires an active parent/guardian relationship in archive listing, production access and audience evaluation. Prior relationship or pickup-only authority does not grant guardian archives.
 - CI safety workflow passed after the three source commits; source-contract regressions added for the two form guards and historical role boundaries. These are not MySQL integration tests or hosted production validation.
 - **Still open:** all remaining mutation paths, Community interactions and volunteer approvals, current family actionable filtering, readiness reports, confirmed completion and archive actions, automatic worker parity, native/mobile parity, staged transactional rollback testing and live deployment verification. Do not claim the Complete → Archive workflow has shipped.
+
+### Additional service-boundary closure (October 27)
+- Volunteer approval requests and staff approval/decline decisions now check the production lifecycle inside their transactions. Organization-wide shifts with a null production ID remain unaffected. Pending historical requests are retained rather than automatically decided.
+- Self-service signup cancellation is blocked for completed or archived production shifts. Historical service corrections need a separate authorized, audited operation; regular volunteer cancellation must not be used for post-close changes.
+- Community heart reactions now check production lifecycle while holding the parent post in a transaction. Closed production posts remain readable only where existing authorization allows, but participant reactions no longer change. Organization-wide posts remain interactive.
+- Added source-contract regression checks. Database-backed concurrency, guardian revocation, mobile route parity, hosted deployment and manual acceptance are still outstanding.
