@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useCallback,useEffect,useState} from 'react';
-import {Alert,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Alert,StyleSheet,Text,View} from 'react-native';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
@@ -51,6 +52,6 @@ export default function NotificationsScreen(){
 }
 const s=StyleSheet.create({
  intro:{fontSize:14,color:colors.muted,marginBottom:15},card:{backgroundColor:'#fff',borderWidth:1,borderColor:colors.border,borderRadius:16,padding:17,gap:11},
- header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},heading:{fontFamily:'Georgia',fontSize:22,fontWeight:'700',color:colors.navy},count:{fontSize:12,fontWeight:'800',color:colors.primary},muted:{fontSize:13,color:colors.muted,lineHeight:19},
+ header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},heading:{fontSize:22,fontWeight:'700',color:colors.navy},count:{fontSize:12,fontWeight:'800',color:colors.primary},muted:{fontSize:13,color:colors.muted,lineHeight:19},
  row:{flexDirection:'row',gap:11,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},dot:{width:5,borderRadius:4,backgroundColor:colors.primary},dotRead:{backgroundColor:colors.border},itemTitle:{fontSize:15,fontWeight:'800',color:colors.navy},body:{fontSize:13,color:colors.muted,lineHeight:19},rowActions:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10,flexWrap:'wrap'},linkButton:{paddingVertical:6},link:{fontSize:13,color:colors.primary,fontWeight:'800'},history:{marginTop:13,borderTopWidth:1,borderTopColor:colors.border},historyToggle:{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:13},historyLabel:{color:colors.navy,fontWeight:'800',flex:1},historyCount:{backgroundColor:'#f4edef',paddingHorizontal:9,paddingVertical:4,borderRadius:20,color:colors.primary,fontWeight:'800'},refresh:{flexDirection:'row',gap:7,padding:14,alignItems:'center'}
 });

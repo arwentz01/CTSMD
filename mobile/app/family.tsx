@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useCallback} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import {StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../src/components/Screen';
@@ -9,11 +10,11 @@ import {colors} from '../src/theme/colors';
 
 export default function MyFamily(){
  const load=useCallback(()=>myFamily(),[]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  return <Screen title="My Family">
   <Pressable accessibilityRole="button" onPress={()=>router.back()} style={s.back}><Ionicons name="chevron-back" color={colors.primary} size={20}/><Text style={s.link}>More</Text></Pressable>
   <Text style={s.intro}>Family connections associated with your CTSMD account. Only active relationships are displayed.</Text>
-  <LoadState loading={loading} error={error}/>
+  <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&<>
    <Text style={s.heading}>My students</Text>
    {data.students.map(student=><View key={student.id} style={s.card}><Ionicons name="school-outline" size={22} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.name}>{student.name}</Text><Text style={s.label}>{student.is_primary?'Primary guardian relationship':'Active family relationship'}</Text></View></View>)}

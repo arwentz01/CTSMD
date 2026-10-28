@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useCallback,useEffect,useState} from 'react';
-import {Alert,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
 import {tasks,completeProductionTodo,respondCastingOffer} from '../src/api/client';
@@ -73,7 +74,7 @@ export default function ActionCenter(){
  </Screen>;
 }
 const s=StyleSheet.create({
- offerCard:{padding:20,borderWidth:1,borderColor:'#e6c8cf',backgroundColor:'#fffafa',borderRadius:18,marginBottom:14,gap:8},offerEyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.5,color:colors.primary},offerProduction:{fontFamily:'Georgia',fontSize:27,fontWeight:'700',lineHeight:33,color:colors.navy,marginTop:5,marginBottom:8},offerRoleLabel:{fontSize:10,fontWeight:'800',letterSpacing:1.2,color:colors.muted},offerRole:{fontFamily:'Georgia',fontSize:34,fontWeight:'700',color:colors.primary},offerStudent:{color:colors.navy,fontSize:13,fontWeight:'700'},offerInstruction:{fontSize:14,color:colors.muted,lineHeight:21,marginTop:8},declinePanel:{borderWidth:1,borderColor:'#e7d6da',borderRadius:12,padding:14,backgroundColor:'#fff',marginTop:9,gap:8},declineLabel:{color:colors.navy,fontSize:13,fontWeight:'700'},
+ offerCard:{padding:20,borderWidth:1,borderColor:'#e6c8cf',backgroundColor:'#fffafa',borderRadius:18,marginBottom:14,gap:8},offerEyebrow:{fontSize:12,fontWeight:'800',letterSpacing:1.5,color:colors.primary},offerProduction:{fontSize:27,fontWeight:'700',lineHeight:33,color:colors.navy,marginTop:5,marginBottom:8},offerRoleLabel:{fontSize:12,fontWeight:'800',letterSpacing:1.2,color:colors.muted},offerRole:{fontSize:34,fontWeight:'700',color:colors.primary},offerStudent:{color:colors.navy,fontSize:13,fontWeight:'700'},offerInstruction:{fontSize:14,color:colors.muted,lineHeight:21,marginTop:8},declinePanel:{borderWidth:1,borderColor:'#e7d6da',borderRadius:12,padding:14,backgroundColor:'#fff',marginTop:9,gap:8},declineLabel:{color:colors.navy,fontSize:13,fontWeight:'700'},
  intro:{color:colors.muted,marginBottom:18,fontSize:14},heading:{flexDirection:'row',alignItems:'center',gap:9,marginTop:16,marginBottom:10},title:{fontWeight:'800',fontSize:20,color:colors.navy},
  card:{padding:16,borderWidth:1,borderColor:'#e4dadd',backgroundColor:'#fff',borderRadius:14,marginBottom:11,gap:7},
  name:{fontSize:17,fontWeight:'800',color:colors.navy},body:{fontSize:14,color:colors.navy},muted:{fontSize:13,color:colors.muted},error:{color:'#a22035'},

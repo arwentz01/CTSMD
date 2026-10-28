@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback,useState} from 'react';
-import {Alert,FlatList,KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,FlatList,KeyboardAvoidingView,Platform,StyleSheet,Text,TextInput,View} from 'react-native';
 import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
@@ -15,7 +16,7 @@ export default function ThreadScreen(){
  const threadId=Number(id);
  const [version,setVersion]=useState(0),[draft,setDraft]=useState(''),[busy,setBusy]=useState(false);
  const load=useCallback(()=>Number.isSafeInteger(threadId)&&threadId>0?thread(threadId):Promise.reject(new Error('Invalid conversation.')),[threadId,version]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  const send=async()=>{const content=draft.trim();if(!content||busy)return;setBusy(true);try{await sendMessage(threadId,content);setDraft('');setVersion(v=>v+1)}catch(e){Alert.alert('Message not sent',e instanceof Error?e.message:'Please try again.')}finally{setBusy(false)}};
  return <SafeAreaView edges={['top','bottom']} style={styles.screen}>
   <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':undefined}>
@@ -23,7 +24,7 @@ export default function ThreadScreen(){
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>router.back()} hitSlop={12}><Ionicons name="chevron-back" size={26} color={colors.navy}/></Pressable>
     <View style={styles.flex}><Text style={styles.name} numberOfLines={1}>{data?.conversation.display_name||'Conversation'}</Text>{data?.conversation.conversation_type==='safeguarded'&&<Text style={styles.safeguarded}>Safeguarded</Text>}</View>
    </View>
-   <LoadState loading={loading} error={error}/>
+   <LoadState loading={loading} error={error} onRetry={retry}/>
    <FlatList style={styles.flex} contentContainerStyle={styles.messages} data={data?.messages||[]} keyExtractor={m=>String(m.id)} renderItem={({item:m})=>{
     const mine=m.sender_user_id===user?.id;
     const intended=(data?.participants||[]).filter(p=>p.user_id!==user?.id&&p.participant_role!=='guardian');
@@ -50,6 +51,6 @@ export default function ThreadScreen(){
 }
 const styles=StyleSheet.create({
  screen:{flex:1,backgroundColor:colors.background},flex:{flex:1},header:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:1},name:{fontSize:18,fontWeight:'700',color:colors.navy},safeguarded:{fontSize:12,color:colors.muted},
- messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:10,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,alignItems:'flex-start',gap:3},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:10,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
- composer:{flexDirection:'row',alignItems:'flex-end',gap:8,paddingHorizontal:12,paddingTop:10,backgroundColor:colors.card,borderTopWidth:1,borderTopColor:colors.border},input:{flex:1,maxHeight:120,minHeight:42,borderRadius:21,borderWidth:1,borderColor:colors.border,paddingHorizontal:15,paddingVertical:10,fontSize:15,color:colors.text},send:{height:42,width:42,borderRadius:21,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},disabled:{opacity:0.45}
+ messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:12,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,alignItems:'flex-start',gap:3},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:12,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
+ composer:{flexDirection:'row',alignItems:'flex-end',gap:8,paddingHorizontal:12,paddingTop:10,backgroundColor:colors.card,borderTopWidth:1,borderTopColor:colors.border},input:{flex:1,maxHeight:120,minHeight:48,borderRadius:21,borderWidth:1,borderColor:colors.border,paddingHorizontal:15,paddingVertical:10,fontSize:15,color:colors.text},send:{height:48,width:48,borderRadius:21,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},disabled:{opacity:0.45}
 });

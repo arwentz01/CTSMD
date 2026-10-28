@@ -1,7 +1,8 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback} from 'react';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Image,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
@@ -31,14 +32,14 @@ function Shortcut({icon,title,onPress}:{icon:React.ComponentProps<typeof Ionicon
 export default function Home(){
   const {user}=useAuth();
   const load=useCallback(async()=>{const [t,a,m]=await Promise.all([theatre(),tasks(),conversations()]);return {t,a,m}},[]);
-  const {data,error,loading}=useScreenData(load);
+  const {data,error,loading,retry}=useScreenData(load);
   const now=Date.now();
   const events=(data?.t.events||[]).filter(e=>Number.isFinite(toTime(e.starts_at))&&toTime(e.starts_at)>=now).sort((a,b)=>toTime(a.starts_at)-toTime(b.starts_at)).slice(0,3);
   const openForms=(data?.a.forms||[]).filter(f=>f.status!=='completed'&&f.submission_status!=='approved');
   const unread=(data?.m.conversations||[]).reduce((total,c)=>total+Math.max(0,c.unread_count||0),0);
   return <Screen title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
-    <LoadState loading={loading} error={error}/>
+    <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
       <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/(tabs)/theatre')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
@@ -60,19 +61,19 @@ export default function Home(){
   </Screen>;
 }
 const styles=StyleSheet.create({
- offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontFamily:'Georgia',fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
+ offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
   intro:{fontSize:13,color:colors.muted,marginTop:-2,marginBottom:6},
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
-  sectionTitle:{fontFamily:'serif',fontSize:21,fontWeight:'700',color:colors.navy},
+  sectionTitle:{fontSize:21,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
   hero:{position:'relative',backgroundColor:colors.stage,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,height:166,overflow:'hidden'},
   heroContent:{flex:1,paddingVertical:13,paddingLeft:16,paddingRight:67,gap:5,justifyContent:'center'},eventContent:{gap:3},
   heroHeader:{flexDirection:'row',alignItems:'center',gap:8},heroArrow:{position:'absolute',right:13,bottom:13,width:31,height:31,borderRadius:16,backgroundColor:colors.gold,alignItems:'center',justifyContent:'center'},
-  heroEyebrow:{fontSize:10,fontWeight:'800',color:colors.gold,letterSpacing:2},
-  heroTitle:{fontFamily:'serif',fontSize:23,fontWeight:'700',color:'#fff'},
+  heroEyebrow:{fontSize:12,fontWeight:'800',color:colors.gold,letterSpacing:2},
+  heroTitle:{fontSize:23,fontWeight:'700',color:'#fff'},
   heroText:{fontSize:12,color:'#fff4e6'},
   event:{backgroundColor:colors.card,padding:13,borderRadius:14,borderWidth:1,borderColor:colors.border,gap:3},
-  rowTitle:{fontFamily:'serif',fontSize:17,fontWeight:'700',color:colors.text},
+  rowTitle:{fontSize:17,fontWeight:'700',color:colors.text},
   sub:{color:colors.muted,fontSize:12},
   panel:{backgroundColor:colors.card,borderRadius:14,borderWidth:1,borderColor:colors.border,padding:13,gap:8},
   task:{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:5},

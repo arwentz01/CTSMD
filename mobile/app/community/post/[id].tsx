@@ -1,6 +1,7 @@
+import {TouchTarget as Pressable} from '../../../src/components/TouchTarget';
 import {CommunityBody} from '../../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
-import {Alert,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Screen} from '../../../src/components/Screen';
 import {CommunityPhotos} from '../../../src/components/CommunityPhotos';
@@ -19,11 +20,11 @@ export default function CommunityPost(){
   if(!post)throw Error('Post not available.');
   return {channel:c.channel,post,replies:r.replies};
  },[postId,channelId,version]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  const submit=async()=>{const body=draft.trim();if(!body||busy)return;setBusy(true);try{const result=await createChannelReply(postId,body);if(result.status==='rejected'){Alert.alert('Reply not published','The reply was not accepted by moderation.');return;}setDraft('');setVersion(x=>x+1);if(result.status==='pending')Alert.alert('Submitted','Your reply is awaiting review.');}catch(e){Alert.alert('Unable to reply',e instanceof Error?e.message:'Try again.')}finally{setBusy(false)}};
  return <Screen title="Post">
   <Pressable accessibilityRole="button" onPress={()=>router.back()}><Text style={s.link}>‹ Back to Community</Text></Pressable>
-  <LoadState loading={loading} error={error}/>
+  <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&<>
    <View style={s.card}><Text style={s.muted}>{data.channel.name}</Text><Text style={s.name}>{data.post.author}</Text><CommunityBody body={data.post.body}/><CommunityPhotos attachments={data.post.attachments}/><CommunityHeart postId={data.post.id} count={data.post.heart_count} hearted={data.post.hearted}/><Text style={s.muted}>{data.post.created_at}</Text></View>
    <Text style={s.heading}>Replies</Text>

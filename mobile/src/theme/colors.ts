@@ -1,1 +1,2 @@
-export const colors={primary:'#9e1230',navy:'#201b20',background:'#fcf9f2',card:'#fffdf9',text:'#1e1a1d',muted:'#66616a',border:'#e7cda4',danger:'#b42318',gold:'#daa94d',burgundy:'#69091b',stage:'#180e13',ivory:'#fff9ed'} as const;
+// Shared Calm Backstage semantic roles; existing aliases remain compatible.
+export const colors={primary:'#8b233b',navy:'#292323',background:'#f7f4f1',card:'#ffffff',text:'#292323',muted:'#685d59',border:'#e4dcd5',control:'#8d7d75',danger:'#9b2234',gold:'#b58a33',burgundy:'#8b233b',stage:'#292323',ivory:'#f0eae3'} as const;

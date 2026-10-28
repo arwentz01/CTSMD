@@ -34,6 +34,14 @@ Routes: `/production/tasks`, `/production/readiness`, production directory/detai
 
 Routes: child-specific Family & Pickup, staff relationship review, caregiver logistics and account-management list/detail. Reused shell, readable relationship/pickup rows, forms and mobile stacking. Existing parent/guardian/caregiver explanations and separate pickup-only authorization are preserved, with no new permission claims. Primary guardian, automatic pickup authority, revocation, account invitation and relationship-review handlers are unchanged. A student ID is required for the child-specific route; browser coverage uses an authorized linked child rather than the parameterless error path.
 
+**Actual local blocker:** the linked-child route fails in existing StudentProfileService because demo `users.date_of_birth` is absent. No schema change was made. An authorization-loader PDO failure now returns an HTTP 503 unavailable screen, with no student information or mutation control and no stack trace. Successful child-specific rendering/pickup actions remain unverified until approved schema reconciliation; the review queue and account list do render. This is not a claim that Build 5's successful workflow acceptance is complete.
+
+### Build 6 — Native Expo
+
+Inspected SDK `~58.0.20`, React Native `0.88.0`, Expo Router and existing dependencies; no SDK/dependency version upgrade. Shared colors now map to web semantic roles. Screen and Item use warm surfaces, system UI type, readable metadata, safe-area edges, a bounded tablet reading column, keyboard-aware scrolling and existing native tab/stack destinations. A shared TouchTarget supplies 48dp minimum controls with disabled semantics. Existing async data hook retains focus/unmount data clearing and adds explicit retry; consumers now expose it. Native message creation uses the shared Screen rather than a bare ScrollView; all API/auth/send/notification code is unchanged.
+
+Native verification limitation: `xcrun simctl` is unavailable and no `adb` executable/device is configured. No native screenshot, simulator, tablet, TalkBack/VoiceOver, keyboard or hardware claim is made. TypeScript checks and hosted Expo CI are recorded separately. Existing structured-form support gaps, pickup administration, staff attendance/readiness tooling, complete dark-mode theming and expanded tablet navigation are not invented as frontend-only behavior; these remain documented follow-up acceptance/API work.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.

@@ -1,6 +1,7 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {CommunityBody} from '../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import {StyleSheet,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen,Item} from '../../src/components/Screen';
@@ -16,7 +17,7 @@ export default function Community(){
  const id=Number(production_id);
  const filtered=!!production_id&&Number.isSafeInteger(id)&&id>0;
  const load=useCallback(async()=>{const [directory,feed]=await Promise.all([channels(),communityFeed()]);return {directory,feed}},[]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  const visible=(data?.directory.channels||[]).filter(c=>!filtered||c.production_id===id);
  const posts=(data?.feed.posts||[]).filter(p=>!filtered||p.production_id===id);
  const general=visible.filter(c=>c.production_id===null);
@@ -26,7 +27,7 @@ export default function Community(){
  return <Screen title="Community">
   {filtered&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
   <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="button" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
-  <LoadState loading={loading} error={error}/>
+  <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&view==='Feed'&&<>
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
     {posts.map(p=><View key={p.id} style={s.post}><Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(p.channel_id)}})}>
@@ -41,4 +42,4 @@ export default function Community(){
   </>}
  </Screen>;
 }
-const s=StyleSheet.create({filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},muted:{color:colors.muted,fontSize:12},link:{color:colors.primary,fontWeight:'700'},switch:{flexDirection:'row',borderRadius:15,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.gold,padding:5},tab:{flex:1,paddingVertical:10,alignItems:'center',borderRadius:9},selected:{backgroundColor:colors.burgundy},tabText:{fontSize:14,fontWeight:'700',color:colors.muted},selectedText:{color:colors.ivory},section:{fontFamily:'Georgia',fontSize:25,fontWeight:'700',color:colors.navy},post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:4,borderLeftColor:colors.primary,borderRadius:16,padding:17,gap:12},authorRow:{flexDirection:'row',gap:10,alignItems:'center'},avatar:{height:43,width:43,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:2},avatarText:{fontFamily:'Georgia',fontSize:15,fontWeight:'700',color:colors.ivory},author:{color:colors.text,fontFamily:'Georgia',fontWeight:'700',fontSize:19},body:{color:colors.text,fontSize:15,lineHeight:22}});
+const s=StyleSheet.create({filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},muted:{color:colors.muted,fontSize:12},link:{color:colors.primary,fontWeight:'700'},switch:{flexDirection:'row',borderRadius:15,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.gold,padding:5},tab:{flex:1,paddingVertical:10,alignItems:'center',borderRadius:9},selected:{backgroundColor:colors.burgundy},tabText:{fontSize:14,fontWeight:'700',color:colors.muted},selectedText:{color:colors.ivory},section:{fontSize:25,fontWeight:'700',color:colors.navy},post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:4,borderLeftColor:colors.primary,borderRadius:16,padding:17,gap:12},authorRow:{flexDirection:'row',gap:10,alignItems:'center'},avatar:{height:43,width:43,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:2},avatarText:{fontSize:15,fontWeight:'700',color:colors.ivory},author:{color:colors.text,fontWeight:'700',fontSize:19},body:{color:colors.text,fontSize:15,lineHeight:22}});

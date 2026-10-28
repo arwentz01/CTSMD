@@ -1,9 +1,10 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {CommunityBody} from '../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Alert,Image,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,Image,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {CommunityPhotos} from '../../src/components/CommunityPhotos';
 import {CommunityHeart} from '../../src/components/CommunityHeart';
@@ -15,13 +16,13 @@ export default function Channel(){
  const {id,post_id}=useLocalSearchParams<{id:string;post_id?:string}>();
  const [draft,setDraft]=useState('');const [photo,setPhoto]=useState<ImagePicker.ImagePickerAsset|null>(null);const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);
  const load=useCallback(()=>{const value=Number(id);if(!Number.isSafeInteger(value)||value<1)throw Error('Invalid channel');return channel(value)},[id,revision]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  const choosePhoto=async()=>{try{const selection=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:false,quality:0.8,exif:false});if(!selection.canceled&&selection.assets[0])setPhoto(selection.assets[0]);}catch(e){Alert.alert('Photo unavailable',e instanceof Error?e.message:'Unable to select photo.')}};
  const submit=async()=>{const body=draft.trim();if(!body||busy)return;setBusy(true);try{const result=await createChannelPost(Number(id),body,photo?{uri:photo.uri,fileName:photo.fileName,mimeType:photo.mimeType}:undefined);if(result.status==='rejected'){Alert.alert('Post not published','This post was not accepted by moderation.');return;}setDraft('');setPhoto(null);setRevision(v=>v+1);if(result.status==='pending')Alert.alert('Submitted','Your post is awaiting moderator review.');}catch(e){Alert.alert('Unable to post',e instanceof Error?e.message:'Please try again.')}finally{setBusy(false)}};
  return <Screen title={data?.channel.name||'Channel'}>
   <Pressable accessibilityRole="button" style={s.back} onPress={()=>router.back()}><Ionicons name="chevron-back" size={18} color={colors.primary}/><Text style={s.backText}>Community</Text></Pressable>
   {!!data?.channel.description&&<Text style={s.muted}>{data.channel.description}</Text>}
-  <LoadState loading={loading} error={error}/>
+  <LoadState loading={loading} error={error} onRetry={retry}/>
   {data?.channel.can_post&&<View style={s.post}><Text style={s.author}>Share with this channel</Text><TextInput accessibilityLabel="New channel post" placeholder="Write a post..." multiline maxLength={5000} value={draft} onChangeText={setDraft} style={s.input}/>{photo&&<View style={{gap:6}}><Image source={{uri:photo.uri}} style={{height:120,width:120,borderRadius:10}}/><Pressable accessibilityRole="button" onPress={()=>setPhoto(null)}><Text style={s.backText}>Remove photo</Text></Pressable></View>}<Pressable accessibilityRole="button" onPress={()=>void choosePhoto()}><Text style={s.backText}>+ Add photo</Text></Pressable><Pressable accessibilityRole="button" disabled={!draft.trim()||busy} onPress={()=>void submit()} style={[s.submit,(!draft.trim()||busy)&&{opacity:0.5}]}><Text style={s.submitText}>{busy?'Posting…':'Post'}</Text></Pressable></View>}
   {data&&data.posts.length===0&&<Text style={s.muted}>No posts in this channel yet.</Text>}
   {post_id&&data?.posts.some(p=>String(p.id)===String(post_id))&&<Text style={s.muted}>Selected post is highlighted below.</Text>}

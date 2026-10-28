@@ -1,7 +1,8 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback} from 'react';
 import {useLocalSearchParams,router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Linking,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Linking,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
@@ -14,14 +15,14 @@ export default function ProductionPage(){
  const productionId=Number(id);
  const valid=Number.isSafeInteger(productionId)&&productionId>0;
  const load=useCallback(async()=>{const t=await theatre();const selected=t.productions.find(p=>p.id===productionId);if(!valid||!selected||selected.is_public_preview)return {t,c:{channels:[]},casting:{cast:null,callbacks:null}};const [c,casting]=await Promise.all([channels(),productionCasting(productionId)]);return {t,c,casting}},[productionId,valid]);
- const {data,error,loading}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load);
  const production=data?.t.productions.find(p=>p.id===productionId);
  const casting=data?.casting;
  const events=(data?.t.events||[]).filter(e=>e.production_id===productionId&&e.status.toLowerCase()!=='cancelled'&&new Date(e.starts_at.replace(' ','T')).getTime()>=Date.now()).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
  const relatedChannels=(data?.c.channels||[]).filter(c=>c.production_id===productionId);
  return <Screen title={production?.title||'Production'}>
    <Pressable onPress={()=>router.back()} accessibilityRole="button" style={s.back}><Ionicons name="arrow-back" color={colors.navy} size={23}/><Text style={s.backText}>Back to Theatre</Text></Pressable>
-    <LoadState loading={loading} error={error}/>
+    <LoadState loading={loading} error={error} onRetry={retry}/>
     {!valid&&<Text style={s.secondary}>Invalid production.</Text>}
     {data&&valid&&!production&&<Text style={s.secondary}>This production isn't available to your account.</Text>}
     {production&&<>

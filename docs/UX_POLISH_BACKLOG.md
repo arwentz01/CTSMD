@@ -16,3 +16,6 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Accessibility | Physical devices, Safari/Firefox and assistive-technology validation remain follow-up testing | Medium |
 | Forms | No draft/save model or template library is invented; only the existing submission and builder capabilities are presented | Medium |
 | Forms | Closed-production backend enforcement is a release blocker in TODO, not cosmetic backlog work | P0 dependency |
+| Native | SDK 58 retained. Verify iPhone/iPad and Android phone/tablet, keyboard, large font settings, screen readers, dark appearance and back/deep-link behavior on simulator/hardware | Acceptance |
+| Native | Full dark-mode role mapping and expanded tablet navigation need a device-verified follow-up; the current warm light identity is not a dark-mode implementation | Medium |
+| Native/API | Structured forms, pickup editing and full staff attendance/readiness workflows must follow real API support; no local mock completion or offline mutation queue added | Dependency |

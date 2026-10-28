@@ -1,6 +1,7 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useEffect,useRef,useState} from 'react';
 import {useEvent,useEventListener} from 'expo';
-import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
+import {ActivityIndicator,StyleSheet,Text,View} from 'react-native';
 import {useLocalSearchParams,router} from 'expo-router';
 import {VideoView,useVideoPlayer,type VideoSource} from 'expo-video';
 import {Ionicons} from '@expo/vector-icons';
@@ -73,6 +74,6 @@ const styles=StyleSheet.create({
  error:{color:colors.primary,fontSize:14},viewer:{gap:12},video:{width:'100%',aspectRatio:16/9,backgroundColor:'#151116',borderRadius:12},
  tools:{flexDirection:'row',flexWrap:'wrap',gap:8,alignItems:'center'},tool:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:9,paddingHorizontal:11,paddingVertical:9,flexDirection:'row',gap:5,alignItems:'center'},
  selected:{borderColor:colors.primary,backgroundColor:'#fff0f3'},disabled:{opacity:0.4},toolText:{fontSize:12,color:colors.text,fontWeight:'700'},
- info:{gap:9,marginTop:18},eyebrow:{fontSize:11,fontWeight:'800',color:colors.primary},title:{fontSize:23,fontWeight:'700',fontFamily:'Georgia',color:colors.navy},
- desc:{fontSize:14,color:colors.text,lineHeight:21},note:{fontSize:11,color:colors.muted,marginTop:14}
+ info:{gap:9,marginTop:18},eyebrow:{fontSize:12,fontWeight:'800',color:colors.primary},title:{fontSize:23,fontWeight:'700',color:colors.navy},
+ desc:{fontSize:14,color:colors.text,lineHeight:21},note:{fontSize:12,color:colors.muted,marginTop:14}
 });

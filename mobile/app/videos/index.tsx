@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useEffect,useState} from 'react';
-import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
+import {ActivityIndicator,StyleSheet,Text,View} from 'react-native';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../../src/components/Screen';
@@ -32,5 +33,5 @@ const styles=StyleSheet.create({
  error:{color:colors.primary},action:{color:colors.primary,fontWeight:'700'},empty:{color:colors.muted,fontSize:14,padding:16},
  card:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',gap:12},
  icon:{width:48,height:48,borderRadius:12,backgroundColor:'#fbf0f2',alignItems:'center',justifyContent:'center'},
- label:{color:colors.muted,fontSize:10,fontWeight:'700'},title:{fontSize:17,color:colors.navy,fontWeight:'700'},desc:{color:colors.text,fontSize:12}
+ label:{color:colors.muted,fontSize:12,fontWeight:'700'},title:{fontSize:17,color:colors.navy,fontWeight:'700'},desc:{color:colors.text,fontSize:12}
 });

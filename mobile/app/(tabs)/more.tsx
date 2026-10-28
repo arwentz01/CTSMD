@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useState} from 'react';
-import {Alert,Linking,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Alert,Linking,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../../src/components/Screen';
@@ -49,4 +50,4 @@ export default function More(){
   <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Sign out','Sign out of CTSMD Connect on this device?',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])} style={[s.item,{borderColor:colors.primary}]}><Ionicons name="log-out-outline" color={colors.primary} size={21}/><Text style={[s.itemText,{color:colors.primary}]}>Sign out</Text></Pressable>
  </Screen>;
 }
-const s=StyleSheet.create({profile:{flexDirection:'row',alignItems:'center',gap:14,padding:20,backgroundColor:colors.burgundy,borderRadius:17,borderWidth:1,borderColor:colors.gold},avatar:{width:60,height:60,borderRadius:30,alignItems:'center',justifyContent:'center',backgroundColor:colors.stage,borderWidth:2,borderColor:colors.gold},initials:{color:'#fff',fontWeight:'800',fontSize:18},name:{color:colors.ivory,fontFamily:'Georgia',fontSize:22,fontWeight:'700'},muted:{color:colors.muted,fontSize:12,lineHeight:17},profileEmail:{color:'#f5dcd2',fontSize:12,lineHeight:17},heading:{fontFamily:'Georgia',fontSize:25,fontWeight:'700',color:colors.navy,marginTop:12},item:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:16,padding:17,flexDirection:'row',alignItems:'center',gap:12},itemText:{fontFamily:'Georgia',fontSize:17,fontWeight:'700',color:colors.text,flexShrink:1}});
+const s=StyleSheet.create({profile:{flexDirection:'row',alignItems:'center',gap:14,padding:20,backgroundColor:colors.burgundy,borderRadius:17,borderWidth:1,borderColor:colors.gold},avatar:{width:60,height:60,borderRadius:30,alignItems:'center',justifyContent:'center',backgroundColor:colors.stage,borderWidth:2,borderColor:colors.gold},initials:{color:'#fff',fontWeight:'800',fontSize:18},name:{color:colors.ivory,fontSize:22,fontWeight:'700'},muted:{color:colors.muted,fontSize:12,lineHeight:17},profileEmail:{color:'#f5dcd2',fontSize:12,lineHeight:17},heading:{fontSize:25,fontWeight:'700',color:colors.navy,marginTop:12},item:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:16,padding:17,flexDirection:'row',alignItems:'center',gap:12},itemText:{fontSize:17,fontWeight:'700',color:colors.text,flexShrink:1}});

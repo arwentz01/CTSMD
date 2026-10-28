@@ -1,5 +1,6 @@
+import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React from 'react';
-import {Alert,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Alert,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../src/components/Screen';
