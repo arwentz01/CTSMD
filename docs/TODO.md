@@ -81,6 +81,15 @@
 - [ ] Accessibility/responsive QA for desktop, mobile drawers, forms, attendance and keyboard navigation.
 - [ ] Run link checks, performance baseline, media upload/optimization and server-side form validation audit.
 
+### Production lifecycle closure — October 27 source changes
+
+- [x] Added source-level closed-production guards for direct People roster additions/removals, volunteer shift creation/edit and roster-status changes, and Production Group form assignment; completed/archived and unknown-stage roster writes are blocked and rolled back in regression stubs. Historical read paths were not changed.
+- [ ] Run migrated-database integration checks for each new boundary and verify on CTSMD.me with a disposable completed and archived production, including direct POST attempts, preserved historical casting/credits, and account-wide student/guardian access.
+- [ ] Finish the remaining write-boundary audit for existing form submissions/reviews, volunteer member signup/cancel and approval routes, community replies/reactions, notifications, file archives, production announcements, and other writes that may require narrowly defined post-close exceptions.
+- [ ] Decide and implement a controlled closeout process with pre-close readiness warnings, pending offers/forms/shifts review, archival handoff, and reversible stage changes only where policy allows.
+- [ ] Reconfirm former-guardian rights, archived channel visibility, native API permissions, queued delivery authorization, and audit/retention after stage changes.
+- [ ] Resolve all remaining pilot CI failures and capture separate PHP, database and device acceptance evidence. The volunteer-cancellation stub's invalid-ID pretransaction assertion was corrected; it requires verification by CI.
+
 ## P2 — Public experience and quality
 
 - [ ] Audit public-only titles, descriptions, social previews, favicons and accessible image alternatives.
