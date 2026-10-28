@@ -38,6 +38,18 @@ $cases=[
   "FOR UPDATE",
   "Only completed productions can be archived.",
  ],
+ 'FamilyDashboardService.php'=>[
+  "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
+  "fa.production_id IS NULL",
+  "vs.production_id IS NULL",
+ ],
+ 'HomeDashboardService.php'=>[
+  "fa.production_id IS NULL",
+  "vs.production_id IS NULL",
+ ],
+ 'CalendarService.php'=>[
+  "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
+ ],
  'ProductionCompletionService.php'=>[
   "pending_casting_offers",
   "unmarked_attendance",
