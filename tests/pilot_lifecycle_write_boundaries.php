@@ -14,6 +14,16 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db,(int)$shift[\'production_id\']);',
   "p.lifecycle_stage IN ('upcoming','planning','in_production','performing')",
  ],
+ 'VolunteerApprovalExperience.php'=>[
+  "ProductionLifecycleGuard::assertWritable($db,(int)$shift['production_id']);",
+  "ProductionLifecycleGuard::assertWritable($db,(int)$r['production_id']);",
+ ],
+ 'VolunteerExperience.php'=>[
+  "ProductionLifecycleGuard::assertWritable($db,(int)$shift['production_id']);",
+ ],
+ 'CommunityExperience.php'=>[
+  "ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost['production_id']);",
+ ],
  'FormExperience.php'=>[
   "require_once __DIR__ . '/ProductionLifecycleGuard.php';",
   'ProductionLifecycleGuard::assertWritable($db, (int)$assignment[\'production_id\']);',
