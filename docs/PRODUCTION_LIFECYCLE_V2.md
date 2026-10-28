@@ -156,3 +156,10 @@
 ### Student invitation email worker eligibility
 - `MailService::process` formerly suppressed all queued user-addressed mail for account statuses `managed` and `pending_verification`, even when the message category was `account_security`. The delivery eligibility policy now allows only **account-security** mail to those states, as well as existing invited accounts. Non-security mail remains suppressed until activation.
 - This fixes the managed-child invitation delivery path and existing adult verification queue eligibility. Operational mail transport remains subject to configured worker, queue monitoring and staging delivery verification; no real messages were sent in this change.
+
+## Closure security hardening (October 27, 2026; partial)
+- FormExperience now checks ProductionLifecycleGuard inside transactions before accepting a production-linked form submission or staff approval/rejection. Organization-wide assignments with no production ID continue to work. Historical submitted and reviewed records are not deleted or modified by this guard.
+- ProductionNotificationAccess casting-offer visibility requires an **active parent/guardian** relationship, not merely an active caregiver relationship. Delivery-time authorization and all notification source types still require broader audit.
+- ProductionArchiveService historical parent/guardian access now requires an active parent/guardian relationship in archive listing, production access and audience evaluation. Prior relationship or pickup-only authority does not grant guardian archives.
+- CI safety workflow passed after the three source commits; source-contract regressions added for the two form guards and historical role boundaries. These are not MySQL integration tests or hosted production validation.
+- **Still open:** all remaining mutation paths, Community interactions and volunteer approvals, current family actionable filtering, readiness reports, confirmed completion and archive actions, automatic worker parity, native/mobile parity, staged transactional rollback testing and live deployment verification. Do not claim the Complete → Archive workflow has shipped.
