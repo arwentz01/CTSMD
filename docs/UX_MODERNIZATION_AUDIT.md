@@ -22,6 +22,10 @@ Verification and subsequent build records follow as each batch lands. This phase
 
 Routes: readiness, opportunities/detail, shift management/new/detail, requests/staff review, training, verifications and verified service history. Reused shared tokens for headers, shift rows, eligibility reasons, approval context and service records. Existing eligibility, waitlist/approval, check-in/out, cancellation, verified-hour data and actions are unchanged. Print service records retain their print mode. Before/after authenticated Chromium at 1440/768/390; cancellation and lifecycle regression suites pass. Physical check-in/out and real-device testing remain open acceptance work.
 
+### Build 3 — Scheduling and attendance
+
+Routes: Calendar month/week/agenda, Attendance list/take/report, schedule creation, schedule notices, Production Day and late-pickup review. Shared heading, date/context, form/control and warm-surface patterns preserve every event/audience filter, attendance status, absence report and pickup record. Existing phone quick attendance and detailed drawer remain the interaction model; no replacement table or new status. Focus indication also covers radio-backed status labels. Lifecycle source-contract and late-pickup workflow tests pass; responsive renders are recorded in the final verification section.
+
 ## Phase 2 implementation record
 
 Started from remote-synchronized `5093b1f` on the existing branch. Each build reuses `WorkspaceUI` and `--ux-*` tokens. Cosmetic follow-ups live in `UX_POLISH_BACKLOG.md`.

@@ -1,4 +1,30 @@
 /* Phase 3 adopts the existing --ux-* tokens. Only opted-in operational routes. */
+body.ux-operational .unified-main :is(.sc-page,.notice-page,.pd-page,.lp-page) { max-width:1440px; margin-inline:auto; min-width:0; padding:28px 32px 48px; }
+body.ux-operational .unified-main :is(.cal-event,.cal-subscribe,.att-item,.att-person,.att-report-form,.att-report-history,.sc-form,.sc-side,.notice-card,.notice-row,.pd-section,.pd-panel,.lp-row,.lp-settings) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; box-shadow:none!important; border-radius:12px!important; }
+body.ux-operational .unified-main :is(.cal-event,.att-item,.sc-side,.notice-card,.pd-panel) :is(p,small,time) { color:var(--ux-muted); font-size:13px; letter-spacing:0; text-transform:none; }
+body.ux-operational .unified-main :is(.att-date,.cal-event>time,.att-summary,.pd-summary) { background:var(--ux-ivory); color:var(--ux-ink); box-shadow:none; }
+body.ux-operational .unified-main :is(.att-detail-head,.notice-detail-head) { background:transparent; color:var(--ux-ink); border:0; box-shadow:none; }
+body.ux-operational .unified-main :is(.att-detail-head,.notice-detail-head) h2 { font:650 24px/1.3 system-ui,sans-serif; color:var(--ux-ink); }
+body.ux-operational .unified-main :is(.att-detail-head,.notice-detail-head) small { color:var(--ux-muted); letter-spacing:0; font-size:13px; }
+body.ux-operational .unified-main .cal-tools { flex-wrap:wrap; gap:16px; }
+body.ux-operational .unified-main .cal-tools form { flex-wrap:wrap; min-width:0; }
+body.ux-operational .unified-main .cal-subscribe code { display:block; overflow-wrap:anywhere; word-break:break-all; color:var(--ux-ink); }
+body.ux-operational .unified-main .cal-view-tabs a { background:transparent; color:var(--ux-muted); min-height:44px; align-content:center; }
+body.ux-operational .unified-main .cal-view-tabs a.active { background:var(--ux-ivory); color:var(--ux-ink); }
+body.ux-operational .unified-main :is(.att-savebar,.att-more-panel,.lp-drawer) { background:var(--ux-paper); color:var(--ux-ink); }
+body.ux-operational .unified-main .att-status-primary label { min-height:44px; font-size:14px; }
+body.ux-operational .unified-main .att-status-primary input:focus-visible + label { outline:3px solid var(--ux-focus); outline-offset:3px; }
+body.ux-operational .unified-main .att-savebar small { font-size:13px; color:var(--ux-muted); }
+@media(max-width:780px) {
+ body.ux-operational .unified-main :is(.sc-page,.notice-page,.pd-page,.lp-page) { padding:20px 16px 32px!important; }
+ body.ux-operational .unified-main :is(.sc-layout,.notice-layout,.pd-layout,.att-report-layout) { grid-template-columns:minmax(0,1fr)!important; }
+ body.ux-operational .unified-main .att-person { padding:16px!important; min-width:0; }
+ body.ux-operational .unified-main :is(.att-status-picker,.att-status-primary,.att-person-id) { min-width:0; }
+ body.ux-operational .unified-main .att-status-primary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+ body.ux-operational .unified-main .att-status-primary input { position:absolute; }
+ body.ux-operational .unified-main .cal-tools select { width:100%; min-width:0; }
+ body.ux-operational .unified-main .cal-event { min-width:0; }
+}
 body.ux-operational .unified-main .approval-page { max-width:1440px; margin-inline:auto; padding:28px 32px 48px; }
 body.ux-operational .unified-main :is(.vol-panel,.vol-shift-card,.vsm-row,.vsm-form,.vsm-side,.vsm-roster,.approval-card,.approval-panel,.approval-queue,.vd-card,.vd-training,.vv-card,.vsr-panel) { background:var(--ux-paper)!important; color:var(--ux-ink)!important; border:1px solid var(--ux-line)!important; border-radius:12px!important; box-shadow:none!important; padding:20px; }
 body.ux-operational .unified-main :is(.vol-detail-hero,.vsm-head,.approval-admin-head,.approval-review-head) { background:var(--ux-ivory); color:var(--ux-ink); border:0; border-radius:12px; box-shadow:none; padding:20px; }

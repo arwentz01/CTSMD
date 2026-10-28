@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ScheduleAudience.php';
@@ -84,7 +85,7 @@ final class AttendanceExperience
         }
         $title=$route==='/attendance'?'Attendance':($route==='/attendance/take'?'Take attendance':'Report an absence');$subnav=AppNavigation::productionSubnav($route,$user);
         header('Content-Type: text/html; charset=utf-8');?>
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/attendance.css?v=20261026-pickup-roster') ?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav);?><div class="att-page">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/attendance.css?v=20261026-pickup-roster') ?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-operational ux-schedule"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav);?><div class="att-page">
 <?php if($flash):?><div class="att-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?>
 <?php if(!$production):?><section class="att-empty"><h2>No active production selected</h2><p>Choose a working production before opening attendance.</p><a class="button" href="<?= $url('/production') ?>">Choose production</a></section>
 <?php elseif($route==='/attendance'):?>
