@@ -36,6 +36,8 @@ jobs:
           php -l front.php
       - name: Validate Video Library browser upload JavaScript
         run: node --check assets/js/video-library-upload.js
+      - name: Closed-production roster write guards
+        run: php tests/pilot_closed_production_roster.php
       - name: Member roster aggregation and cross-production videos
         run: php tests/pilot_member_roster_media.php
       - name: Named video links in Community posts
