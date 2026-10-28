@@ -206,3 +206,8 @@
 ### Completion readiness extension (October 27)
 - Readiness now includes unresolved pending casting offers (blocking), unmarked attendance (warning), and draft schedule notices (warning), in addition to future schedule entries, incomplete forms and pending volunteer approvals. Blocking offers are rechecked under the completion transaction before the lifecycle can change. The staff completion button is disabled while blockers exist.
 - Warning counts remain visible for acknowledgement, but no records are silently completed or deleted. The readiness inventory is not yet exhaustive: production tasks, service-hour verification, delivery queues, and cross-production family behavior still need coverage and integration testing.
+
+### Family current-view closure (October 27)
+- FamilyDashboardService and HomeDashboardService now exclude completed, archived, inactive, and unknown production stages from actionable form assignments and upcoming volunteer commitments while preserving organization-wide records. Household production summaries likewise include only current production memberships.
+- CalendarService's current visible events list now checks each joined production lifecycle and active flag, preventing a newly completed show from leaving stale current schedule events on Home or Family. Historical schedules are not deleted.
+- Each item is filtered using its own production ID; closing one show does not select or hide another active show. This is source-level validation only, and guardian/student/multi-show staging acceptance remains required.
