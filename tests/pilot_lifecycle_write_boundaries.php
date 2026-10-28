@@ -72,6 +72,15 @@ $cases=[
   "FROM productions WHERE lifecycle_stage='in_production' FOR UPDATE",
   'if($stage===\'in_production\'&&$start!==\'\'&&$time>=$start&&!$finished)$target=\'performing\';',
  ],
+ 'MailService.php'=>[
+  "Form or family access revoked before delivery.",
+  "form-due-",
+  "fr.relationship_type IN ('parent','guardian')",
+ ],
+ 'PushEventBridgeService.php'=>[
+  "ProductionNotificationAccess::visible",
+  "n.source_type,n.source_id",
+ ],
  'NotificationReminderService.php'=>[
   "fa.production_id IS NULL OR EXISTS",
   "vs.production_id IS NULL OR EXISTS",
