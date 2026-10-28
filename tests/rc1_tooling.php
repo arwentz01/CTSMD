@@ -26,6 +26,8 @@ try{
  foreach(['front.php','.htaccess','src/Auth.php','src/MobileApi.php','src/SafeguardedConversationPolicy.php','database/schema.sql'] as $path){$created[]=$fixtureRoot.'/'.$path;file_put_contents($fixtureRoot.'/'.$path,'synthetic fixture');$fixtureEntries[]=['path'=>$path,'category'=>ReleaseCandidate::category($path),'sha256'=>hash_file('sha256',$fixtureRoot.'/'.$path)];}
  $created[]=$fixtureRoot.'/.unexpected.phtml';file_put_contents($fixtureRoot.'/.unexpected.phtml','synthetic fixture');
  $assert(in_array('unmanaged executable: .unexpected.phtml',ReleaseCandidate::verifyFiles($fixtureRoot,['format'=>1,'revision'=>str_repeat('a',40),'files'=>$fixtureEntries]),true),'Hidden unmanaged executable detected');
+ $fixtureEntries[]=['path'=>'.unexpected.phtml','category'=>'evidence_not_public','sha256'=>hash_file('sha256',$fixtureRoot.'/.unexpected.phtml')];
+ $assert(in_array('unmanaged executable: .unexpected.phtml',ReleaseCandidate::verifyFiles($fixtureRoot,['format'=>1,'revision'=>str_repeat('a',40),'files'=>$fixtureEntries]),true),'Non-web manifest entry cannot authorize a web-root executable');
 }finally{foreach($created as $file)unlink($file);rmdir($fixtureRoot.'/src');rmdir($fixtureRoot.'/database');rmdir($fixtureRoot);}
 final class Rc1MetadataPDO extends PDO {
  public function __construct(private array $contract,private bool $broken=false){}

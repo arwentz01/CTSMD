@@ -48,7 +48,7 @@ final class ReleaseCandidate
         foreach($manifest['files'] as $file){
             $path=(string)($file['path']??'');
             if(!preg_match('#^[a-zA-Z0-9_.()/@\[\]+ -]+$#',$path)||str_contains($path,'..')||str_starts_with($path,'/')||isset($seen[$path])||self::category($path)!==($file['category']??''))throw new RuntimeException('Unsafe or duplicate manifest path/category.');
-            $seen[$path]=true;
+            $seen[$path]=$file['category'];
             if($file['category']==='excluded'||!preg_match('/^[a-f0-9]{64}$/',(string)($file['sha256']??'')))throw new RuntimeException('Invalid manifest entry.');
             if($webOnly&&$file['category']!=='web_runtime')continue;
             if(!in_array($file['category'],['web_runtime','operator_only_not_public','migration_review_only','schema_reference_not_executable'],true))continue;
@@ -61,7 +61,7 @@ final class ReleaseCandidate
         $rootExecutables=[];
         foreach(new DirectoryIterator($root) as $file)if($file->isFile()&&preg_match('/^(?:php\d*|phtml|phar)$/i',$file->getExtension()))$rootExecutables[]=$file->getPathname();
         foreach(array_merge($rootExecutables,self::phpFiles($root.'/assets'),self::phpFiles($root.'/public'),self::phpFiles($root.'/src'),self::phpFiles($root.'/cgi-bin'),self::phpFiles($root.'/production'),self::phpFiles($root.'/my-theatre')) as $full){
-            $relative=substr($full,strlen($root)+1);if(!isset($seen[$relative]))$errors[]='unmanaged executable: '.$relative;
+            $relative=substr($full,strlen($root)+1);if(($seen[$relative]??null)!=='web_runtime')$errors[]='unmanaged executable: '.$relative;
         }
         return array_values(array_unique($errors));
     }
