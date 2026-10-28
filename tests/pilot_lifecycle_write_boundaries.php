@@ -19,7 +19,12 @@ $cases=[
   'ProductionLifecycleGuard::assertWritable($db,(int)$shift[\'production_id\']);',
   'ProductionLifecycleGuard::assertWritable($db,(int)$r[\'production_id\']);',
  ],
+ 'CommunityManagementExperience.php'=>[
+  'if($productionId!==null)ProductionLifecycleGuard::assertWritable($db,(int)$productionId);',
+ ],
  'CommunityExperience.php'=>[
+  "fr.relationship_type IN ('parent','guardian')",
+  "['upcoming','planning','in_production','performing']",
   'ProductionLifecycleGuard::assertWritable($db,(int)$lockedPost[\'production_id\']);',
  ],
  'FormExperience.php'=>[
