@@ -14,10 +14,11 @@ final class ProductionLifecycleGuard
         self::assertWritable($db,(int)$productionId);
     }
 
-    public static function assertWritable(PDO $db,int $productionId):void
+    public static function assertWritable(PDO $db,int $productionId,bool $lockForUpdate=false):void
     {
         if($productionId<1)throw new RuntimeException('Select a production before making changes.');
-        $s=$db->prepare('SELECT lifecycle_stage FROM productions WHERE id=:id LIMIT 1');
+        // Locking reads observe the current stage, not a prior REPEATABLE READ snapshot.
+        $s=$db->prepare('SELECT lifecycle_stage FROM productions WHERE id=:id LIMIT 1'.($lockForUpdate?' FOR UPDATE':''));
         $s->execute(['id'=>$productionId]);
         $stage=$s->fetchColumn();
         if($stage===false)throw new RuntimeException('Production not found.');

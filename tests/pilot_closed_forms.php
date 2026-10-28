@@ -19,7 +19,7 @@ foreach(['completed','archived','unknown-stage',''] as $stage){
     $db=new FormGuardPDO($stage);
     try{FormWriteGuard::form($db,42);throw new LogicException('Closed definition accepted.');}
     catch(RuntimeException $e){$checks++;}
-    if(count($db->queries)!==3||!str_contains($db->queries[0],'FOR UPDATE')||!str_contains($db->queries[1],'FOR UPDATE'))throw new RuntimeException('Definition and production must be locked before lifecycle evaluation.');
+    if(count($db->queries)!==3||!str_contains($db->queries[0],'FOR UPDATE')||!str_contains($db->queries[1],'FOR UPDATE')||!str_contains($db->queries[2],'FOR UPDATE'))throw new RuntimeException('Definition and current production stage must be locked before lifecycle evaluation.');
     $checks++;
 }
 foreach(['upcoming','planning','in_production','performing'] as $stage){FormWriteGuard::form(new FormGuardPDO($stage),42);$checks++;}

@@ -12,7 +12,7 @@ final class FormWriteGuard
         $lock=$db->prepare('SELECT id FROM productions WHERE id=:id FOR UPDATE');
         $lock->execute(['id'=>$productionId]);
         if (!$lock->fetchColumn()) throw new RuntimeException('Production not found.');
-        ProductionLifecycleGuard::assertWritable($db,$productionId);
+        ProductionLifecycleGuard::assertWritable($db,$productionId,true);
     }
 
     public static function form(PDO $db,int $formId): void
