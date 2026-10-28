@@ -8,6 +8,7 @@ require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/IdentityRolePolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ProductionLifecycleGuard.php';
 require_once __DIR__ . '/TheatreHistoryService.php';
 require_once __DIR__ . '/ManualParticipantService.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
@@ -94,6 +95,7 @@ final class ProductionPeopleExperience
 
         $db->beginTransaction();
         try {
+            ProductionLifecycleGuard::assertWritable($db,$productionId);
             $personStmt = $db->prepare("SELECT id, active, account_status FROM users WHERE id = :id FOR UPDATE");
             $personStmt->execute(['id' => $userId]);
             $person = $personStmt->fetch();
@@ -166,6 +168,7 @@ final class ProductionPeopleExperience
 
         $db->beginTransaction();
         try {
+            ProductionLifecycleGuard::assertWritable($db,$productionId);
             $stmt = $db->prepare("SELECT pm.id, pm.user_id, pm.audience_type, pm.participation_role, pm.status, CONCAT(u.first_name, ' ', u.last_name) AS name FROM production_memberships pm JOIN users u ON u.id = pm.user_id WHERE pm.id = :id AND pm.production_id = :production_id FOR UPDATE");
             $stmt->execute(['id' => $membershipId, 'production_id' => $productionId]);
             $membership = $stmt->fetch();
