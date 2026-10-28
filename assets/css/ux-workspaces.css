@@ -233,6 +233,15 @@
 .ux-workspace :is(.comm-attachments,.msg-attachments) b { overflow-wrap: anywhere; }
 .ux-workspace :is(.comm-attachments,.msg-attachments) small { color: var(--ux-muted); font-size: 12px; }
 .ux-community .community-heart-form button { min-width: 44px; min-height: 44px; }
+/* Adopt legacy communication surfaces explicitly; their route skins use !important. */
+body.ux-workspace.ux-community .community-page :is(.community-rail,.community-rail-head,.community-rail-list,.community-rail-item) { background: var(--ux-ground) !important; color: var(--ux-ink) !important; box-shadow: none !important; }
+body.ux-workspace.ux-community .community-page .community-rail-item.active { background: var(--ux-ivory) !important; }
+body.ux-workspace.ux-community .community-page .community-rail-head h2 { font: 650 20px/1.3 var(--font-sans,system-ui,sans-serif) !important; color: var(--ux-ink) !important; }
+body.ux-workspace.ux-community .community-page .community-rail :is(b,p,small,a,label) { color: var(--ux-muted) !important; font-size: 13px; }
+body.ux-workspace.ux-community .community-page .community-rail-item b { color: var(--ux-ink) !important; font-size: 14px; }
+body.ux-workspace.ux-community .community-page .community-rail-head a { color: var(--ux-wine) !important; }
+body.ux-workspace.ux-community .community-page .community-pane-head small { color: var(--ux-muted) !important; font-size: 12px !important; text-transform: none !important; letter-spacing: 0 !important; }
+body.ux-workspace.ux-community .community-page button { box-shadow: none !important; }
 .ux-workspace.ux-messages .comm-page { max-width: 1280px; margin-inline: auto; padding: 24px 32px 40px; }
 .ux-messages :is(.comm-message-intro,.comm-channel-head) { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; background: transparent; padding: 0; margin-bottom: 24px; color: var(--ux-ink); }
 .ux-messages :is(.comm-message-intro,.comm-channel-head) small { display: none; }
@@ -267,6 +276,10 @@
 .ux-messages .comm-new-form { max-width: 800px; background: var(--ux-paper); border: 1px solid var(--ux-line); border-radius: var(--ux-radius); padding: 24px; }
 .ux-messages .comm-new-form label { font-size: 14px; color: var(--ux-ink); }
 .ux-messages .comm-day-separator span { background: var(--ux-ground); color: var(--ux-muted); font-size: 12px; }
+body.ux-workspace.ux-messages .comm-page { background: var(--ux-ground) !important; }
+body.ux-workspace.ux-messages .comm-page .comm-message-intro { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+body.ux-workspace.ux-messages .comm-message-intro h2 { color: var(--ux-ink) !important; font: 650 22px/1.3 var(--font-sans,system-ui,sans-serif) !important; }
+body.ux-workspace.ux-messages .comm-message-intro p { color: var(--ux-muted) !important; font-size: 14px !important; }
 @media(max-width:780px) {
   body.ux-workspace.ux-community[data-native-route] .community-pane, body.ux-workspace.ux-community[data-native-route] .community-pane-feed { background: var(--ux-paper) !important; }
   body.ux-workspace.ux-community[data-native-route] .community-rail-head :is(h2,p,a), body.ux-workspace.ux-community[data-native-route] .community-rail-item :is(b,small) { color: var(--ux-ink) !important; }
@@ -336,6 +349,27 @@
 .ux-workspace :is(.fd-empty,.home-empty) span { font-size: 13px; color: var(--ux-muted); margin-top: 5px; }
 .ux-workspace :is(.fd-main-grid,.home-priority-grid,.home-content-grid) { gap: var(--ux-gap); align-items: start; }
 .ux-workspace .fd-attention-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--ux-gap); align-items: start; }
+body.ux-workspace.ux-community, body.ux-workspace.ux-community .community-page { background: var(--ux-ground) !important; }
+.ux-notifications .notification-columns { gap: 24px; align-items: start; }
+.ux-workspace.ux-notifications .home-hero { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 0 24px !important; color: var(--ux-ink) !important; }
+.ux-notifications .home-hero > div > span { display: none; }
+.ux-workspace.ux-notifications .home-hero h2 { font: 650 26px/1.2 var(--font-sans,system-ui,sans-serif) !important; color: var(--ux-ink) !important; }
+.ux-workspace.ux-notifications .home-hero p { font-size: 15px !important; color: var(--ux-muted) !important; }
+.ux-notifications :is(.notification-row,.persisted-notification) { border: 0; border-top: 1px solid var(--ux-line); border-radius: 0; background: transparent; padding: 16px 0; box-shadow: none; }
+.ux-notifications :is(.notification-form-copy span,.persisted-notification small,.persisted-notification p,.notification-history p) { font-size: 13px; color: var(--ux-muted); line-height: 1.5; }
+.ux-notifications .notification-row > i, .ux-notifications .casting-offer-eyebrow > span { display: none; }
+.ux-notifications .notification-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.ux-notifications .notification-form-copy { min-width: 0; flex: 1 1 180px; }
+.ux-notifications :is(.notification-form-action,.notification-history summary,.persisted-notification footer a) { color: var(--ux-wine); min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+.ux-notifications .notification-casting-offer { background: var(--ux-ground); border-radius: 6px; padding: 16px; }
+.ux-notifications .casting-offer-role { color: var(--ux-wine); font: 650 24px/1.25 var(--font-sans,system-ui,sans-serif); }
+.ux-notifications .persisted-notification.unread h3::before { content: 'Unread · '; color: var(--ux-wine); }
+.ux-notifications .persisted-notification h3 { font: 600 16px/1.4 var(--font-sans,system-ui,sans-serif); }
+@media(max-width:780px) {
+ body.ux-workspace.ux-notifications .notification-page { background: var(--ux-ground) !important; }
+ .ux-notifications .notification-columns { display: grid; grid-template-columns: minmax(0,1fr); }
+ .ux-notifications .home-hero { flex-wrap: wrap; gap: 16px; }
+}
 .ux-workspace .fd-offer { display: grid; gap: 5px; padding: 14px 0; border-top: 1px solid var(--ux-line); color: var(--ux-ink); text-decoration: none; }
 .ux-workspace .fd-offer span { color: var(--ux-muted); font-size: 13px; }
 .ux-workspace .fd-offer b { color: var(--ux-wine); font-size: 13px; }

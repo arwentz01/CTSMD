@@ -34,6 +34,8 @@
     icon(element, name);
   });
   document.querySelectorAll('.staffdash-productions article > span').forEach(element => icon(element, 'star'));
+  document.querySelectorAll('.comm-conversation-icon').forEach(element => icon(element, 'messages'));
+  document.querySelectorAll('.community-rail-item.active').forEach(link => link.setAttribute('aria-current', 'page'));
   document.querySelectorAll('.unified-nav-item.active').forEach(link => link.setAttribute('aria-current', 'page'));
   const tabs = [...document.querySelectorAll('[data-cast-tab]')];
   const updateTabs = () => tabs.forEach(tab => {
