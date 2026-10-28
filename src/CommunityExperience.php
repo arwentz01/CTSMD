@@ -347,6 +347,13 @@ final class CommunityExperience
 
     private static function canPost(PDO $db, array $user, array $channel): bool
     {
+        // The UI and mobile capability endpoint must agree with createPost's
+        // transactional guard. Fail closed for missing or unknown stages.
+        if (!empty($channel['production_id'])) {
+            $stage=$db->prepare('SELECT lifecycle_stage FROM productions WHERE id=:id LIMIT 1');
+            $stage->execute(['id'=>(int)$channel['production_id']]);
+            if (!in_array((string)$stage->fetchColumn(),['upcoming','planning','in_production','performing'],true)) return false;
+        }
         if (empty($channel['production_id']) && !Auth::isApprovedMember($user)) return false;
         $mode = (string)($channel['access_mode'] ?? 'audience');
         if ($mode === 'audience' && AccessPolicy::isStaff($user)) return true;
@@ -425,7 +432,7 @@ final class CommunityExperience
         $stmt=$db->prepare("SELECT 1 FROM family_relationships fr
           JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status='active'
           JOIN production_memberships pm ON pm.user_id=fr.student_user_id AND pm.production_id=:production AND pm.audience_type='student' AND pm.status='active'
-          WHERE fr.guardian_user_id=:guardian AND fr.status='active' LIMIT 1");
+          WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
         $stmt->execute(['guardian'=>$guardianId,'production'=>$productionId]);
         return (bool)$stmt->fetchColumn();
     }
