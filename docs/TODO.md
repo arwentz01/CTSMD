@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Mobile lifecycle parity (Oct 27 continuation):** daily tasks now filter completed/closed-production forms and future shifts; Community reaction endpoint uses a locked lifecycle write check (52ee0d7, de3b30e, regression e19ada9). Still audit mobile Community reply/moderation and other mutations, archived visibility, combined family actions and test on real database/native clients.
+
+
 - [ ] **Volunteer email delivery-time gate:** queued shift-reminder and shift-eligibility messages now revalidate signup owner, status and writable production lifecycle prior to sending (1e51e96, 50f3cce). Add database-backed tests and remaining origin checks; no live delivery tests performed.
 
 
