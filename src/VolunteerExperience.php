@@ -130,11 +130,12 @@ final class VolunteerExperience
         try {
             // Lock the shift before its signup to serialize against attendance
             // changes and prevent after-start cancellation of live coverage.
-            $shiftStmt = $db->prepare('SELECT starts_at FROM volunteer_shifts WHERE id=:id FOR UPDATE');
+            $shiftStmt = $db->prepare('SELECT starts_at,production_id FROM volunteer_shifts WHERE id=:id FOR UPDATE');
             $shiftStmt->execute(['id'=>$shiftId]);
-            $start = $shiftStmt->fetchColumn();
-            if ($start === false) throw new RuntimeException('That volunteer shift no longer exists.');
-            if (strtotime((string)$start) <= time()) throw new RuntimeException('This shift has started. Contact a coordinator about your attendance.');
+            $shift = $shiftStmt->fetch(PDO::FETCH_ASSOC);
+            if ($shift === false) throw new RuntimeException('That volunteer shift no longer exists.');
+            if ($shift['production_id'] !== null) ProductionLifecycleGuard::assertWritable($db,(int)$shift['production_id']);
+            if (strtotime((string)$shift['starts_at']) <= time()) throw new RuntimeException('This shift has started. Contact a coordinator about your attendance.');
             $signup = $db->prepare("SELECT id,status FROM volunteer_shift_signups WHERE shift_id=:shift AND user_id=:user FOR UPDATE");
             $signup->execute(['shift'=>$shiftId,'user'=>$userId]);
             $row=$signup->fetch(PDO::FETCH_ASSOC);
