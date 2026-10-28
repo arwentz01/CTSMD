@@ -111,7 +111,7 @@ final class ProductionArchiveService
     private static function activeViewer(PDO $db,int $viewerId):bool
     {
         if($viewerId<1)return false;
-        $s=$db->prepare("SELECT 1 FROM users WHERE id=:viewer AND active=1 AND account_status='active' LIMIT 1");
+        $s=$db->prepare("SELECT 1 FROM users WHERE id=:viewer AND active=1 AND account_status<>'disabled' LIMIT 1");
         $s->execute(['viewer'=>$viewerId]);
         return (bool)$s->fetchColumn();
     }
