@@ -28,6 +28,9 @@
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Community lifecycle hardening (Oct 27 follow-up):** block posting capability for closed/unknown production stages, filter production-guardian audiences by active parent/guardian roles, and recheck channel write scopes inside save transactions. Source changes bbd8f9c, d373dcd, regression 695b215. Pending: group/team membership history, concurrency, former-guardian integration, mobile persona tests and hosted acceptance.
+
+
 - [ ] **Additional closure gates (Oct 27):** production-scoped volunteer approval requests, coordinator decisions, signup cancellations, and Community heart reactions now call ProductionLifecycleGuard at service boundaries. Pending: authorized historical volunteer corrections, all Community mutations/membership and notification queues, plus full Complete/Archive workflows. Commits 91c70db, 1cab45f, 863ba07, 354f058. Treat CI as source verification only; staging and production remain unverified.
 
 
