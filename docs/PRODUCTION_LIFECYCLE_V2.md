@@ -1,5 +1,7 @@
 # Unified production lifecycle rollout
 
+Adult participation enhancement (separate release scope): enrollment/offers use the existing writable lifecycle guard plus centralized participant eligibility. Settings changes do not delete cast or history. Roster removal withdraws casting and retains offer/credit history. Account-wide conversations depend on active platform accounts and guardian safeguards, not production membership or stage; private production Community and operational resources retain lifecycle restrictions. See [architecture and evidence](ADULT_PARTICIPATION_ARCHITECTURE.md).
+
 ## Implemented in this phase
 - Migration 075 adds lifecycle_stage: upcoming, planning, in_production, performing, completed, archived.
 - Legacy active productions backfill to in_production, including legacy planning productions, to preserve existing access.

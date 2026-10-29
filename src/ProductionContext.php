@@ -137,6 +137,11 @@ final class ProductionContext
         $direct->execute(['production'=>$productionId,'user'=>$userId]);
         $type=$direct->fetchColumn();
         if($type!==false)return (string)$type;
+        return self::hasGuardianAudience($db,$userId,$productionId)?'guardian':null;
+    }
+
+    public static function hasGuardianAudience(PDO $db,int $userId,int $productionId):bool
+    {
         $guardian=$db->prepare("SELECT 1 FROM productions p
             JOIN production_memberships child_pm ON child_pm.production_id=p.id
                 AND child_pm.audience_type='student' AND child_pm.status='active'
@@ -148,6 +153,6 @@ final class ProductionContext
                 AND adult.account_status<>'disabled'
             WHERE p.id=:production AND p.is_active=1 AND fr.guardian_user_id=:user LIMIT 1");
         $guardian->execute(['production'=>$productionId,'user'=>$userId]);
-        return $guardian->fetchColumn()?'guardian':null;
+        return (bool)$guardian->fetchColumn();
     }
 }

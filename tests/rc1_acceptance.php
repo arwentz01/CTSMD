@@ -4,6 +4,9 @@ declare(strict_types=1);
 require_once dirname(__DIR__).'/src/Database.php';
 require_once dirname(__DIR__).'/src/ReleaseCandidate.php';
 require_once dirname(__DIR__).'/src/CalendarService.php';
+require_once dirname(__DIR__).'/src/AdultParticipantService.php';
+require_once dirname(__DIR__).'/src/CastingService.php';
+require_once dirname(__DIR__).'/src/CastingOfferService.php';
 if(PHP_SAPI!=='cli'||getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Disposable loopback rc1-test database required. No live target supported.');
 $root=dirname(__DIR__);$db=Database::connect($root);
 if(!ReleaseCandidate::inspect($db,$root)['schema_matches_declared_contracts'])throw new RuntimeException('Migrate a fresh disposable schema with rc1_bootstrap.php first.');
@@ -59,6 +62,24 @@ try{
   $result=$request($label,'/api/mobile/login','POST',['email'=>strtolower($label).'.'.$suffix.'@rc1.invalid','password'=>$password],true);$assert($result['status']===200&&!empty($result['json']['token']),$label.' native authentication');$tokens[$label]=$result['json']['token'];
   $assert($request($label,'/api/mobile/me','GET',null,true)['status']===200,$label.' current native identity');
  }
+ // Adult performer + Guardian on one account, using actual mobile offer endpoints.
+ $db->prepare("UPDATE users SET date_of_birth='1980-01-01' WHERE id=?")->execute([$users['Guardian']]);
+ AdultParticipantService::classify($db,$users['Administrator'],$users['Guardian'],true,'Reviewed Adult fixture identity');
+ $assert(($request('Guardian','/api/mobile/me','GET',null,true)['json']['user']['participant_classification']??'')==='adult','Native identity reports Adult classification separately from roles');
+ $assert(($request('Student','/api/mobile/me','GET',null,true)['json']['user']['participant_classification']??'')==='student','Native identity preserves Student classification');
+ foreach($productions as $p){
+  ProductionParticipantEligibility::saveSettings($db,$p,$users['Administrator'],['participant_category'=>'mixed']);
+  $record=CastingService::add($db,$p,$users['Administrator'],$users['Guardian']);
+  CastingService::update($db,$p,$users['Administrator'],$record,['casting_status'=>'offered','role_title'=>'Adult character']);
+  $offer=CastingOfferService::issue($db,$p,$record,$users['Administrator']);
+  $offers=$request('Guardian','/api/mobile/daily-tasks','GET',null,true);
+  $assert(in_array($offer,array_map('intval',array_column($offers['json']['casting_offers']??[],'id')),true),'Adult offer visible through native API');
+  $assert($request('Volunteer','/api/mobile/casting-offer-respond','POST',['offer_id'=>$offer,'decision'=>'accepted','note'=>''],true)['status']===400,'Native unrelated Adult offer response denied');
+  $assert($request('Guardian','/api/mobile/casting-offer-respond','POST',['offer_id'=>$offer,'decision'=>'accepted','note'=>''],true)['status']===200,'Adult accepts own offer through native API');
+  $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$p AND user_id=".$users['Guardian']." AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Native acceptance enrolls Adult independently');
+ }
+ $assert($request('Guardian','/student-profile?student='.$users['Guardian'])['status']===200,'Adult website performer profile handoff works');
+ $assert($request('Guardian','/theatre-history?student='.$users['Guardian'])['status']===200,'Adult website history handoff works');
  // Staff is intentionally broad under existing organization-wide policy; no invented scope.
  foreach(['Administrator','Staff','Guardian','FormerGuardian','Student','Caregiver','Volunteer'] as $label){
   foreach(['/admin/accounts','/admin/forms','/safeguarding'] as $route){$allowed=$label==='Administrator'||($label==='Staff'&&$route==='/admin/forms');$assert($request($label,$route)['status']===($allowed?200:403),$label.' direct route '.$route);}
@@ -68,7 +89,8 @@ try{
  $assert($getEvent('Guardian','B')['status']===200,'Guardian sees second linked production');
  foreach(['Student','FormerGuardian','Volunteer'] as $label)$assert($getEvent($label,'B')['status']===404,$label.' cannot obtain unrelated production B event');
  $assert($getEvent('Caregiver','A')['status']===403,'Caregiver cannot use general event endpoint');
- foreach(['/api/mobile/messages','/api/mobile/channels','/api/mobile/daily-tasks','/api/mobile/form-detail?id='.$assignments['A']] as $route)$assert($request('Caregiver',$route,'GET',null,true)['status']===403,'Caregiver mobile boundary '.$route);
+ $assert($request('Caregiver','/api/mobile/messages','GET',null,true)['status']===200,'Active caregiver account uses account-wide conversations');
+ foreach(['/api/mobile/channels','/api/mobile/daily-tasks','/api/mobile/form-detail?id='.$assignments['A']] as $route)$assert($request('Caregiver',$route,'GET',null,true)['status']===403,'Caregiver mobile boundary '.$route);
  $family=$request('Caregiver','/api/mobile/my-family','GET',null,true)['json'];$child=$family['students'][0]??[];
  $assert(isset($child['first_name'])&&!isset($child['id'])&&!isset($child['name']),'Caregiver family data minimization');
  $calls=$request('Caregiver','/api/mobile/caregiver-schedule','GET',null,true);$assert($calls['status']===200,'Caregiver scoped logistics endpoint');

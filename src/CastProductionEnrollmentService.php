@@ -27,7 +27,7 @@ final class CastProductionEnrollmentService {
             ProductionParticipantEligibility::audit($db,$actorId,$studentId,'adult_enrolled',['production_id'=>$productionId,'membership_id'=>$membershipId]);
             return [];
         }
-        $q=$db->prepare("SELECT DISTINCT fr.guardian_user_id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY fr.guardian_user_id");
+        $q=$db->prepare("SELECT DISTINCT fr.guardian_user_id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY fr.guardian_user_id FOR UPDATE");
         $q->execute(['student'=>$studentId]);$guardianIds=[];
         foreach($q->fetchAll() as $adult){
             $id=(int)$adult['guardian_user_id'];

@@ -4,6 +4,8 @@ October 28, 2026. Repository `arwentz01/CTSMD`, branch `audit/board-pilot-readin
 
 ## 1. Candidate identity and payload
 
+The branch now contains the separate Adult participation enhancement. Current tools explicitly label its manifest/preflight `CTSMD-ADULT-PARTICIPATION-REVIEW` with `adult_enhancement_separate_from_rc1`; this is not the original RC1 deployment candidate. Reproduce original RC1 evidence from its approved pinned revision (see dated RC1 acceptance evidence), rather than deploying this branch tip or mixing migrations 093–096 into that release. All authorization fields remain false.
+
 From a clean reviewed checkout, run `php bin/rc1-manifest.php` and save stdout to an access-controlled evidence directory **outside the checkout/document root**. It records the exact Git revision, branch and SHA-256/size of tracked blobs. It fails on a dirty/unsupported tree and never packages, copies or deploys anything. Preserve the downloaded CI artifact and its hash with the release ticket; a manifest is not signed approval. Authenticate its origin through the reviewed commit/CI run before trusting it.
 
 | Manifest category | Handling |

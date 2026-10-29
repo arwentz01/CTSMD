@@ -55,6 +55,9 @@ try {const p=await b.newPage();await p.send('Network.setCacheDisabled',{cacheDis
    await p.setViewport({width,height:900,mobile:width===390});
    try {await p.goto(origin+path,{settleMs:100});} catch(e) {if(!e.message.includes('ERR_HTTP_RESPONSE_CODE_FAILURE'))throw e;}
    await p.eval(()=>document.querySelector('.mobile-engagement-later')?.click());
+   // A PHP failure inside a select can truncate HTML without visible error text.
+   // Inspect the local response too, rather than treating a partial DOM as success.
+   const responseShape=await p.eval(async()=>{const response=await fetch(location.href,{credentials:'same-origin',cache:'no-store'});const html=await response.text();return {status:response.status,complete:/<\/html>\s*$/i.test(html),serverError:/Fatal error|Uncaught (?:Error|TypeError|PDOException)|SQLSTATE\[/.test(html)};});
    const state=await p.eval(()=>({
     components:[...new Set([...document.querySelectorAll('main [class]')].flatMap(e=>[...e.classList].filter(c=>c.startsWith('ops-'))))],
     title:document.title,width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
@@ -67,9 +70,9 @@ try {const p=await b.newPage();await p.send('Network.setCacheDisabled',{cacheDis
      .map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return {type:e.type,disabled:e.disabled,border:s.borderTopColor,background:s.backgroundColor,height:r.height,width:r.width};}),
    }));
    const findings=judge(await p.eval(probe),{width,allow:[]}).filter(f=>!APP_SKIP.has(f.id));
-   writeFileSync(`${out}/${name}-${width}.json`,JSON.stringify({...state,route:row.route,findings},null,2));
+   writeFileSync(`${out}/${name}-${width}.json`,JSON.stringify({...state,responseShape,route:row.route,findings},null,2));
    await p.screenshot({path:`${out}/${name}-${width}.jpg`,fullPage:true});
-   results.push({route:row.route,width,adopted:state.adopted,scrollWidth:state.scrollWidth,title:state.title,error:/Fatal error|Uncaught|SQLSTATE/.test(state.text)});
+   results.push({route:row.route,width,adopted:state.adopted,scrollWidth:state.scrollWidth,title:state.title,error:responseShape.status>=400||!responseShape.complete||responseShape.serverError||/Fatal error|Uncaught|SQLSTATE/.test(state.text)});
    console.log(row.route,width,state.scrollWidth,state.adopted);
   }
  }

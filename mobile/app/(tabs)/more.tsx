@@ -7,6 +7,7 @@ import {Screen} from '../../src/components/Screen';
 import {StageBackdrop} from '../../src/components/StageBackdrop';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
+import {participantWebsite} from '../../src/api/client';
 
 const resources:[string,string][]=[
  ['Tickets','https://ctsmd.ludus.com/index.php'],
@@ -38,6 +39,10 @@ export default function More(){
   <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
   <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
   <Local title="Volunteer" detail="Shifts, signups and approvals" icon="hand-left-outline" path="/(tabs)/volunteer"/>
+  <External title="Performer profile & publication consent · website" url={participantWebsite('/student-profile')}/>
+  <External title="My Theatre History · website" url={participantWebsite('/theatre-history')}/>
+  <External title="Auditions & registration · website" url={participantWebsite('/register')}/>
+  <Text style={s.muted}>These workflows open the CTSMD website and may require a separate sign-in. Casting offer responses remain in Action Center.</Text>
   <Pressable accessibilityRole="button" onPress={()=>router.push('/videos')} style={s.item}><Ionicons name="play-circle-outline" size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>Video Library</Text><Text style={s.muted}>Rehearsals and CTSMD-wide videos</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>Tickets & resources</Text>
   <External title="Tickets" url={resources[0][1]}/>

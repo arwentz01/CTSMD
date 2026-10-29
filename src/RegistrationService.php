@@ -44,6 +44,7 @@ final class RegistrationService
             IdentityRolePolicy::assertProductionAudience($db,(int)$self['id'],'adult');
             $adultSelfId=(int)$self['id'];
             $q=$db->prepare('SELECT first_name,last_name,email,date_of_birth,contact_phone FROM users WHERE id=?');$q->execute([$adultSelfId]);$adult=$q->fetch();
+            if(!$adult||!$adult['date_of_birth'])throw new RuntimeException('Add a reviewed date of birth before registering independently.');
             $input['participant_declared_age']=PersonEligibility::ageOn($adult['date_of_birth'],PersonEligibility::cutoff($opportunity)?:date('Y-m-d'));
             $first=$adult['first_name'];$last=$adult['last_name'];$email=$adult['email'];$phone=$adult['contact_phone']??'';
         }

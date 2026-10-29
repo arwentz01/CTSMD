@@ -419,7 +419,7 @@ final class CommunityExperience
                 'production_members' => $activeProductionMember,
                 'production_adults' => $activeProductionMember && $isAdult,
                 'production_students' => $activeProductionMember && $audienceType === 'student',
-                'production_guardians' => $activeProductionMember && $audienceType === 'guardian' && self::activeProductionGuardian($db,$userId,$productionId),
+                'production_guardians' => $activeProductionMember && self::activeProductionGuardian($db,$userId,$productionId),
                 'production_staff' => $activeProductionMember && $audienceType === 'staff',
                 default => false,
             };

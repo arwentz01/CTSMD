@@ -7,6 +7,8 @@ foreach(['.env','.env.example','storage/private/a.txt','database/seeds/001_demo.
 $assert(ReleaseCandidate::category('bin/process-push-queue.php')==='operator_only_not_public','Worker is not web payload');
 $assert(ReleaseCandidate::category('mobile/app/login.tsx')==='native_source_not_distributable','Native source is not signed build');
 $assert(ReleaseCandidate::category('database/schema.sql')==='schema_reference_not_executable','Source schema contract is hashed, not deployed/imported');
+$assert(ReleaseCandidate::candidateScope(dirname(__DIR__))['candidate']==='CTSMD-ADULT-PARTICIPATION-REVIEW','Current enhancement is not mislabeled as original RC1');
+$assert(ReleaseCandidate::candidateScope(dirname(__DIR__))['release_scope']==='adult_enhancement_separate_from_rc1','Enhancement release scope is explicit');
 $inventory=ReleaseCandidate::inventory(dirname(__DIR__));
 $assert(isset($inventory['columns']['users']['date_of_birth']),'086 included');
 $assert(isset($inventory['tables']['rehearsal_videos']),'091 included');

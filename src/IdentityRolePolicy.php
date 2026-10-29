@@ -52,6 +52,7 @@ final class IdentityRolePolicy
         if(in_array('student',$selected,true)){
             $q=$db->prepare('SELECT adult_participant FROM users WHERE id=?');$q->execute([$userId]);
             if($q->fetchColumn())throw new RuntimeException('Remove Adult classification through account review before assigning Student identity.');
+            $q=$db->prepare("SELECT id FROM production_memberships WHERE user_id=? AND audience_type='adult' AND status='active' LIMIT 1");$q->execute([$userId]);if($q->fetchColumn())throw new RuntimeException('Retire active Adult memberships before assigning Student identity.');
         }
 
         $child=$db->prepare("SELECT 1 FROM family_relationships WHERE student_user_id=:user AND status='active' LIMIT 1");$child->execute(['user'=>$userId]);

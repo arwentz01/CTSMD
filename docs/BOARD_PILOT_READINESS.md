@@ -1,5 +1,7 @@
 # Executive Summary
 
+**Adult enhancement — separate acceptance scope:** [architecture/evidence](ADULT_PARTICIPATION_ARCHITECTURE.md) records shared casting, eligibility, identity transitions, history/consent and account-wide safeguarded messaging. Local database/HTTP/native checks do not authorize deployment. New migrations 093–096 need independent populated rehearsal/restore review; native dependency compatibility currently reports newer SDK-compatible patch expectations, and real devices/push remain unverified. Remaining safeguarding race and scenario gates stay in [TODO](TODO.md). RC1 remains NO-GO.
+
 **October 28 RC1 preparation:** see [RC1 evidence](RC1_ACCEPTANCE.md) and [release/recovery runbook](RC1_RELEASE_RUNBOOK.md) for current manifest/preflight and isolated role-test evidence. This work does not deploy or alter production, activate workers, replace historical acceptance evidence, change owner-reported percentages or grant pilot GO. Active gates remain in [TODO.md](TODO.md).
 
 Overall readiness:

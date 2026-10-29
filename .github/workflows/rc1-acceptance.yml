@@ -56,7 +56,9 @@ jobs:
       - name: Existing transactional safeguarding suite
         run: php tests/safeguarded_conversation.php
       - name: Adult enhancement isolated assertions (separate deployment scope)
-        run: php tests/adult_participation_mysql.php
+        run: |
+          php tests/adult_participation_mysql.php
+          php tests/adult_participation_concurrency.php
       - uses: actions/upload-artifact@v4
         if: always()
         with:

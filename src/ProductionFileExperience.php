@@ -210,7 +210,7 @@ final class ProductionFileExperience
         if($role===null)return false;
         if(in_array('production_all',$audiences,true))return true;
         if(in_array('production_students',$audiences,true)&&$role==='student')return true;
-        if(in_array('production_guardians',$audiences,true)&&$role==='guardian')return true;
+        if(in_array('production_guardians',$audiences,true)&&ProductionContext::hasGuardianAudience($db,(int)$user['id'],(int)$file['production_id']))return true;
         if(in_array('production_staff',$audiences,true)&&$role==='staff')return true;
         if(in_array('production_adults',$audiences,true)&&$role!=='student')return true;
         return false;

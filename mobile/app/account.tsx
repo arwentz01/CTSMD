@@ -6,6 +6,7 @@ import {router} from 'expo-router';
 import {Screen} from '../src/components/Screen';
 import {useAuth} from '../src/auth/AuthProvider';
 import {colors} from '../src/theme/colors';
+import {participantIdentityLabel} from '../src/participants/identity';
 export default function MyAccount(){
  const {user}=useAuth();
  return <Screen title="My Account">
@@ -14,7 +15,9 @@ export default function MyAccount(){
   <Text style={s.heading}>Account information</Text>
   <View style={s.card}><Text style={s.label}>Name</Text><Text style={s.value}>{user?.name||'Not available'}</Text></View>
   <View style={s.card}><Text style={s.label}>Email</Text><Text style={s.value}>{user?.email||'Not available'}</Text></View>
-  <View style={s.card}><Text style={s.label}>Role</Text><Text style={s.value}>{user?.role||'Member'}</Text></View>
+  <View style={s.card}><Text style={s.label}>Participation identity</Text><Text style={s.value}>{participantIdentityLabel(user?.participant_classification)}</Text></View>
+  <View style={s.card}><Text style={s.label}>Account label</Text><Text style={s.value}>{user?.role||'Member'}</Text></View>
+  <Text style={s.hint}>Participation identity does not grant staff or family permissions. Conversations are account-wide; Student conversations include their active guardians.</Text>
   <Text style={s.hint}>These details are provided by your CTSMD account. Profile editing and contact preferences remain managed through the website until the mobile profile API supports secure updates.</Text>
  </Screen>;
 }

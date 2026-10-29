@@ -1,6 +1,6 @@
 # CTSMD Connect — Single Source of Truth: To-Do & Product Backlog
 
-**Updated:** October 28, 2026 · **Working branch:** `audit/board-pilot-readiness`
+**Updated:** October 29, 2026 · **Working branch:** `audit/board-pilot-readiness`
 
 **This is the ONE maintained list of active work, pilot gates, and approved feature backlog.** Checkboxes represent verification or implementation remaining; a merged commit is not proof of production deployment. Keep status/owner/evidence here, link details elsewhere, and do not create new competing active to-do documents.
 
@@ -13,7 +13,7 @@
 - [x] Implement Batches A–F with per-route presentation and browser evidence in [Operations coverage](UX_OPERATIONS_COVERAGE.md). 121 route entries, 101 screen templates adopted, 100 actual screens rendered at three widths; Playbill Media is explicitly blocked before rendering. Existing permission, lifecycle, form and safeguarding behavior is frozen to baseline. No deployment, production-data changes or delivery workers were part of this work.
 - [x] Verify code `1b02b97`: web safety and isolated RC1 CI pass; local PHP/JS checks, 52 PHP behavior contracts, 76 browser interaction/role checks, 120 real HTTP/API checks and 36 transactional safeguarding checks pass. These checks do not prove every screen save or close the existing RC1 release gates.
 - [ ] Complete physical-device/assistive-technology and communicating/destructive POST acceptance separately. A styled control is not evidence that a transaction or real-device workflow passed.
-- [ ] **Operations dependency — Playbill Media:** populated `/admin/playbill/media` fails in `PlaybillEnhancementService::syncCastProfiles()` because the query selects `cr.role_title` without a `cr` join. Reproduced against fully migrated isolated schema; not a missing-column migration. Requires a separately reviewed backend correction and sync/consent regression test. UI adoption does not close this blocker.
+- [x] **Playbill Media source correction:** Adult enhancement Batch 5 adds the missing casting-role join, real migrated sync/consent tests and successful real-route renders at three widths. No deployment claimed; full publication/private-media/archive acceptance remains open.
 - [ ] **Local demo dependency:** read-only preflight on the existing `ctsmd` demo still finds 45 declared-contract issues, including safeguarding statements, videos and registration/notification columns. Browser verification used a fully migrated isolated schema. Reconcile the default demo through the migration review process separately; no schema changes were made during Operations UX work.
 
 Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
@@ -76,7 +76,11 @@ Phase 3: six implementation areas addressed and pushed in focused batches. See t
 
 ## P1 — Verification and workflow completion
 
-- [ ] **Adult participation enhancement (separate from RC1):** implement and verify six batches in [architecture](ADULT_PARTICIPATION_ARCHITECTURE.md), including all ingress enforcement, audited Student transition, casting/enrollment, mixed-age safeguarding, consent/history, web/native parity and real MySQL concurrency. No hosting migration or deployment approved. Existing pilot gates remain open.
+- [x] **Adult participation implementation batches 1–6 (separate from RC1):** reviewed classification, two-reviewer Student transition/session revocation, production eligibility/age exceptions, shared casting/native offer acceptance, retained roster/history, multi-function credits, account-wide guarded conversations, shared profile and explicit Playbill consent. [Architecture and measured evidence](ADULT_PARTICIPATION_ARCHITECTURE.md). This checkbox records implementation, not full acceptance or deployment.
+- [ ] **ADULT-01 — Migration/recovery acceptance:** independently review populated prerequisites and 093→094→095→096 statements/locks/FKs/triggers, defaults and restore rehearsal. Fresh disposable bootstrap passes; hosted migration remains unauthorized.
+- [ ] **ADULT-02 — Safeguarding and concurrency acceptance:** complete role/membership-change and guardian-revocation/queued-dispatch races, mixed group/private Community, private media and all mandatory scenario permutations. Current evidence includes real offer/closure/exception concurrency and stale transition web/native credentials; no live workers executed.
+- [ ] **ADULT-03 — Publication/history acceptance:** fully exercise public casting snapshots, archive/withdrawal/private-file access and manual credit/media transfer across production types. Profile/manual transfer and Playbill draft/approval/withdrawal pass locally; source does not prove complete publication signoff.
+- [ ] **ADULT-04 — Native/distribution gate:** resolve the Expo compatibility check's newly expected SDK 58.0.21 and six module patches through a separately authorized SDK-compatible maintenance decision. Explicit no-upgrade boundary preserved. TypeScript, seven native contracts and Android/iOS exports pass; real device/AT/push acceptance remains open.
 
 - [ ] **Archived viewer revocation:** historical memberships no longer grant archive access to disabled/inactive viewers; active managed student accounts remain eligible (9a2b3b4, 4189333, assertion a526bac). Add database-backed inactive/member/managed student/guardian tests before pilot sign-off.
 

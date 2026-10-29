@@ -24,13 +24,13 @@ final class CastingService
 
     public static function intakeCandidates(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT DISTINCT rs.id submission_id,rsl.participant_user_id user_id,CONCAT(u.first_name,' ',u.last_name) person_name,rs.participant_age_group,rs.status registration_status,ro.title opportunity_title,rs.submitted_at FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id AND ro.production_id=:production AND ro.opportunity_type='audition' JOIN registration_submission_links rsl ON rsl.submission_id=rs.id JOIN users u ON u.id=rsl.participant_user_id AND u.active=1 AND u.account_status<>'disabled' LEFT JOIN production_casting_records cr ON cr.production_id=:production2 AND cr.user_id=rsl.participant_user_id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND rs.status NOT IN ('declined','cancelled') AND cr.id IS NULL ORDER BY rs.submitted_at,u.last_name,u.first_name");
+        $s=$db->prepare("SELECT rs.id submission_id,rsl.participant_user_id user_id,CONCAT(u.first_name,' ',u.last_name) person_name,rs.participant_age_group,rs.status registration_status,ro.title opportunity_title,rs.submitted_at FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id AND ro.production_id=:production AND ro.opportunity_type='audition' JOIN registration_submission_links rsl ON rsl.submission_id=rs.id JOIN users u ON u.id=rsl.participant_user_id AND u.active=1 AND u.account_status<>'disabled' LEFT JOIN production_casting_records cr ON cr.production_id=:production2 AND cr.user_id=rsl.participant_user_id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND rs.status NOT IN ('declined','cancelled') AND cr.id IS NULL ORDER BY rs.submitted_at,u.last_name,u.first_name");
         $s->execute(['production'=>$productionId,'production2'=>$productionId]);return $s->fetchAll();
     }
 
     public static function peopleCandidates(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.active=1 AND u.account_status<>'disabled' AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
+        $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.active=1 AND u.account_status<>'disabled' AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
         $s->execute(['production'=>$productionId]);return $s->fetchAll();
     }
 
@@ -42,6 +42,8 @@ final class CastingService
         if($productionId<1||$userId<1)throw new RuntimeException('Choose a valid person.');
         $db->beginTransaction();
         try{
+            ProductionLifecycleGuard::assertWritable($db,$productionId,true);
+            ProductionParticipantEligibility::assertManager($db,$actorId,$productionId,false);
             $p=$db->prepare('SELECT id,active,account_status FROM users WHERE id=:id FOR UPDATE');$p->execute(['id'=>$userId]);$person=$p->fetch();if(!$person||(int)$person['active']!==1||$person['account_status']==='disabled')throw new RuntimeException('That person is not available for active casting.');
             ProductionParticipantEligibility::assertEligible($db,$productionId,$userId);
             if($submissionId){$r=$db->prepare("SELECT rsl.participant_user_id,ro.production_id,ro.opportunity_type FROM registration_submission_links rsl JOIN registration_submissions rs ON rs.id=rsl.submission_id JOIN registration_opportunities ro ON ro.id=rs.opportunity_id WHERE rsl.submission_id=:submission LIMIT 1");$r->execute(['submission'=>$submissionId]);$link=$r->fetch();if(!$link||(int)$link['participant_user_id']!==$userId||(int)$link['production_id']!==$productionId||$link['opportunity_type']!=='audition')throw new RuntimeException('That audition intake is not linked to this person and Working Production.');}
@@ -59,6 +61,8 @@ final class CastingService
         if(!in_array($status,['under_review','callback','offered','cast','not_cast','withdrawn'],true))throw new RuntimeException('Choose a valid casting status.');
         if(mb_strlen($role)>190||mb_strlen($track)>100||mb_strlen($notes)>2000)throw new RuntimeException('One or more casting fields are too long.');
         $db->beginTransaction();try{
+            ProductionLifecycleGuard::assertWritable($db,$productionId,true);
+            ProductionParticipantEligibility::assertManager($db,$actorId,$productionId,false);
             $s=$db->prepare("SELECT cr.*,u.active user_active,u.account_status user_account_status FROM production_casting_records cr JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");$s->execute(['id'=>$recordId,'production'=>$productionId]);$before=$s->fetch();if(!$before)throw new RuntimeException('That casting record no longer exists in this production.');
             $liveState=in_array($status,['under_review','callback','offered','cast'],true);if($liveState)ProductionParticipantEligibility::assertEligible($db,$productionId,(int)$before['user_id']);
             $decision=in_array($status,['offered','cast','not_cast','withdrawn'],true);$u=$db->prepare('UPDATE production_casting_records SET casting_status=:status,role_title=:role,participation_track=:track,staff_notes=:notes,decided_by_user_id=:actor,decided_at='.($decision?'CURRENT_TIMESTAMP':'decided_at').' WHERE id=:id');$u->execute(['status'=>$status,'role'=>$role!==''?$role:null,'track'=>$track!==''?$track:null,'notes'=>$notes!==''?$notes:null,'actor'=>$actorId,'id'=>$recordId]);
@@ -92,6 +96,8 @@ final class CastingService
         ProductionLifecycleGuard::assertWritable($db,$productionId);
         $groupIds=ScheduleAudience::validateGroupIds($db,$productionId,$groupIds);
         $db->beginTransaction();try{
+            ProductionLifecycleGuard::assertWritable($db,$productionId,true);
+            ProductionParticipantEligibility::assertManager($db,$actorId,$productionId,false);
             $s=$db->prepare("SELECT cr.*,CONCAT(u.first_name,' ',u.last_name) person_name,u.active user_active,u.account_status user_account_status FROM production_casting_records cr JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");$s->execute(['id'=>$recordId,'production'=>$productionId]);$record=$s->fetch();if(!$record)throw new RuntimeException('That casting record no longer exists.');if((int)$record['user_active']!==1||$record['user_account_status']==='disabled')throw new RuntimeException('That student is no longer available for an active production roster.');if($record['casting_status']!=='cast')throw new RuntimeException('Mark the casting decision Cast before finalizing production access.');
             $role=trim((string)($record['role_title']??''));if($role==='')throw new RuntimeException('Enter a character or participation role before finalizing the roster.');
             $guardianIds=CastProductionEnrollmentService::enroll($db,$productionId,(int)$record['user_id'],$actorId,$role);

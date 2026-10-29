@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__.'/ProductionParticipantEligibility.php';
+require_once __DIR__.'/ProductionParticipantFunctionService.php';
+require_once __DIR__.'/ParticipantControls.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
@@ -38,7 +40,7 @@ final class ProductionPeopleExperience
         $_SESSION['production_people_csrf'] ??= bin2hex(random_bytes(24));
         $production = ProductionContext::selected($db, $user);
         if (!$production) {
-            self::page($basePath, $user, null, [], [], [], []);
+            self::page($db,$basePath, $user, null, [], [], [], []);
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -48,7 +50,7 @@ final class ProductionPeopleExperience
         $members = self::members($db, (int)$production['id']);
         $candidates = self::candidates($db, (int)$production['id']);
         $coverage = self::guardianCoverage($db, (int)$production['id']);
-        self::page($basePath, $user, $production, $members, $candidates, $coverage, ManualParticipantService::forProduction($db,(int)$production['id']));
+        self::page($db,$basePath, $user, $production, $members, $candidates, $coverage, ManualParticipantService::forProduction($db,(int)$production['id']));
     }
 
     private static function handlePost(PDO $db, array $user, int $productionId, string $basePath): never
@@ -67,7 +69,10 @@ final class ProductionPeopleExperience
 
         $action = (string)($_POST['action'] ?? '');
         try {
-            if ($action === 'add') {
+            if($action==='save_function'||$action==='retire_function'){
+                ProductionParticipantFunctionService::save($db,$productionId,(int)($_POST['user_id']??0),(int)$user['id'],(string)($_POST['function_type']??''),(string)($_POST['function_title']??''),$action==='save_function');
+                self::flash('success','Participant function updated without changing authorization roles.');
+            }elseif ($action === 'add') {
                 $userId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT) ?: 0;
                 $audienceType = (string)($_POST['audience_type'] ?? '');
                 $participationRole = trim((string)($_POST['participation_role'] ?? ''));
@@ -201,6 +206,7 @@ final class ProductionPeopleExperience
             $autoRetiredGuardians = [];
             $removedCasting = [];
             if ($membership['audience_type'] === 'student' || $membership['audience_type'] === 'adult') {
+                $db->prepare("UPDATE production_participant_functions SET status='inactive',updated_at=NOW() WHERE production_id=? AND user_id=?")->execute([$productionId,(int)$membership['user_id']]);
                 $casting=$db->prepare("SELECT cr.id,cr.casting_status,cr.role_title,cr.participation_track,cr.staff_notes FROM production_casting_records cr WHERE cr.production_id=:production AND cr.user_id=:student FOR UPDATE");
                 $casting->execute(['production'=>$productionId,'student'=>(int)$membership['user_id']]);
                 $removedCasting=$casting->fetchAll();
@@ -300,7 +306,7 @@ final class ProductionPeopleExperience
         ]);
     }
 
-    private static function page(string $basePath, array $user, ?array $production, array $members, array $candidates, array $coverage, array $manual): never
+    private static function page(PDO $db,string $basePath, array $user, ?array $production, array $members, array $candidates, array $coverage, array $manual): never
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -309,6 +315,7 @@ final class ProductionPeopleExperience
         $active = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active' && $m['account_status'] !== 'disabled'));
         $disabledActive = array_values(array_filter($members, static fn(array $m): bool => $m['status'] === 'active' && $m['account_status'] === 'disabled'));
         $students = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'student'));
+        $adults = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'adult'));
         $guardians = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'guardian'));
         $staff = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === 'staff'));
         $subnav = AppNavigation::productionSubnav('/production/people', $user);
@@ -317,7 +324,8 @@ final class ProductionPeopleExperience
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>Production people · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/production-people.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar('/production/people', $basePath, $user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Production', 'People & cast', $basePath, $subnav); ?><div class="production-people-page ops-page">
         <?php if ($flash): ?><div class="production-people-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <?php if (!$production): ?><section class="production-people-empty"><h2>No active production selected</h2><p>Activate a production or switch the working production before managing its membership.</p></section><?php else: ?>
-        <section class="production-people-hero ops-heading"><div><small><?= $esc(strtoupper((string)$production['season'])) ?> · WORKING PRODUCTION</small><h2><?= $esc($production['title']) ?></h2><p>Manage only the people who belong to this selected production. Student additions automatically carry their available active guardian relationships into this production audience.</p></div><div class="production-people-metrics"><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
+        <section class="production-people-hero ops-heading"><div><small><?= $esc(strtoupper((string)$production['season'])) ?> · WORKING PRODUCTION</small><h2><?= $esc($production['title']) ?></h2><p>Manage only the people who belong to this selected production. Student additions automatically carry their available active guardian relationships into this production audience.</p></div><div class="production-people-metrics"><span><b><?= count($adults) ?></b><small>Adults</small></span><span><b><?= count($students) ?></b><small>Students</small></span><span><b><?= count($guardians) ?></b><small>Guardians</small></span><span><b><?= count($staff) ?></b><small>Staff</small></span></div></section>
+        <?php ParticipantControls::functions($db,(int)$production['id'],(string)$_SESSION['production_people_csrf']); ?>
 
         <div class="production-people-layout"><section class="production-people-panel ops-panel"><header><div><small>ACTIVE ROSTER</small><h3>Production membership</h3></div><span class="badge badge-count"><?= count($active) ?> live</span></header>
         <div class="production-people-table op-table" aria-label="Production membership"><div class="production-people-columns op-table-columns"><span>Person</span><span>Audience</span><span>Production role</span><span>Account role</span><span>Actions</span></div><?php foreach (['adult' => 'Adult participants', 'student' => 'Student participants', 'guardian' => 'Guardians', 'staff' => 'Production Staff'] as $type => $label): ?><div class="op-table-group production-people-group"><header class="op-table-group-header"><div><b><?= $esc($label) ?></b><small><?php $group = array_values(array_filter($active, static fn(array $m): bool => $m['audience_type'] === $type)); ?><?= count($group) ?> active</small></div></header><?php if (!$group): ?><div class="op-table-empty">No active <?= $esc($label) ?>.</div><?php else: foreach ($group as $member): ?><article class="production-member op-table-row"><div class="production-member-id op-table-primary"><i><?= $esc($member['initials']) ?></i><div><b><?= $esc($member['name']) ?></b><small><?= $esc((string)$member['account_status']) ?></small></div></div><div><span class="op-mobile-label">Audience</span><span class="badge badge-compact badge-neutral"><?= $esc(ucfirst((string)$member['audience_type'])) ?></span></div><div><span class="op-mobile-label">Production role</span><?= $esc((string)($member['participation_role'] ?: 'Not set')) ?></div><div><span class="op-mobile-label">Account role</span><?= $esc($member['account_role']) ?></div><form class="op-table-actions" method="post" onsubmit="return confirm(<?= $esc(json_encode($member['audience_type']==='student' ? 'Remove this student from the production AND remove their casting record and published cast/callback entry? This cannot be undone from this page.' : 'Remove this person from this production?')) ?>)"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['production_people_csrf']) ?>"><input type="hidden" name="action" value="remove"><input type="hidden" name="membership_id" value="<?= (int)$member['id'] ?>"><button class="btn btn-tertiary btn-compact" type="submit">Remove</button></form></article><?php endforeach; endif; ?></div><?php endforeach; ?>

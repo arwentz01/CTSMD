@@ -1,7 +1,7 @@
 {
     "AccountManagementExperience": {
-        "reason": "Adult participation Batch 2: reviewed classification and production eligibility controls; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
-        "php": "90d6c56545449a808e753e6c2a041968fb090ad3db199ff221478ac1a2cb410e",
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "4eb18d5a4fb3b76100511c052a5938eef4ce7cb9e4702503f553c0e8f07c7277",
         "forms": "4b3877af05e5e82e08adc5c242cd0df768f35be7c5f176eae83ec934b0ce27b7"
     },
     "ProductionLifecycleExperience": {
@@ -10,18 +10,28 @@
         "forms": "1fb04b92675403c15f2c90feea921b319d0e744693ceb523871180c2c1438f8e"
     },
     "CastingExperience": {
-        "reason": "Adult participation Batch 3: unified casting labels, Adult roster and retained casting removal history",
-        "php": "ccb63e169c5e7e183a2f472b9735e39ff147e94c1fd2b12dfceed4ddaeec4410",
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "3b4b4ffb6c5d714387b749239c4c84e78d5185ddef158008bbf9d64c02372125",
         "forms": "619350a7fa0e7a5278133d2e54b4114a5c11e8d81b83232594d88be3ad060363"
     },
     "ProductionPeopleExperience": {
-        "reason": "Adult participation Batch 3: unified casting labels, Adult roster and retained casting removal history",
-        "php": "40ecf93969e5ddf75a64e2a8eeeb70d167e35cf28b30c64c2870b085b32c5700",
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "8fc5a92f30bf47f627c60cb5c7becfd867b9ab653b30a31d75ad5ced34a89e73",
         "forms": "86fd02a11422dfe95a9f6dc994b95869e13a2145fc523699faebc379c2b7a5bb"
     },
     "StudentProfileExperience": {
         "reason": "Adult participation Batch 5: shared performer profile and consent copy",
         "php": "a319e341986a500abb80ac8828970eadb94cb366d8d187eb42d9043193d1719c",
         "forms": "8de6fa701c6b8cd352307bef0b21050f520a6e2188343e858a1fa53dfbbdf4d1"
+    },
+    "ResourceExperience": {
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "494fbac4f00e8646162dbf49e3caa68948c171155e10976b95cebe58f2c48c02",
+        "forms": "47c38d6936210c02844db70e9bbbf2aa20ebf763273babc61cf6d57ca7ba3fea"
+    },
+    "ProductionFileExperience": {
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "30dafc2343601eb6f72bc80525d4f23d61c336855449c8fc59f522a3193aacbd",
+        "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
     }
 }

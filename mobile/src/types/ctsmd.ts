@@ -1,4 +1,4 @@
-export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[]};
+export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[];participant_classification?:'adult'|'student'|'unclassified'};
 export type MeResult={user:CtsmdUser};
 export type Conversation={id:number;subject:string;display_name:string;conversation_type:string;latest_at:string|null;message_count:number;participant_count:number;unread_count:number;preview:string|null};export type MessagesResult={conversations:Conversation[]};
 export type Channel={id:number;name:string;description:string|null;channel_type:string;production_id:number|null;production_title:string|null;unread_count:number};export type ChannelsResult={channels:Channel[]};

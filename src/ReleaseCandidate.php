@@ -4,6 +4,11 @@ declare(strict_types=1);
 /** Offline manifest and read-only schema inspection. No deployment or SQL runner. */
 final class ReleaseCandidate
 {
+    public static function candidateScope(string $root):array
+    {
+        $enhancement=is_file($root.'/database/migrations/093_adult_participation.sql');
+        return ['candidate'=>$enhancement?'CTSMD-ADULT-PARTICIPATION-REVIEW':'CTSMD-RC1','release_scope'=>$enhancement?'adult_enhancement_separate_from_rc1':'rc1_preparation'];
+    }
     public static function category(string $path):string
     {
         if(preg_match('#(^|/)(\.env(?:\..*)?|\.git|node_modules|error_log|storage)(/|$)#',$path))return 'excluded';
@@ -38,7 +43,7 @@ final class ReleaseCandidate
             $bytes=self::git($root,['cat-file','blob',$m[2]]);
             $files[]=['path'=>$m[3],'category'=>$category,'bytes'=>strlen($bytes),'sha256'=>hash('sha256',$bytes)];
         }
-        return ['format'=>1,'candidate'=>'CTSMD-RC1','repository'=>'arwentz01/CTSMD','revision'=>$revision,'branch'=>trim(self::git($root,['branch','--show-current'])),'deployment_authorized'=>false,'workers_enabled'=>false,'migration_execution'=>'manual_review_only','files'=>$files];
+        return ['format'=>1,'repository'=>'arwentz01/CTSMD','revision'=>$revision,'branch'=>trim(self::git($root,['branch','--show-current'])),'deployment_authorized'=>false,'workers_enabled'=>false,'migration_execution'=>'manual_review_only','files'=>$files]+self::candidateScope($root);
     }
 
     public static function verifyFiles(string $root,array $manifest,bool $webOnly=false):array
@@ -116,6 +121,7 @@ REGEX;
         foreach($expected['triggers'] as $name=>$definition)if(($triggers[$name]??null)!==$definition)$missing[]='trigger missing/drifted: '.$name;
         foreach($expected['dropped'] as $name=>$_)if(isset($triggers[$name]))$missing[]='obsolete trigger: '.$name;
         foreach(['users.date_of_birth'=>'date','conversation_participants.history_through_message_id'=>'bigint unsigned','conversation_participants.access_revoked_at'=>'datetime'] as $key=>$type){[$table,$column]=explode('.',$key);$actual=$columns[$table][$column]??[];if(($actual['COLUMN_TYPE']??'')!==$type||($actual['IS_NULLABLE']??'')!=='YES')$missing[]='critical type/nullability: '.$key;}
+        foreach(['production_memberships.audience_type'=>['student','guardian','staff','adult'],'productions.participant_category'=>['students','adults','mixed']] as $key=>$values){[$table,$column]=explode('.',$key);$type=$columns[$table][$column]['COLUMN_TYPE']??'';foreach($values as $value)if(!str_contains($type,"'".$value."'")){$missing[]='critical participant enum: '.$key;break;}}
         return ['schema_matches_declared_contracts'=>!$missing,'issues'=>$missing,'table_count'=>count($tables),'trigger_count'=>count($triggers),'migration_review'=>$expected['migrations'],'limitations'=>['Presence is not an applied-migration ledger; backfills, permissions, indexes, FK definitions and all type/default changes require review.','Trigger hashes are lexical drift checks, not proof of concurrency correctness.','No migration or delivery worker was executed.']];
     }
 }

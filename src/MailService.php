@@ -87,6 +87,13 @@ final class MailService
                     continue;
                 }
             }
+            if(preg_match('/^casting-result-(\d+)-(offered|cast|not_cast)-/',(string)($row['dedupe_key']??''),$castMatch)){
+                require_once __DIR__.'/CastingResultDeliveryPolicy.php';
+                if(!CastingResultDeliveryPolicy::allows($db,(int)$castMatch[1],(int)($row['user_id']??0),$castMatch[2])){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Casting or family authorization changed before delivery.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Casting or family authorization changed before delivery.');$suppressed++;continue;
+                }
+            }
             // Reminder jobs carry an assignment identifier in their dedupe key.
             // Recheck the production lifecycle and parent/guardian relationship
             // at delivery time so previously queued reminders cannot escape closure.

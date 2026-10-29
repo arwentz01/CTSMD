@@ -1,5 +1,7 @@
 # CTSMD Connect UX design system
 
+Reviewed Student transitions and participant functions reuse native disclosures, explicit reason fields and Operations controls. Transitions explain history/session effects before action and require a different authorized reviewer on the server. Native classification is display-only; profile, consent, registration and history have labeled website handoffs with separate-sign-in guidance. Casting offers remain native and use shared backend acceptance.
+
 Adult participation extension: account classification is a separate Operations panel from authorization roles. Production participation settings reuse `pl-panel`, `pl-detail-form` and `ops-form`, visible labels, native fieldsets/legends and explicit optional age bounds/cutoff help. Age exceptions live in a disclosure with required review reason and visible approval/revocation history. They never imply guardian or administrative authority. No second palette, navigation or decorative interaction was introduced.
 
 ## Phase 3 operational and native adoption

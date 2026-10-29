@@ -14,7 +14,7 @@ try{
  if(in_array($args['target'],['staging','production'],true)&&getenv('APP_ENV')!==$args['target'])throw new RuntimeException('Environment label mismatch.');
  $db->exec('SET TRANSACTION READ ONLY');$db->beginTransaction();
  try{$result=ReleaseCandidate::inspect($db,$root);}finally{$db->rollBack();}
- $result=['candidate'=>'CTSMD-RC1','target_label'=>$args['target'],'inspection_utc'=>gmdate('c'),'source_revision'=>$manifest['revision']??null,'manifest_checked'=>isset($manifest),'file_issues'=>$errors,'release_authorized'=>false]+$result;
+ $result=['candidate'=>$manifest['candidate']??ReleaseCandidate::candidateScope($root)['candidate'],'release_scope'=>$manifest['release_scope']??ReleaseCandidate::candidateScope($root)['release_scope'],'target_label'=>$args['target'],'inspection_utc'=>gmdate('c'),'source_revision'=>$manifest['revision']??null,'manifest_checked'=>isset($manifest),'file_issues'=>$errors,'release_authorized'=>false]+$result;
  echo json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";
  exit($errors||!$result['schema_matches_declared_contracts']?2:0);
 }catch(Throwable){fwrite(STDERR,"RC1 preflight failed safely. Check private configuration, manifest and read-only metadata privileges. No SQL applied; no credentials or database content printed.\n");exit(1);}

@@ -46,12 +46,12 @@ final class ProductionParticipantEligibility
         return $result;
     }
 
-    public static function assertManager(PDO $db,int $actorId,int $productionId):void
+    public static function assertManager(PDO $db,int $actorId,int $productionId,bool $requireMembership=true):void
     {
         Auth::clearRequestCache($actorId);
         $q=$db->prepare("SELECT active,account_status FROM users WHERE id=? FOR UPDATE");$q->execute([$actorId]);$actor=$q->fetch();
         if(!$actor||!(int)$actor['active']||$actor['account_status']!=='active'||!in_array('production.manage',Auth::permissions($db,$actorId),true))throw new RuntimeException('Production management permission is required.');
-        if(in_array('administrator',Auth::roles($db,$actorId),true))return;
+        if(!$requireMembership||in_array('administrator',Auth::roles($db,$actorId),true))return;
         $q=$db->prepare("SELECT id FROM production_memberships WHERE production_id=? AND user_id=? AND audience_type='staff' AND status='active' FOR UPDATE");$q->execute([$productionId,$actorId]);
         if(!$q->fetchColumn())throw new RuntimeException('Current staff membership in this production is required.');
     }

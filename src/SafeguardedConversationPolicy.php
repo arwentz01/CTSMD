@@ -24,7 +24,7 @@ final class SafeguardedConversationPolicy
             WHERE fr.student_user_id=:student
                 AND fr.status='active'
                 AND fr.relationship_type IN ('parent','guardian')
-            ORDER BY fr.is_primary DESC,fr.id,u.id");
+            ORDER BY fr.is_primary DESC,fr.id,u.id".($db->inTransaction()?' FOR UPDATE':''));
         $stmt->execute(['student'=>$studentId]);
         return $stmt->fetchAll();
     }
@@ -108,6 +108,7 @@ final class SafeguardedConversationPolicy
                     throw new RuntimeException('Messaging is paused because this safeguarded conversation no longer has an available Student.');
                 }
                 self::assertLiveSender($participants,$senderId);
+                foreach($participants as $participant)if(!(bool)$participant['active']||$participant['account_status']!=='active')throw new RuntimeException('Messaging is paused because a conversation account is unavailable.');
                 if ($ownsTransaction) $db->commit();
                 return ['conversation_type'=>'direct','student_id'=>null,'guardian_ids'=>[]];
             }

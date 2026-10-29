@@ -86,7 +86,7 @@ final class ScheduleAudience
         $groupIds=self::normalizeGroupIds($groupIds);
         if(!$groupIds) return [];
         $placeholders=implode(',',array_fill(0,count($groupIds),'?'));
-        $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff']};
+        $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff','adult']};
         $typePh=implode(',',array_fill(0,count($types),'?'));
         $sql="SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name
               FROM production_group_members pgm
@@ -132,7 +132,7 @@ final class ScheduleAudience
 
     private static function productionAudience(PDO $db,int $productionId,string $visibility): array
     {
-        $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff']};
+        $types=match($visibility){'family'=>['student','guardian'],'staff'=>['staff'],default=>['student','guardian','staff','adult']};
         $ph=implode(',',array_fill(0,count($types),'?'));
         $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name
             FROM production_memberships pm
@@ -157,6 +157,11 @@ final class ScheduleAudience
         $audienceType=self::productionAudienceType($db,(int)$user['id'],$productionId);
         if($audienceType===null) return false;
         $visibility=(string)($item['visibility']??'all');
+        if($audienceType==='adult'&&$visibility==='family'){
+            // Independent Adult participation must not mask a real guardian path.
+            $q=$db->prepare("SELECT 1 FROM family_relationships fr JOIN production_memberships child ON child.user_id=fr.student_user_id AND child.production_id=? AND child.audience_type='student' AND child.status='active' JOIN users u ON u.id=child.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=? AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$q->execute([$productionId,(int)$user['id']]);
+            if($q->fetchColumn())$audienceType='guardian';
+        }
         $visibilityAllows=match($visibility){'family'=>in_array($audienceType,['student','guardian'],true),'staff'=>$audienceType==='staff',default=>true};
         if(!$visibilityAllows) return false;
         if((string)($item['audience_mode']??'production')!=='groups') return true;
@@ -173,7 +178,7 @@ final class ScheduleAudience
         $direct->execute(['production'=>$productionId,'item'=>$scheduleItemId,'user'=>(int)$user['id']]);
         if($direct->fetchColumn()) return true;
 
-        if($audienceType==='guardian' && in_array($visibility,['family','all'],true)){
+        if(in_array($audienceType,['guardian','adult'],true) && in_array($visibility,['family','all'],true)){
             $guardian=$db->prepare("SELECT 1
                 FROM family_relationships fr
                 JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=:production AND spm.audience_type='student' AND spm.status='active'

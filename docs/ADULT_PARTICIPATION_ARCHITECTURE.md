@@ -1,6 +1,6 @@
 # Adult participation and mixed-age productions
 
-October 28, 2026. Development enhancement on `audit/board-pilot-readiness`, separate from RC1 deployment. **Not approved for production or a real-family pilot.** Active release work remains in [TODO](TODO.md).
+October 28–29, 2026. Development enhancement on `audit/board-pilot-readiness`, separate from RC1 deployment. **Not approved for production or a real-family pilot.** Active release work remains in [TODO](TODO.md).
 
 ## Baseline audit
 
@@ -18,7 +18,7 @@ Other audit surfaces: ProductionContext, ScheduleAudience, archive and task/chec
 
 `users.adult_participant` is reviewed participation classification, not an auth role. It grants no permissions. Existing Student role remains the authoritative safeguarded identity and takes precedence over an inconsistent Adult flag. DOB edit never reclassifies anyone. Adult may retain independent guardian/caregiver relationships, volunteer credentials and explicitly assigned staff roles. Disabled accounts cannot be classified or participate.
 
-Classification is an accounts.manage action with locked user state, reviewed DOB (18+), reason and audit. Generic role editing cannot remove Student safeguarding or assign Student to an Adult-classified account. Student-to-Adult transition is deliberately **blocked pending explicit review workflow**; the policy requires account administration plus safeguarding review, identity/age evidence, independent-login readiness, relationship/pickup closure, preserved account/media/credits and frozen historical message cutoffs. Reaching a birthday alone is insufficient. Implementation of that workflow remains an acceptance gate, not a claim of completed transition support.
+Classification is an accounts.manage action with locked user state, reviewed DOB (18+), reason and audit. Generic role editing cannot remove Student safeguarding or assign Student to an Adult-classified account. Student-to-Adult transition requires **two different reviewers**: an account administrator requests it; a different current account administrator with safeguarding permission approves or rejects it. Reasons are mandatory. Approval verifies age 18+, active independent sign-in, password and verified email, then preserves the same account/profile/credits, retires Student memberships and guardian management, freezes existing safeguarded threads and revokes stale sessions/bearers/push subscriptions. Reenrollment is an explicit eligibility-checked staff action. Reaching a birthday alone is insufficient. Human review must verify actual identity/age evidence; a saved self-reported DOB is not evidence by itself.
 
 ## Eligibility and concurrency
 
@@ -28,7 +28,7 @@ ProductionParticipantEligibility returns structured status and eligibility, hand
 
 ## Data and migration safety
 
-Review existing schema/trigger/history before upgrading. Sequence: reconcile approved prerequisites through 092 with the existing RC1 runbook, then separately approve 093. Do not rerun all migrations on populated data; duplicate 069 numbers and base/062 overlap remain. 093 adds two eligibility/participation tables, four production columns, one user column and extends the membership enum; it does not migrate existing participants, grant roles or rewrite offers/publications. Functions (cast/crew/creative) are descriptive and cannot authorize management.
+Review existing schema/trigger/history before upgrading. Sequence: reconcile approved prerequisites through 092 with the existing RC1 runbook, then separately review/apply **093 → 094 → 095 → 096**. Do not rerun all migrations on populated data; duplicate 069 numbers and base/062 overlap remain. 093 adds classification, eligibility, exceptions and descriptive functions without reclassifying existing users. 094 freezes direct-message participant sets after content exists. 095 adds transition reviews/session revision and narrowly extends the last-guardian guard only for a recorded two-reviewer-approved Adult transition whose Student role is already retired. It preserves ordinary live-Student last-guardian rejection. 096 adds retained function retirement state. Read-only candidate preflight checks Adult membership/category enum values in addition to new columns/tables and trigger hashes. No role grants or publication approvals are backfilled.
 
 MySQL DDL is not transactional rollback. Before any hosted change take matched code, DB, triggers and private-file backup, rehearse restore, inspect locks/runtime and record statement checksums. After new Adult writes, rollback requires restoring a matched pre-enhancement snapshot in maintenance mode and reconciling subsequent changes; **never shrink the enum or drop tables/columns containing new history**. Do not run old code with new Adult records until compatibility is verified. No hosting migration, workers or deployment performed here.
 
@@ -55,3 +55,32 @@ Evidence includes Adult/Adult, Adult/own Student, Adult parent/unrelated Student
 Batch 5 reuses `student_profiles` for both identities; the legacy table/route names remain compatible. Adults edit their own performer profiles and see their own shared Theatre History; a former guardian cannot edit an Adult's profile through an old family link. Private headshot access still passes shared profile authorization. Adult Playbill entries start hidden/draft, require the Adult's own explicit consent, and preserve withdrawal on resync. Existing Student guardian/staff approval rules remain unchanged. The missing `cr` join in Playbill sync is repaired; completed/archived snapshots skip live synchronization. Public casting continues to publish only staff-reviewed name/role snapshots, never private profile biography or headshots.
 
 Local MySQL evidence now includes 44 enhancement assertions: reusable Adult profile, unrelated edit denial, real Playbill sync, draft privacy, denial of staff-fabricated Adult consent, self-approval and withdrawal/resync. This does not prove all private-file delivery, archive restoration or real-device paths.
+
+## Batch 6: final integration evidence and limits
+
+Batch 6 adds two-reviewer transition controls, descriptive multi-function assignment/retirement with retained credits, queued casting-result recipient reauthorization and native classification/website handoffs. Adult performers who are also caregivers retain independent participant API paths; caregiver-only accounts retain child logistics restrictions while account-wide conversation endpoints use the same guardian-inclusive policy as web. Family-only schedules stay private: an Adult performer needs an independently valid guardian relationship for child calls; Adult membership does not mask that relationship.
+
+Local automated evidence on fresh disposable `ctsmd_rc1_adult_20261028` (all migrations through 096, no demo reset):
+
+| Check | Result | Scope |
+|---|---|---|
+| Eligibility boundaries | 19 pass | Pure rules, not SQL |
+| Enhancement integration | 73 pass | Real MySQL/services; identity, exceptions, offers, functions, consent, manual transfer, independent guardian resource/Community audiences, transition and stale web/native credentials |
+| Concurrent acceptance/closure/exceptions/role/revocation | 16 pass | Real separate PHP processes behind MySQL locks; one winner, closure rollback, serialized exceptions, removed-staff denial and guardian revocation/send with preserved cutoff |
+| Safeguarding regression | 36 pass | Real MySQL transaction rolled back |
+| Web/native HTTP regression | 132 pass | Seven persona categories/two productions, Adult Guardian native offer self-acceptance and website handoffs |
+| Native TypeScript and integration | Pass / 7 pass | Existing SDK/dependencies unchanged |
+| Android and iOS bundle export | Pass | Bundles are not device verification |
+| Expo dependency compatibility | **Blocked** | SDK 58.0.20 now reports expected 58.0.21 and compatible patch increments for six modules; no upgrade performed under the explicit boundary |
+
+The complete mandatory scenario list is not claimed closed by these counts. Remaining acceptance gates are in TODO: additional race interleavings and actual delivery dispatch, full mixed-group/private-channel combinations, populated migration/restore rehearsal, public casting/archived Playbill snapshots, manual credit/media transfer permutations, real private-file tests and physical device/assistive technology. The tested role/removal and guardian/send interleavings do not prove every race order. `simctl` is unavailable in the installed Xcode command-line environment; `adb` is unavailable. No simulator, physical-device, APNs/FCM delivery or production acceptance was executed. No notification worker, production data change or deployment was performed.
+
+The original Operations baseline remains historical; reviewed functional extensions use separate feature fingerprints. Browser evidence for account/production controls and repaired real Playbill Media/profile routes covers 1440/768/390 widths; geometry evidence is not full WCAG certification.
+
+Final browser verification caught and corrected a MySQL DISTINCT/ORDER BY candidate-query failure and missing PDO context in the new People/Casting controls. The capture harness now checks complete server HTML as well as the visible DOM, because failures inside a select can be visually hidden. Baseline assumption inventory is pinned to `755c93c` and includes PHP, native, assets, schema and migration keyword locations; it is not a claim that every match represents a rule that should change.
+
+Adult classification removal requires retiring active Adult memberships first, matching the existing Staff-role integrity pattern. Explicit manual transfers now accept an eligible reviewed Adult destination as well as a Student, retain the retired source and require current staff authority; no name/email claiming is added. Unaffiliated manual credits are not platform identities and cannot establish DOB/category eligibility or grant platform access; staff must review eligibility before account transfer/enrollment.
+
+Repeatable commands (explicit local test schema environment is mandatory for SQL/HTTP suites): `php tests/adult_participation.php`, `php tests/adult_participation_mysql.php`, `php tests/adult_participation_concurrency.php`, `php tests/safeguarded_conversation.php`, `php tests/rc1_acceptance.php`. CI invokes the same SQL/HTTP checks after a fresh bootstrap. Native checks use `npm run typecheck`, `npm run test:integration`, `npx expo install --check` and separate Android/iOS exports. No test accepts an arbitrary remote URL or real account credentials.
+
+Current manifest/preflight explicitly identify this branch as `CTSMD-ADULT-PARTICIPATION-REVIEW`, scope `adult_enhancement_separate_from_rc1`, with deployment/worker authorization false. Reusing RC1 regression tooling is not approval to combine this enhancement with the original RC1 deployment. Offline Expo checking reports dependencies up to date but warns its validation is unreliable; it does not replace the failing online compatibility gate.

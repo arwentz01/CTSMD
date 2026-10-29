@@ -51,7 +51,9 @@ final class MobileApi
             $roleCheck=$db->prepare("SELECT relationship_type FROM family_relationships WHERE guardian_user_id=:id AND status='active'");
             $roleCheck->execute(['id'=>(int)$user['id']]);$familyTypes=$roleCheck->fetchAll(PDO::FETCH_COLUMN);
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
-            if($caregiverOnly && !in_array($route,['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],true)){
+            $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
+            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create'];
+            if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
             // Mirror the web membership gate: a pending account without an active
@@ -715,10 +717,10 @@ final class MobileApi
 
     private static function loadUser(PDO $db,int $id): array
     {
-        $s=$db->prepare("SELECT id,first_name,last_name,email,initials,display_role role,organization_membership_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$s->execute(['id'=>$id]);$u=$s->fetch();if(!$u)throw new RuntimeException('This account is unavailable.');$u['name']=trim($u['first_name'].' '.$u['last_name']);$u['roles']=Auth::roles($db,$id);$u['permissions']=Auth::permissions($db,$id);return $u;
+        $s=$db->prepare("SELECT adult_participant,id,first_name,last_name,email,initials,display_role role,organization_membership_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$s->execute(['id'=>$id]);$u=$s->fetch();if(!$u)throw new RuntimeException('This account is unavailable.');$u['name']=trim($u['first_name'].' '.$u['last_name']);$u['roles']=Auth::roles($db,$id);$u['permissions']=Auth::permissions($db,$id);return $u;
     }
 
-    private static function publicUser(array $u): array{return ['id'=>(int)$u['id'],'name'=>$u['name'],'first_name'=>$u['first_name'],'last_name'=>$u['last_name'],'email'=>$u['email'],'initials'=>$u['initials'],'role'=>$u['role'],'roles'=>$u['roles']];}
+    private static function publicUser(array $u): array{return ['participant_classification'=>in_array('student',$u['roles'],true)?'student':(!empty($u['adult_participant'])?'adult':'unclassified'),'id'=>(int)$u['id'],'name'=>$u['name'],'first_name'=>$u['first_name'],'last_name'=>$u['last_name'],'email'=>$u['email'],'initials'=>$u['initials'],'role'=>$u['role'],'roles'=>$u['roles']];}
     private static function bearerToken(): ?string{$h=(string)($_SERVER['HTTP_AUTHORIZATION']??'');return preg_match('/^Bearer\s+(.+)$/i',$h,$m)?trim($m[1]):null;}
     private static function input(): array{$raw=file_get_contents('php://input')?:'';$data=json_decode($raw,true);return is_array($data)?$data:$_POST;}
     private static function requireMethod(string $method): void{if(($_SERVER['REQUEST_METHOD']??'GET')!==$method)self::json(['error'=>'Method not allowed.'],405);}

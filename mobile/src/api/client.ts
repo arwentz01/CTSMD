@@ -3,6 +3,7 @@ import type {MeResult,MessagesResult,ChannelsResult,TheatreResult,TasksResult,Th
 const configured=process.env.EXPO_PUBLIC_CTSMD_API_BASE_URL||'https://ctsmd.me';
 if(!/^https:\/\//i.test(configured))throw new Error('CTSMD API must use HTTPS.');
 const BASE=configured.replace(/\/$/,'');
+export function participantWebsite(path:'/student-profile'|'/theatre-history'|'/register'):string{return BASE+path;}
 export class ApiError extends Error {constructor(message:string,public status:number){super(message)}}
 export async function api<T>(path:string,opts:{method?:'GET'|'POST'|'DELETE';body?:object;token?:string|null}={}):Promise<T>{
  const token=opts.token===undefined?await readToken():opts.token;
