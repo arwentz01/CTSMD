@@ -53,3 +53,28 @@
  .ux-operations .pl-page:has(.pl-manage-nav) .pl-panel { padding:16px; }
  .pl-lifecycle-form > button { width:100%; }
 }
+
+
+/* Participation controls: group related age inputs without oversized rows. */
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 16px;
+  margin:0;
+  padding:14px 16px;
+  border:1px solid var(--ux-line,#e4dcd5);
+  border-radius:9px;
+}
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > legend { font-size:13px; font-weight:750; padding-inline:5px; }
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > label { display:grid; gap:5px; min-width:0; }
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > label:first-of-type,
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > p,
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > button { grid-column:1/-1; }
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > p { margin:0; font-size:12px; }
+.pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > button { justify-self:start; width:auto; }
+.pl-management-anchor details { margin-top:12px; }
+.pl-management-anchor details > summary { cursor:pointer; padding-block:8px; font-weight:700; }
+@media(max-width:650px) {
+ .pl-management-anchor > .pl-panel > .pl-detail-form > fieldset { grid-template-columns:minmax(0,1fr); padding:12px; }
+ .pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > button { width:100%; }
+}
