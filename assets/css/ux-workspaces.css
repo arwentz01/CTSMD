@@ -430,3 +430,53 @@ body.ux-workspace.ux-community, body.ux-workspace.ux-community .community-page {
   .ux-workspace .fd-schedule-row > div { min-width: 0; }
   .ux-workspace .fd-action-row > .fd-avatar { width: 32px; }
 }
+
+
+/* Workspace design tokens for the shared section-tab component.
+   Do not turn the selected tab into a filled button. */
+.ux-workspace .unified-subnav {
+  gap: clamp(12px, 1.5vw, 24px);
+  padding-block: 0;
+  background: var(--ux-paper);
+}
+.ux-workspace .unified-subnav > a {
+  min-height: 44px;
+  padding: 11px 2px 9px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ux-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+.ux-workspace .unified-subnav > a:hover {
+  color: var(--ux-wine);
+  background: transparent;
+}
+.ux-workspace .unified-subnav > a.active,
+.ux-workspace .unified-subnav > a[aria-current="page"] {
+  color: var(--ux-wine);
+  background: transparent;
+  border-bottom-color: var(--ux-wine);
+  border-radius: 0;
+  font-weight: 800;
+}
+@media (max-width: 780px) {
+  .ux-workspace .unified-subnav { padding: 0 16px; gap: 14px; }
+  .ux-workspace .unified-subnav > a {
+    min-height: 44px;
+    padding: 10px 2px 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+  }
+  .ux-workspace .unified-subnav > a.active,
+  .ux-workspace .unified-subnav > a[aria-current="page"] {
+    color: var(--ux-wine);
+    background: transparent;
+    border-bottom-color: var(--ux-wine);
+  }
+}
