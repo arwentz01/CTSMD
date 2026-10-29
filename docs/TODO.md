@@ -8,6 +8,11 @@
 
 ## RC1 signoff blockers — October 28, 2026
 
+### Operations UX work in progress
+
+- [ ] Complete Batches A–F with per-route presentation and browser evidence in [Operations coverage](UX_OPERATIONS_COVERAGE.md). Existing permission, lifecycle, form and safeguarding behavior is frozen to baseline; no production deployment/data changes or notification workers are part of this work.
+- [ ] Complete physical-device/assistive-technology and communicating/destructive POST acceptance separately. A styled control is not evidence that a transaction or real-device workflow passed.
+
 Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
 
 Verified candidate code `6a891e7`: [RC1 CI](https://github.com/arwentz01/CTSMD/actions/runs/40691477305) and [web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40691477248) passed. 27 tooling contracts, 120 seven-persona/two-production real HTTP checks and 36 transactional safeguarding checks pass; Expo CI/local exports pass on unchanged native source. Read-only preflight correctly blocks incomplete demo schema. These results do not close the 13 gates below.

@@ -122,6 +122,10 @@ Batch A implemented: quiet Operations tool rows, four permission-filtered hubs, 
 
 ## Embedded and absent surfaces
 
+### Batch B evidence
+
+Accounts (directory and detail), People (directory/detail), Teams (directory/membership/private room), and registrations (opportunities/edit/submissions/intake) explicitly adopt page/header/panel/form roles. All 11 route samples rendered at 1440/768/390px without page overflow or PHP errors. Desktop and phone screenshots reviewed for account detail, registration edit/intake and team membership. Ten comparable pre/post form inventories match actions, methods and named field/type contracts. Intake baseline initially used the wrong query key; its corrected populated review was checked independently, not claimed as a matching baseline. The PHP behavior contract and closed-form/roster boundary tests pass. Communicating account/registration decisions were not submitted.
+
 - Account detail owns contact editing, roles, invitations, account lifecycle and relationship links; no separate roles/settings screen is invented. People detail retains staff relationship/roster context.
 - Registrations owns opportunity edit, submitted applications and person/household intake review. Teams owns member editing and private-channel creation.
 - Production detail owns artwork, lifecycle configuration, typed completion/archive confirmations. Casting drawers, attendance drawers and late-pickup review remain separate interaction checks.

@@ -5,6 +5,8 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Area | Deferred refinement | Priority |
 | --- | --- | --- |
 | Shared shell | Reduce legacy CSS layering after route adoption; retain opt-in scope until verified | Medium |
+| Operations | Track every registered route and embedded subview in UX_OPERATIONS_COVERAGE.md; do not infer detail completion from parent styling | Active batch work |
+| Operations | Physical-device, Safari/Firefox, screen-reader and 200% zoom acceptance remain separate from Chromium responsive checks | Acceptance |
 | Shared shell | Review long production names in the native select on physical devices | Low |
 | Family | Add explicit per-child filtering only if household usability sessions justify it; keep all children and shows visible by default | Low |
 | Student | Consider reducing repeated date/time presentation between Next up and the full timeline after user testing | Low |

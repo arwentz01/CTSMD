@@ -55,4 +55,10 @@ Staff operations use compact rows and warm neutral chrome. Family/student screen
 
 ## Implementation boundary
 
+### Operations page adoption (October 28–29, 2026)
+
+`WorkspaceUI::operationsStyles()` adds the existing workspace foundation and a scoped `ux-operations.css` layer. Each adopted renderer opts into `ux-operations` and explicit `ops-page`, `ops-heading`, `ops-panel`, or `ops-form` roles. This is not a replacement palette: all colors use the approved `--ux-*` tokens. Existing task layouts, conditional actions and production artwork remain feature-owned.
+
+Keep headings compact, long forms grouped, real status labels visible, and secondary actions subordinate. Native tables get a named keyboard-scrollable region via progressive enhancement; no fake sorting/filtering is introduced. Without JavaScript, routes and native form submission still work. Public programs and printable letters keep their own presentation. See [per-route adoption and verification](UX_OPERATIONS_COVERAGE.md).
+
 This visual system does not own authorization, notifications, publication visibility, lifecycle state, roster membership, or family relationships. Document a backend dependency before changing any of those meanings.

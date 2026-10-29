@@ -168,3 +168,15 @@ The screen's data and counts come from the existing services. The editorial prod
 Remaining validation: physical iOS/Android devices, Safari/Firefox, assistive technology, 200% zoom, image-present production samples, and destructive/communicating POST integration paths. Native Expo files and lifecycle/archival/completion screens were not altered. Hosted GitHub CI has not been run because these commits are local and were not pushed or deployed.
 
 Local review captures and measurement JSON are in `/tmp/ctsmd-ux-before/` and `/tmp/ctsmd-ux-final/`. They are intentionally outside the repository because they contain authenticated demo-account context.
+
+## Operations expansion — October 28–29, 2026
+
+See [Operations coverage](UX_OPERATIONS_COVERAGE.md) for the dispatch-order inventory and batch evidence. Historical statements above about unpushed work and untouched lifecycle screens describe Phase 1, not the current Operations pass.
+
+| Before | After | Why |
+|---|---|---|
+| Dark decorative hub banner, tiny category labels, individual icon tiles | Warm workspace heading and compact tool rows | Scan actual permitted destinations without a competing dashboard |
+| Account parent styled but legacy People, Teams and registration subviews | Explicit renderer/component adoption, grouped access/contact controls and intake review | Parent adoption does not prove a detail screen |
+| Ad hoc table overflow | Named keyboard-scrollable native-table regions | Preserve columns and native semantics on narrow screens |
+
+Presentation-only PHP contracts are pinned to `c6c7852`; routes, permissions, queries and actions must remain unchanged. Browser rendering is recorded separately from source contracts and domain-changing workflow tests.
