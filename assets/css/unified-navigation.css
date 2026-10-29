@@ -15,3 +15,70 @@
 .unified-utilities .unified-inbox-link .unified-unread{position:absolute;top:1px;right:0;margin:0;min-width:17px;height:17px;font-size:9px}
 .unified-utilities .unified-inbox-link:hover{background:#f5edef}
 @media(max-width:650px){.unified-utilities .unified-message-icon{width:26px;height:26px}}
+
+
+/* Shared section navigation: consistent flat tab treatment on every workspace. */
+.unified-subnav {
+  align-items: stretch;
+  gap: clamp(12px, 1.5vw, 24px);
+  padding-inline: clamp(16px, 2.4vw, 34px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scroll-padding-inline: 16px;
+}
+.unified-subnav > a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 11px 2px 9px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-decoration: none;
+  line-height: 1.25;
+  font-weight: 650;
+  transition: color .15s ease, border-color .15s ease;
+}
+.unified-subnav > a:hover { color: var(--red, #8b233b); background: transparent; }
+.unified-subnav > a.active,
+.unified-subnav > a[aria-current="page"] {
+  color: var(--red, #8b233b);
+  background: transparent;
+  border-bottom-color: var(--red, #8b233b);
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 800;
+}
+.unified-subnav > a:focus-visible {
+  outline: 2px solid var(--red, #8b233b);
+  outline-offset: -4px;
+}
+@media (max-width: 780px) {
+  .unified-subnav { gap: 14px; padding: 0 16px; }
+  .unified-subnav > a {
+    min-height: 44px;
+    padding: 10px 2px 8px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted, #685d59);
+  }
+  .unified-subnav > a.active,
+  .unified-subnav > a[aria-current="page"] {
+    color: var(--red, #8b233b);
+    background: transparent;
+    border-bottom: 3px solid var(--red, #8b233b);
+    border-radius: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .unified-subnav > a { transition: none; }
+}
