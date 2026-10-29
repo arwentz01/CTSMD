@@ -20,8 +20,8 @@ final class WorkspaceUI
     {
         self::styles($basePath);
         $root = htmlspecialchars(($basePath ?: '') . '/assets/', ENT_QUOTES, 'UTF-8');
-        echo '<link rel="stylesheet" data-ux-operations href="' . $root . 'css/ux-operations.css?v=20261029">';
-        echo '<script defer src="' . $root . 'js/ux-operations.js?v=20261029"></script>';
+        echo '<link rel="stylesheet" data-ux-operations href="' . $root . 'css/ux-operations.css?v=20261029-operations-1">';
+        echo '<script defer src="' . $root . 'js/ux-operations.js?v=20261029-operations-1"></script>';
     }
 
     public static function pageHeader(string $title, string $description, ?array $action = null): void

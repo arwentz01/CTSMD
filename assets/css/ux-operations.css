@@ -82,6 +82,31 @@
 .ux-operations .prod-schedule-section-title { font-size:13px; letter-spacing:0; }
 .ux-operations :is(.approval-queue-row small,.vol-score span,.sc-radio b,.sc-radio small,.sc-check small,.prod-impact-card span small) { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
 .ux-operations :is(.vsm-head > a,.sc-hero > a) { display:inline-flex; align-items:center; min-height:40px; padding:8px 12px; }
+/* Publishing keeps its editorial preview; only the staff controls use Operations chrome. */
+.ux-operations :is(.emailops-stats small,.orgres-list small,.mod-mobile-label,.ca-mobile-label,.mod-tester > small,.push-diagnostics > small,.push-diagnostic-grid small) { font-size:12px; letter-spacing:0; color:var(--ux-muted); text-transform:none; }
+.ux-operations :is(.pb-card,.pb2-card) > small { color:var(--ux-muted); font-size:13px; letter-spacing:0; font-weight:500; }
+.ux-operations :is(.pb-card,.pb2-card) { border-radius:12px; box-shadow:none; }
+.ux-operations :is(.pb2-grid,.pb-admin-grid) { gap:20px; align-items:start; }
+.ux-operations .pb2-hero { display:block; }
+.ux-operations .pb2-card form { display:grid; gap:12px; }
+.ux-operations .pb2-card label { display:grid; gap:6px; min-width:0; }
+.ux-operations .pb2-form-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.ux-operations .pb2-card .pb2-check { display:flex; align-items:start; }
+.ux-operations .pb-card h3 { font-family:var(--ux-font,system-ui,sans-serif); font-size:17px; }
+.ux-operations :is(.push-diagnostic-actions,.push-diagnostic-grid) { gap:12px; }
+.ux-operations :is(.push-install h3,.push-devices h3,.push-diagnostics h3) { font-size:17px; }
+.ux-operations :is(.orgres-form,.mod-form,.ca-form) { padding:20px; border-radius:12px; border:1px solid var(--ux-line); box-shadow:none; }
+.ux-operations .rl-upload code { font-family:inherit; overflow-wrap:anywhere; }
+.ux-operations .rl-video-detail video { width:100%; max-height:65vh; background:var(--ux-ink); border-radius:7px; }
+.ux-operations :is(.push-diagnostics small,.push-diagnostic-grid dt) { font-size:13px; font-weight:500; letter-spacing:0; color:var(--ux-muted); text-transform:none; }
+.ux-operations :is(.ca-actions,.mod-table-actions) { display:flex; flex-wrap:wrap; gap:8px; }
+.ux-operations :is(.ca-actions,.mod-table-actions) :is(a,button) { padding:8px 10px; font-size:13px; white-space:nowrap; overflow-wrap:normal; }
+/* Legacy mobile .cast-page > * forces 12px important margins, including fixed drawers. */
+.ux-operations .cast-page .cast-drawer { width:min(540px,100vw); max-width:100vw; min-width:0; box-sizing:border-box; right:0; left:auto; margin:0 !important; }
+.ux-operations [data-close-cast-drawer] { min-width:44px; min-height:44px; }
+.ux-operations .pb2-card-heading small { color:var(--ux-muted); font-size:13px; font-weight:500; letter-spacing:0; }
+.ux-operations .pb2-card .pb2-radio-option { display:flex; align-items:flex-start; min-height:44px; gap:12px; }
+.ux-operations .pb2-card input:is([type=radio],[type=checkbox]) { width:20px; flex:0 0 20px; min-height:20px; margin:2px 0; }
 .ux-operations .ops-page :is(.op-table-primary,.op-table-row) { overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .ux-operations .ops-page { padding:16px; }
@@ -96,5 +121,7 @@
  .ux-operations :is(.sp-grid,.sgc-layout,.safe-layout,.safe-review-layout,.resume-builder-grid,.sgdm-filters) { grid-template-columns:minmax(0,1fr); }
  .ux-operations .unified-header .unified-title { max-width:calc(100% - 150px); }
  .ux-operations :is(.file-pair,.resource-pair,.production-people-layout,.pg-layout) { grid-template-columns:minmax(0,1fr); }
+ .ux-operations :is(.pb2-grid,.pb2-cast-fields,.pb-admin-grid,.rl-fields) { grid-template-columns:minmax(0,1fr); }
+ .ux-operations .pb2-field-wide { grid-column:auto; }
 }
 @media print { .ux-operations .ops-page { max-width:none; padding:0; } }

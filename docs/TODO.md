@@ -12,6 +12,7 @@
 
 - [ ] Complete Batches A–F with per-route presentation and browser evidence in [Operations coverage](UX_OPERATIONS_COVERAGE.md). Existing permission, lifecycle, form and safeguarding behavior is frozen to baseline; no production deployment/data changes or notification workers are part of this work.
 - [ ] Complete physical-device/assistive-technology and communicating/destructive POST acceptance separately. A styled control is not evidence that a transaction or real-device workflow passed.
+- [ ] **Operations dependency — Playbill Media:** populated `/admin/playbill/media` fails in `PlaybillEnhancementService::syncCastProfiles()` because the query selects `cr.role_title` without a `cr` join. Reproduced against fully migrated isolated schema; not a missing-column migration. Requires a separately reviewed backend correction and sync/consent regression test. UI adoption does not close this blocker.
 
 Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
 

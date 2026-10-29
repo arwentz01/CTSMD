@@ -35,7 +35,13 @@ $count = 0;
 foreach ($contracts as $owner => $hash) {
     $source = file_get_contents($root.'/src/'.$owner.'.php');
     if (!hash_equals($hash, operationsPhpContract($source))) throw new RuntimeException($owner.': PHP behavior changed; review against c6c7852.');
+    if (preg_match('/ops-(page|heading|panel|form) ops-\1\b/', $source)) throw new RuntimeException($owner.': duplicate component adoption.');
+    if (preg_match('/(WorkspaceUI::operationsStyles\([^;]+;\s*\?>)\s*<\?php\s*WorkspaceUI::operationsStyles/', $source)) throw new RuntimeException($owner.': duplicate style/script inclusion.');
     ++$count;
+}
+$script = file_get_contents($root.'/assets/js/ux-operations.js');
+foreach (['fetch(', 'XMLHttpRequest', '.submit(', '.requestSubmit('] as $mutation) {
+    if (str_contains($script, $mutation)) throw new RuntimeException('Table enhancement must not submit or request data.');
 }
 foreach ($inventory['rows'] as $row) {
     if (!str_contains($front, "'".$row['route']."'")) throw new RuntimeException('Unregistered route in inventory: '.$row['route']);

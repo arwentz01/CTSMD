@@ -123,28 +123,32 @@
       "owner": "NotificationPreferenceExperience",
       "batch": "F",
       "kind": "screen",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PushExperience"
     },
     {
       "route": "/push/subscribe",
       "owner": "NotificationPreferenceExperience",
       "batch": "F",
       "kind": "transport",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PushExperience"
     },
     {
       "route": "/push/unsubscribe",
       "owner": "NotificationPreferenceExperience",
       "batch": "F",
       "kind": "transport",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PushExperience"
     },
     {
       "route": "/push/test",
       "owner": "NotificationPreferenceExperience",
       "batch": "F",
       "kind": "transport",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PushExperience"
     },
     {
       "route": "/staff",
@@ -360,7 +364,7 @@
       "route": "/volunteer/verification",
       "owner": "VolunteerVerificationExperience",
       "batch": "E",
-      "kind": "screen",
+      "kind": "print",
       "baseline": "existing B2; inspect subview"
     },
     {
@@ -675,7 +679,7 @@
       "route": "/videos/inventory",
       "owner": "RehearsalVideoExperience",
       "batch": "F",
-      "kind": "screen",
+      "kind": "transport",
       "baseline": "legacy; explicit adoption needed"
     },
     {
@@ -689,7 +693,7 @@
       "route": "/production/rehearsal-video",
       "owner": "RehearsalVideoExperience",
       "batch": "F",
-      "kind": "screen",
+      "kind": "transport",
       "baseline": "legacy; explicit adoption needed"
     },
     {
@@ -838,6 +842,76 @@
       "batch": "C",
       "kind": "screen",
       "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/forms",
+      "owner": "FamilyFormsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/forms/view",
+      "owner": "FamilyFormsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms",
+      "owner": "FamilyFormsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/review",
+      "owner": "FamilyFormsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/group-assign",
+      "owner": "FamilyFormsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/manage",
+      "owner": "FormManagementExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/manage/edit",
+      "owner": "FormManagementExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/manage/assign",
+      "owner": "FormManagementExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/build",
+      "owner": "FormBuilderIndexExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/forms/builder",
+      "owner": "DynamicFormExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
     }
   ]
 }

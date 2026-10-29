@@ -62,7 +62,27 @@ final class ProductionTasksExperience
         <div class="pr-lead-backdrop" data-close-leads hidden></div><aside class="pr-task-drawer" data-leads-drawer hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Manage Volunteer Leads"><header><div><small>PRODUCTION RESPONSIBILITIES</small><h2>Volunteer Leads</h2></div><button type="button" data-close-leads aria-label="Close Volunteer Leads">×</button></header>
         <p>Designate trusted adult production members to coordinate volunteers and own tasks. This does not grant administrative access.</p>
         <form method="post" class="pr-task-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['production_tasks_csrf'])?>"><input type="hidden" name="production_id" value="<?=(int)$production['id']?>"><input type="hidden" name="action" value="set_volunteer_leads"><fieldset class="pr-multi-assignees"><legend>Designated leads</legend><?php foreach($leadCandidates as $lead):?><label><input type="checkbox" name="lead_user_ids[]" value="<?=(int)$lead['id']?>"<?=in_array((int)$lead['id'],$leadIds,true)?' checked':''?>><span><?=$e((string)$lead['name'])?></span></label><?php endforeach;?></fieldset><button type="submit">Save Volunteer Leads</button></form></aside>
-        <?php endif;?><script>(function(){const panel=document.querySelector('[data-leads-drawer]'),back=document.querySelector('.pr-lead-backdrop');if(!panel||!back)return;document.addEventListener('click',e=>{if(e.target.closest('[data-open-leads]')){panel.hidden=false;back.hidden=false;panel.focus();}if(e.target.closest('[data-close-leads]')){panel.hidden=true;back.hidden=true;}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){panel.hidden=true;back.hidden=true;}});})();</script>
+        <?php endif;?><script>(()=>{
+          const panel=document.querySelector('[data-leads-drawer]'),back=document.querySelector('.pr-lead-backdrop');
+          if(!panel||!back)return;
+          let trigger=null,previousOverflow='';
+          const close=()=>{if(panel.hidden)return;panel.hidden=true;back.hidden=true;document.body.style.overflow=previousOverflow;trigger?.focus();};
+          document.addEventListener('click',e=>{
+            const opener=e.target.closest('[data-open-leads]');
+            if(opener){trigger=opener;previousOverflow=document.body.style.overflow;panel.hidden=false;back.hidden=false;document.body.style.overflow='hidden';panel.focus();}
+            if(e.target.closest('[data-close-leads]'))close();
+          });
+          document.addEventListener('keydown',e=>{
+            if(panel.hidden)return;
+            if(e.key==='Escape'){e.preventDefault();close();return;}
+            if(e.key!=='Tab')return;
+            const items=[...panel.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(x=>x.getClientRects().length&&x.type!=='hidden');
+            if(!items.length){e.preventDefault();panel.focus();return;}
+            const first=items[0],last=items[items.length-1];
+            if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last.focus();}
+            else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+          });
+        })();</script>
         <style>.pr-lead-backdrop{position:fixed;inset:0;background:#13121a80;z-index:1250}[data-leads-drawer]{z-index:1251}</style>
         <section class="pr-section"><header><div><small>PRODUCTION CHECKLIST</small><h3>What your team still needs to do</h3></div></header><div class="pr-layout"><div class="pr-list"><?php if(!$data['checklist']):?><div class="pr-empty-card">No checklist items yet. Add the practical production work Connect cannot infer on its own.</div><?php endif;?><?php foreach($data['checklist'] as $item):
  $overdue=$item['status']!=='done'&&!empty($item['due_at'])&&strtotime($item['due_at'])<time();
