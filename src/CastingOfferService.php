@@ -9,6 +9,8 @@ final class CastingOfferService {
         $ownsTransaction=!$db->inTransaction();
         if($ownsTransaction)$db->beginTransaction();
         try {
+            ProductionLifecycleGuard::assertWritable($db,$productionId,true);
+            ProductionParticipantEligibility::assertManager($db,$actorId,$productionId);
             $s=$db->prepare("SELECT cr.*,p.title production_title,u.active student_active,u.account_status student_status FROM production_casting_records cr JOIN productions p ON p.id=cr.production_id JOIN users u ON u.id=cr.user_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");
             $s->execute(['id'=>$recordId,'production'=>$productionId]);$r=$s->fetch();
             if(!$r || $r['casting_status']!=='offered' || !(int)$r['student_active'] || $r['student_status']==='disabled')throw new RuntimeException('A current Offered student is required.');
@@ -17,9 +19,11 @@ final class CastingOfferService {
             $assigned=CastingRoleService::assigned($db,$productionId,$recordId);
             if($assigned)$role=implode(' / ',array_column($assigned,'title'));
             if($role==='')throw new RuntimeException('Assign the offered role before sending.');
+            $eligibility=ProductionParticipantEligibility::assertEligible($db,$productionId,(int)$r['user_id']);
             $s=$db->prepare("SELECT fr.guardian_user_id FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')");
             $s->execute(['student'=>(int)$r['user_id']]);$guardians=array_map('intval',$s->fetchAll(PDO::FETCH_COLUMN));
-            if(!$guardians)throw new RuntimeException('An active guardian is required before sending a student casting offer.');
+            if($eligibility['category']==='adult')$guardians=[];
+            elseif(!$guardians)throw new RuntimeException('An active guardian is required before sending a Student casting offer.');
             $s=$db->prepare("SELECT id,status FROM production_cast_offers WHERE casting_record_id=:record FOR UPDATE");
             $s->execute(['record'=>$recordId]);$existing=$s->fetch();
             if($existing && $existing['status']==='pending'){if($ownsTransaction)$db->commit();return (int)$existing['id'];}
@@ -56,14 +60,17 @@ final class CastingOfferService {
             if(!$actor||!(int)$actor['active']||$actor['account_status']!=='active')throw new RuntimeException('Your account cannot respond to this offer.');
             $s=$db->prepare("SELECT active,account_status FROM users WHERE id=:id");$s->execute(['id'=>(int)$o['student_user_id']]);$student=$s->fetch();
             if(!$student||!(int)$student['active']||$student['account_status']==='disabled')throw new RuntimeException('The student is unavailable.');
+            $isStudent=IdentityRolePolicy::isStudent($db,(int)$o['student_user_id']);
+            if(!$isStudent&&$userId!==(int)$o['student_user_id'])throw new RuntimeException('Only the Adult participant can respond to their offer.');
             if($userId!==(int)$o['student_user_id']){
-                $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' LIMIT 1");
+                $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:guardian AND student_user_id=:student AND status='active' AND relationship_type IN ('parent','guardian') LIMIT 1");
                 $s->execute(['guardian'=>$userId,'student'=>(int)$o['student_user_id']]);if(!$s->fetchColumn())throw new RuntimeException('You are not an active guardian for this student.');
-            }else{
+            }elseif($isStudent){
                 $s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
                 $s->execute(['student'=>(int)$o['student_user_id']]);if(!$s->fetchColumn())throw new RuntimeException('An active guardian is required to respond.');
             }
-            ProductionLifecycleGuard::assertWritable($db,(int)$o['production_id']);
+            ProductionLifecycleGuard::assertWritable($db,(int)$o['production_id'],true);
+            if($decision==='accepted')ProductionParticipantEligibility::assertEligible($db,(int)$o['production_id'],(int)$o['student_user_id']);
             $status=$decision==='accepted'?'cast':'withdrawn';
             $s=$db->prepare("UPDATE production_cast_offers SET status=:decision,response_note=:note,responded_by_user_id=:actor,responded_at=NOW() WHERE id=:id AND status='pending'");
             $s->execute(['decision'=>$decision,'note'=>$note?:null,'actor'=>$userId,'id'=>$offerId]);if($s->rowCount()!==1)throw new RuntimeException('This offer has already been answered.');

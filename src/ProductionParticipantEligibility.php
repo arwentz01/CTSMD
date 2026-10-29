@@ -33,6 +33,7 @@ final class ProductionParticipantEligibility
         $q=$db->prepare('SELECT active,account_status,date_of_birth,adult_participant FROM users WHERE id=?'.$suffix);$q->execute([$userId]);$person=$q->fetch();
         if(!$production||!$person||!(int)$person['active']||$person['account_status']==='disabled')return ['status'=>'unavailable','eligible'=>false];
         // Student always wins over an inconsistent adult flag. DOB never changes classification.
+        Auth::clearRequestCache($userId);
         $category=IdentityRolePolicy::isStudent($db,$userId)?'student':((bool)$person['adult_participant']?'adult':'unknown');
         $q=$db->prepare('SELECT id FROM production_age_exceptions WHERE production_id=? AND student_user_id=? AND revoked_at IS NULL'.$suffix);$q->execute([$productionId,$userId]);
         return self::evaluate($production,$category,$person['date_of_birth'],(bool)$q->fetchColumn())+['category'=>$category];

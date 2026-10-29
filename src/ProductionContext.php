@@ -133,7 +133,7 @@ final class ProductionContext
             JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
             WHERE pm.production_id=:production AND pm.user_id=:user AND pm.status='active'
             AND pm.audience_type<>'guardian'
-            ORDER BY FIELD(pm.audience_type,'staff','student') LIMIT 1");
+            ORDER BY FIELD(pm.audience_type,'staff','student','adult') LIMIT 1");
         $direct->execute(['production'=>$productionId,'user'=>$userId]);
         $type=$direct->fetchColumn();
         if($type!==false)return (string)$type;

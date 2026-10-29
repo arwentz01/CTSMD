@@ -2,6 +2,9 @@
 declare(strict_types=1);
 require_once dirname(__DIR__).'/src/Database.php';
 require_once dirname(__DIR__).'/src/AdultParticipantService.php';
+require_once dirname(__DIR__).'/src/CastingService.php';
+require_once dirname(__DIR__).'/src/CastingOfferService.php';
+require_once dirname(__DIR__).'/src/ProductionPeopleExperience.php';
 if(PHP_SAPI!=='cli'||getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Explicit disposable loopback rc1-test schema required.');
 $db=Database::connect(dirname(__DIR__));$checks=0;$ids=[];$productions=[];$suffix=bin2hex(random_bytes(6));
 $assert=static function(bool $ok,string $label)use(&$checks):void{if(!$ok)throw new RuntimeException($label);$checks++;echo 'PASS '.$label."\n";};
@@ -35,6 +38,31 @@ try{
     $db->prepare('UPDATE users SET date_of_birth=? WHERE id=?')->execute(['1980-01-01',$student]);
     $assert(IdentityRolePolicy::isStudent($db,$student),'DOB edit preserves Student');
     $denied(fn()=>IdentityRolePolicy::assertRoleSelection($db,$student,[]),'Generic role edit cannot remove safeguarding');
+    $db->prepare("INSERT INTO family_relationships(guardian_user_id,student_user_id,relationship_type,status) VALUES(?,?,'guardian','active'),(?,?,'guardian','active')")->execute([$adult,$student,$admin,$student]);
+    $db->prepare("INSERT INTO production_memberships(production_id,user_id,audience_type,status) VALUES(?,?,'staff','active'),(?,?,'guardian','active')")->execute([$mixed,$admin,$mixed,$adult]);
+    $record=CastingService::add($db,$mixed,$admin,$adult);
+    CastingService::update($db,$mixed,$admin,$record,['casting_status'=>'offered','role_title'=>'Scrooge']);
+    $offer=CastingOfferService::issue($db,$mixed,$record,$admin);
+    $assert($offer===CastingOfferService::issue($db,$mixed,$record,$admin),'Repeated issue is idempotent');
+    $denied(fn()=>CastingOfferService::respond($db,$volunteer,$offer,'accepted',''),'Unrelated offer response denied');
+    CastingOfferService::respond($db,$adult,$offer,'accepted','');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$mixed AND user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Adult self acceptance enrolls Adult');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$mixed AND user_id=$adult AND audience_type='guardian' AND status='active'")->fetchColumn()===1,'Adult cast membership preserves independent Guardian membership');
+    $assert((int)$db->query("SELECT COUNT(*) FROM theatre_history_credits WHERE production_id=$mixed AND user_id=$adult AND role_title='Scrooge'")->fetchColumn()===1,'Adult history credit created');
+    $denied(fn()=>CastingOfferService::respond($db,$adult,$offer,'accepted',''),'Repeated acceptance cannot duplicate enrollment');
+    ProductionParticipantEligibility::saveSettings($db,$adultOnly,$admin,['participant_category'=>'adults']);
+    $second=CastingService::add($db,$adultOnly,$admin,$adult);CastingService::update($db,$adultOnly,$admin,$second,['casting_status'=>'offered','role_title'=>'Crew']);
+    CastingOfferService::respond($db,$adult,CastingOfferService::issue($db,$adultOnly,$second,$admin),'accepted','');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===2,'Independent multi-production participation');
+    $studentRecord=CastingService::add($db,$mixed,$admin,$student);CastingService::update($db,$mixed,$admin,$studentRecord,['casting_status'=>'offered','role_title'=>'Tiny Tim']);
+    $studentOffer=CastingOfferService::issue($db,$mixed,$studentRecord,$admin);CastingOfferService::respond($db,$adult,$studentOffer,'accepted','');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$mixed AND user_id=$student AND audience_type='student' AND status='active'")->fetchColumn()===1,'Student guardian acceptance enrolls Student');
+    $membershipId=(int)$db->query("SELECT id FROM production_memberships WHERE production_id=$mixed AND user_id=$adult AND audience_type='adult'")->fetchColumn();
+    (new ReflectionMethod(ProductionPeopleExperience::class,'deactivateMember'))->invoke(null,$db,['id'=>$admin],$mixed,$membershipId);
+    $assert($db->query('SELECT casting_status FROM production_casting_records WHERE id='.$record)->fetchColumn()==='withdrawn','Roster removal retains withdrawn casting history');
+    $assert($db->query('SELECT status FROM production_cast_offers WHERE id='.$offer)->fetchColumn()==='accepted','Roster removal preserves accepted offer history');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$adultOnly AND user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Roster removal leaves other production intact');
+    $assert((int)$db->query("SELECT COUNT(*) FROM family_relationships WHERE guardian_user_id=$adult AND student_user_id=$student AND status='active'")->fetchColumn()===1,'Cast removal preserves family relationship');
     $db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived' WHERE id=?")->execute([$adultOnly]);
     $assert(!ProductionParticipantEligibility::forUser($db,$adultOnly,$adult)['eligible'],'Archived production denied');
     $db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$adult]);
@@ -43,6 +71,7 @@ try{
     echo "PASS $checks migrated MySQL participation assertions; synthetic records only.\n";
 }finally{
     if($db->inTransaction())$db->rollBack();
+    if(isset($student))$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$student]);
     foreach($ids as $id)$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
     foreach($productions as $id)$db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived',is_active=0 WHERE id=?")->execute([$id]);
 }

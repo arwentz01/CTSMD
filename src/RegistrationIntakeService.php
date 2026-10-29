@@ -37,6 +37,7 @@ final class RegistrationIntakeService
 
         $db->beginTransaction();
         try{
+            if(!empty($submission['production_id']))ProductionParticipantEligibility::assertEligible($db,(int)$submission['production_id'],$participantUserId);
             if($minor){self::assertActiveRelationship($db,$guardianUserId,$participantUserId);if(($submission['opportunity_type']??'')==='audition')AuditionIntakeBridge::assertStudentEligible($db,$submissionId,$participantUserId);}
             self::saveLink($db,$submissionId,$participantUserId,$guardianUserId,(int)$actor['id'],'existing');
             self::audit($db,(int)$actor['id'],'registration.records_linked',$submissionId,'Linked registration to existing CTSMD people.',['participant_user_id'=>$participantUserId,'guardian_user_id'=>$guardianUserId]);
@@ -68,6 +69,7 @@ final class RegistrationIntakeService
                 if(!$participantId){$participantId=self::createAdultPerson($db,(string)$submission['participant_first_name'],(string)$submission['participant_last_name'],(string)$submission['registrant_email'],(int)$actor['id']);$createdParticipant=true;}else{self::assertAvailableAdult($db,$participantId);}
             }
             $method=($createdParticipant||$createdGuardian)?(($createdParticipant&&($createdGuardian||!$minor))?'created':'mixed'):'existing';
+            if(!empty($submission['production_id']))ProductionParticipantEligibility::assertEligible($db,(int)$submission['production_id'],$participantId);
             self::saveLink($db,$submissionId,$participantId,$guardianId,(int)$actor['id'],$method);
             self::audit($db,(int)$actor['id'],'registration.records_created_or_linked',$submissionId,'Converted registration into reviewed CTSMD people/household records.',['participant_user_id'=>$participantId,'guardian_user_id'=>$guardianId,'created_participant'=>$createdParticipant,'created_guardian'=>$createdGuardian]);
             $db->commit();return ['participant_user_id'=>$participantId,'guardian_user_id'=>$guardianId,'created_participant'=>$createdParticipant,'created_guardian'=>$createdGuardian];

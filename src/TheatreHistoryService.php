@@ -10,7 +10,7 @@ final class TheatreHistoryService
             FROM production_memberships pm
             JOIN productions p ON p.id=pm.production_id
             LEFT JOIN production_casting_records cr ON cr.production_id=pm.production_id AND cr.user_id=pm.user_id
-            WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type='student' LIMIT 1");
+            WHERE pm.production_id=:production AND pm.user_id=:user AND pm.audience_type IN ('student','adult') LIMIT 1");
         $s->execute(['production'=>$productionId,'user'=>$userId]);$row=$s->fetch();
         if(!$row)return;
         $g=$db->prepare("SELECT pg.name FROM production_group_members pgm JOIN production_groups pg ON pg.id=pgm.group_id WHERE pgm.production_membership_id=:membership AND pgm.status='active' AND pg.active=1 ORDER BY pg.sort_order,pg.name");

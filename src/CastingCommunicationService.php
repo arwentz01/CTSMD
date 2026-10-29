@@ -30,7 +30,9 @@ final class CastingCommunicationService
             $s=$db->prepare("SELECT cr.*,p.title production_title,CONCAT(u.first_name,' ',u.last_name) student_name,u.email student_email,u.active student_active,u.account_status student_account_status,pm.status membership_status,EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.active=1 AND ar.code='student' WHERE ur.user_id=cr.user_id) student_role_active FROM production_casting_records cr JOIN productions p ON p.id=cr.production_id JOIN users u ON u.id=cr.user_id LEFT JOIN production_memberships pm ON pm.id=cr.production_membership_id WHERE cr.id=:id AND cr.production_id=:production FOR UPDATE");
             $s->execute(['id'=>$recordId,'production'=>$productionId]);$r=$s->fetch();
             if(!$r)throw new RuntimeException('That casting record could not be found.');
-            if(!(bool)$r['student_active']||$r['student_account_status']==='disabled'||!(bool)$r['student_role_active'])throw new RuntimeException('That Student identity is no longer available for live casting communication.');
+            if(!(bool)$r['student_active']||$r['student_account_status']==='disabled'||(!(bool)$r['student_role_active']&&!IdentityRolePolicy::isAdult($db,(int)$r['user_id'])))throw new RuntimeException('That participant is no longer available for live casting communication.');
+            $isStudent=IdentityRolePolicy::isStudent($db,(int)$r['user_id']);
+            ProductionParticipantEligibility::assertEligible($db,$productionId,(int)$r['user_id']);
             if(!in_array((string)$r['casting_status'],['offered','cast','not_cast'],true))throw new RuntimeException('Only Offered, Cast, or Not cast decisions can be communicated.');
             // Multi-select roles are authoritative; role_title is only a legacy display
             // projection and may be empty for records written by older editors.
@@ -47,7 +49,8 @@ final class CastingCommunicationService
             $g=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY fr.is_primary DESC,fr.id");
             $g->execute(['student'=>(int)$r['user_id']]);
             $guardians=$g->fetchAll();
-            if(!$guardians)throw new RuntimeException('This Student has no available active guardian relationship. Restore guardian context before communicating a casting result.');
+            if(!$isStudent)$guardians=[];
+            elseif(!$guardians)throw new RuntimeException('This Student has no available active guardian relationship. Restore guardian context before communicating a casting result.');
 
             $recipients=[];
             if(filter_var((string)$r['student_email'],FILTER_VALIDATE_EMAIL))$recipients[(string)$r['student_email']]=['user_id'=>(int)$r['user_id'],'name'=>(string)$r['student_name']];
@@ -57,7 +60,7 @@ final class CastingCommunicationService
                 $recipients[(string)$guardian['email']]=['user_id'=>(int)$guardian['id'],'name'=>(string)$guardian['name']];
                 $guardianRecipients++;
             }
-            if($guardianRecipients<1)throw new RuntimeException('This Student has guardian context, but no available guardian email address can receive the casting result.');
+            if($isStudent&&$guardianRecipients<1)throw new RuntimeException('This Student has guardian context, but no available guardian email address can receive the casting result.');
 
             $status=(string)$r['casting_status'];$production=(string)$r['production_title'];$student=(string)$r['student_name'];
             $subject=$status==='not_cast'?'Casting update · '.$production:($status==='offered'?'Casting offer · '.$production:'Casting result · '.$production);
@@ -68,7 +71,8 @@ final class CastingCommunicationService
                     :"CTSMD has finalized a casting result for {$student} in {$production}.\n\nRole: {$role}\n\nPlease sign in to CTSMD Connect for production information.\n\nCTSMD Connect");
             $queued=0;$guardianQueued=0;$guardianIds=array_map(static fn(array $guardian):int=>(int)$guardian['id'],$guardians);$nonce=date('YmdHis');
             foreach($recipients as $email=>$recipient){$id=MailService::queue($db,$recipient['user_id'],$email,$recipient['name'],'system',$subject,$body,null,'casting-result-'.$recordId.'-'.$status.'-'.$email.'-'.$nonce);if($id>0){$queued++;if(in_array((int)$recipient['user_id'],$guardianIds,true))$guardianQueued++;}}
-            if($guardianQueued<1)throw new RuntimeException('Current email preferences prevented every guardian copy from being queued. No casting result was marked as communicated.');
+            if($isStudent&&$guardianQueued<1)throw new RuntimeException('Current email preferences prevented every guardian copy from being queued. No casting result was marked as communicated.');
+            if(!$isStudent&&$queued<1)throw new RuntimeException('No casting result email could be queued for this Adult.');
             // An Offered result is one staff action: send the email and create the
             // actionable student/guardian offer in the same database transaction.
             // Reuse any pending offer rather than notifying the family twice.

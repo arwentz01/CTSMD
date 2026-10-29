@@ -8,5 +8,15 @@
         "reason": "Adult participation Batch 2: reviewed classification and production eligibility controls; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
         "php": "3ee5eda69cd8dadfde9b6b813be8ed672e35b66282b7f612c1c4f8ba3bbd34ef",
         "forms": "1fb04b92675403c15f2c90feea921b319d0e744693ceb523871180c2c1438f8e"
+    },
+    "CastingExperience": {
+        "reason": "Adult participation Batch 3: unified casting labels, Adult roster and retained casting removal history",
+        "php": "ccb63e169c5e7e183a2f472b9735e39ff147e94c1fd2b12dfceed4ddaeec4410",
+        "forms": "619350a7fa0e7a5278133d2e54b4114a5c11e8d81b83232594d88be3ad060363"
+    },
+    "ProductionPeopleExperience": {
+        "reason": "Adult participation Batch 3: unified casting labels, Adult roster and retained casting removal history",
+        "php": "40ecf93969e5ddf75a64e2a8eeeb70d167e35cf28b30c64c2870b085b32c5700",
+        "forms": "86fd02a11422dfe95a9f6dc994b95869e13a2145fc523699faebc379c2b7a5bb"
     }
 }

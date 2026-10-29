@@ -6,6 +6,11 @@ require_once __DIR__.'/Auth.php';
 
 final class IdentityRolePolicy
 {
+    public static function isAdult(PDO $db,int $userId):bool
+    {
+        if($userId<1||self::isStudent($db,$userId))return false;
+        $q=$db->prepare("SELECT adult_participant FROM users WHERE id=? AND active=1 AND account_status<>'disabled'");$q->execute([$userId]);return (bool)$q->fetchColumn();
+    }
     public static function isStudent(PDO $db,int $userId):bool
     {
         return $userId>0 && in_array('student',Auth::roles($db,$userId),true);
