@@ -26,11 +26,15 @@ final class IdentityRolePolicy
 
     public static function assertProductionAudience(PDO $db,int $userId,string $audienceType):void
     {
-        if($userId<1||!in_array($audienceType,['student','guardian','staff'],true))throw new RuntimeException('Choose a valid person and production role.');
+        if($userId<1||!in_array($audienceType,['student','guardian','staff','adult'],true))throw new RuntimeException('Choose a valid person and production role.');
         $person=$db->prepare('SELECT active,account_status FROM users WHERE id=:id LIMIT 1');$person->execute(['id'=>$userId]);$row=$person->fetch();if(!$row||!(bool)$row['active']||$row['account_status']==='disabled')throw new RuntimeException('That person is not available for an active production roster.');
         if($audienceType==='student'&&!self::isStudent($db,$userId))throw new RuntimeException('Only an account with the Student role can be added as a production student.');
         if($audienceType==='staff'&&!self::isStaff($db,$userId))throw new RuntimeException('Only Production Staff or an Administrator can be added as production staff.');
         if($audienceType==='guardian'&&self::isStudent($db,$userId))throw new RuntimeException('A Student cannot be added as a production guardian.');
+        if($audienceType==='adult'){
+            $q=$db->prepare('SELECT adult_participant FROM users WHERE id=?');$q->execute([$userId]);
+            if(!$q->fetchColumn()||self::isStudent($db,$userId))throw new RuntimeException('Reviewed Adult classification is required.');
+        }
     }
 
     public static function assertRoleSelection(PDO $db,int $userId,array $roleIds):void
@@ -39,6 +43,11 @@ final class IdentityRolePolicy
         $ids=array_values(array_unique(array_filter(array_map('intval',$roleIds),static fn(int $id):bool=>$id>0)));
         $selected=[];
         if($ids){$ph=implode(',',array_fill(0,count($ids),'?'));$s=$db->prepare("SELECT code FROM auth_roles WHERE active=1 AND id IN ($ph)");$s->execute($ids);$selected=array_values($s->fetchAll(PDO::FETCH_COLUMN));}
+        if(self::isStudent($db,$userId)&&!in_array('student',$selected,true))throw new RuntimeException('Student identity changes require the explicit reviewed transition workflow; role editing cannot remove safeguarding.');
+        if(in_array('student',$selected,true)){
+            $q=$db->prepare('SELECT adult_participant FROM users WHERE id=?');$q->execute([$userId]);
+            if($q->fetchColumn())throw new RuntimeException('Remove Adult classification through account review before assigning Student identity.');
+        }
 
         $child=$db->prepare("SELECT 1 FROM family_relationships WHERE student_user_id=:user AND status='active' LIMIT 1");$child->execute(['user'=>$userId]);
         $productionStudent=$db->prepare("SELECT 1 FROM production_memberships WHERE user_id=:user AND audience_type='student' AND status='active' LIMIT 1");$productionStudent->execute(['user'=>$userId]);

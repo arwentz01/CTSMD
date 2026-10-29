@@ -1,0 +1,39 @@
+# Adult participation and mixed-age productions
+
+October 28, 2026. Development enhancement on `audit/board-pilot-readiness`, separate from RC1 deployment. **Not approved for production or a real-family pilot.** Active release work remains in [TODO](TODO.md).
+
+## Baseline audit
+
+Operations implementation and final evidence are committed through `755c93c`; clean checkout and remote branch fetched before this work. Source inventory found Student/guardian/audience assumptions in 90 PHP files (1,059 matching lines). The companion [assumption inventory](ADULT_PARTICIPATION_ASSUMPTIONS.tsv) records each location before changes. A match is an inspection lead, not proof it should be generalized.
+
+Actual read-only MySQL inspection used disposable `ctsmd_rc1_20261028b`, migrated through 092, not the incomplete default demo or hosting. `SHOW CREATE TABLE` confirmed membership uniqueness is `(production_id,user_id,audience_type)`, **not** `(production_id,user_id)`. Separate family and staff memberships already coexist. Membership FK deletion cascades from accounts/productions; casting membership FK uses SET NULL. Casting records restrict user deletion. Retention risk is not resolved by adding Adult participation.
+
+Current Student-only participation assumptions: CastingService candidate joins, add/update/finalize guards; CastProductionEnrollmentService guardian-required path; CastingOfferService guardian issue/response; AuditionIntakeBridge and RegistrationIntakeService account linking; production roster audience whitelist; TheatreHistoryService and StudentProfileService self subject selection; casting publication audience and Playbill synchronization. Existing offer `student_user_id` is an FK to users, not a Student-only table: retain its physical name for compatibility.
+
+Safeguarding assumptions intentionally remain restrictive: family pair validation, Family & Pickup and attendance/late-pickup child logistics, guardian forms, confidential review, Student channel restrictions, message attachment/search/unread cutoffs, delivery-time reauthorization. SafeguardedConversationPolicy currently requires staff as well as active guardians; mixed Adult/Student communication must be explicitly extended, never inferred from Adult status. No participant-add endpoint may expose an Adult thread's earlier messages to a new Student.
+
+Other audit surfaces: ProductionContext, ScheduleAudience, archive and task/checklist targeting use explicit audience sets; resource/video channels use generic production membership or explicit audiences. Native MobileApi uses the same offer and message services, but native structured forms/family administration remain incomplete. Manual participant claim/retirement must remain explicit and staff-approved. No name/email matching is introduced.
+
+## Identity and authority
+
+`users.adult_participant` is reviewed participation classification, not an auth role. It grants no permissions. Existing Student role remains the authoritative safeguarded identity and takes precedence over an inconsistent Adult flag. DOB edit never reclassifies anyone. Adult may retain independent guardian/caregiver relationships, volunteer credentials and explicitly assigned staff roles. Disabled accounts cannot be classified or participate.
+
+Classification is an accounts.manage action with locked user state, reviewed DOB (18+), reason and audit. Generic role editing cannot remove Student safeguarding or assign Student to an Adult-classified account. Student-to-Adult transition is deliberately **blocked pending explicit review workflow**; the policy requires account administration plus safeguarding review, identity/age evidence, independent-login readiness, relationship/pickup closure, preserved account/media/credits and frozen historical message cutoffs. Reaching a birthday alone is insufficient. Implementation of that workflow remains an acceptance gate, not a claim of completed transition support.
+
+## Eligibility and concurrency
+
+Migration 093 preserves existing Student-only casting defaults and unrestricted Student ages. Staff explicitly selects Students, Adults or mixed. Bounds are optional/inclusive. Restriction requires a stored visible date; use the production's existing audition date as a proposed UI default, not today's changing date. Completed birthdays use PersonEligibility::ageOn (Feb 29 reaches the next birthday on March 1 in a non-leap year).
+
+ProductionParticipantEligibility returns structured status and eligibility, handles lifecycle/category before Student age exceptions and never grants organizational authority. Exception records are append-only approvals with actor/time/reason and explicit revocation metadata. They waive only age requirements, never production category or guardian safeguards. Writes lock production then account/exception state; exception authorization requires production.manage plus current production staff membership, or Administrator. Settings changes do not remove existing memberships or rewrite historical credits.
+
+## Data and migration safety
+
+Review existing schema/trigger/history before upgrading. Sequence: reconcile approved prerequisites through 092 with the existing RC1 runbook, then separately approve 093. Do not rerun all migrations on populated data; duplicate 069 numbers and base/062 overlap remain. 093 adds two eligibility/participation tables, four production columns, one user column and extends the membership enum; it does not migrate existing participants, grant roles or rewrite offers/publications. Functions (cast/crew/creative) are descriptive and cannot authorize management.
+
+MySQL DDL is not transactional rollback. Before any hosted change take matched code, DB, triggers and private-file backup, rehearse restore, inspect locks/runtime and record statement checksums. After new Adult writes, rollback requires restoring a matched pre-enhancement snapshot in maintenance mode and reconciling subsequent changes; **never shrink the enum or drop tables/columns containing new history**. Do not run old code with new Adult records until compatibility is verified. No hosting migration, workers or deployment performed here.
+
+## Implementation and evidence
+
+Batch 1: additive model, centralized eligibility, reviewed classification and auditable Student age exceptions. Local evidence: 19 pure eligibility checks and 15 real migrated MySQL assertions pass. Migration 093 applied only to disposable `ctsmd_rc1_20261028b`; synthetic test accounts disabled afterward and test productions archived. This is sequential database evidence, not concurrent acceptance. Further batches must wire every registration/intake/casting/enrollment ingress, UI, ordinary Adult and safeguarded mixed conversations, shared history/profile/publication and native API. Source presence does not establish complete parity. Real HTTP, concurrent acceptance, publication consent and physical-device evidence must be recorded before closing the feature.
+
+Publication is always separate consent: Adult classification never approves biography, headshot or public credit. Existing manual entries and published snapshots must remain intact. Preserve revoked guardian cutoffs and reject queued delivery after revocation. Native SDK and dependencies remain unchanged.

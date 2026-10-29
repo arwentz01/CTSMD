@@ -76,6 +76,8 @@ Phase 3: six implementation areas addressed and pushed in focused batches. See t
 
 ## P1 — Verification and workflow completion
 
+- [ ] **Adult participation enhancement (separate from RC1):** implement and verify six batches in [architecture](ADULT_PARTICIPATION_ARCHITECTURE.md), including all ingress enforcement, audited Student transition, casting/enrollment, mixed-age safeguarding, consent/history, web/native parity and real MySQL concurrency. No hosting migration or deployment approved. Existing pilot gates remain open.
+
 - [ ] **Archived viewer revocation:** historical memberships no longer grant archive access to disabled/inactive viewers; active managed student accounts remain eligible (9a2b3b4, 4189333, assertion a526bac). Add database-backed inactive/member/managed student/guardian tests before pilot sign-off.
 
 

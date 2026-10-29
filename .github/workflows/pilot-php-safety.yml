@@ -60,6 +60,8 @@ jobs:
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract
         run: php tests/pilot_lifecycle_write_boundaries.php
+      - name: Participant eligibility birthday and category boundaries
+        run: php tests/adult_participation.php
       - name: Closed-production roster write guards
         run: php tests/pilot_closed_production_roster.php
       - name: Closed-production form write guards
