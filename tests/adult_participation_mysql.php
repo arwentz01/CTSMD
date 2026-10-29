@@ -14,6 +14,10 @@ try{
     $admin=$person('administrator','1980-01-01');$adult=$person('member','1990-01-01');$student=$person('student','2017-01-01');$volunteer=$person('volunteer','1990-01-01');$staff=$person('production_staff','1980-01-01');
     foreach(['mixed','adults'] as $category){$db->prepare("INSERT INTO productions(title,status,lifecycle_stage,participant_category,student_minimum_age,participant_eligibility_date) VALUES(?,'planning','planning',?,10,'2026-10-28')")->execute(['Adult test '.$suffix,$category]);$productions[]=(int)$db->lastInsertId();}
     [$mixed,$adultOnly]=$productions;
+    $denied(fn()=>ProductionParticipantEligibility::saveSettings($db,$mixed,$adult,['participant_category'=>'mixed']),'Settings forged actor denied');
+    $denied(fn()=>ProductionParticipantEligibility::saveSettings($db,$mixed,$admin,['participant_category'=>'mixed','student_minimum_age'=>'9']),'Restricted ages require explicit date');
+    ProductionParticipantEligibility::saveSettings($db,$mixed,$admin,['participant_category'=>'mixed','student_minimum_age'=>'10','participant_eligibility_date'=>'2026-10-28']);
+    $assert((int)$db->query('SELECT student_minimum_age FROM productions WHERE id='.$mixed)->fetchColumn()===10,'Participation settings persisted');
     $denied(fn()=>AdultParticipantService::classify($db,$adult,$adult,true,'Self approval'),'Self classification denied');
     AdultParticipantService::classify($db,$admin,$adult,true,'Reviewed independent Adult participation');
     $assert(ProductionParticipantEligibility::forUser($db,$mixed,$adult)['eligible'],'Reviewed Adult eligible');

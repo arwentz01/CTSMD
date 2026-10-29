@@ -12,6 +12,7 @@ require_once __DIR__ . '/ProductionListOrganizer.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/ProductionCompletionService.php';
 require_once __DIR__ . '/ProductionArchivalWorkflow.php';
+require_once __DIR__.'/ParticipantControls.php';
 
 final class ProductionLifecycleExperience
 {
@@ -61,7 +62,13 @@ final class ProductionLifecycleExperience
             $id = filter_input(INPUT_POST, 'production_id', FILTER_VALIDATE_INT) ?: 0;
             if ($id < 1) throw new RuntimeException('That production could not be found.');
 
-            if (in_array($action,['artwork_save','artwork_remove'],true)) {
+            if($action==='participation_settings'){
+                ProductionParticipantEligibility::saveSettings($db,(int)$id,(int)$user['id'],$_POST);
+                self::flash('success','Participation eligibility saved. Existing cast records were retained.');
+            }elseif(in_array($action,['age_exception_approve','age_exception_revoke'],true)){
+                ProductionParticipantEligibility::exception($db,(int)$id,(int)($_POST['student_user_id']??0),(int)$user['id'],(string)($_POST['reason']??''),$action==='age_exception_revoke');
+                self::flash('success','Student age exception review recorded.');
+            }elseif (in_array($action,['artwork_save','artwork_remove'],true)) {
                 self::saveArtwork($db,$user,(int)$id,$action,(string)($_POST['artwork_role']??''),$_FILES['artwork_upload']??[]);
                 self::flash('success','Production artwork updated.');
             } elseif ($action === 'announcement_publish' || $action === 'announcement_unpublish') {
@@ -264,7 +271,7 @@ final class ProductionLifecycleExperience
     private static function production(PDO $db, int $id): ?array
     {
         if ($id < 1) return null;
-        $stmt = $db->prepare("SELECT p.id,p.title,p.season,p.status,p.is_active,p.activated_at,p.deactivated_at,p.created_at,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,p.archive_after_at,p.lifecycle_override_note,p.lifecycle_automation_paused,p.announcement_published_at,
+        $stmt = $db->prepare("SELECT p.participant_category,p.student_minimum_age,p.student_maximum_age,p.participant_eligibility_date,p.id,p.title,p.season,p.status,p.is_active,p.activated_at,p.deactivated_at,p.created_at,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,p.archive_after_at,p.lifecycle_override_note,p.lifecycle_automation_paused,p.announcement_published_at,
             (SELECT COUNT(*) FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=p.id AND pm.status='active') active_members,
             (SELECT COUNT(*) FROM schedule_items si WHERE si.production_id=p.id) schedule_items,
             (SELECT COUNT(*) FROM volunteer_shifts vs WHERE vs.production_id=p.id) volunteer_shifts,
@@ -321,6 +328,7 @@ final class ProductionLifecycleExperience
         <label><input type="checkbox" name="acknowledge_archive" value="1" required> I understand this will close the active workspace while preserving authorized history.</label>
         <button class="button" type="submit" <?= $archiveBlocked?'disabled':'' ?>>Archive Production</button></form></section>
         <?php endif; ?>
+        <?php ParticipantControls::settings($db,$selected,(string)$_SESSION['production_lifecycle_csrf']); ?>
         <?php if(in_array((string)$selected['lifecycle_stage'],['in_production','performing'],true)): $readiness=ProductionCompletionService::readiness($db,(int)$selected['id']); ?>
         <section class="pl-panel ops-panel"><small>CONTROLLED COMPLETION</small><h3>Review completion readiness</h3><p>Completion makes this production's operational records read-only. Historical records are preserved.</p>
         <ul><?php foreach($readiness as $item): ?><li><?= $esc($item['description']) ?>: <b><?= (int)$item['count'] ?></b> (<?= WorkspaceUI::readinessLabel($item) ?>)</li><?php endforeach; ?></ul><?php $blocked=count(array_filter($readiness,static fn(array $item):bool=>$item['severity']==='blocker' && $item['count']>0))>0; if($blocked): ?><p role="alert"><b>Completion is blocked.</b> Resolve the blocking items before confirming.</p><?php endif; ?>

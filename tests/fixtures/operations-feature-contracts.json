@@ -1,0 +1,12 @@
+{
+    "AccountManagementExperience": {
+        "reason": "Adult participation Batch 2: reviewed classification and production eligibility controls; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "90d6c56545449a808e753e6c2a041968fb090ad3db199ff221478ac1a2cb410e",
+        "forms": "4b3877af05e5e82e08adc5c242cd0df768f35be7c5f176eae83ec934b0ce27b7"
+    },
+    "ProductionLifecycleExperience": {
+        "reason": "Adult participation Batch 2: reviewed classification and production eligibility controls; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "3ee5eda69cd8dadfde9b6b813be8ed672e35b66282b7f612c1c4f8ba3bbd34ef",
+        "forms": "1fb04b92675403c15f2c90feea921b319d0e744693ceb523871180c2c1438f8e"
+    }
+}

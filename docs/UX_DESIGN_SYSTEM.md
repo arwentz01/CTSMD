@@ -1,5 +1,7 @@
 # CTSMD Connect UX design system
 
+Adult participation extension: account classification is a separate Operations panel from authorization roles. Production participation settings reuse `pl-panel`, `pl-detail-form` and `ops-form`, visible labels, native fieldsets/legends and explicit optional age bounds/cutoff help. Age exceptions live in a disclosure with required review reason and visible approval/revocation history. They never imply guardian or administrative authority. No second palette, navigation or decorative interaction was introduced.
+
 ## Phase 3 operational and native adoption
 
 Phase 4 follow-up: closed-form backend guards and legacy structured-submit rejection are now implemented with local API/lifecycle evidence; see [Native Phase 4 acceptance](NATIVE_PHASE4_ACCEPTANCE.md). The Phase 3 findings below remain historical context, not a claim that device or hosted closure acceptance has passed.

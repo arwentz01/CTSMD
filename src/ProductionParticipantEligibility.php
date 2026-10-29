@@ -47,11 +47,30 @@ final class ProductionParticipantEligibility
 
     public static function assertManager(PDO $db,int $actorId,int $productionId):void
     {
+        Auth::clearRequestCache($actorId);
         $q=$db->prepare("SELECT active,account_status FROM users WHERE id=? FOR UPDATE");$q->execute([$actorId]);$actor=$q->fetch();
         if(!$actor||!(int)$actor['active']||$actor['account_status']!=='active'||!in_array('production.manage',Auth::permissions($db,$actorId),true))throw new RuntimeException('Production management permission is required.');
         if(in_array('administrator',Auth::roles($db,$actorId),true))return;
         $q=$db->prepare("SELECT id FROM production_memberships WHERE production_id=? AND user_id=? AND audience_type='staff' AND status='active' FOR UPDATE");$q->execute([$productionId,$actorId]);
         if(!$q->fetchColumn())throw new RuntimeException('Current staff membership in this production is required.');
+    }
+
+    public static function saveSettings(PDO $db,int $productionId,int $actorId,array $input):void
+    {
+        $category=(string)($input['participant_category']??'');
+        if(!in_array($category,['students','adults','mixed'],true))throw new RuntimeException('Choose who can participate.');
+        $bounds=[];
+        foreach(['student_minimum_age','student_maximum_age'] as $field){$value=trim((string)($input[$field]??''));if($value!==''&&(!ctype_digit($value)||(int)$value>120))throw new RuntimeException('Student age limits must be whole numbers from 0 to 120, or blank.');$bounds[$field]=$value===''?null:(int)$value;}
+        if($bounds['student_minimum_age']!==null&&$bounds['student_maximum_age']!==null&&$bounds['student_minimum_age']>$bounds['student_maximum_age'])throw new RuntimeException('Minimum age cannot exceed maximum age.');
+        $date=trim((string)($input['participant_eligibility_date']??''));$parsed=DateTimeImmutable::createFromFormat('!Y-m-d',$date);
+        if($date!==''&&(!$parsed||$parsed->format('Y-m-d')!==$date))throw new RuntimeException('Enter a valid eligibility date.');
+        if(($bounds['student_minimum_age']!==null||$bounds['student_maximum_age']!==null)&&$date==='')throw new RuntimeException('Choose an eligibility date for Student age limits.');
+        $db->beginTransaction();
+        try{
+            ProductionLifecycleGuard::assertWritable($db,$productionId,true);self::assertManager($db,$actorId,$productionId);
+            $db->prepare('UPDATE productions SET participant_category=?,student_minimum_age=?,student_maximum_age=?,participant_eligibility_date=? WHERE id=?')->execute([$category,$bounds['student_minimum_age'],$bounds['student_maximum_age'],$date?:null,$productionId]);
+            self::audit($db,$actorId,$productionId,'settings_updated',['production_id'=>$productionId,'category'=>$category,'bounds'=>$bounds,'date'=>$date]);$db->commit();
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
 
     public static function exception(PDO $db,int $productionId,int $studentId,int $actorId,string $reason,bool $revoke=false):void
