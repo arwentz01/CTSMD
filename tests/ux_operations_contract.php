@@ -5,7 +5,9 @@ declare(strict_types=1);
 function operationsPhpContract(string $source): string
 {
     $source = preg_replace("~require_once\s+__DIR__\s*\.\s*['\"]/WorkspaceUI\.php['\"];~", '', $source);
-    $source = preg_replace('~WorkspaceUI::(?:operationsStyles|styles)\(\$basePath\);~', '', $source);
+    $source = preg_replace('~WorkspaceUI::(?:operationsStyles|styles)\(\$(?:basePath|base)\);~', '', $source);
+    $source = str_replace("<?php if(!\$print) {  } ?>", '', $source);
+    $source = str_replace("<?=\$print?'':' ux-workspace ux-operations'?>", '', $source);
     // Hub decoration removed from inline HTML; these expressions never made decisions.
     $source = str_replace(['$e($eyebrow)', '$e($item[\'eyebrow\'])', '$e($item[\'icon\'])'], '', $source);
     $tokens = [];

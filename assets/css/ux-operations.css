@@ -44,6 +44,23 @@
 .ux-operations :is(.acct-panel-heading,.acct-section-head,.people-panel header,.regops-intake-card) > small { color:var(--ux-muted); font-size:13px; letter-spacing:0; font-weight:500; }
 .ux-operations :is(.acct-family-list h4,.people-help) { font-size:13px; letter-spacing:0; text-transform:none; color:var(--ux-muted); }
 .ux-operations :is(.acct-list .op-mobile-label,.regops-form label span) { color:var(--ux-muted); }
+/* Restricted review remains a record/decision workspace, not a promotional hero. */
+.ux-operations :is(.sp-card,.sgc-panel,.safe-panel,.resume-panel) > small,
+.ux-operations :is(.sp-card,.sgc-panel,.safe-panel) > header small { color:var(--ux-muted); font-size:13px; font-weight:500; letter-spacing:0; }
+.ux-operations .sgdm-hero { display:block; }
+.ux-operations .sgdm-hero h1 { font:650 24px/1.2 var(--ux-font,system-ui,sans-serif); color:var(--ux-ink); margin:6px 0; }
+.ux-operations .sgdm-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.ux-operations .sgdm-filters label { display:grid; gap:6px; }
+.ux-operations :is(.sp-grid,.sgc-layout,.safe-layout,.safe-review-layout,.resume-builder-grid) { gap:20px; align-items:start; }
+.ux-operations :is(.history-seal,.history-marker) { color:var(--ux-wine); background:var(--ux-ivory); }
+.ux-operations .resume-tools { border-radius:12px; padding:20px; background:var(--ux-paper); color:var(--ux-ink); box-shadow:none; }
+.ux-operations .resume-tools h2 { font:650 22px/1.3 var(--ux-font,system-ui,sans-serif); max-width:60ch; }
+.ux-operations :is(.resume-tools,.resume-panel) small { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
+.ux-operations .resume-panel form { display:grid; gap:12px; }
+.ux-operations .resume-panel label { display:grid; gap:6px; }
+.ux-operations .sgc-facts dt { color:var(--ux-muted); }
+.ux-operations .history-seal :is(b,span,strong,small) { color:var(--ux-wine); font-size:13px; letter-spacing:0; }
+.ux-operations :is(.resume-tools p,.resume-sheet h3,.history-card > small) { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
 .ux-operations .ops-page :is(.op-table-primary,.op-table-row) { overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .ux-operations .ops-page { padding:16px; }
@@ -55,5 +72,6 @@
  .ux-operations .ops-toolbar > * { min-width:0; max-width:100%; }
  .ux-operations :is(.regops-form,.team-form) { padding:16px; }
  .ux-operations .regops-intake-grid { grid-template-columns:minmax(0,1fr); }
+ .ux-operations :is(.sp-grid,.sgc-layout,.safe-layout,.safe-review-layout,.resume-builder-grid,.sgdm-filters) { grid-template-columns:minmax(0,1fr); }
 }
 @media print { .ux-operations .ops-page { max-width:none; padding:0; } }
