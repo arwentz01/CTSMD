@@ -78,3 +78,48 @@
  .pl-management-anchor > .pl-panel > .pl-detail-form > fieldset { grid-template-columns:minmax(0,1fr); padding:12px; }
  .pl-management-anchor > .pl-panel > .pl-detail-form > fieldset > button { width:100%; }
 }
+
+
+/* Edit-in-context: overview and management drawers */
+.ux-operations .pl-page:has(.pl-manage-nav) { gap: 16px; }
+.pl-management-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; scroll-margin-top:105px; }
+.pl-summary-card,.pl-management-row { background:#fff; border:1px solid var(--ux-line,#e4dcd5); border-radius:12px; padding:20px; min-width:0; }
+.pl-summary-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.pl-summary-head small { display:block; font-size:11px; font-weight:750; color:var(--ux-muted,#685d59); letter-spacing:.045em; }
+.pl-summary-head h3 { margin:4px 0 8px; font-size:18px; line-height:1.3; }
+.pl-summary-head p { margin:0; color:var(--ux-muted,#685d59); font-size:13px; }
+.pl-manage-button { flex:0 0 auto; cursor:pointer; border:1px solid var(--ux-control,#8d7d75); background:#fff; color:var(--ux-wine,#8b233b); padding:7px 14px; min-height:38px; font:700 13px/1.2 inherit; border-radius:7px; }
+.pl-manage-button:hover { background:var(--ux-ivory,#f0eae3); }
+.pl-summary-facts { margin:8px 0 0; display:grid; gap:0; }
+.pl-summary-facts > div { display:grid; grid-template-columns:minmax(100px,35%) minmax(0,1fr); gap:10px; padding:8px 0; border-top:1px solid var(--ux-line,#e4dcd5); }
+.pl-summary-facts dt { color:var(--ux-muted,#685d59); font-size:12px; }
+.pl-summary-facts dd { margin:0; font-size:13px; font-weight:650; overflow-wrap:anywhere; }
+.pl-management-row { display:block; scroll-margin-top:105px; }
+.pl-management-row .pl-summary-facts { display:block; font-size:13px; margin-top:8px; }
+.pl-operations-section { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; scroll-margin-top:105px; }
+.pl-operations-heading { padding-top:8px; border-top:1px solid var(--ux-line,#e4dcd5); }
+.pl-operations-heading h3 { font-size:18px; margin:10px 0 4px; }
+.pl-operations-heading p { margin:0; color:var(--ux-muted,#685d59); font-size:13px; }
+.pl-operations-section > aside { max-width:none; }
+.pl-manage-drawer { position:fixed; inset:0 0 0 auto; width:min(560px,100vw); max-width:100vw; height:100dvh; max-height:100dvh; margin:0; padding:0; border:0; border-left:1px solid var(--ux-line,#e4dcd5); border-radius:0; background:var(--ux-paper,#fff); color:var(--ux-ink,#292323); box-shadow:-16px 0 50px rgba(25,15,20,.18); overflow:auto; }
+.pl-manage-drawer::backdrop { background:rgba(18,13,17,.45); }
+.pl-drawer-head { position:sticky; top:0; z-index:2; padding:18px 22px; border-bottom:1px solid var(--ux-line,#e4dcd5); background:#fff; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.pl-drawer-head small { font-size:11px; color:var(--ux-muted,#685d59); }
+.pl-drawer-head h2 { font-size:20px; margin:3px 0 0; }
+.pl-drawer-close { display:grid; place-items:center; background:transparent; color:var(--ux-ink,#292323); border:1px solid var(--ux-line,#e4dcd5); border-radius:8px; min-width:40px; min-height:40px; font-size:24px; cursor:pointer; }
+.pl-drawer-body { padding:22px; }
+.pl-drawer-body > .pl-panel { border:0 !important; padding:0 !important; box-shadow:none; }
+.pl-drawer-body .pl-detail-form { display:grid; grid-template-columns:minmax(0,1fr) !important; gap:14px; margin:0; }
+.pl-drawer-body .pl-lifecycle-form > * { grid-column:1/-1; }
+.pl-drawer-body .pl-panel > small,.pl-drawer-body .pl-panel > h3 { display:none; }
+.pl-drawer-body .pl-management-anchor { scroll-margin:0; }
+.pl-drawer-body .pl-management-anchor .pl-panel { border:0; padding:0; }
+.pl-drawer-body .pl-management-anchor fieldset { grid-template-columns:minmax(0,1fr) !important; }
+.pl-drawer-body :is(input,select,textarea) { max-width:100%; }
+.pl-drawer-body .pl-participation-editor { display:block; }
+@media (max-width:760px) {
+ .pl-management-summary { grid-template-columns:minmax(0,1fr); }
+ .pl-summary-card,.pl-management-row { padding:16px; }
+ .pl-manage-drawer { width:100vw; border-left:0; }
+ .pl-drawer-head,.pl-drawer-body { padding:16px; }
+}
