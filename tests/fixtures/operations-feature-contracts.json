@@ -33,5 +33,10 @@
         "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
         "php": "30dafc2343601eb6f72bc80525d4f23d61c336855449c8fc59f522a3193aacbd",
         "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
+    },
+    "PlaybillExperience": {
+        "reason": "Adult participation: performer consent validation wording",
+        "php": "da59fb92cb09926f5d04460760b0e854ee62009e401cf9a9e4a4dac6ddc4fbcf",
+        "forms": "445a89c9f7f3570fb32e4f133a20081e94ad362d9190a7a4a731a4251fd07ce9"
     }
 }

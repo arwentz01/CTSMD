@@ -5,8 +5,8 @@ require_once __DIR__.'/TheatreHistoryService.php';
 require_once __DIR__.'/ProductionParticipantEligibility.php';
 
 /**
- * Enroll an accepted cast student and their currently active parent/guardian
- * relationships. Must be invoked inside the caller's transaction.
+ * Enroll an accepted performer. Students retain currently active parent/guardian
+ * enrollment; reviewed Adults enroll independently. Uses the caller's transaction.
  * Never enroll pickup-only contacts or unapproved relationship requests.
  */
 final class CastProductionEnrollmentService {

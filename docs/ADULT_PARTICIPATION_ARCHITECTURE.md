@@ -65,10 +65,10 @@ Local automated evidence on fresh disposable `ctsmd_rc1_adult_20261028` (all mig
 | Check | Result | Scope |
 |---|---|---|
 | Eligibility boundaries | 19 pass | Pure rules, not SQL |
-| Enhancement integration | 73 pass | Real MySQL/services; identity, exceptions, offers, functions, consent, manual transfer, independent guardian resource/Community audiences, transition and stale web/native credentials |
+| Enhancement integration | 76 pass | Real MySQL/services; identity, exceptions, offers, Staff/Adult coexistence, functions, consent, manual transfer, guardian audiences, archived profile preservation, transition and stale credentials |
 | Concurrent acceptance/closure/exceptions/role/revocation | 16 pass | Real separate PHP processes behind MySQL locks; one winner, closure rollback, serialized exceptions, removed-staff denial and guardian revocation/send with preserved cutoff |
 | Safeguarding regression | 36 pass | Real MySQL transaction rolled back |
-| Web/native HTTP regression | 132 pass | Seven persona categories/two productions, Adult Guardian native offer self-acceptance and website handoffs |
+| Web/native HTTP regression | 139 pass | Seven persona categories/two productions, Adult Guardian native offer acceptance, real private headshot upload/authorized bytes/outside denial, public casting excludes private bio/DOB |
 | Native TypeScript and integration | Pass / 7 pass | Existing SDK/dependencies unchanged |
 | Android and iOS bundle export | Pass | Bundles are not device verification |
 | Expo dependency compatibility | **Blocked** | SDK 58.0.20 now reports expected 58.0.21 and compatible patch increments for six modules; no upgrade performed under the explicit boundary |
@@ -84,3 +84,5 @@ Adult classification removal requires retiring active Adult memberships first, m
 Repeatable commands (explicit local test schema environment is mandatory for SQL/HTTP suites): `php tests/adult_participation.php`, `php tests/adult_participation_mysql.php`, `php tests/adult_participation_concurrency.php`, `php tests/safeguarded_conversation.php`, `php tests/rc1_acceptance.php`. CI invokes the same SQL/HTTP checks after a fresh bootstrap. Native checks use `npm run typecheck`, `npm run test:integration`, `npx expo install --check` and separate Android/iOS exports. No test accepts an arbitrary remote URL or real account credentials.
 
 Current manifest/preflight explicitly identify this branch as `CTSMD-ADULT-PARTICIPATION-REVIEW`, scope `adult_enhancement_separate_from_rc1`, with deployment/worker authorization false. Reusing RC1 regression tooling is not approval to combine this enhancement with the original RC1 deployment. Offline Expo checking reports dependencies up to date but warns its validation is unreliable; it does not replace the failing online compatibility gate.
+
+Verified runtime revision `dc61765`: [web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013890) and [isolated MySQL/HTTP CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013964) passed. [Expo CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013765) passed TypeScript and failed dependency compatibility, skipping its later native contracts/exports; those passed locally. Follow-up CI orders independent native contracts/exports before the same unchanged compatibility gate, so the gate stays blocking without hiding other verification. Read-only clean-revision preflight passed with 113 tables, 27 triggers, matching files and no declared-contract issues on the disposable schema. This says nothing about the unmigrated default demo or hosted schema.

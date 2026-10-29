@@ -7,10 +7,11 @@ require_once dirname(__DIR__).'/src/CalendarService.php';
 require_once dirname(__DIR__).'/src/AdultParticipantService.php';
 require_once dirname(__DIR__).'/src/CastingService.php';
 require_once dirname(__DIR__).'/src/CastingOfferService.php';
+require_once dirname(__DIR__).'/src/CastingCommunicationService.php';
 if(PHP_SAPI!=='cli'||getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Disposable loopback rc1-test database required. No live target supported.');
 $root=dirname(__DIR__);$db=Database::connect($root);
 if(!ReleaseCandidate::inspect($db,$root)['schema_matches_declared_contracts'])throw new RuntimeException('Migrate a fresh disposable schema with rc1_bootstrap.php first.');
-$suffix=bin2hex(random_bytes(6));$password=bin2hex(random_bytes(24));$users=[];$tokens=[];$cookies=[];$checks=[];$process=null;$pipes=[];
+$suffix=bin2hex(random_bytes(6));$password=bin2hex(random_bytes(24));$users=[];$tokens=[];$cookies=[];$checks=[];$process=null;$pipes=[];$createdAssets=[];$uploadPath=null;$testStorage=sys_get_temp_dir().'/ctsmd-rc1-files-'.$suffix;
 $assert=static function(bool $ok,string $label)use(&$checks):void{if(!$ok)throw new RuntimeException('FAIL: '.$label);$checks[]=$label;};
 $insert=static function(string $table,array $values)use($db):int{
  $columns=array_keys($values);$q=$db->prepare('INSERT INTO '.$table.' ('.implode(',',$columns).') VALUES ('.implode(',',array_fill(0,count($columns),'?')).')');$q->execute(array_values($values));return(int)$db->lastInsertId();
@@ -42,7 +43,7 @@ try{
  $message=$insert('messages',['conversation_id'=>$thread,'sender_user_id'=>$users['Staff'],'body'=>'RC1 historical fixture','created_at'=>date('Y-m-d H:i:s')]);
  // Local server cannot bind or route to a remote deployment. Credentials remain memory-only.
  $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);if(!$socket)throw new RuntimeException('No loopback port.');$address=stream_socket_get_name($socket,false);fclose($socket);$port=(int)substr(strrchr($address,':'),1);$base='http://127.0.0.1:'.$port;
- $env=getenv();$env['MAIL_TRANSPORT']='log';$env['APP_DEBUG']='false';$env['APP_URL']=$base;
+ $env=getenv();$env['MAIL_TRANSPORT']='log';$env['APP_DEBUG']='false';$env['APP_URL']=$base;$env['STORAGE_PATH']=$testStorage;
  $process=proc_open([PHP_BINARY,'-d','display_errors=0','-S','127.0.0.1:'.$port,'-t',$root,$root.'/tests/fixtures/rc1-router.php'],[['pipe','r'],['file','/dev/null','a'],['file','/dev/null','a']],$pipes,$root,$env);
  if(!is_resource($process))throw new RuntimeException('Cannot start test server.');fclose($pipes[0]);
  for($attempt=0;$attempt<50;$attempt++){if($probe=@fsockopen('127.0.0.1',$port)){fclose($probe);break;}usleep(100000);}
@@ -80,6 +81,27 @@ try{
  }
  $assert($request('Guardian','/student-profile?student='.$users['Guardian'])['status']===200,'Adult website performer profile handoff works');
  $assert($request('Guardian','/theatre-history?student='.$users['Guardian'])['status']===200,'Adult website history handoff works');
+ // Real multipart upload and private-byte authorization, with a synthetic pixel
+ // in a unique temporary storage root, never the configured private file store.
+ $profile=$request('Guardian','/student-profile?student='.$users['Guardian']);
+ $uploadPath=tempnam(sys_get_temp_dir(),'ctsmd-rc1-upload-');
+ $pixel=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jBasAAAAASUVORK5CYII=',true);file_put_contents($uploadPath,$pixel);
+ $curl=curl_init($base.'/student-profile?student='.$users['Guardian']);
+ curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_TIMEOUT=>15,CURLOPT_PROTOCOLS=>CURLPROTO_HTTP,CURLOPT_HTTPHEADER=>['Cookie: '.implode('; ',$cookies['Guardian'])],CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>['csrf_token'=>$csrf($profile['body'],'student_id',(string)$users['Guardian']),'student_id'=>$users['Guardian'],'action'=>'save_profile','date_of_birth'=>'1980-01-01','short_bio'=>'Private Adult profile fixture','headshot'=>new CURLFile($uploadPath,'image/png','fixture.png')]]);
+ curl_exec($curl);$uploadStatus=curl_getinfo($curl,CURLINFO_RESPONSE_CODE);curl_close($curl);
+ $assert($uploadStatus===303,'Adult uploads headshot through authenticated website');
+ $key=$db->query('SELECT v.storage_key FROM student_profiles sp JOIN stored_file_versions v ON v.stored_file_id=sp.headshot_stored_file_id WHERE sp.user_id='.$users['Guardian'].' ORDER BY v.id DESC LIMIT 1')->fetchColumn();
+ if(is_string($key)&&preg_match('#^\d{4}/\d{2}/[a-f0-9]{40}\.png$#',$key))$createdAssets[]=$testStorage.'/'.$key;
+ $assert(count($createdAssets)===1&&is_file($createdAssets[0]),'Headshot stored only in disposable private storage');
+ $image=$request('Guardian','/student-profile/headshot?student='.$users['Guardian']);
+ $assert($image['status']===200&&hash('sha256',$image['body'])===hash('sha256',$pixel),'Owner receives exact private headshot bytes');
+ $assert($request('Volunteer','/student-profile/headshot?student='.$users['Guardian'])['status']===404,'Unrelated active account cannot fetch private headshot');
+ $assert($request('Anonymous','/student-profile/headshot?student='.$users['Guardian'])['status']===303,'Anonymous private headshot request requires sign-in');
+ CastingCommunicationService::savePublication($db,$productions['A'],$users['Administrator'],'cast','Reviewed Adult cast','',true);
+ $public=CastingCommunicationService::setPublicPage($db,$productions['A'],$users['Administrator'],true);
+ $publicPage=$request('Anonymous','/public/casting?slug='.$public['slug']);
+ $assert($publicPage['status']===200&&str_contains($publicPage['body'],'Adult character'),'Published casting route includes approved Adult role');
+ $assert(!str_contains($publicPage['body'],'Private Adult profile fixture')&&!str_contains($publicPage['body'],'1980-01-01'),'Public casting excludes private biography and DOB');
  // Staff is intentionally broad under existing organization-wide policy; no invented scope.
  foreach(['Administrator','Staff','Guardian','FormerGuardian','Student','Caregiver','Volunteer'] as $label){
   foreach(['/admin/accounts','/admin/forms','/safeguarding'] as $route){$allowed=$label==='Administrator'||($label==='Staff'&&$route==='/admin/forms');$assert($request($label,$route)['status']===($allowed?200:403),$label.' direct route '.$route);}
@@ -167,6 +189,8 @@ try{
  echo json_encode(['result'=>'PASS','checks'=>count($checks),'personas'=>['Administrator','Staff','Guardian','FormerGuardian','Student','Caregiver','Volunteer'],'productions'=>2,'coverage'=>$checks,'limitations'=>['Local HTTP and MySQL, not hosted Apache/TLS or device verification.','Staff policy is currently organization-wide.','Native guardian child forms remain unavailable, explicitly tested fail-closed.','Volunteer capacity/approval races and full closure concurrency require additional acceptance.']],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)."\n";
 }finally{
  if(is_resource($process)){proc_terminate($process);proc_close($process);}
+ foreach($createdAssets as $asset)if(str_starts_with($asset,$testStorage.'/')&&is_file($asset))unlink($asset);
+ if(is_string($uploadPath)&&is_file($uploadPath))unlink($uploadPath);
  // Keep isolated fixture history for diagnosis, but make every fake login unusable.
  foreach(['Student','StudentB','Guardian','FormerGuardian','Caregiver','Volunteer','Staff','Administrator'] as $label)if(isset($users[$label])){
   $db->prepare('UPDATE auth_mobile_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=:id')->execute(['id'=>$users[$label]]);

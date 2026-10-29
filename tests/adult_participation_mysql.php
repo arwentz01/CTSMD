@@ -70,6 +70,12 @@ try{
     CastingOfferService::respond($db,$adult,CastingOfferService::issue($db,$adultOnly,$second,$admin),'accepted','');
     $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===2,'Independent multi-production participation');
     $denied(fn()=>AdultParticipantService::classify($db,$admin,$adult,false,'Remove classification before cast cleanup'),'Adult classification removal cannot leave active Adult memberships');
+    AdultParticipantService::classify($db,$admin,$staff,true,'Reviewed Staff performer identity independently');
+    $db->prepare("INSERT INTO production_memberships(production_id,user_id,audience_type,status) VALUES(?,?,'staff','active')")->execute([$mixed,$staff]);
+    $staffRecord=CastingService::add($db,$mixed,$admin,$staff);CastingService::update($db,$mixed,$admin,$staffRecord,['casting_status'=>'offered','role_title'=>'Staff performer']);
+    CastingOfferService::respond($db,$staff,CastingOfferService::issue($db,$mixed,$staffRecord,$admin),'accepted','');
+    $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$mixed AND user_id=$staff AND status='active' AND audience_type IN ('staff','adult')")->fetchColumn()===2,'Staff performer acceptance preserves separate Staff and Adult memberships');
+    $assert(in_array('production_staff',Auth::roles($db,$staff),true),'Adult acceptance preserves explicitly granted Staff role');
     $studentRecord=CastingService::add($db,$mixed,$admin,$student);CastingService::update($db,$mixed,$admin,$studentRecord,['casting_status'=>'offered','role_title'=>'Tiny Tim']);
     $studentOffer=CastingOfferService::issue($db,$mixed,$studentRecord,$admin);CastingOfferService::respond($db,$adult,$studentOffer,'accepted','');
     $assert(CastingResultDeliveryPolicy::allows($db,$studentRecord,$adult,'cast'),'Current guardian eligible for queued casting result');
@@ -149,7 +155,10 @@ try{
     $assert(Auth::currentUser($db)===null,'Transition invalidates stale web session');
     $_SERVER['HTTP_AUTHORIZATION']='Bearer '.$rawToken;
     $assert((new ReflectionMethod(MobileApi::class,'bearerUser'))->invoke(null,$db)===null,'Transition invalidates stale native bearer');
+    $archivedProfile=$db->query('SELECT * FROM playbill_cast_profiles WHERE id='.$profileId)->fetch();
     $db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived' WHERE id=?")->execute([$adultOnly]);
+    PlaybillEnhancementService::syncCastProfiles($db,$playbill,$adultOnly,$admin);
+    $assert($db->query('SELECT * FROM playbill_cast_profiles WHERE id='.$profileId)->fetch()===$archivedProfile,'Archived Playbill sync preserves the exact profile snapshot');
     $assert(!ProductionParticipantEligibility::forUser($db,$adultOnly,$adult)['eligible'],'Archived production denied');
     $db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$adult]);
     $assert(!ProductionParticipantEligibility::forUser($db,$mixed,$adult)['eligible'],'Disabled Adult denied');
