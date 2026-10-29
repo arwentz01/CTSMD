@@ -31,11 +31,17 @@ $root = dirname(__DIR__);
 $inventory = json_decode(file_get_contents($root.'/tests/fixtures/operations-routes.json'), true, flags: JSON_THROW_ON_ERROR);
 $contracts = json_decode(file_get_contents($root.'/tests/fixtures/operations-php-contracts.json'), true, flags: JSON_THROW_ON_ERROR);
 $front = file_get_contents($root.'/front.php');
+$registered = [];
+preg_match_all("~\\['(\\w+)',\\[([^\\]]+)\\]~", $front, $entries, PREG_SET_ORDER);
+foreach ($entries as $entry) {
+    preg_match_all("~'(/[^']+)'~", $entry[2], $routes);
+    foreach ($routes[1] as $route) $registered[$route] ??= $entry[1];
+}
 $count = 0;
 foreach ($contracts as $owner => $hash) {
     $source = file_get_contents($root.'/src/'.$owner.'.php');
     if (!hash_equals($hash, operationsPhpContract($source))) throw new RuntimeException($owner.': PHP behavior changed; review against c6c7852.');
-    if (preg_match('/ops-(page|heading|panel|form) ops-\1\b/', $source)) throw new RuntimeException($owner.': duplicate component adoption.');
+    if (preg_match('/(?<![a-z0-9-])ops-(page|heading|panel|form) ops-\1\b/', $source)) throw new RuntimeException($owner.': duplicate component adoption.');
     if (preg_match('/(WorkspaceUI::operationsStyles\([^;]+;\s*\?>)\s*<\?php\s*WorkspaceUI::operationsStyles/', $source)) throw new RuntimeException($owner.': duplicate style/script inclusion.');
     ++$count;
 }
@@ -44,6 +50,15 @@ foreach (['fetch(', 'XMLHttpRequest', '.submit(', '.requestSubmit('] as $mutatio
     if (str_contains($script, $mutation)) throw new RuntimeException('Table enhancement must not submit or request data.');
 }
 foreach ($inventory['rows'] as $row) {
-    if (!str_contains($front, "'".$row['route']."'")) throw new RuntimeException('Unregistered route in inventory: '.$row['route']);
+    if (($registered[$row['route']] ?? null) !== $row['owner']) throw new RuntimeException('Dispatch-order owner mismatch: '.$row['route']);
+    if ($row['kind'] === 'screen') {
+        $owner = $row['renderOwner'] ?? $row['owner'];
+        $source = file_get_contents($root.'/src/'.$owner.'.php');
+        foreach (['WorkspaceUI::operationsStyles(', 'ux-operations', 'ops-page'] as $adoption) {
+            if (!str_contains($source, $adoption)) throw new RuntimeException($row['route'].': missing explicit presentation adoption '.$adoption);
+        }
+        // Do not mistake legacy "regops-page" / "emailops-page" for an ops-page class token.
+        if (!preg_match('~class="(?:[^"\r\n]* )?ops-page(?: |")~', $source)) throw new RuntimeException($row['route'].': missing exact ops-page token.');
+    }
 }
 echo "PASS: $count Operations renderers preserve baseline PHP behavior; registered-route inventory checked. Presentation and actual interactions require browser tests.\n";

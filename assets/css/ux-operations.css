@@ -4,10 +4,10 @@
 .ux-operations .unified-title { min-width:0; }
 .ux-operations .unified-title h1 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ux-operations .ops-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-block:0 20px; padding:0; border:0; border-radius:0; background:none; box-shadow:none; color:var(--ux-ink); }
-.ux-operations .ops-heading h2 { margin:0 0 6px; font:650 24px/1.2 var(--ux-font,system-ui,sans-serif); letter-spacing:-.02em; color:var(--ux-ink); }
+.ux-operations .ops-heading h2 { margin:0 0 6px; font:650 24px/1.2 var(--font-sans,system-ui,sans-serif); letter-spacing:-.02em; color:var(--ux-ink); }
 .ux-operations .ops-heading p { max-width:75ch; margin:0; color:var(--ux-muted); font-size:14px; line-height:1.5; }
 .ux-operations .ops-panel { padding:20px; border:1px solid var(--ux-line); border-radius:12px; background:var(--ux-paper); box-shadow:none; color:var(--ux-ink); }
-.ux-operations .ops-panel h3 { font:650 17px/1.3 var(--ux-font,system-ui,sans-serif); letter-spacing:-.01em; }
+.ux-operations .ops-panel h3 { font:650 17px/1.3 var(--font-sans,system-ui,sans-serif); letter-spacing:-.01em; }
 .ux-operations .ops-page :is(input,select,textarea) { max-width:100%; min-width:0; box-sizing:border-box; font:inherit; color:var(--ux-ink); accent-color:var(--ux-wine); caret-color:var(--ux-wine); }
 .ux-operations .ops-page :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea) { min-height:40px; border:1px solid var(--ux-control); border-radius:7px; background:var(--ux-paper); padding:9px 11px; }
 .ux-operations .ops-page :is(input[type=date],input[type=time],input[type=datetime-local]) { width:100%; }
@@ -48,13 +48,13 @@
 .ux-operations :is(.sp-card,.sgc-panel,.safe-panel,.resume-panel) > small,
 .ux-operations :is(.sp-card,.sgc-panel,.safe-panel) > header small { color:var(--ux-muted); font-size:13px; font-weight:500; letter-spacing:0; }
 .ux-operations .sgdm-hero { display:block; }
-.ux-operations .sgdm-hero h1 { font:650 24px/1.2 var(--ux-font,system-ui,sans-serif); color:var(--ux-ink); margin:6px 0; }
+.ux-operations .sgdm-hero h1 { font:650 24px/1.2 var(--font-sans,system-ui,sans-serif); color:var(--ux-ink); margin:6px 0; }
 .ux-operations .sgdm-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
 .ux-operations .sgdm-filters label { display:grid; gap:6px; }
 .ux-operations :is(.sp-grid,.sgc-layout,.safe-layout,.safe-review-layout,.resume-builder-grid) { gap:20px; align-items:start; }
 .ux-operations :is(.history-seal,.history-marker) { color:var(--ux-wine); background:var(--ux-ivory); }
 .ux-operations .resume-tools { border-radius:12px; padding:20px; background:var(--ux-paper); color:var(--ux-ink); box-shadow:none; }
-.ux-operations .resume-tools h2 { font:650 22px/1.3 var(--ux-font,system-ui,sans-serif); max-width:60ch; }
+.ux-operations .resume-tools h2 { font:650 22px/1.3 var(--font-sans,system-ui,sans-serif); max-width:60ch; }
 .ux-operations :is(.resume-tools,.resume-panel) small { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
 .ux-operations .resume-panel form { display:grid; gap:12px; }
 .ux-operations .resume-panel label { display:grid; gap:6px; }
@@ -74,7 +74,7 @@
 .ux-operations .pa-panel header h3 { font-size:17px; }
 /* Participation: predictable review headers and readable coverage, not decorative metrics. */
 .ux-operations :is(.vd-hero.admin,.vsm-head) { background:var(--ux-ivory); color:var(--ux-ink); border-radius:12px; padding:20px; box-shadow:none; }
-.ux-operations :is(.vd-hero.admin,.vsm-head) h2 { font:650 24px/1.25 var(--ux-font,system-ui,sans-serif); color:var(--ux-ink); max-width:55ch; }
+.ux-operations :is(.vd-hero.admin,.vsm-head) h2 { font:650 24px/1.25 var(--font-sans,system-ui,sans-serif); color:var(--ux-ink); max-width:55ch; }
 .ux-operations :is(.vd-hero.admin p,.vsm-side small,.vsm-roster h3,.vsm-roster-list small,.vol-capacity span,.prod-impact-card span,.att-person-id small) { color:var(--ux-muted); }
 .ux-operations :is(.vd-hero.admin small,.vsm-side small,.vsm-roster > header small,.vsm-roster > small,.prod-impact-card > small,.att-roster-section-head small) { font-size:13px; letter-spacing:0; color:var(--ux-muted); }
 .ux-operations :is(.vsm-head > a,.sc-hero > a) { background:var(--ux-paper); color:var(--ux-wine); border:1px solid var(--ux-control); border-radius:7px; }
@@ -92,7 +92,7 @@
 .ux-operations .pb2-card label { display:grid; gap:6px; min-width:0; }
 .ux-operations .pb2-form-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
 .ux-operations .pb2-card .pb2-check { display:flex; align-items:start; }
-.ux-operations .pb-card h3 { font-family:var(--ux-font,system-ui,sans-serif); font-size:17px; }
+.ux-operations .pb-card h3 { font-family:var(--font-sans,system-ui,sans-serif); font-size:17px; }
 .ux-operations :is(.push-diagnostic-actions,.push-diagnostic-grid) { gap:12px; }
 .ux-operations :is(.push-install h3,.push-devices h3,.push-diagnostics h3) { font-size:17px; }
 .ux-operations :is(.orgres-form,.mod-form,.ca-form) { padding:20px; border-radius:12px; border:1px solid var(--ux-line); box-shadow:none; }
@@ -107,6 +107,12 @@
 .ux-operations .pb2-card-heading small { color:var(--ux-muted); font-size:13px; font-weight:500; letter-spacing:0; }
 .ux-operations .pb2-card .pb2-radio-option { display:flex; align-items:flex-start; min-height:44px; gap:12px; }
 .ux-operations .pb2-card input:is([type=radio],[type=checkbox]) { width:20px; flex:0 0 20px; min-height:20px; margin:2px 0; }
+/* Measured legacy label fixes, including labels nested inside panel headings. */
+.ux-operations :is(.acct-section-head small,.pa-muted,.pa-readonly-note,.pg-roster small,.production-member-id small,.approval-admin-head strong span,.sc-groups b,.sc-groups small,.sc-form label > span,.resource-admin-row em,.pb-roster > small,.df-editor > small) { color:var(--ux-muted); }
+.ux-operations :is(.acct-section-head small,.approval-admin-head strong span,.pb-roster > small,.df-editor > small) { font-size:13px; letter-spacing:0; font-weight:500; }
+.ux-operations .pa-panel > header > span { color:var(--ux-muted); }
+/* Legacy mobile input rules force pale important borders; restore the approved control edge. */
+.ux-operations .ops-page :is(input,select,textarea):not([type=hidden]):not([type=checkbox]):not([type=radio]) { border-color:var(--ux-control) !important; }
 .ux-operations .ops-page :is(.op-table-primary,.op-table-row) { overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .ux-operations .ops-page { padding:16px; }
@@ -123,5 +129,8 @@
  .ux-operations :is(.file-pair,.resource-pair,.production-people-layout,.pg-layout) { grid-template-columns:minmax(0,1fr); }
  .ux-operations :is(.pb2-grid,.pb2-cast-fields,.pb-admin-grid,.rl-fields) { grid-template-columns:minmax(0,1fr); }
  .ux-operations .pb2-field-wide { grid-column:auto; }
+ /* Legacy feature layers use important inherited fonts/heights. Keep the approved phone controls. */
+ body.ux-operations .unified-main .ops-page :is(button,.button,.btn,input,select,textarea):not([type=hidden]):not([type=checkbox]):not([type=radio]) { min-height:44px !important; }
+ body.ux-operations .unified-main .ops-page :is(input,select,textarea):not([type=hidden]):not([type=checkbox]):not([type=radio]) { font-size:16px !important; }
 }
 @media print { .ux-operations .ops-page { max-width:none; padding:0; } }
