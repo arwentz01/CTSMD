@@ -85,6 +85,8 @@ try{
     $assert(SafeguardedConversationPolicy::canReceiveLive($db,$thread,$admin),'Mixed conversation includes Student guardian');
     $assert(SafeguardedConversationPolicy::canReceiveLive($db,$thread,$adult),'Authorized Adult receives mixed conversation');
     $assert($db->query('SELECT conversation_type FROM conversations WHERE id='.$thread)->fetchColumn()==='safeguarded','Adult to Student uses safeguarded thread');
+    $noProductionThread=CommunicationExperience::mobileCreateConversation($db,['id'=>$volunteer,'roles'=>['volunteer'],'permissions'=>[]],$messageStudent,'Platform conversation','No shared production required');
+    $assert(SafeguardedConversationPolicy::canReceiveLive($db,$noProductionThread,$volunteer),'Active platform account without shared production can communicate with guardian inclusion');
     $direct=CommunicationExperience::mobileCreateConversation($db,$initiator,$volunteer,'Adult conversation','Ordinary conversation');
     $assert($db->query('SELECT conversation_type FROM conversations WHERE id='.$direct)->fetchColumn()==='direct','Adult to Adult ordinary conversation');
     $denied(fn()=>$db->prepare("INSERT INTO conversation_participants(conversation_id,user_id,participant_role,guardian_required) VALUES(?,?,'student',0)")->execute([$direct,$student]),'Student cannot inherit Adult direct history');
@@ -94,7 +96,7 @@ try{
     $assert($db->query('SELECT status FROM production_cast_offers WHERE id='.$offer)->fetchColumn()==='accepted','Roster removal preserves accepted offer history');
     $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$adultOnly AND user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Roster removal leaves other production intact');
     $assert((int)$db->query("SELECT COUNT(*) FROM family_relationships WHERE guardian_user_id=$adult AND student_user_id=$student AND status='active'")->fetchColumn()===1,'Cast removal preserves family relationship');
-    $denied(fn()=>SafeguardedConversationPolicy::enforceForSend($db,$thread,$adult),'Removed Adult cannot continue production-based Student conversation');
+    $assert(SafeguardedConversationPolicy::enforceForSend($db,$thread,$adult)['conversation_type']==='safeguarded','Production removal preserves account-wide safeguarded conversation');
     $db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived' WHERE id=?")->execute([$adultOnly]);
     $assert(!ProductionParticipantEligibility::forUser($db,$adultOnly,$adult)['eligible'],'Archived production denied');
     $db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$adult]);

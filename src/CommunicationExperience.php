@@ -61,7 +61,7 @@ final class CommunicationExperience
         $type='direct';$participants=[];
         if($initiatorStudent||$recipientStudent){
             $student=$initiatorStudent?$initiator:$recipient;$adult=$initiatorStudent?$recipient:$initiator;
-            if(!SafeguardedConversationPolicy::canContactStudent($db,(int)$adult['id'],(int)$student['id']))throw new RuntimeException('Student conversations require current CTSMD staff or an approved Adult performer in a shared active production.');
+            if(!SafeguardedConversationPolicy::canContactStudent($db,(int)$adult['id'],(int)$student['id']))throw new RuntimeException('Both conversation accounts must be active on the platform.');
             $guardians=SafeguardedConversationPolicy::eligibleGuardians($db,(int)$student['id']);
             if(!$guardians)throw new RuntimeException('This student does not have an available guardian relationship. Messaging cannot begin until staff repairs that relationship.');
             $type='safeguarded';
@@ -74,7 +74,6 @@ final class CommunicationExperience
                 if($guardianId===(int)$adult['id']||$guardianId===(int)$student['id'])continue;
                 $participants[]=['user_id'=>$guardianId,'participant_role'=>'guardian','guardian_required'=>1];
             }
-            if(count($participants)<3)throw new RuntimeException('A separate available guardian is required before this student conversation can begin.');
         }else{
             $participants=[
                 ['user_id'=>(int)$initiator['id'],'participant_role'=>'adult','guardian_required'=>0],

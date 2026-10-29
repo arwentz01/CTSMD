@@ -7,14 +7,12 @@ require_once __DIR__.'/IdentityRolePolicy.php';
 
 final class SafeguardedConversationPolicy
 {
-    /** Adult participation only authorizes contact with a current shared Student roster. */
+    /** Account-wide contact: production participation is not messaging authority. */
     public static function canContactStudent(PDO $db,int $adultId,int $studentId):bool
     {
         Auth::clearRequestCache($adultId);
         if(IdentityRolePolicy::isStudent($db,$adultId))return false;
-        if(IdentityRolePolicy::isStaff($db,$adultId))return true; // Existing staff policy is organization-wide.
-        if(!IdentityRolePolicy::isAdult($db,$adultId))return false;
-        $q=$db->prepare("SELECT a.id FROM production_memberships a JOIN production_memberships s ON s.production_id=a.production_id AND s.user_id=? AND s.audience_type='student' AND s.status='active' JOIN productions p ON p.id=a.production_id AND p.is_active=1 AND p.status<>'archived' AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing') WHERE a.user_id=? AND a.audience_type='adult' AND a.status='active' ORDER BY a.production_id".($db->inTransaction()?' FOR UPDATE':''));$q->execute([$studentId,$adultId]);return (bool)$q->fetchColumn();
+        $q=$db->prepare("SELECT id FROM users WHERE id IN (?,?) AND active=1 AND account_status='active'".($db->inTransaction()?' FOR UPDATE':''));$q->execute([$adultId,$studentId]);return count($q->fetchAll())===2;
     }
     public static function eligibleGuardians(PDO $db, int $studentId): array
     {
@@ -177,7 +175,7 @@ final class SafeguardedConversationPolicy
                 }
             }
             if (!$staffCurrent) {
-                throw new RuntimeException('Messaging is paused because this conversation no longer includes current staff or an authorized Adult participant.');
+                throw new RuntimeException('Messaging is paused because this conversation no longer includes an active non-Student participant.');
             }
             sort($guardianIds);
             $liveGuardianIds = array_values(array_unique($liveGuardianIds));
