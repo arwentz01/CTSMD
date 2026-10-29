@@ -17,6 +17,8 @@ test('participant identity labels do not infer authority and web handoffs use co
  const {participantWebsite}=load('src/api/client.ts');
  assert.equal(participantWebsite('/student-profile'),'https://ctsmd.me/student-profile');
  assert.equal(participantWebsite('/theatre-history'),'https://ctsmd.me/theatre-history');
+ assert.equal(participantWebsite('/admin/accounts'),'https://ctsmd.me/admin/accounts');
+ assert.equal(participantWebsite('/admin/productions'),'https://ctsmd.me/admin/productions');
 });
 test('notification routes are allowlisted and reject arbitrary destinations',()=>{
  const {notificationDestination:route}=load('src/notifications/destination.ts');

@@ -85,4 +85,23 @@ Repeatable commands (explicit local test schema environment is mandatory for SQL
 
 Current manifest/preflight explicitly identify this branch as `CTSMD-ADULT-PARTICIPATION-REVIEW`, scope `adult_enhancement_separate_from_rc1`, with deployment/worker authorization false. Reusing RC1 regression tooling is not approval to combine this enhancement with the original RC1 deployment. Offline Expo checking reports dependencies up to date but warns its validation is unreliable; it does not replace the failing online compatibility gate.
 
+## Native/web parity
+
+| Capability | Web | Existing native app |
+|---|---|---|
+| Participation identity | Reviewed account management | Server-controlled self classification display |
+| Student transition | Two-reviewer workflow | Explicit administrator website handoff; no native identity mutation |
+| Eligibility/settings/exceptions | Production settings and casting indicators | Staff website handoff; API acceptance still enforces shared rules |
+| Audition registration | Account-linked Student or Adult self registration; reviewed guest intake | Explicit website handoff |
+| Casting offers | Shared issue/response/enrollment | Native Action Center, same service; Adult self-acceptance verified by real HTTP |
+| Productions and schedule | Independent participant/family memberships | Existing shared authorization; Adult/Guardian child-call coexistence regression passes |
+| Conversations | Active platform accounts, Student guardian inclusion and fixed history boundaries | Same creation/send policy; no production requirement |
+| Community/resources | Independent audience/private-channel gates | Existing API gates; Adult identity cannot fabricate guardian or private-channel access |
+| Performer profiles, consent, history | Shared existing storage and approved snapshots | Labeled website handoffs; separate sign-in may be required |
+| Push and devices | Existing delivery authorization remains authoritative | Token/session revocation tested; device/provider delivery remains unverified |
+
+Native staff links are conveniences; website/backend permissions authorize every action. No native screen claims account administration, profile editing or publication approval parity merely because it can open the website.
+
 Verified runtime revision `dc61765`: [web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013890) and [isolated MySQL/HTTP CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013964) passed. [Expo CI](https://github.com/arwentz01/CTSMD/actions/runs/40855013765) passed TypeScript and failed dependency compatibility, skipping its later native contracts/exports; those passed locally. Follow-up CI orders independent native contracts/exports before the same unchanged compatibility gate, so the gate stays blocking without hiding other verification. Read-only clean-revision preflight passed with 113 tables, 27 triggers, matching files and no declared-contract issues on the disposable schema. This says nothing about the unmigrated default demo or hosted schema.
+
+Expanded acceptance revision `b971960`: [web safety](https://github.com/arwentz01/CTSMD/actions/runs/40856417646) and [139-HTTP/76-MySQL/16-concurrency acceptance](https://github.com/arwentz01/CTSMD/actions/runs/40856417589) pass. [Hosted native CI](https://github.com/arwentz01/CTSMD/actions/runs/40856417748) now passes TypeScript, seven native integration contracts and both platform exports; its final compatibility gate fails. Failure is retained and is not a device or dependency signoff.

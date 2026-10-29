@@ -42,6 +42,8 @@ export default function More(){
   <External title="Performer profile & publication consent · website" url={participantWebsite('/student-profile')}/>
   <External title="My Theatre History · website" url={participantWebsite('/theatre-history')}/>
   <External title="Auditions & registration · website" url={participantWebsite('/register')}/>
+  {user?.roles?.some(role=>role==='production_staff'||role==='administrator')&&<External title="Participation settings & staff tools · website" url={participantWebsite('/admin/productions')}/>}
+  {user?.roles?.includes('administrator')&&<External title="Account identity reviews · website" url={participantWebsite('/admin/accounts')}/>}
   <Text style={s.muted}>These workflows open the CTSMD website and may require a separate sign-in. Casting offer responses remain in Action Center.</Text>
   <Pressable accessibilityRole="button" onPress={()=>router.push('/videos')} style={s.item}><Ionicons name="play-circle-outline" size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>Video Library</Text><Text style={s.muted}>Rehearsals and CTSMD-wide videos</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>Tickets & resources</Text>
