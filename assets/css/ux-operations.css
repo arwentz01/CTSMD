@@ -61,6 +61,17 @@
 .ux-operations .sgc-facts dt { color:var(--ux-muted); }
 .ux-operations .history-seal :is(b,span,strong,small) { color:var(--ux-wine); font-size:13px; letter-spacing:0; }
 .ux-operations :is(.resume-tools p,.resume-sheet h3,.history-card > small) { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
+/* Production configuration and historical records keep their distinct structures. */
+.ux-operations .ops-heading > a { display:inline-flex; align-items:center; min-height:40px; padding:8px 12px; border:1px solid var(--ux-control); border-radius:7px; background:var(--ux-paper); color:var(--ux-wine); font-size:14px; font-weight:600; text-decoration:none; }
+.ux-operations :is(.pg-panel,.production-people-panel,.pa-panel) header small { color:var(--ux-muted); font-size:13px; letter-spacing:0; font-weight:500; }
+.ux-operations :is(.pg-card small,.pg-card .op-mobile-label,.production-member .op-mobile-label,.resource-admin-row small,.resource-side small) { color:var(--ux-muted); font-size:12px; letter-spacing:0; text-transform:none; }
+.ux-operations :is(.pg-form,.file-form,.resource-form,.production-people-form) { padding:20px; border:1px solid var(--ux-line); border-radius:12px; background:var(--ux-paper); box-shadow:none; }
+.ux-operations .pg-panel .pg-form { border:0; padding:0; }
+.ux-operations .ops-page .badge { color:var(--ux-ink); }
+.ux-operations :is(.pa-seal,.pa-channel-hero > span,.pa-production-hero > div:last-child b) { color:var(--ux-wine); border-color:var(--ux-line); font-size:14px; letter-spacing:0; }
+.ux-operations .pa-production-hero > div:last-child span { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
+.ux-operations .pa-panel { margin-bottom:20px; }
+.ux-operations .pa-panel header h3 { font-size:17px; }
 .ux-operations .ops-page :is(.op-table-primary,.op-table-row) { overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .ux-operations .ops-page { padding:16px; }
@@ -73,5 +84,7 @@
  .ux-operations :is(.regops-form,.team-form) { padding:16px; }
  .ux-operations .regops-intake-grid { grid-template-columns:minmax(0,1fr); }
  .ux-operations :is(.sp-grid,.sgc-layout,.safe-layout,.safe-review-layout,.resume-builder-grid,.sgdm-filters) { grid-template-columns:minmax(0,1fr); }
+ .ux-operations .unified-header .unified-title { max-width:calc(100% - 150px); }
+ .ux-operations :is(.file-pair,.resource-pair,.production-people-layout,.pg-layout) { grid-template-columns:minmax(0,1fr); }
 }
 @media print { .ux-operations .ops-page { max-width:none; padding:0; } }
