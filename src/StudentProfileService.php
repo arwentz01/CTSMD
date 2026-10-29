@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/IdentityRolePolicy.php';
 
 require_once __DIR__.'/AccessPolicy.php';
 require_once __DIR__.'/StorageService.php';
@@ -8,23 +9,24 @@ require_once __DIR__.'/PersonEligibility.php';
 
 final class StudentProfileService
 {
+    private static function isPerformer(PDO $db,int $id):bool{return self::isStudent($db,$id)||IdentityRolePolicy::isAdult($db,$id);}
     public static function subjectsForViewer(PDO $db,array $viewer):array
     {
         $viewerId=(int)$viewer['id'];$subjects=[];
-        if(self::isStudent($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
+        if(self::isPerformer($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
         $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
-        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
+        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u  WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
         return array_values(array_filter($subjects));
     }
 
     public static function canEdit(PDO $db,array $viewer,int $studentId):bool
     {
-        if($studentId<1||!self::isStudent($db,$studentId))return false;if((int)$viewer['id']===$studentId)return true;if(AccessPolicy::canManagePeople($viewer))return true;$s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:viewer AND fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$s->execute(['viewer'=>(int)$viewer['id'],'student'=>$studentId]);return(bool)$s->fetchColumn();
+        if($studentId<1||!self::isPerformer($db,$studentId))return false;if((int)$viewer['id']===$studentId)return true;if(AccessPolicy::canManagePeople($viewer))return true;if(IdentityRolePolicy::isAdult($db,$studentId))return false;$s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:viewer AND fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$s->execute(['viewer'=>(int)$viewer['id'],'student'=>$studentId]);return(bool)$s->fetchColumn();
     }
 
     public static function profile(PDO $db,int $studentId):?array
     {
-        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id,sp.photographer_credit FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
+        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id,sp.photographer_credit FROM users u LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
     }
 
     public static function save(PDO $db,string $projectRoot,array $viewer,int $studentId,array $input,array $upload):void
@@ -48,7 +50,7 @@ final class StudentProfileService
             JOIN productions p ON p.id=mine.production_id AND p.is_active=1
             JOIN production_memberships student ON student.production_id=mine.production_id
                 AND student.user_id=:student
-                AND student.audience_type='student'
+                AND student.audience_type IN ('student','adult')
                 AND student.status='active'
             JOIN users subject ON subject.id=student.user_id AND subject.active=1 AND subject.account_status<>'disabled'
             WHERE mine.user_id=:viewer AND mine.status='active'

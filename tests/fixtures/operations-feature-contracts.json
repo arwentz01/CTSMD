@@ -18,5 +18,10 @@
         "reason": "Adult participation Batch 3: unified casting labels, Adult roster and retained casting removal history",
         "php": "40ecf93969e5ddf75a64e2a8eeeb70d167e35cf28b30c64c2870b085b32c5700",
         "forms": "86fd02a11422dfe95a9f6dc994b95869e13a2145fc523699faebc379c2b7a5bb"
+    },
+    "StudentProfileExperience": {
+        "reason": "Adult participation Batch 5: shared performer profile and consent copy",
+        "php": "a319e341986a500abb80ac8828970eadb94cb366d8d187eb42d9043193d1719c",
+        "forms": "8de6fa701c6b8cd352307bef0b21050f520a6e2188343e858a1fa53dfbbdf4d1"
     }
 }
