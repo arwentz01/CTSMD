@@ -15,6 +15,15 @@ final class WorkspaceUI
         echo '<script defer src="' . $script . '"></script>';
     }
 
+    /** Explicit administrative opt-in; does not alter routes, data or permissions. */
+    public static function operationsStyles(string $basePath): void
+    {
+        self::styles($basePath);
+        $root = htmlspecialchars(($basePath ?: '') . '/assets/', ENT_QUOTES, 'UTF-8');
+        echo '<link rel="stylesheet" data-ux-operations href="' . $root . 'css/ux-operations.css?v=20261029">';
+        echo '<script defer src="' . $root . 'js/ux-operations.js?v=20261029"></script>';
+    }
+
     public static function pageHeader(string $title, string $description, ?array $action = null): void
     {
         $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');

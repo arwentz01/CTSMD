@@ -29,6 +29,8 @@
   if (workspaceStyles) document.head.appendChild(workspaceStyles);
   const operationalStyles = document.querySelector('link[data-ux-operational]');
   if (operationalStyles) document.head.appendChild(operationalStyles);
+  const operationsStyles = document.querySelector('link[data-ux-operations]');
+  if (operationsStyles) document.head.appendChild(operationsStyles);
 
   const sidebar = document.querySelector('[data-unified-sidebar]');
   const scrim = document.querySelector('[data-nav-scrim]');

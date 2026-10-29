@@ -1,0 +1,843 @@
+{
+  "baseline": "c6c7852",
+  "batches": {
+    "A": [
+      "OperationsHub",
+      "StaffDashboard"
+    ],
+    "B": [
+      "AccountManagement",
+      "RegistrationOperations",
+      "People",
+      "Team"
+    ],
+    "C": [
+      "FamilyPickup",
+      "CaregiverLogistics",
+      "StudentProfile",
+      "TheatreHistory",
+      "ActingResume",
+      "Safeguarding",
+      "SafeguardingCase",
+      "SafeguardingConversationReview",
+      "LatePickup"
+    ],
+    "D": [
+      "ProductionLifecycle",
+      "ProductionWorkspace",
+      "Casting",
+      "ProductionReadiness",
+      "ProductionTasks",
+      "ProductionPeople",
+      "ProductionGroup",
+      "ProductionSupportNeeds",
+      "ProductionArchive",
+      "ProductionFile",
+      "Resource"
+    ],
+    "E": [
+      "Production",
+      "Calendar",
+      "ScheduleCreate",
+      "ScheduleNotice",
+      "ProductionDay",
+      "Attendance",
+      "VolunteerExperience",
+      "VolunteerShiftManagement",
+      "VolunteerApproval",
+      "VolunteerDevelopment",
+      "VolunteerVerification",
+      "VolunteerServiceRecord"
+    ],
+    "F": [
+      "OrganizationResource",
+      "AccountLibrary",
+      "CommunityManagement",
+      "Moderation",
+      "EmailOperations",
+      "NotificationPreference",
+      "RehearsalVideo",
+      "Playbill",
+      "Playbill2"
+    ]
+  },
+  "rows": [
+    {
+      "route": "/admin/accounts",
+      "owner": "AccountManagementExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/accounts/view",
+      "owner": "AccountManagementExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/registrations",
+      "owner": "RegistrationOperationsExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/registrations/edit",
+      "owner": "RegistrationOperationsExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/registrations/view",
+      "owner": "RegistrationOperationsExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/registrations/intake",
+      "owner": "RegistrationOperationsExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/email",
+      "owner": "EmailOperationsExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/notification-preferences",
+      "owner": "NotificationPreferenceExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/push-settings",
+      "owner": "NotificationPreferenceExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/push/subscribe",
+      "owner": "NotificationPreferenceExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/push/unsubscribe",
+      "owner": "NotificationPreferenceExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/push/test",
+      "owner": "NotificationPreferenceExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/staff",
+      "owner": "StaffDashboardExperience",
+      "batch": "A",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/operations",
+      "owner": "OperationsHubExperience",
+      "batch": "A",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/operations/community",
+      "owner": "OperationsHubExperience",
+      "batch": "A",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/operations/resources",
+      "owner": "OperationsHubExperience",
+      "batch": "A",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/operations/forms",
+      "owner": "OperationsHubExperience",
+      "batch": "A",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/calendar",
+      "owner": "CalendarExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/calendar/feed",
+      "owner": "CalendarExperience",
+      "batch": "E",
+      "kind": "transport",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/student-profile",
+      "owner": "StudentProfileExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/student-profile/headshot",
+      "owner": "StudentProfileExperience",
+      "batch": "C",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/student-profile/family",
+      "owner": "FamilyPickupExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/student-profile/family/review",
+      "owner": "FamilyPickupExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/family/caregiver-schedule",
+      "owner": "CaregiverLogisticsExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/theatre-history/resume",
+      "owner": "ActingResumeExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/theatre-history",
+      "owner": "TheatreHistoryExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/archive",
+      "owner": "ProductionArchiveExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/archive/production",
+      "owner": "ProductionArchiveExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/archive/community",
+      "owner": "ProductionArchiveExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/archive/file",
+      "owner": "ProductionArchiveExperience",
+      "batch": "D",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/member-resources",
+      "owner": "OrganizationResourceExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/member-resources/edit",
+      "owner": "OrganizationResourceExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/member-resources/download",
+      "owner": "OrganizationResourceExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/files",
+      "owner": "AccountLibraryExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/files/view",
+      "owner": "AccountLibraryExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/resources",
+      "owner": "AccountLibraryExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/resources/view",
+      "owner": "AccountLibraryExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/people",
+      "owner": "PeopleExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/people/view",
+      "owner": "PeopleExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/volunteer/history",
+      "owner": "VolunteerServiceRecordExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/service-record",
+      "owner": "VolunteerServiceRecordExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/verifications",
+      "owner": "VolunteerVerificationExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/verification",
+      "owner": "VolunteerVerificationExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-verification",
+      "owner": "VolunteerVerificationExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/training",
+      "owner": "VolunteerDevelopmentExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-development",
+      "owner": "VolunteerDevelopmentExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-shifts",
+      "owner": "VolunteerShiftManagementExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-shifts/new",
+      "owner": "VolunteerShiftManagementExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-shifts/view",
+      "owner": "VolunteerShiftManagementExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/approvals",
+      "owner": "VolunteerApprovalExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-approvals",
+      "owner": "VolunteerApprovalExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/volunteer-approvals/review",
+      "owner": "VolunteerApprovalExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer-readiness",
+      "owner": "VolunteerExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer-shifts",
+      "owner": "VolunteerExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/volunteer/shift",
+      "owner": "VolunteerExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/teams",
+      "owner": "TeamExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/teams/view",
+      "owner": "TeamExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/private-channel",
+      "owner": "TeamExperience",
+      "batch": "B",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/moderation/terms",
+      "owner": "ModerationExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/moderation/terms/edit",
+      "owner": "ModerationExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/moderation/queue",
+      "owner": "ModerationExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/channels",
+      "owner": "CommunityManagementExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/channels/edit",
+      "owner": "CommunityManagementExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/productions",
+      "owner": "ProductionLifecycleExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/productions/view",
+      "owner": "ProductionLifecycleExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/admin/productions/artwork-image",
+      "owner": "ProductionLifecycleExperience",
+      "batch": "D",
+      "kind": "transport",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/casting",
+      "owner": "CastingExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/readiness",
+      "owner": "ProductionReadinessExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/tasks",
+      "owner": "ProductionTasksExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/day",
+      "owner": "ProductionDayExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production",
+      "owner": "ProductionWorkspaceExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/artwork-image",
+      "owner": "ProductionWorkspaceExperience",
+      "batch": "D",
+      "kind": "transport",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/groups",
+      "owner": "ProductionGroupExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/groups/view",
+      "owner": "ProductionGroupExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/people",
+      "owner": "ProductionPeopleExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/support-needs",
+      "owner": "ProductionSupportNeedsExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/attendance",
+      "owner": "AttendanceExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/attendance/take",
+      "owner": "AttendanceExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/attendance/report",
+      "owner": "AttendanceExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/late-pickups",
+      "owner": "LatePickupExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/schedule/new",
+      "owner": "ScheduleCreateExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/notices",
+      "owner": "ScheduleNoticeExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/production/notice",
+      "owner": "ScheduleNoticeExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "existing B2; inspect subview"
+    },
+    {
+      "route": "/videos",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/videos/view",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/videos/play",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/videos/archive-download",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/videos/inventory",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/rehearsal-library",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/rehearsal-video",
+      "owner": "RehearsalVideoExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/files/download",
+      "owner": "ProductionFileExperience",
+      "batch": "D",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/files",
+      "owner": "ProductionFileExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/files/edit",
+      "owner": "ProductionFileExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/resources",
+      "owner": "ResourceExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/resources/edit",
+      "owner": "ResourceExperience",
+      "batch": "D",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/playbill",
+      "owner": "Playbill2Experience",
+      "batch": "F",
+      "kind": "public",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/playbill/asset",
+      "owner": "Playbill2Experience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/playbill/qr",
+      "owner": "Playbill2Experience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/playbill/sign",
+      "owner": "Playbill2Experience",
+      "batch": "F",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/playbill/media",
+      "owner": "Playbill2Experience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/playbills",
+      "owner": "PlaybillExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/admin/playbill",
+      "owner": "PlaybillExperience",
+      "batch": "F",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/schedule",
+      "owner": "ProductionExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/production/edit",
+      "owner": "ProductionExperience",
+      "batch": "E",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/conversations",
+      "owner": "SafeguardingConversationReviewExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/conversations/attachment",
+      "owner": "SafeguardingConversationReviewExperience",
+      "batch": "C",
+      "kind": "transport",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/cases",
+      "owner": "SafeguardingCaseExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/case",
+      "owner": "SafeguardingCaseExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding",
+      "owner": "SafeguardingExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/review",
+      "owner": "SafeguardingExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    },
+    {
+      "route": "/safeguarding/audit",
+      "owner": "SafeguardingExperience",
+      "batch": "C",
+      "kind": "screen",
+      "baseline": "legacy; explicit adoption needed"
+    }
+  ]
+}

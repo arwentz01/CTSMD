@@ -8,6 +8,9 @@ on:
       - "tests/**"
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-operational.css"
+      - "assets/css/ux-operations.css"
+      - "assets/css/operations-hub.css"
+      - "assets/js/ux-operations.js"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -17,6 +20,9 @@ on:
       - "tests/**"
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-operational.css"
+      - "assets/css/ux-operations.css"
+      - "assets/css/operations-hub.css"
+      - "assets/js/ux-operations.js"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -47,6 +53,7 @@ jobs:
           node --check assets/js/video-library-upload.js
           node --check assets/js/unified-navigation.js
           node --check assets/js/ux-workspaces.js
+          node --check assets/js/ux-operations.js
       - name: Staff production directory ordering and past grouping
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract
@@ -63,6 +70,7 @@ jobs:
         run: |
           php tests/ux_action_visibility.php
           php tests/ux_operational_presentation.php
+          php tests/ux_operations_contract.php
       - name: Community search and safeguarding presentation regressions
         run: |
           php tests/community_search.php

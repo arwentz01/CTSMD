@@ -1,0 +1,39 @@
+<?php
+declare(strict_types=1);
+
+/** Deliberately ignores presentation, not PHP authorization/data/action logic. */
+function operationsPhpContract(string $source): string
+{
+    $source = preg_replace("~require_once\s+__DIR__\s*\.\s*['\"]/WorkspaceUI\.php['\"];~", '', $source);
+    $source = preg_replace('~WorkspaceUI::(?:operationsStyles|styles)\(\$basePath\);~', '', $source);
+    // Hub decoration removed from inline HTML; these expressions never made decisions.
+    $source = str_replace(['$e($eyebrow)', '$e($item[\'eyebrow\'])', '$e($item[\'icon\'])'], '', $source);
+    $tokens = [];
+    foreach (token_get_all($source) as $token) {
+        if (is_array($token)) {
+            if (in_array($token[0], [T_INLINE_HTML,T_WHITESPACE,T_COMMENT,T_DOC_COMMENT,T_OPEN_TAG,T_CLOSE_TAG,T_OPEN_TAG_WITH_ECHO], true)) continue;
+            $value = $token[1];
+            if ($token[0] === T_CONSTANT_ENCAPSED_STRING && str_contains($value, 'class=')) {
+                $value = preg_replace('/ ops-(?:page|heading|panel|form|toolbar|status|empty)\b/', '', $value);
+            }
+            $tokens[] = [$token[0], $value];
+        } else $tokens[] = $token;
+    }
+    return hash('sha256', serialize($tokens));
+}
+
+if (realpath($_SERVER['SCRIPT_FILENAME']) !== __FILE__) return;
+$root = dirname(__DIR__);
+$inventory = json_decode(file_get_contents($root.'/tests/fixtures/operations-routes.json'), true, flags: JSON_THROW_ON_ERROR);
+$contracts = json_decode(file_get_contents($root.'/tests/fixtures/operations-php-contracts.json'), true, flags: JSON_THROW_ON_ERROR);
+$front = file_get_contents($root.'/front.php');
+$count = 0;
+foreach ($contracts as $owner => $hash) {
+    $source = file_get_contents($root.'/src/'.$owner.'.php');
+    if (!hash_equals($hash, operationsPhpContract($source))) throw new RuntimeException($owner.': PHP behavior changed; review against c6c7852.');
+    ++$count;
+}
+foreach ($inventory['rows'] as $row) {
+    if (!str_contains($front, "'".$row['route']."'")) throw new RuntimeException('Unregistered route in inventory: '.$row['route']);
+}
+echo "PASS: $count Operations renderers preserve baseline PHP behavior; registered-route inventory checked. Presentation and actual interactions require browser tests.\n";
