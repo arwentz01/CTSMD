@@ -78,7 +78,7 @@ try{
     echo "PASS $checks real multiprocess MySQL concurrency assertions; no delivery workers or live accounts.\n";
 }finally{
     if($db->inTransaction())$db->rollBack();
-    if(isset($student))$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$student]);
-    foreach($people as $id)$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
+    if(isset($student))$db->prepare("UPDATE users SET active=0,account_status='disabled' WHERE id=?")->execute([$student]);
+    foreach($people as $id)$db->prepare("UPDATE users SET active=0,account_status='disabled' WHERE id=?")->execute([$id]);
     foreach($productions as $id)$db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived',is_active=0 WHERE id=?")->execute([$id]);
 }

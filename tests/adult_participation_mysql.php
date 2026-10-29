@@ -167,7 +167,8 @@ try{
     echo "PASS $checks migrated MySQL participation assertions; synthetic records only.\n";
 }finally{
     if($db->inTransaction())$db->rollBack();
-    foreach($ids as $id)if(IdentityRolePolicy::isStudent($db,$id))$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
-    foreach($ids as $id)$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
+    foreach($ids as $id)if(IdentityRolePolicy::isStudent($db,$id))$db->prepare("UPDATE users SET active=0,account_status='disabled' WHERE id=?")->execute([$id]);
+    foreach($ids as $id)$db->prepare("UPDATE users SET active=0,account_status='disabled' WHERE id=?")->execute([$id]);
     foreach($productions as $id)$db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived',is_active=0 WHERE id=?")->execute([$id]);
+    if($ids&&(int)$db->query('SELECT COUNT(*) FROM users WHERE id IN ('.implode(',',array_map('intval',$ids)).") AND (active=1 OR account_status<>'disabled')")->fetchColumn()!==0)throw new RuntimeException('Owned fixture cleanup failed.');
 }
