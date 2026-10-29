@@ -61,7 +61,7 @@ final class CommunicationExperience
         $type='direct';$participants=[];
         if($initiatorStudent||$recipientStudent){
             $student=$initiatorStudent?$initiator:$recipient;$adult=$initiatorStudent?$recipient:$initiator;
-            if(!self::isStaffUser($adult))throw new RuntimeException('New student conversations must involve current CTSMD staff. Family-to-student direct threads are not created here.');
+            if(!SafeguardedConversationPolicy::canContactStudent($db,(int)$adult['id'],(int)$student['id']))throw new RuntimeException('Student conversations require current CTSMD staff or an approved Adult performer in a shared active production.');
             $guardians=SafeguardedConversationPolicy::eligibleGuardians($db,(int)$student['id']);
             if(!$guardians)throw new RuntimeException('This student does not have an available guardian relationship. Messaging cannot begin until staff repairs that relationship.');
             $type='safeguarded';

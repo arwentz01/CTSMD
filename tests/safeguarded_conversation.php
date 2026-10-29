@@ -152,9 +152,10 @@ try{
     $message($db,$direct,$staff,'Before role change');
     $grant($db,$newStudent,'student');
     $rel->execute(['guardian'=>$guardianB,'student'=>$newStudent,'primary'=>1]);
-    $converted=SafeguardedConversationPolicy::enforceForSend($db,$direct,$staff);
-    $assert($converted['conversation_type']==='safeguarded','Role change did not upgrade the conversation.');
-    $assert(in_array($guardianB,$converted['guardian_ids'],true),'Role-change safeguarding did not add the guardian.');
+    $transitionBlocked=false;try{SafeguardedConversationPolicy::enforceForSend($db,$direct,$staff);}catch(RuntimeException){$transitionBlocked=true;}
+    $assert($transitionBlocked,'Role change disclosed previous Adult-only history instead of requiring a new thread.');
+    $q=$db->prepare('SELECT COUNT(*) FROM conversation_participants WHERE conversation_id=? AND user_id=?');$q->execute([$direct,$guardianB]);
+    $assert((int)$q->fetchColumn()===0,'Role change exposed historical messages to a new guardian.');
 
     $otherStudent=$user($db,'Student Two','Student',$suffix);$grant($db,$otherStudent,'member');$grant($db,$otherStudent,'student');
     $studentThread=$conversation($db,'direct','Student prohibition');

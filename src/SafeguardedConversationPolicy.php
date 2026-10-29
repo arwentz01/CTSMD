@@ -3,9 +3,19 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__.'/IdentityRolePolicy.php';
 
 final class SafeguardedConversationPolicy
 {
+    /** Adult participation only authorizes contact with a current shared Student roster. */
+    public static function canContactStudent(PDO $db,int $adultId,int $studentId):bool
+    {
+        Auth::clearRequestCache($adultId);
+        if(IdentityRolePolicy::isStudent($db,$adultId))return false;
+        if(IdentityRolePolicy::isStaff($db,$adultId))return true; // Existing staff policy is organization-wide.
+        if(!IdentityRolePolicy::isAdult($db,$adultId))return false;
+        $q=$db->prepare("SELECT a.id FROM production_memberships a JOIN production_memberships s ON s.production_id=a.production_id AND s.user_id=? AND s.audience_type='student' AND s.status='active' JOIN productions p ON p.id=a.production_id AND p.is_active=1 AND p.status<>'archived' AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing') WHERE a.user_id=? AND a.audience_type='adult' AND a.status='active' ORDER BY a.production_id".($db->inTransaction()?' FOR UPDATE':''));$q->execute([$studentId,$adultId]);return (bool)$q->fetchColumn();
+    }
     public static function eligibleGuardians(PDO $db, int $studentId): array
     {
         $stmt = $db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role
@@ -105,6 +115,7 @@ final class SafeguardedConversationPolicy
             }
 
             $studentId = $currentStudents[0];
+            if($conversation['conversation_type']==='direct'&&self::latestMessageId($db,$conversationId)>0)throw new RuntimeException('Start a new safeguarded conversation. Previous Adult-only messages cannot be shared with newly required guardians.');
             $studentParticipants = array_values(array_filter($participants,static fn(array $row):bool=>(int)$row['user_id']===$studentId));
             if (!$studentParticipants) throw new RuntimeException('The current Student is not a conversation participant.');
 
@@ -156,8 +167,9 @@ final class SafeguardedConversationPolicy
             $liveGuardianIds = [];
             foreach ($active as $participant) {
                 $roles = Auth::roles($db,(int)$participant['user_id']);
-                if ($participant['participant_role']==='adult'
-                    && (in_array('production_staff',$roles,true)||in_array('administrator',$roles,true))) {
+                if($participant['participant_role']==='adult'&&!self::canContactStudent($db,(int)$participant['user_id'],$studentId))throw new RuntimeException('An Adult participant no longer has authorized contact with this Student.');
+                if (in_array($participant['participant_role'],['adult','guardian'],true)
+                    && self::canContactStudent($db,(int)$participant['user_id'],$studentId)) {
                     $staffCurrent = true;
                 }
                 if ($participant['participant_role']==='guardian') {
@@ -165,7 +177,7 @@ final class SafeguardedConversationPolicy
                 }
             }
             if (!$staffCurrent) {
-                throw new RuntimeException('Messaging is paused because this conversation no longer includes current CTSMD staff.');
+                throw new RuntimeException('Messaging is paused because this conversation no longer includes current staff or an authorized Adult participant.');
             }
             sort($guardianIds);
             $liveGuardianIds = array_values(array_unique($liveGuardianIds));
@@ -213,8 +225,7 @@ final class SafeguardedConversationPolicy
             $eligible = array_map(static fn(array $row):int=>(int)$row['id'],self::eligibleGuardians($db,$studentId));
             return in_array($userId,$eligible,true);
         }
-        $roles = Auth::roles($db,$userId);
-        return in_array('production_staff',$roles,true)||in_array('administrator',$roles,true);
+        return self::canContactStudent($db,$userId,$studentId);
     }
 
     private static function participants(PDO $db,int $conversationId,bool $lock):array

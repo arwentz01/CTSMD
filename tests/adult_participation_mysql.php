@@ -5,17 +5,18 @@ require_once dirname(__DIR__).'/src/AdultParticipantService.php';
 require_once dirname(__DIR__).'/src/CastingService.php';
 require_once dirname(__DIR__).'/src/CastingOfferService.php';
 require_once dirname(__DIR__).'/src/ProductionPeopleExperience.php';
+require_once dirname(__DIR__).'/src/CommunicationExperience.php';
 if(PHP_SAPI!=='cli'||getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Explicit disposable loopback rc1-test schema required.');
 $db=Database::connect(dirname(__DIR__));$checks=0;$ids=[];$productions=[];$suffix=bin2hex(random_bytes(6));
 $assert=static function(bool $ok,string $label)use(&$checks):void{if(!$ok)throw new RuntimeException($label);$checks++;echo 'PASS '.$label."\n";};
 $denied=static function(callable $fn,string $label)use($assert):void{$blocked=false;try{$fn();}catch(RuntimeException){$blocked=true;}$assert($blocked,$label);};
 $person=static function(string $role,string $dob)use($db,&$ids,$suffix):int{
-    $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,account_status,active,organization_membership_status,date_of_birth) VALUES('AdultTest',?,?,'AT',?,'active',1,'approved',?)")->execute([$role,$role.'.'.$suffix.'@rc1.invalid',$role,$dob]);$id=(int)$db->lastInsertId();$ids[]=$id;
+    $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,account_status,active,organization_membership_status,date_of_birth) VALUES('AdultTest',?,?,'AT',?,'active',1,'approved',?)")->execute([$role,$role.'.'.count($ids).'.'.$suffix.'@rc1.invalid',$role,$dob]);$id=(int)$db->lastInsertId();$ids[]=$id;
     $db->prepare('INSERT INTO auth_user_roles(user_id,role_id) SELECT ?,id FROM auth_roles WHERE code=?')->execute([$id,$role]);return $id;
 };
 try{
     $admin=$person('administrator','1980-01-01');$adult=$person('member','1990-01-01');$student=$person('student','2017-01-01');$volunteer=$person('volunteer','1990-01-01');$staff=$person('production_staff','1980-01-01');
-    foreach(['mixed','adults'] as $category){$db->prepare("INSERT INTO productions(title,status,lifecycle_stage,participant_category,student_minimum_age,participant_eligibility_date) VALUES(?,'planning','planning',?,10,'2026-10-28')")->execute(['Adult test '.$suffix,$category]);$productions[]=(int)$db->lastInsertId();}
+    foreach(['mixed','adults'] as $category){$db->prepare("INSERT INTO productions(title,is_active,status,lifecycle_stage,participant_category,student_minimum_age,participant_eligibility_date) VALUES(?,1,'planning','planning',?,10,'2026-10-28')")->execute(['Adult test '.$suffix,$category]);$productions[]=(int)$db->lastInsertId();}
     [$mixed,$adultOnly]=$productions;
     $denied(fn()=>ProductionParticipantEligibility::saveSettings($db,$mixed,$adult,['participant_category'=>'mixed']),'Settings forged actor denied');
     $denied(fn()=>ProductionParticipantEligibility::saveSettings($db,$mixed,$admin,['participant_category'=>'mixed','student_minimum_age'=>'9']),'Restricted ages require explicit date');
@@ -57,12 +58,26 @@ try{
     $studentRecord=CastingService::add($db,$mixed,$admin,$student);CastingService::update($db,$mixed,$admin,$studentRecord,['casting_status'=>'offered','role_title'=>'Tiny Tim']);
     $studentOffer=CastingOfferService::issue($db,$mixed,$studentRecord,$admin);CastingOfferService::respond($db,$adult,$studentOffer,'accepted','');
     $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$mixed AND user_id=$student AND audience_type='student' AND status='active'")->fetchColumn()===1,'Student guardian acceptance enrolls Student');
+    $initiator=['id'=>$adult,'roles'=>['member'],'permissions'=>[]];
+    $ownThread=CommunicationExperience::mobileCreateConversation($db,$initiator,$student,'Family cast','Guardian-inclusive family conversation');
+    $assert(SafeguardedConversationPolicy::canReceiveLive($db,$ownThread,$adult),'Adult guardian retains family context with separate guardian included');
+    $messageStudent=$person('student','2015-01-01');
+    $db->prepare("INSERT INTO family_relationships(guardian_user_id,student_user_id,relationship_type,status) VALUES(?,?,'guardian','active')")->execute([$admin,$messageStudent]);
+    $db->prepare("INSERT INTO production_memberships(production_id,user_id,audience_type,status) VALUES(?,?,'student','active')")->execute([$mixed,$messageStudent]);
+    $thread=CommunicationExperience::mobileCreateConversation($db,$initiator,$messageStudent,'Mixed cast','Hello from your cast mate');
+    $assert(SafeguardedConversationPolicy::canReceiveLive($db,$thread,$admin),'Mixed conversation includes Student guardian');
+    $assert(SafeguardedConversationPolicy::canReceiveLive($db,$thread,$adult),'Authorized Adult receives mixed conversation');
+    $assert($db->query('SELECT conversation_type FROM conversations WHERE id='.$thread)->fetchColumn()==='safeguarded','Adult to Student uses safeguarded thread');
+    $direct=CommunicationExperience::mobileCreateConversation($db,$initiator,$volunteer,'Adult conversation','Ordinary conversation');
+    $assert($db->query('SELECT conversation_type FROM conversations WHERE id='.$direct)->fetchColumn()==='direct','Adult to Adult ordinary conversation');
+    $denied(fn()=>$db->prepare("INSERT INTO conversation_participants(conversation_id,user_id,participant_role,guardian_required) VALUES(?,?,'student',0)")->execute([$direct,$student]),'Student cannot inherit Adult direct history');
     $membershipId=(int)$db->query("SELECT id FROM production_memberships WHERE production_id=$mixed AND user_id=$adult AND audience_type='adult'")->fetchColumn();
     (new ReflectionMethod(ProductionPeopleExperience::class,'deactivateMember'))->invoke(null,$db,['id'=>$admin],$mixed,$membershipId);
     $assert($db->query('SELECT casting_status FROM production_casting_records WHERE id='.$record)->fetchColumn()==='withdrawn','Roster removal retains withdrawn casting history');
     $assert($db->query('SELECT status FROM production_cast_offers WHERE id='.$offer)->fetchColumn()==='accepted','Roster removal preserves accepted offer history');
     $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$adultOnly AND user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Roster removal leaves other production intact');
     $assert((int)$db->query("SELECT COUNT(*) FROM family_relationships WHERE guardian_user_id=$adult AND student_user_id=$student AND status='active'")->fetchColumn()===1,'Cast removal preserves family relationship');
+    $denied(fn()=>SafeguardedConversationPolicy::enforceForSend($db,$thread,$adult),'Removed Adult cannot continue production-based Student conversation');
     $db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived' WHERE id=?")->execute([$adultOnly]);
     $assert(!ProductionParticipantEligibility::forUser($db,$adultOnly,$adult)['eligible'],'Archived production denied');
     $db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$adult]);
@@ -71,7 +86,7 @@ try{
     echo "PASS $checks migrated MySQL participation assertions; synthetic records only.\n";
 }finally{
     if($db->inTransaction())$db->rollBack();
-    if(isset($student))$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$student]);
+    foreach($ids as $id)if(IdentityRolePolicy::isStudent($db,$id))$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
     foreach($ids as $id)$db->prepare("UPDATE users SET account_status='disabled' WHERE id=?")->execute([$id]);
     foreach($productions as $id)$db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived',is_active=0 WHERE id=?")->execute([$id]);
 }
