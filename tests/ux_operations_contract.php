@@ -26,10 +26,19 @@ function operationsPhpContract(string $source): string
     return hash('sha256', serialize($tokens));
 }
 
+/** Preserve form/control protocol attributes independently of visual class changes. */
+function operationsFormContract(string $source): string
+{
+    $source = preg_replace('~\sclass="[^"]*"~', '', $source);
+    preg_match_all('~<(?:form|input|select|textarea|button|option)\b[^>]*>~i', $source, $tags);
+    return hash('sha256', json_encode(array_map(static fn(string $tag): string => preg_replace('/\s+/', ' ', trim($tag)), $tags[0]), JSON_THROW_ON_ERROR));
+}
+
 if (realpath($_SERVER['SCRIPT_FILENAME']) !== __FILE__) return;
 $root = dirname(__DIR__);
 $inventory = json_decode(file_get_contents($root.'/tests/fixtures/operations-routes.json'), true, flags: JSON_THROW_ON_ERROR);
 $contracts = json_decode(file_get_contents($root.'/tests/fixtures/operations-php-contracts.json'), true, flags: JSON_THROW_ON_ERROR);
+$forms = json_decode(file_get_contents($root.'/tests/fixtures/operations-form-contracts.json'), true, flags: JSON_THROW_ON_ERROR);
 $front = file_get_contents($root.'/front.php');
 $registered = [];
 preg_match_all("~\\['(\\w+)',\\[([^\\]]+)\\]~", $front, $entries, PREG_SET_ORDER);
@@ -41,6 +50,7 @@ $count = 0;
 foreach ($contracts as $owner => $hash) {
     $source = file_get_contents($root.'/src/'.$owner.'.php');
     if (!hash_equals($hash, operationsPhpContract($source))) throw new RuntimeException($owner.': PHP behavior changed; review against c6c7852.');
+    if (!hash_equals($forms[$owner], operationsFormContract($source))) throw new RuntimeException($owner.': baseline form/control protocol attributes changed.');
     if (preg_match('/(?<![a-z0-9-])ops-(page|heading|panel|form) ops-\1\b/', $source)) throw new RuntimeException($owner.': duplicate component adoption.');
     if (preg_match('/(WorkspaceUI::operationsStyles\([^;]+;\s*\?>)\s*<\?php\s*WorkspaceUI::operationsStyles/', $source)) throw new RuntimeException($owner.': duplicate style/script inclusion.');
     ++$count;
@@ -61,4 +71,4 @@ foreach ($inventory['rows'] as $row) {
         if (!preg_match('~class="(?:[^"\r\n]* )?ops-page(?: |")~', $source)) throw new RuntimeException($row['route'].': missing exact ops-page token.');
     }
 }
-echo "PASS: $count Operations renderers preserve baseline PHP behavior; registered-route inventory checked. Presentation and actual interactions require browser tests.\n";
+echo "PASS: $count Operations renderers preserve baseline PHP and form/control protocol contracts; registered-route inventory checked. Presentation and actual interactions require browser tests.\n";

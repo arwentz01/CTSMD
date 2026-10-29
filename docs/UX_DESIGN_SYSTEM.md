@@ -61,4 +61,10 @@ Staff operations use compact rows and warm neutral chrome. Family/student screen
 
 Keep headings compact, long forms grouped, real status labels visible, and secondary actions subordinate. Native tables get a named keyboard-scrollable region via progressive enhancement; no fake sorting/filtering is introduced. Without JavaScript, routes and native form submission still work. Public programs and printable letters keep their own presentation. See [per-route adoption and verification](UX_OPERATIONS_COVERAGE.md).
 
+Adoption requires the exact `ops-page` class token inside `main`, not merely a legacy name such as `regops-page`. Source and browser contracts check this distinction. All 52 renderer PHP behavior contracts remain pinned to `c6c7852`; presentation changes must not become a reason to change permissions or transactions.
+
+Phone fields use 16px text and at least 44px height. The approved `--ux-control` edge measures 3.95:1 on white. Narrow, documented important exceptions neutralize pre-existing global mobile input borders/fonts and 12px margins incorrectly applied to fixed Casting drawers; they do not restyle unrelated routes. Volunteer Leads dialogs restore trigger focus, contain forward/backward Tab in code, close on Escape/backdrop, and restore body scroll behavior. Browser verification covers forward Tab wrapping and Escape; it is not assistive-technology certification.
+
+Emil informed the interaction/focus refinements; Impeccable informed measured contrast, field grouping and state review; Taste's app-screen framed-sheet direction (seed `123105929`, palette/type retained) informed quiet work surfaces and restrained headers. The approved CTSMD system and existing navigation override any generic drawn palette or shell geometry. No decorative motion, new font service, icon tiles or fabricated controls were introduced.
+
 This visual system does not own authorization, notifications, publication visibility, lifecycle state, roster membership, or family relationships. Document a backend dependency before changing any of those meanings.

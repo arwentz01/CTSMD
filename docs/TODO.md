@@ -8,11 +8,13 @@
 
 ## RC1 signoff blockers — October 28, 2026
 
-### Operations UX work in progress
+### Operations UX implementation and acceptance exceptions
 
-- [ ] Complete Batches A–F with per-route presentation and browser evidence in [Operations coverage](UX_OPERATIONS_COVERAGE.md). Existing permission, lifecycle, form and safeguarding behavior is frozen to baseline; no production deployment/data changes or notification workers are part of this work.
+- [x] Implement Batches A–F with per-route presentation and browser evidence in [Operations coverage](UX_OPERATIONS_COVERAGE.md). 121 route entries, 101 screen templates adopted, 100 actual screens rendered at three widths; Playbill Media is explicitly blocked before rendering. Existing permission, lifecycle, form and safeguarding behavior is frozen to baseline. No deployment, production-data changes or delivery workers were part of this work.
+- [x] Verify code `1b02b97`: web safety and isolated RC1 CI pass; local PHP/JS checks, 52 PHP behavior contracts, 76 browser interaction/role checks, 120 real HTTP/API checks and 36 transactional safeguarding checks pass. These checks do not prove every screen save or close the existing RC1 release gates.
 - [ ] Complete physical-device/assistive-technology and communicating/destructive POST acceptance separately. A styled control is not evidence that a transaction or real-device workflow passed.
 - [ ] **Operations dependency — Playbill Media:** populated `/admin/playbill/media` fails in `PlaybillEnhancementService::syncCastProfiles()` because the query selects `cr.role_title` without a `cr` join. Reproduced against fully migrated isolated schema; not a missing-column migration. Requires a separately reviewed backend correction and sync/consent regression test. UI adoption does not close this blocker.
+- [ ] **Local demo dependency:** read-only preflight on the existing `ctsmd` demo still finds 45 declared-contract issues, including safeguarding statements, videos and registration/notification columns. Browser verification used a fully migrated isolated schema. Reconcile the default demo through the migration review process separately; no schema changes were made during Operations UX work.
 
 Release preparation is not approval to deploy. See [RC1 evidence and required signoff proof](RC1_ACCEPTANCE.md) and [manifest/preflight/rollback/restore runbook](RC1_RELEASE_RUNBOOK.md). No hosting writes or workers were authorized or executed. The following IDs map to the dated evidence table; appoint owners through the release process.
 

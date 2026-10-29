@@ -1,0 +1,1989 @@
+{
+  "schema_version": 1,
+  "code_revision": "1b02b97b320a901d418b6d1398a7a592bc19d695",
+  "recorded_utc": "2026-10-29T02:04:57.730Z",
+  "environment": "Loopback Chromium and isolated complete MySQL schema; synthetic identities only",
+  "overall_browser_status": "INCOMPLETE_EXPECTED_PLAYBILL_SYNC_BLOCKER",
+  "screen_routes": 101,
+  "rendered_routes": 100,
+  "blocked_routes": 1,
+  "successful_viewports": 300,
+  "additional_query_disclosure_viewports": 27,
+  "additional_views": [
+    {
+      "name": "denied-memberships",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "registration-submissions",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "registration-intake-list",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "calendar-week",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "calendar-agenda",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "archived-production-settings",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "past-production-directory",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "case-request-disclosure",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    },
+    {
+      "name": "conversation-reason-disclosure",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "contrast_findings": 0
+    }
+  ],
+  "mobile_enabled_text_select_textarea_samples": 267,
+  "mobile_samples_below_44px": 0,
+  "observed_mobile_control_border_rgb": [
+    "rgb(141, 125, 117)"
+  ],
+  "control_edge_on_white_contrast": 3.95,
+  "interaction_checks": 76,
+  "interaction_failures": 0,
+  "baseline_php_contract_renderers": 52,
+  "local_real_http_backend_checks": 120,
+  "local_transactional_safeguarding_checks": 36,
+  "ci": {
+    "web_safety": "https://github.com/arwentz01/CTSMD/actions/runs/40803725183",
+    "isolated_rc1": "https://github.com/arwentz01/CTSMD/actions/runs/40803725199"
+  },
+  "limitations": [
+    "Not a WCAG certification, device test or release approval.",
+    "Text probes cover sampled visible states, not every conditional dialog or status.",
+    "Workflow form submission was intercepted in browser checks; only test identity/context POSTs executed.",
+    "Backend suite coverage is its named assertions, not every screen save.",
+    "Binary playback/upload/streaming, provider delivery, real artwork and full preserved history remain unverified.",
+    "Playbill Media template-only fixture is excluded from passing routes.",
+    "Original local demo schema still fails read-only preflight; no schema was changed."
+  ],
+  "routes": [
+    {
+      "route": "/admin/accounts",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/accounts/view",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/registrations",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/registrations/edit",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/registrations/view",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/admin/registrations/intake",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/admin/email",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/notification-preferences",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/push-settings",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/push/subscribe",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/push/unsubscribe",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/push/test",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/staff",
+      "batch": "A",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/admin/operations",
+      "batch": "A",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/operations/community",
+      "batch": "A",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/operations/resources",
+      "batch": "A",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/operations/forms",
+      "batch": "A",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/calendar",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/calendar/feed",
+      "batch": "E",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/student-profile",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/student-profile/headshot",
+      "batch": "C",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/student-profile/family",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/student-profile/family/review",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/family/caregiver-schedule",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/theatre-history/resume",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/theatre-history",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/archive",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/archive/production",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/archive/community",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/archive/file",
+      "batch": "D",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/admin/member-resources",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/member-resources/edit",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/member-resources/download",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/files",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/files/view",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/resources",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/resources/view",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/people",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/people/view",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/volunteer/history",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/volunteer/service-record",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/volunteer/verifications",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/volunteer/verification",
+      "batch": "E",
+      "kind": "print",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/admin/volunteer-verification",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/volunteer/training",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-development",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-shifts",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-shifts/new",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-shifts/view",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/volunteer/approvals",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-approvals",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/volunteer-approvals/review",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/volunteer-readiness",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/volunteer-shifts",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/volunteer/shift",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/teams",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/teams/view",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/private-channel",
+      "batch": "B",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/moderation/terms",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/moderation/terms/edit",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/moderation/queue",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/channels",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/channels/edit",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/productions",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/admin/productions/view",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/productions/artwork-image",
+      "batch": "D",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/production/casting",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/readiness",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production/tasks",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/day",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production/artwork-image",
+      "batch": "D",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/production/groups",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/groups/view",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/people",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/support-needs",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/attendance",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/attendance/take",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/attendance/report",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production/late-pickups",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/schedule/new",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/production/notices",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production/notice",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/videos",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-table-region",
+        "ops-form",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/videos/view",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/videos/play",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/videos/archive-download",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/videos/inventory",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/production/rehearsal-library",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-table-region",
+        "ops-form",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/production/rehearsal-video",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/files/download",
+      "batch": "D",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/admin/files",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/files/edit",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/resources",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/resources/edit",
+      "batch": "D",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/playbill",
+      "batch": "F",
+      "kind": "public",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/playbill/asset",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/playbill/qr",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/playbill/sign",
+      "batch": "F",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/admin/playbill/media",
+      "batch": "F",
+      "kind": "screen",
+      "status": "blocked-before-render",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": null,
+      "text_contrast_findings": null,
+      "components": []
+    },
+    {
+      "route": "/playbills",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/admin/playbill",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/schedule",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/production/edit",
+      "batch": "E",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-form",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/safeguarding/conversations",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/safeguarding/conversations/attachment",
+      "batch": "C",
+      "kind": "transport",
+      "status": "retained-not-workflow-tested"
+    },
+    {
+      "route": "/safeguarding/cases",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/safeguarding/case",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/safeguarding",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/safeguarding/review",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading",
+        "ops-panel"
+      ]
+    },
+    {
+      "route": "/safeguarding/audit",
+      "batch": "C",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-heading"
+      ]
+    },
+    {
+      "route": "/forms",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/forms/view",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/forms",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/forms/review",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/forms/group-assign",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/forms/manage",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/forms/manage/edit",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/forms/manage/assign",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    },
+    {
+      "route": "/admin/forms/build",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page"
+      ]
+    },
+    {
+      "route": "/admin/forms/builder",
+      "batch": "F",
+      "kind": "screen",
+      "status": "rendered",
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "document_overflow": false,
+      "text_contrast_findings": 0,
+      "components": [
+        "ops-page",
+        "ops-form"
+      ]
+    }
+  ]
+}

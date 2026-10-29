@@ -178,5 +178,10 @@ See [Operations coverage](UX_OPERATIONS_COVERAGE.md) for the dispatch-order inve
 | Dark decorative hub banner, tiny category labels, individual icon tiles | Warm workspace heading and compact tool rows | Scan actual permitted destinations without a competing dashboard |
 | Account parent styled but legacy People, Teams and registration subviews | Explicit renderer/component adoption, grouped access/contact controls and intake review | Parent adoption does not prove a detail screen |
 | Ad hoc table overflow | Named keyboard-scrollable native-table regions | Preserve columns and native semantics on narrow screens |
+| Mixed dark operational banners and pale gold metadata | Compact warm headings and measured readable labels | Preserve theatre identity without obscuring working information |
+| Leads drawer loses focus; Casting drawer inherits phone page margins | Focus-return/Tab containment and viewport-bound drawer | Keyboard and phone operation must be verified beyond a closed screenshot |
+| Legacy form administration treated as already complete at parent level | Review, assignment, settings and builder routes independently captured | Existing B2 screens still need detail-level regression coverage |
 
 Presentation-only PHP contracts are pinned to `c6c7852`; routes, permissions, queries and actions must remain unchanged. Browser rendering is recorded separately from source contracts and domain-changing workflow tests.
+
+Final code evidence `1b02b97`: 100 rendered routes × three widths, 76 browser interaction/role checks, 52 baseline PHP behavior contracts, 120 local real-HTTP/API checks and 36 transactional safeguarding checks. [Web safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40803725183) and [isolated RC1 CI](https://github.com/arwentz01/CTSMD/actions/runs/40803725199) pass. The separate Playbill Media synchronization failure is **not** closed by those passing suites. See the coverage report for its actual-route failure, template-only fixture and default-demo schema limitation. No deployment, production connection or delivery queue processing occurred.

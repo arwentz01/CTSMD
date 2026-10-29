@@ -5,9 +5,11 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Area | Deferred refinement | Priority |
 | --- | --- | --- |
 | Shared shell | Reduce legacy CSS layering after route adoption; retain opt-in scope until verified | Medium |
-| Operations | Track every registered route and embedded subview in UX_OPERATIONS_COVERAGE.md; do not infer detail completion from parent styling | Active batch work |
+| Operations | Batches A–F implemented; 100 routes rendered independently at three widths. Playbill Media controller remains blocked; keep conditional-state gaps explicit in UX_OPERATIONS_COVERAGE.md | Implementation complete; acceptance exceptions |
 | Operations | Physical-device, Safari/Firefox, screen-reader and 200% zoom acceptance remain separate from Chromium responsive checks | Acceptance |
 | Playbill dependency | Undefined `cr.role_title` query alias prevents Media/Sponsors route rendering; backend review required, do not mask as a styling success | Blocked |
+| Local environment | Default demo schema fails read-only preflight (safeguarding/video/registration/notification dependencies). Review migrations separately; this UX pass did not apply them | Dependency |
+| Shared shell | Retire legacy global mobile important rules after multi-engine/device testing; scoped field/drawer exceptions currently preserve the approved controls | Medium |
 | Shared shell | Review long production names in the native select on physical devices | Low |
 | Family | Add explicit per-child filtering only if household usability sessions justify it; keep all children and shows visible by default | Low |
 | Student | Consider reducing repeated date/time presentation between Next up and the full timeline after user testing | Low |
@@ -18,7 +20,7 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Notifications | Broader notification deduplication needs an API/service design review; this phase keeps delivery and queue processing unchanged | Medium |
 | Accessibility | Physical devices, Safari/Firefox and assistive-technology validation remain follow-up testing | Medium |
 | Forms | No draft/save model or template library is invented; only the existing submission and builder capabilities are presented | Medium |
-| Forms | Closed-production backend enforcement is a release blocker in TODO, not cosmetic backlog work | P0 dependency |
+| Forms | Phase 4 enforcement and RC1 closed-form regressions pass; concurrent-close/race proof remains RC1-04, not cosmetic backlog work | Release acceptance |
 | Native | SDK 58 retained. Verify iPhone/iPad and Android phone/tablet, keyboard, large font settings, screen readers, dark appearance and back/deep-link behavior on simulator/hardware | Acceptance |
 | Native | Full dark-mode role mapping and expanded tablet navigation need a device-verified follow-up; the current warm light identity is not a dark-mode implementation | Medium |
 | Native/API | Structured forms, pickup editing and full staff attendance/readiness workflows must follow real API support; no local mock completion or offline mutation queue added | Dependency |
