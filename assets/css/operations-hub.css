@@ -1,8 +1,73 @@
-/* Tool destinations, not decorative metrics. */
-.ux-operations .opshub-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 24px; background:var(--ux-paper); border:1px solid var(--ux-line); border-radius:12px; padding:0 20px; }
-.ux-operations .opshub-card { display:block; padding:20px 0; border:0; border-bottom:1px solid var(--ux-line); border-radius:0; color:var(--ux-ink); background:none; box-shadow:none; text-decoration:none; transform:none; }
-.ux-operations .opshub-card:hover { background:var(--ux-ivory); box-shadow:none; transform:none; }
-.ux-operations .opshub-card h3 { margin:0 0 6px; font-size:16px; font-weight:650; }
-.ux-operations .opshub-card p { margin:0; max-width:65ch; color:var(--ux-muted); font-size:14px; line-height:1.5; }
-.ux-operations .opshub-card span { display:block; margin-top:10px; color:var(--ux-wine); font-size:13px; font-weight:650; }
-@media(max-width:760px) { .ux-operations .opshub-grid { grid-template-columns:1fr; padding-inline:16px; } }
+/* Compact, full-width destination rows for the Operations hub.
+   Cards share a grid cell; their hover/focus paint covers the entire hit target. */
+.ux-operations .opshub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 0;
+  padding: 8px 12px;
+  background: var(--ux-paper);
+  border: 1px solid var(--ux-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ux-operations .opshub-grid > a.opshub-card.surface {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 14px 14px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--ux-line);
+  border-radius: 6px;
+  color: var(--ux-ink);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.ux-operations .opshub-grid > a.opshub-card.surface > div { min-width: 0; }
+.ux-operations .opshub-grid > a.opshub-card.surface:hover,
+.ux-operations .opshub-grid > a.opshub-card.surface:focus-visible {
+  background: var(--ux-ivory);
+  box-shadow: none;
+  transform: none;
+}
+.ux-operations .opshub-card h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.ux-operations .opshub-card p {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--ux-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ux-operations .opshub-card span {
+  display: block;
+  margin-top: 7px;
+  color: var(--ux-wine);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ux-operations .opshub-page .opshub-hero { margin-bottom: 14px; }
+@media (max-width: 760px) {
+  .ux-operations .opshub-grid {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding: 6px 10px;
+  }
+  .ux-operations .opshub-grid > a.opshub-card.surface {
+    min-height: 44px;
+    padding: 13px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ux-operations .opshub-grid > a.opshub-card.surface { transition: none; }
+}
