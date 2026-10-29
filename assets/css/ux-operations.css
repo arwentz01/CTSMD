@@ -72,6 +72,16 @@
 .ux-operations .pa-production-hero > div:last-child span { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
 .ux-operations .pa-panel { margin-bottom:20px; }
 .ux-operations .pa-panel header h3 { font-size:17px; }
+/* Participation: predictable review headers and readable coverage, not decorative metrics. */
+.ux-operations :is(.vd-hero.admin,.vsm-head) { background:var(--ux-ivory); color:var(--ux-ink); border-radius:12px; padding:20px; box-shadow:none; }
+.ux-operations :is(.vd-hero.admin,.vsm-head) h2 { font:650 24px/1.25 var(--ux-font,system-ui,sans-serif); color:var(--ux-ink); max-width:55ch; }
+.ux-operations :is(.vd-hero.admin p,.vsm-side small,.vsm-roster h3,.vsm-roster-list small,.vol-capacity span,.prod-impact-card span,.att-person-id small) { color:var(--ux-muted); }
+.ux-operations :is(.vd-hero.admin small,.vsm-side small,.vsm-roster > header small,.vsm-roster > small,.prod-impact-card > small,.att-roster-section-head small) { font-size:13px; letter-spacing:0; color:var(--ux-muted); }
+.ux-operations :is(.vsm-head > a,.sc-hero > a) { background:var(--ux-paper); color:var(--ux-wine); border:1px solid var(--ux-control); border-radius:7px; }
+.ux-operations .approval-queue-row em { color:var(--ux-ink); background:var(--ux-ivory); font-size:12px; letter-spacing:0; }
+.ux-operations .prod-schedule-section-title { font-size:13px; letter-spacing:0; }
+.ux-operations :is(.approval-queue-row small,.vol-score span,.sc-radio b,.sc-radio small,.sc-check small,.prod-impact-card span small) { color:var(--ux-muted); font-size:13px; letter-spacing:0; }
+.ux-operations :is(.vsm-head > a,.sc-hero > a) { display:inline-flex; align-items:center; min-height:40px; padding:8px 12px; }
 .ux-operations .ops-page :is(.op-table-primary,.op-table-row) { overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .ux-operations .ops-page { padding:16px; }
