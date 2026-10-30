@@ -57,3 +57,38 @@
   .acct-c-state,.acct-c-zip{grid-column:span 6!important}
   .acct-contact-actions button{width:100%!important}
 }
+
+
+/* Account detail: inspect first, edit intentionally. */
+.acct-profile-summary{padding:18px 20px!important;margin-bottom:14px!important}
+.acct-summary-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.acct-summary-head h3,.acct-summary-head h4{margin:3px 0 0}
+.acct-summary-head small,.acct-dialog-head small{font-size:11px;font-weight:800;letter-spacing:.055em;color:var(--text-muted,#675b5a)}
+.acct-summary-head p{margin:5px 0 0;font-size:13px;color:var(--text-muted,#675b5a)}
+.acct-profile-summary .acct-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 24px;margin:15px 0 0}
+.acct-facts>div{min-width:0}
+.acct-facts dt{font-size:11px;font-weight:750;color:var(--text-muted,#675b5a);margin-bottom:5px}
+.acct-facts dd{margin:0;font-size:14px;font-weight:650;overflow-wrap:anywhere}
+.acct-not-set{color:var(--text-muted,#675b5a);font-weight:400}
+.acct-edit-action,.acct-cancel{width:auto!important;min-height:36px!important;white-space:nowrap;background:#fff!important;color:var(--brand-primary,#a6192e)!important;border:1px solid #cbbfba!important;border-radius:8px!important;padding:7px 14px!important;font-weight:750!important}
+.acct-edit-action:hover,.acct-cancel:hover{background:#fbf3f1!important}
+.acct-access-summary{padding:11px 0!important}
+.acct-access-summary .acct-summary-head{align-items:center}
+.acct-role-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.acct-role-chip{display:inline-block;padding:4px 9px;background:#f8f0ee;color:#613e42;border:1px solid #eadedb;border-radius:999px;font-size:12px;font-weight:650}
+.acct-edit-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(720px,calc(100vw - 24px));max-height:min(88vh,900px);overflow:auto;border:1px solid #ded2cd;border-radius:14px;box-shadow:0 24px 80px #18120f55;background:#fff;color:#292526;padding:22px;z-index:10000}
+.acct-edit-dialog::backdrop{background:rgba(24,18,20,.58)}
+.acct-edit-dialog-narrow{width:min(510px,calc(100vw - 24px))}
+.acct-dialog-head{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:18px}
+.acct-dialog-head h2{font-size:22px;line-height:1.2;margin:3px 0 6px}
+.acct-dialog-head p{font-size:13px;margin:0;color:#655d5c}
+.acct-dialog-close{font-size:25px!important;width:38px!important;min-width:38px!important;height:38px!important;padding:0!important;background:#f7f2ef!important;border-radius:8px!important;color:#332e2d!important}
+.acct-edit-dialog .acct-contact-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+.acct-edit-dialog form{display:grid;gap:12px}
+.acct-edit-dialog .acct-contact-actions{gap:8px;flex-wrap:wrap}
+.acct-edit-dialog .acct-role-list{max-width:none}
+.acct-edit-dialog .acct-role{padding:10px 12px}
+.acct-edit-dialog .acct-role-list form{gap:7px}
+.acct-edit-dialog form>button[name=action]{margin-top:10px}
+@media(max-width:900px){.acct-profile-summary .acct-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){.acct-profile-summary .acct-facts{grid-template-columns:1fr 1fr;gap:14px}.acct-profile-summary{padding:16px!important}.acct-edit-dialog{padding:16px}.acct-summary-head{align-items:start}.acct-contact-grid .acct-contact-field{grid-column:span 12!important}.acct-edit-dialog .acct-contact-actions button{flex:1}}
