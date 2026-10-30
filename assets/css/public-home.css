@@ -6,3 +6,54 @@ body.public-home{margin:0;background:var(--ux-ground);color:var(--ux-ink)}.stage
 @media(max-width:1000px){.stage-header{flex-wrap:wrap}.stage-header nav{gap:14px}.stage-cover{gap:32px}.stage-story h1{font-size:clamp(3rem,7vw,5rem)}.stage-actions{gap:10px 20px}.stage-information{gap:32px}.stage-imprint{padding:28px;min-height:300px}}
 @media(max-width:680px){.stage-home{padding-inline:20px}.stage-header{padding-block:20px;gap:16px}.stage-header nav{width:100%;gap:8px 18px}.stage-header nav .stage-signin{padding:8px 12px}.stage-brand>span{font-size:1.1rem}.stage-cover{grid-template-columns:minmax(0,1fr);padding:38px 0;gap:32px}.stage-story h1{font-size:clamp(3rem,12vw,4.8rem);line-height:1.04;margin-bottom:22px}.stage-intro{font-size:1rem;margin-bottom:22px}.stage-imprint{min-height:160px;padding:24px;align-items:center}.stage-imprint>span{font-size:2.8rem}.stage-artwork{padding:16px;max-width:440px;width:100%;justify-self:center}.stage-artwork img{max-height:440px}.stage-information{grid-template-columns:minmax(0,1fr);padding-bottom:36px;gap:36px}.stage-production-list>a{grid-template-columns:minmax(0,1fr) 24px;gap:8px}.stage-production-list>a>span:first-child{grid-column:1/-1}.stage-productions{padding-bottom:32px}.stage-section-title{gap:10px}.stage-footer>span{width:100%}}
 @media(prefers-reduced-motion:reduce){.stage-home *{scroll-behavior:auto}}
+
+
+/* Living Playbill / Opening Night: public-facing art direction.
+   Organization color and published artwork supply the identity. */
+.stage-home{max-width:1580px;padding-inline:clamp(22px,5.2vw,92px)}
+.stage-header{min-height:94px;border-bottom:1px solid color-mix(in srgb,var(--ux-ink) 28%,transparent)}
+.stage-brand strong{font-weight:850;letter-spacing:-.045em}
+.stage-header nav .stage-signin{border-radius:999px;padding-inline:22px}
+.stage-cover{position:relative;grid-template-columns:minmax(0,.93fr) minmax(0,1.07fr);gap:clamp(28px,4vw,64px);align-items:stretch;padding:clamp(40px,5vw,72px) 0 clamp(54px,6vw,90px);min-height:min(740px,80vh)}
+.stage-story{display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1;padding-block:12px}
+.stage-story:before{content:"YOUR NEXT ACT STARTS HERE";display:block;letter-spacing:.18em;font-size:.69rem;font-weight:850;color:var(--stage-primary);margin-bottom:clamp(20px,3vw,44px)}
+.stage-story h1{font-size:clamp(4.2rem,7.4vw,8.3rem);line-height:.91;letter-spacing:-.072em;margin:0 0 clamp(24px,4vw,48px);max-width:9ch}
+.stage-story h1 em{color:var(--stage-primary);font-weight:400}
+.stage-intro{font-size:clamp(1.08rem,1.7vw,1.4rem);line-height:1.48;max-width:29ch;margin-bottom:28px;color:var(--ux-ink)}
+.stage-actions{gap:12px 24px}
+.stage-actions>a{min-height:56px}
+.stage-actions .stage-primary{border-radius:999px;padding:14px 24px;min-width:195px}
+.stage-actions>a:not(.stage-primary){text-decoration-thickness:1px}
+.stage-member-note{font-size:.79rem;max-width:35ch;margin-top:20px}
+.stage-artwork,.stage-imprint{position:relative;min-height:520px;overflow:hidden;border:0;margin:0;align-self:stretch}
+.stage-artwork{display:flex;flex-direction:column;justify-content:center;padding:clamp(18px,2.8vw,44px);background:color-mix(in srgb,var(--stage-primary) 12%,var(--ux-ivory));isolation:isolate}
+.stage-artwork:before{content:"FEATURED ON STAGE";position:absolute;left:18px;top:18px;z-index:2;background:var(--stage-primary);color:var(--organization-on-primary,#fff);padding:8px 12px;font-size:.65rem;font-weight:800;letter-spacing:.12em}
+.stage-artwork:after{content:"";position:absolute;right:-22%;top:-20%;width:74%;aspect-ratio:1;border:1px solid color-mix(in srgb,var(--stage-primary) 30%,transparent);border-radius:50%;pointer-events:none}
+.stage-artwork>a{display:flex;min-height:0;justify-content:center;flex:1;align-items:center}
+.stage-artwork img{width:auto;max-width:100%;max-height:clamp(340px,45vw,565px);object-fit:contain;filter:drop-shadow(0 18px 22px rgb(33 19 24 / .20))}
+.stage-artwork figcaption{position:relative;z-index:2;background:var(--ux-paper);padding:12px 16px;margin:14px -8px -8px;align-items:center}
+.stage-artwork figcaption strong{font-size:.95rem}
+.stage-imprint{display:flex;flex-direction:column;justify-content:space-between;padding:clamp(24px,3vw,46px);background:var(--stage-primary);color:var(--organization-on-primary,#fff);isolation:isolate}
+.stage-imprint:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(105deg,transparent 0 42px,rgba(255,255,255,.045) 43px,transparent 44px 110px);pointer-events:none;z-index:-1}
+.stage-imprint-top{display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:.7rem;letter-spacing:.2em;font-weight:800}
+.stage-imprint-top span:last-child{font-size:1.75rem;letter-spacing:0}
+.stage-imprint-center{position:absolute;inset:12% 0 16%;display:grid;place-items:center;pointer-events:none;overflow:hidden}
+.stage-orbit{position:absolute;display:block;width:75%;aspect-ratio:1;border:1px solid currentColor;opacity:.35;transform:rotate(-26deg) scaleX(.65);border-radius:50%}
+.stage-orbit-two{width:106%;transform:rotate(38deg) scaleX(.48);opacity:.26}
+.stage-asterisk{font:400 clamp(14rem,29vw,31rem)/1 Georgia,serif;transform:rotate(-16deg);color:var(--stage-accent);opacity:.92}
+.stage-imprint-feature{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 20px;align-items:end;text-decoration:none}
+.stage-imprint-feature>span:first-child{grid-column:1/-1;letter-spacing:.18em;font-size:.68rem;font-weight:800}
+.stage-imprint-feature strong{font:italic 400 clamp(2rem,3.6vw,4.3rem)/1.02 var(--font-serif,Georgia,serif);letter-spacing:-.045em;max-width:15ch}
+.stage-imprint-feature>span:last-child{font-size:1.6rem}
+.stage-imprint-feature[href]:hover strong{text-decoration:underline;text-decoration-thickness:1px}
+.stage-productions{padding-top:36px}
+.stage-section-title{margin-bottom:30px}
+.stage-home h2{font-size:clamp(2.25rem,4vw,4.3rem);letter-spacing:-.055em}
+.stage-production-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 clamp(20px,4vw,60px)}
+.stage-production-list>a{min-height:136px;grid-template-columns:1fr 34px;gap:10px 18px;align-content:center;border-top:1px solid var(--ux-line);padding:24px 0}
+.stage-production-list>a>span:first-child{grid-column:1/-1;letter-spacing:.1em;text-transform:uppercase;font-size:.69rem;font-weight:800;color:var(--stage-primary)}
+.stage-production-list h3{font-size:clamp(1.4rem,2.5vw,2.7rem);line-height:1.08;letter-spacing:-.03em}
+.stage-production-list>a>span:last-child{font-size:1.4rem;align-self:end}
+.stage-information{padding-top:50px}
+@media(max-width:1000px){.stage-cover{min-height:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.stage-story h1{font-size:clamp(3.6rem,7.3vw,6rem)}.stage-imprint,.stage-artwork{min-height:440px}.stage-asterisk{font-size:clamp(11rem,28vw,19rem)}}
+@media(max-width:680px){.stage-home{padding-inline:20px}.stage-header{min-height:0}.stage-cover{grid-template-columns:minmax(0,1fr);padding:36px 0 48px;gap:26px}.stage-story:before{margin-bottom:22px}.stage-story h1{font-size:clamp(3.7rem,13vw,6rem);margin-bottom:24px;max-width:10ch}.stage-intro{font-size:1.08rem}.stage-imprint,.stage-artwork{min-height:340px}.stage-imprint-center{inset:2% 0 12%}.stage-asterisk{font-size:16rem}.stage-imprint-feature strong{font-size:clamp(2rem,8vw,3.4rem)}.stage-artwork img{max-height:400px}.stage-production-list{grid-template-columns:minmax(0,1fr)}.stage-production-list>a{min-height:110px}.stage-home h2{font-size:2.6rem}.stage-information{padding-top:32px}}
