@@ -331,3 +331,19 @@ body.public-home{background:#f3eee8}
 .features-real-life>span{display:block;color:var(--stage-primary);font-size:.7rem;font-weight:850;letter-spacing:.13em;margin-bottom:9px}
 .features-real-life p{max-width:85ch;color:#49353a;font-size:1rem;line-height:1.65;margin:0}
 @media(max-width:760px){.features-real-life{padding:19px 20px}}
+
+
+/* A six-step theatre journey connects individual capabilities into one story. */
+.features-journey{margin:0 0 62px;padding:clamp(28px,4vw,50px);border-radius:14px;background:#f7eee3;border:1px solid #dfcec0}
+.features-journey-intro{max-width:730px;margin-bottom:30px}
+.features-journey-intro h2{font:400 clamp(2.25rem,4.3vw,3.9rem)/1.08 Georgia,serif;letter-spacing:-.035em;margin:9px 0 14px;color:#351a27}
+.features-journey-intro h2 em{color:var(--stage-primary)}
+.features-journey-intro>p:last-child{color:#6a585b;font-size:1.05rem}
+.features-journey-steps{list-style:none;counter-reset:none;margin:0 0 27px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.features-journey-steps li{display:flex;gap:16px;min-width:0;padding:22px 19px;background:#fffaf4;border:1px solid #e2d2c4;border-radius:10px}
+.features-journey-number{display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border-radius:50%;background:var(--stage-primary);color:var(--organization-on-primary,#fff);font-size:.72rem;font-weight:800}
+.features-journey-steps h3{font:400 1.22rem/1.2 Georgia,serif;margin:2px 0 10px;color:#38212c}
+.features-journey-steps p{font-size:.89rem;line-height:1.58;color:#66575a;margin:0}
+.features-journey-link{display:inline-block;color:var(--stage-primary);font-weight:800;text-underline-offset:4px}
+@media(max-width:980px){.features-journey-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.features-journey-steps{grid-template-columns:1fr}.features-journey{padding:24px 18px}.features-journey-steps li{padding:18px}}
