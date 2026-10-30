@@ -167,3 +167,44 @@ body.public-home{background:#f3eee8}
 .lobby-upcoming-dates strong{font-weight:750;color:var(--ux-ink)}
 .lobby-upcoming-dates small{display:block;margin-top:4px;color:var(--ux-muted);font-size:.76rem}
 @media(max-width:650px){.lobby-upcoming-list article{display:flex;padding:14px}.lobby-upcoming-list article>div:last-child{padding-left:63px}}
+
+
+/* Theatre-lobby welcome: lighting and depth, not a featured-show billboard. */
+.stage-home .stage-welcome-theatrical{
+  position:relative;isolation:isolate;overflow:hidden;max-width:none;
+  margin:28px 0 36px;padding:clamp(43px,6vw,80px) clamp(28px,5.5vw,78px);
+  min-height:410px;border-radius:15px;
+  background:radial-gradient(ellipse at 84% 12%,rgba(219,155,101,.2),transparent 35%),
+             radial-gradient(ellipse at 28% 110%,rgba(170,48,73,.34),transparent 55%),
+             linear-gradient(118deg,#23131e 0%,#4b1930 55%,#641e35 100%);
+  color:#fff4e9;box-shadow:0 15px 35px rgba(54,24,35,.15);
+}
+.stage-welcome-theatrical:before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.4;
+  background:repeating-linear-gradient(96deg,transparent 0 90px,rgba(255,224,193,.05) 91px,transparent 92px 175px);
+}
+.stage-welcome-theatrical:after{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  width:50%;height:130%;right:-16%;top:-34%;border:1px solid rgba(255,224,188,.22);
+  border-radius:50%;transform:rotate(-24deg);
+  box-shadow:0 0 0 54px rgba(247,200,148,.035),0 0 0 120px rgba(247,200,148,.024);
+}
+.stage-welcome-theatrical .stage-light{position:absolute;z-index:-1;pointer-events:none;inset:auto}
+.stage-light-left{width:470px;height:470px;left:-240px;top:-320px;background:radial-gradient(circle,rgba(249,213,161,.2),transparent 68%)}
+.stage-light-right{width:580px;height:580px;right:-240px;bottom:-390px;background:radial-gradient(circle,rgba(249,192,143,.19),transparent 70%)}
+.stage-welcome-theatrical .stage-welcome-content{position:relative;max-width:750px}
+.stage-welcome-theatrical .stage-eyebrow{color:#efc684!important;font-size:.72rem!important;margin-bottom:18px!important}
+.stage-welcome-theatrical h1{font-size:clamp(2.8rem,5vw,4.85rem);line-height:1.05;color:#fffaf5;max-width:none;margin-bottom:23px}
+.stage-welcome-theatrical h1 em{color:#f2c892}
+.stage-welcome-theatrical .stage-welcome-lead{color:#fff4eb;font-size:clamp(1.1rem,1.65vw,1.33rem);max-width:57ch;margin-bottom:14px}
+.stage-welcome-theatrical .stage-welcome-support{color:#e9d4d0;font-size:.94rem;line-height:1.55;max-width:62ch;margin-bottom:26px}
+.stage-welcome-theatrical .stage-actions{gap:12px 24px}
+.stage-welcome-theatrical .stage-actions .stage-primary{background:#f2d6ae;color:#361827;box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:9px;font-weight:800}
+.stage-welcome-theatrical .stage-actions .stage-primary:hover{background:#fff0d8}
+.stage-welcome-theatrical .stage-actions>a:not(.stage-primary){color:#fff8f0;text-decoration-color:#e7be99}
+.stage-welcome-theatrical .stage-actions>a:focus-visible{outline-color:#f5d7ad}
+@media(max-width:680px){
+ .stage-home .stage-welcome-theatrical{margin:14px 0 26px;padding:38px 25px;min-height:0;border-radius:12px}
+ .stage-welcome-theatrical h1{font-size:clamp(2.5rem,9.5vw,3.9rem)}
+ .stage-welcome-theatrical:after{width:100%;right:-72%;top:-20%;height:100%}
+}
