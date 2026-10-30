@@ -24,10 +24,11 @@ foreach(['published','empty'] as $state){
  $html=shell_exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg(__FILE__).' --render '.$state);
  $ok(is_string($html)&&str_ends_with(trim($html),'</html>')&&!preg_match('/Warning:|Fatal error/',$html),'Actual public template renders completely.');
  $ok(str_contains($html,'Another Theatre')&&!str_contains($html,'CTSMD')&&str_contains($html,'--organization-primary:#f0d040;'),'Actual public page is organization-aware.');
+ $ok(str_contains($html,'/connect/features')&&str_contains($html,'Performers &amp; Students')&&str_contains($html,'Parents &amp; Guardians'),'Welcome page provides audience context and a features destination.');
  foreach(['/login','/join','/register','/productions'] as $route)$ok(str_contains($html,'href="/connect'.$route.'"'),'Public destination retained: '.$route);
  foreach(['/admin/','/my-theatre','/channels','/messages','production_artwork=1'] as $private)$ok(!str_contains($html,$private),'No private destinations or artwork requests on public page.');
  if($state==='published')$ok(str_contains($html,'/playbill/asset?kind=artwork&amp;slug=public-program')&&str_contains($html,'A public production')&&str_contains($html,'Open audition'),'Published artwork, production and signup rendered.');
- else $ok(!str_contains($html,'/playbill/asset')&&str_contains($html,'stage-imprint')&&str_contains($html,'No public signups'),'Empty state has strong type and no invented production imagery.');
+ else $ok(!str_contains($html,'/playbill/asset')&&!str_contains($html,'stage-opportunities')&&!str_contains($html,'stage-program-gallery')&&str_contains($html,'Where the whole'),'Empty state welcomes visitors without invented content or empty sections.');
 }
 $source=file_get_contents(dirname(__DIR__).'/src/PublicExperience.php');
 $landing=substr($source,strpos($source,'private static function landing('),strpos($source,'private static function registration(')-strpos($source,'private static function landing('));
