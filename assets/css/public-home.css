@@ -154,3 +154,16 @@ body.public-home{background:#f3eee8}
 .lobby-past-grid .lobby-past-name strong{font-size:1.13rem}
 .lobby-past-grid a>span:last-child{margin-left:auto}
 @media(max-width:650px){.lobby-list-poster{flex-basis:48px;width:48px;height:68px}.lobby-past-grid a{min-height:94px}.lobby-show .lobby-date{font-size:.8rem}}
+
+
+/* Upcoming productions use the same compact card language as Past. */
+.lobby-upcoming-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.lobby-upcoming-list article{display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:14px;min-width:0;padding:16px;border:1px solid #dfd0c5;border-radius:8px;background:#fbf5ee}
+.lobby-upcoming-list .lobby-list-identity{align-items:center}
+.lobby-upcoming-list h3{font-size:1.28rem;line-height:1.18;margin:6px 0}
+.lobby-upcoming-list article>div:last-child{padding-left:71px;text-align:left;line-height:1.45}
+.lobby-upcoming-list article>div:last-child a{color:var(--stage-primary);font-weight:750}
+.lobby-upcoming-dates{display:block}
+.lobby-upcoming-dates strong{font-weight:750;color:var(--ux-ink)}
+.lobby-upcoming-dates small{display:block;margin-top:4px;color:var(--ux-muted);font-size:.76rem}
+@media(max-width:650px){.lobby-upcoming-list article{display:flex;padding:14px}.lobby-upcoming-list article>div:last-child{padding-left:63px}}
