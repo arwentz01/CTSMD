@@ -114,6 +114,7 @@ try{
  $assert($request('Administrator','/production/people','POST',['csrf_token'=>$teamBody['csrf_token'],'production_id'=>$productions['A'],'action'=>'remove','membership_id'=>999])['status']===303,'Obsolete generic People remove action rejected');
  $assert($request('Administrator','/production/people','POST',['csrf_token'=>$teamBody['csrf_token'],'production_id'=>$productions['A'],'action'=>'remove_team','assignment_id'=>$teamRow['id'],'revision'=>$teamRow['revision']])['status']===303,'Specific team removal works through actual People POST');
  $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=".$productions['A']." AND user_id=".$users['Guardian']." AND audience_type='adult' AND status='active'")->fetchColumn()===1,'People team removal retains independent accepted Adult cast');
+ $staffSelection=$request('Staff','/production');$request('Staff','/production/select','POST',['csrf_token'=>$csrf($staffSelection['body'],'production_id'),'production_id'=>$productions['A'],'return_to'=>'/production/people']);
  $assert($request('Staff','/production/people')['status']===403,'Unscoped Staff cannot inspect private People responsibilities');
  $staffAccount=$request('Administrator','/admin/accounts/view?id='.$users['Staff']);
  $assert($request('Administrator','/admin/accounts/view?id='.$users['Staff'],'POST',['csrf_token'=>$csrf($staffAccount['body'],'action','production_staff_access'),'user_id'=>$users['Staff'],'production_id'=>$productions['A'],'staff_access'=>'1','action'=>'production_staff_access'])['status']===303,'Staff scope granted through existing account authorization route');
@@ -251,6 +252,7 @@ try{
  if(is_resource($process)){proc_terminate($process);proc_close($process);}
  foreach($createdAssets as $asset)if(str_starts_with($asset,$testStorage.'/')&&is_file($asset))unlink($asset);
  if(is_string($uploadPath)&&is_file($uploadPath))unlink($uploadPath);
+ foreach($productions??[] as $fixtureProduction)$db->prepare("UPDATE productions SET lifecycle_stage='archived',status='archived',is_active=0 WHERE id=?")->execute([$fixtureProduction]);
  // Keep isolated fixture history for diagnosis, but make every fake login unusable.
  foreach(['Student','StudentB','Guardian','FormerGuardian','Caregiver','Volunteer','Staff','Administrator'] as $label)if(isset($users[$label])){
   $db->prepare('UPDATE auth_mobile_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=:id')->execute(['id'=>$users[$label]]);

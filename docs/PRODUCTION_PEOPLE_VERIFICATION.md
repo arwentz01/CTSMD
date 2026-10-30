@@ -53,3 +53,5 @@ HTTP tests additionally verify real team/account authorization routes, CSRF reje
 - Broader RC1 hosting, backup/recovery, publication permutations and live pilot approval remain open. No signoff is inferred from these tests.
 
 CI evidence will be appended after the implementation push.
+
+The repeatable HTTP harness explicitly selects its own production for each Staff browser session and archives only its own synthetic productions during cleanup. Retained records from earlier runs must not determine the next run's working-production selection.
