@@ -21,7 +21,8 @@ final class CastProductionEnrollmentService {
         self::membership($db,$productionId,$studentId,$type,$role);
         $q=$db->prepare('SELECT id FROM production_memberships WHERE production_id=? AND user_id=? AND audience_type=?');$q->execute([$productionId,$studentId,$type]);$membershipId=(int)$q->fetchColumn();
         $db->prepare('UPDATE production_casting_records SET production_membership_id=?,rostered_by_user_id=?,rostered_at=NOW() WHERE production_id=? AND user_id=?')->execute([$membershipId,$actorId,$productionId,$studentId]);
-        $db->prepare("INSERT IGNORE INTO production_participant_functions(production_id,user_id,function_type,title,assigned_by_user_id) VALUES(?,?,'cast',?,?)")->execute([$productionId,$studentId,$role,$actorId]);
+        $db->prepare("UPDATE production_participant_functions SET status='inactive' WHERE production_id=? AND user_id=? AND function_type='cast' AND title<>?")->execute([$productionId,$studentId,$role]);
+        $db->prepare("INSERT INTO production_participant_functions(production_id,user_id,function_type,title,assigned_by_user_id) VALUES(?,?,'cast',?,?) ON DUPLICATE KEY UPDATE status='active',assigned_by_user_id=VALUES(assigned_by_user_id)")->execute([$productionId,$studentId,$role,$actorId]);
         if($type==='adult'){
             TheatreHistoryService::syncStudentCredit($db,$productionId,$studentId,$actorId);
             ProductionParticipantEligibility::audit($db,$actorId,$studentId,'adult_enrolled',['production_id'=>$productionId,'membership_id'=>$membershipId]);

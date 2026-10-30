@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__.'/TheatreHistoryService.php';
 
 final class CastingRoleService {
     public static function roles(PDO $db,int $productionId):array {
@@ -42,7 +43,9 @@ final class CastingRoleService {
             if($display!==null&&mb_strlen($display)>190)throw new RuntimeException('Selected role names exceed the casting display limit.');
             $db->prepare("UPDATE $table SET role_title=:role WHERE id=:id")->execute(['role'=>$display,'id'=>$recordId]);
             if(!$manual){
-                $db->prepare("UPDATE production_memberships pm JOIN production_casting_records cr ON cr.production_membership_id=pm.id SET pm.participation_role=:role WHERE cr.id=:id AND cr.production_id=:production AND pm.audience_type='student'")->execute(['role'=>$display,'id'=>$recordId,'production'=>$productionId]);
+                $db->prepare("UPDATE production_memberships pm JOIN production_casting_records cr ON cr.production_membership_id=pm.id SET pm.participation_role=:role WHERE cr.id=:id AND cr.production_id=:production AND pm.audience_type IN ('student','adult')")->execute(['role'=>$display,'id'=>$recordId,'production'=>$productionId]);
+                $q=$db->prepare("SELECT cr.user_id FROM production_casting_records cr JOIN production_memberships pm ON pm.id=cr.production_membership_id AND pm.status='active' WHERE cr.id=? AND cr.production_id=? AND cr.casting_status='cast'");$q->execute([$recordId,$productionId]);$person=(int)$q->fetchColumn();
+                if($person)TheatreHistoryService::syncStudentCredit($db,$productionId,$person);
                 // The offered role is a snapshot: changing selected roles invalidates
                 // an unanswered offer so a family never accepts an obsolete assignment.
                 $db->prepare("UPDATE production_cast_offers SET status='cancelled',responded_at=NOW() WHERE casting_record_id=:id AND status='pending' AND role_snapshot<>:role")->execute(['id'=>$recordId,'role'=>$display??'']);

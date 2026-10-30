@@ -50,3 +50,7 @@ Rollback requires a matched runtime/database backup and a reviewed restore plan.
 Measured local evidence is recorded in `ADULT_PERFORMER_VERIFICATION.md`. Source contracts and fresh bootstrap alone do not prove populated hosting compatibility, real-device behavior, push delivery, full publication/restore acceptance or WCAG certification. Historical evidence in the assumption inventory describes the previous implementation and is not the current identity model.
 
 Remaining blockers include independently reviewed hosting prerequisites and 097, restore rehearsal, full publication/manual-media/archive permutations, actual iOS/Android device sessions and notification revocation/delivery, and the existing Expo SDK patch compatibility gate. No dependency upgrade or production release is part of this correction.
+
+### Production People ownership update
+
+The subsequent [Production People redesign](PRODUCTION_PEOPLE_REDESIGN.md) moves descriptive crew/creative/operations functions to the reusable Production Team service without requiring cast enrollment or Adult Performer authorization. Casting alone owns character assignments, cast enrollment/removal and cast credits. Account Authorization roles/scoped Staff access, genuine family relationships and Volunteer Management remain separate. Cast removal no longer retires independent team functions or credits; reviewed program team credits use explicit snapshots.

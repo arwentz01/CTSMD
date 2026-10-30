@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
-require_once dirname(__DIR__).'/src/ProductionPeopleExperience.php';
+require_once dirname(__DIR__).'/src/CastingRosterService.php';
+require_once dirname(__DIR__).'/src/ProductionParticipantFunctionService.php';
 
 final class ClosedRosterPDO extends PDO {
     public int $writes=0;
@@ -25,13 +26,14 @@ function assertClosedRoster(bool $pass,string $label):void{
     echo 'PASS: '.$label."\n";
 }
 foreach(['completed','archived','unknown-stage'] as $stage){
-    foreach(['addMember','deactivateMember'] as $action){
+    foreach(['saveTeam','removeTeam','removeCast'] as $action){
         $db=new ClosedRosterPDO($stage);
-        $method=new ReflectionMethod(ProductionPeopleExperience::class,$action);
+
         $actor=['id'=>1,'roles'=>['administrator'],'permissions'=>['production.manage']];
         try{
-            if($action==='addMember')$method->invoke(null,$db,$actor,7,42,'student','Cast');
-            else $method->invoke(null,$db,$actor,7,5);
+            if($action==='saveTeam')ProductionParticipantFunctionService::saveAssignment($db,7,1,['user_id'=>42,'function_type'=>'creative','function_code'=>'director']);
+            elseif($action==='removeTeam')ProductionParticipantFunctionService::remove($db,7,1,5,1);
+            else CastingRosterService::remove($db,$actor,7,5);
             throw new RuntimeException('Closed roster unexpectedly accepted '.$action);
         }catch(RuntimeException $e){
             assertClosedRoster(str_contains(strtolower($e->getMessage()),'production')&&!str_contains($e->getMessage(),'unexpectedly accepted'),

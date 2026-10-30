@@ -146,7 +146,8 @@ final class ScheduleAudience
               ))
             ORDER BY sort_last_name,sort_first_name");
         $stmt->execute(array_merge([$productionId],$types));
-        return $stmt->fetchAll();
+        $byId=[];foreach($stmt->fetchAll() as $row)$byId[(int)$row['id']]??=$row;
+        return array_values($byId);
     }
 
     public static function userCanViewItem(PDO $db,array $user,array $item): bool

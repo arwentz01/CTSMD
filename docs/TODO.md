@@ -397,3 +397,9 @@ The 20-item website checklist, mobile-app gates, and privacy decisions are folde
 - [x] Replace duplicate classification/reviewer services and panels with existing assignable `adult_performer` role, shared performer queries and role-based native display. Safe forward migration 097 preserves legacy data/audits and prevents retry resurrection of revoked roles. Existing account POST, performer integration and safeguarding regressions pass locally. [Current architecture](ADULT_PARTICIPATION_ARCHITECTURE.md); [measured verification and open gates](ADULT_PERFORMER_VERIFICATION.md).
 - [ ] Independently review populated hosting prerequisites/097, mapping anomalies, maintenance/locking and matched backup restore before approval. No production changes performed.
 - [ ] Close existing Expo patch compatibility, real-device/push and complete publication/history recovery gates before pilot signoff. No additional Adult classification approval is required after ordinary authorized role assignment.
+
+## Production People / Production Team redesign — October 29
+
+- [x] Source implementation: reusable team functions, accessible add/edit/remove drawers, deduplicated directory and filters, live guardian discovery, Casting-owned cast removal, account-owned scoped Staff access, retained Theatre History and reviewed Playbill team snapshots. [Architecture](PRODUCTION_PEOPLE_REDESIGN.md); [verification](PRODUCTION_PEOPLE_VERIFICATION.md).
+- [ ] Review populated prerequisites through 097 and migrations 098/099, preview legacy public-name snapshots, backup/restore and approved rollout. Default local `ctsmd` and production have not received these migrations; isolated preview/test schemas only.
+- [ ] Physical-device/screen-reader acceptance and existing Expo compatible patch gate remain open. Team-only Student name publication requires an approved visible existing performer profile; no substitute consent workflow introduced.

@@ -94,6 +94,31 @@ try{
   $assert($request('Guardian','/api/mobile/casting-offer-respond','POST',['offer_id'=>$offer,'decision'=>'accepted','note'=>''],true)['status']===200,'Adult accepts own offer through native API');
   $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$p AND user_id=".$users['Guardian']." AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Native acceptance enrolls Adult independently');
  }
+ // Actual People drawer POSTs and account-owned Staff scopes, on owned fixtures.
+ $selection=$request('Administrator','/production');
+ $assert($request('Administrator','/production/select','POST',['csrf_token'=>$csrf($selection['body'],'production_id'),'production_id'=>$productions['A'],'return_to'=>'/production/people'])['status']===303,'Administrator selects fixture production for People');
+ $teamPage=$request('Administrator','/production/people?add_team=1');
+ $assert($teamPage['status']===200&&str_contains($teamPage['body'],'Add Production Team Member'),'People team editor renders through real HTTP');
+ $teamBody=['csrf_token'=>$csrf($teamPage['body'],'action','save_team'),'production_id'=>$productions['A'],'user_id'=>$users['Guardian'],'function_type'=>'creative','function_code'=>'director','staff_notes'=>'RC1 PRIVATE TEAM NOTE','action'=>'save_team'];
+ $assert($request('Administrator','/production/people','POST',$teamBody)['status']===303,'People existing team POST succeeds');
+ $teamQuery=$db->prepare("SELECT id,revision FROM production_participant_functions WHERE production_id=? AND user_id=? AND function_type='creative' AND title='Director' AND status='active'");$teamQuery->execute([$productions['A'],$users['Guardian']]);$teamRow=$teamQuery->fetch();
+ $assert((bool)$teamRow,'Real People POST persists one team assignment');
+ $peoplePage=$request('Administrator','/production/people');
+ $assert(substr_count($peoplePage['body'],'data-person-id="'.$users['Guardian'].'"')===1,'Real All People response deduplicates cast-parent-director');
+ $assert(!str_contains($peoplePage['body'],'name="audience_type"')&&!str_contains($peoplePage['body'],'name="participation_role"'),'Arbitrary audience/casting editor removed from People');
+ $assert($request('Guardian','/production/people')['status']===403,'Parent team credit grants no People administration or private notes access');
+ $nativeIdentity=$request('Guardian','/api/mobile/me','GET',null,true);
+ $assert(!in_array('production_staff',$nativeIdentity['json']['user']['roles']??[],true),'Native identity gains no Staff role from team assignment');
+ $assert($request('Administrator','/production/people','POST',array_replace($teamBody,['csrf_token'=>'invalid','function_code'=>'choreographer']))['status']===303,'Invalid People CSRF redirects without mutation');
+ $assert((int)$db->query("SELECT COUNT(*) FROM production_participant_functions WHERE production_id=".$productions['A']." AND user_id=".$users['Guardian']." AND function_type='creative' AND status='active'")->fetchColumn()===1,'Rejected CSRF creates no extra team responsibility');
+ $assert($request('Administrator','/production/people','POST',['csrf_token'=>$teamBody['csrf_token'],'production_id'=>$productions['A'],'action'=>'remove','membership_id'=>999])['status']===303,'Obsolete generic People remove action rejected');
+ $assert($request('Administrator','/production/people','POST',['csrf_token'=>$teamBody['csrf_token'],'production_id'=>$productions['A'],'action'=>'remove_team','assignment_id'=>$teamRow['id'],'revision'=>$teamRow['revision']])['status']===303,'Specific team removal works through actual People POST');
+ $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=".$productions['A']." AND user_id=".$users['Guardian']." AND audience_type='adult' AND status='active'")->fetchColumn()===1,'People team removal retains independent accepted Adult cast');
+ $assert($request('Staff','/production/people')['status']===403,'Unscoped Staff cannot inspect private People responsibilities');
+ $staffAccount=$request('Administrator','/admin/accounts/view?id='.$users['Staff']);
+ $assert($request('Administrator','/admin/accounts/view?id='.$users['Staff'],'POST',['csrf_token'=>$csrf($staffAccount['body'],'action','production_staff_access'),'user_id'=>$users['Staff'],'production_id'=>$productions['A'],'staff_access'=>'1','action'=>'production_staff_access'])['status']===303,'Staff scope granted through existing account authorization route');
+ $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=".$productions['A']." AND user_id=".$users['Staff']." AND audience_type='staff' AND status='active'")->fetchColumn()===1,'Account Staff scope is authoritative and persisted');
+ $assert($request('Staff','/production/people')['status']===200,'Scoped authorized Staff can inspect People and team management');
  $assert($request('Guardian','/student-profile?student='.$users['Guardian'])['status']===200,'Adult website performer profile handoff works');
  $assert($request('Guardian','/theatre-history?student='.$users['Guardian'])['status']===200,'Adult website history handoff works');
  // Real multipart upload and private-byte authorization, with a synthetic pixel
@@ -117,6 +142,20 @@ try{
  $publicPage=$request('Anonymous','/public/casting?slug='.$public['slug']);
  $assert($publicPage['status']===200&&str_contains($publicPage['body'],'Adult character'),'Published casting route includes approved Adult role');
  $assert(!str_contains($publicPage['body'],'Private Adult profile fixture')&&!str_contains($publicPage['body'],'1980-01-01'),'Public casting excludes private biography and DOB');
+ // Program team credits use the actual editorial import and publication routes.
+ $teamBody['playbill_eligible']='1';
+ $assert($request('Administrator','/production/people','POST',$teamBody)['status']===303,'Team publication eligibility saved through People without publishing');
+ $program=$insert('playbills',['production_id'=>$productions['A'],'status'=>'draft','display_title'=>'RC1 Team Program','public_slug'=>'rc1-team-'.$suffix,'public_enabled'=>0]);
+ $editor=$request('Administrator','/admin/playbill');
+ $assert($editor['status']===200&&str_contains($editor['body'],'Production Team credits'),'Existing Playbill editor previews source team credits');
+ $dom=new DOMDocument();@$dom->loadHTML($editor['body']);$fingerprint=(new DOMXPath($dom))->query('//input[@name="team_fingerprint"]/@value')->item(0)?->nodeValue;
+ $assert(!empty($fingerprint),'Program team import has revision-bound review fingerprint');
+ $assert($request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','import_team'),'action'=>'import_team','team_fingerprint'=>$fingerprint])['status']===303,'Reviewed team names imported through actual Playbill POST');
+ $editor=$request('Administrator','/admin/playbill');
+ $assert($request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','publish'),'action'=>'publish'])['status']===303,'Existing Playbill approval workflow publishes reviewed program');
+ $programPage=$request('Anonymous','/playbill?slug=rc1-team-'.$suffix);
+ $assert($programPage['status']===200&&str_contains($programPage['body'],'Director'),'Public program renders reviewed team snapshot');
+ $assert(!str_contains($programPage['body'],'RC1 PRIVATE TEAM NOTE')&&!str_contains($programPage['body'],'Private Adult profile fixture')&&!str_contains($programPage['body'],'1980-01-01'),'Public team credits exclude staff notes, biography and DOB');
  // Staff is intentionally broad under existing organization-wide policy; no invented scope.
  foreach(['Administrator','Staff','Guardian','FormerGuardian','Student','Caregiver','Volunteer'] as $label){
   foreach(['/admin/accounts','/admin/forms','/safeguarding'] as $route){$allowed=$label==='Administrator'||($label==='Staff'&&$route==='/admin/forms');$assert($request($label,$route)['status']===($allowed?200:403),$label.' direct route '.$route);}

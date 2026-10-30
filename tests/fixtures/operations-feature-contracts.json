@@ -1,8 +1,8 @@
 {
     "AccountManagementExperience": {
-        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
-        "php": "b7d660f0942d67266946c700fcf380479381001d5d220dd6204fbdef8132436f",
-        "forms": "4b3877af05e5e82e08adc5c242cd0df768f35be7c5f176eae83ec934b0ce27b7"
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "65d623817ad824326bce41d0e5834fb4fca8bd82039f9134e793e77f8b80d880",
+        "forms": "52b3553b6c92b3b053e0e5cd2df85ed96becc04eb5317cf0cf1f09a12de83347"
     },
     "ProductionLifecycleExperience": {
         "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
@@ -10,14 +10,14 @@
         "forms": "8748f89102da9dc0b0bbebb2934c816078a2a0339762a61a2666210c6e04d713"
     },
     "CastingExperience": {
-        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
-        "php": "3b4b4ffb6c5d714387b749239c4c84e78d5185ddef158008bbf9d64c02372125",
-        "forms": "619350a7fa0e7a5278133d2e54b4114a5c11e8d81b83232594d88be3ad060363"
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "acf58d9f409a0630b51deb0d6808bdc5521df564c71b0e30295f873a460f7bb7",
+        "forms": "43874678adb765664c39ebf0911bb7000365c12cde4326c33d1ea783c0bdcac7"
     },
     "ProductionPeopleExperience": {
-        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
-        "php": "e753fee94933ba48b74065eaaf1ceb30d9f2c8093f7c00f1103c090570e069b8",
-        "forms": "86fd02a11422dfe95a9f6dc994b95869e13a2145fc523699faebc379c2b7a5bb"
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "e15ba41d50d5bb53ae6f3d0dd759b7c23e409ce7c60656a247cbeb51269fa745",
+        "forms": "ed4dc9ce9e776a783988b2c1f0bcc1d42ed94a02e84fc1a68e1ba3ff1b3eb1fb"
     },
     "StudentProfileExperience": {
         "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
@@ -35,9 +35,9 @@
         "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
     },
     "PlaybillExperience": {
-        "reason": "Adult participation: performer consent validation wording",
-        "php": "da59fb92cb09926f5d04460760b0e854ee62009e401cf9a9e4a4dac6ddc4fbcf",
-        "forms": "445a89c9f7f3570fb32e4f133a20081e94ad362d9190a7a4a731a4251fd07ce9"
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "dc22988703785c064c77b5c5ea95db912b51eca6f904c1e0590e646887a1d874",
+        "forms": "ca24a55237d6681f21d70877862e680b88041c07138002a85e93987e7327dce7"
     },
     "ProductionGroupExperience": {
         "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
@@ -50,8 +50,13 @@
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ProductionWorkspaceExperience": {
-        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
         "php": "db85eeb734a31d8eef26cb986aa0b0bd01158c6fc7ac96c726a8583f7e05f31a",
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "Playbill2Experience": {
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "b99b82630e30808b22b06f171f8d715ad9ce9f88ac738a1746a38c7634378c1f",
+        "forms": "f85a03c1413d605ecf67509215ae56bafc7c4dce8bfecc7652e3087ac47ffc4d"
     }
 }

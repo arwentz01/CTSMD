@@ -60,6 +60,7 @@ jobs:
           php tests/adult_performer_migration.php
           php tests/adult_participation_mysql.php
           php tests/adult_participation_concurrency.php
+          php tests/production_people_mysql.php
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -5,13 +5,6 @@ require_once __DIR__.'/ProductionParticipantEligibility.php';
 /** Existing Operations primitives; owning screens supply their existing CSRF token. */
 final class ParticipantControls
 {
-    public static function functions(PDO $db,int $production,string $token):void
-    {
-        $e=static fn($v):string=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');
-        $q=$db->prepare("SELECT DISTINCT u.id,u.first_name,u.last_name FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.status='active' AND pm.audience_type IN ('adult','student') AND ".PerformerQuery::membership('pm','u')." ORDER BY u.last_name,u.first_name");$q->execute([$production]);$people=$q->fetchAll();
-        ?><details class="production-people-panel ops-panel"><summary>Cast, crew and creative functions</summary><p>Functions describe participation. They do not grant staff, guardian or administration permissions. Retiring a function retains its history credit.</p><form method="post" class="production-people-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e($token)?>"><label>Participant<select name="user_id" required><option value="">Choose participant</option><?php foreach($people as $person):?><option value="<?=(int)$person['id']?>"><?=$e($person['first_name'].' '.$person['last_name'])?></option><?php endforeach;?></select></label><label>Function<select name="function_type"><option value="cast">Cast</option><option value="crew">Crew</option><option value="creative">Creative</option></select></label><label>Role or credit title<input name="function_title" required maxlength="190"></label><button name="action" value="save_function">Assign function</button><button name="action" value="retire_function" class="secondary">Retire this function</button></form>
-        <?php $q=$db->prepare('SELECT f.*,u.first_name,u.last_name FROM production_participant_functions f JOIN users u ON u.id=f.user_id WHERE production_id=? ORDER BY u.last_name,u.first_name,f.function_type,f.title');$q->execute([$production]);?><ul><?php foreach($q->fetchAll() as $function):?><li><?=$e($function['first_name'].' '.$function['last_name'])?> · <?=$e($function['function_type'])?>: <?=$e($function['title'])?> — <?=$e($function['status'])?></li><?php endforeach;?></ul></details><?php
-    }
     public static function settings(PDO $db,array $production,string $token):void
     {
         $e=static fn($v):string=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');$id=(int)$production['id'];

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/WorkspaceUI.php';
+require_once __DIR__.'/ProductionTeamPublicationService.php';
 
 require_once __DIR__.'/Database.php';
 require_once __DIR__.'/Auth.php';
@@ -80,7 +81,7 @@ final class Playbill2Experience
     private static function publicPage(PDO $db,string $basePath):never
     {
         $pb=self::publicPlaybill($db,trim((string)($_GET['slug']??'')));if(!$pb)PlaybillPublicRenderer::render($basePath,null,[],[],[],[]);
-        $sections=self::sections($db,(int)$pb['id']);$company=PlaybillEnhancementService::publicCastProfiles($db,(int)$pb['id']);$cast=array_values(array_filter($company,static fn(array $p):bool=>($p['participant_type']??'cast')==='cast'));$staff=self::staff($db,(int)$pb['production_id']);foreach($company as $person)if(($person['participant_type']??'cast')!=='cast')$staff[]=['name'=>$person['display_name'],'participation_role'=>$person['role_title']?:ucfirst((string)$person['participant_type'])];$sponsors=array_values(array_filter(PlaybillEnhancementService::sponsors($db,(int)$pb['id']),static fn(array $s):bool=>(int)$s['attachment_active']===1&&$s['status']==='active'));
+        $sections=self::sections($db,(int)$pb['id']);$company=PlaybillEnhancementService::publicCastProfiles($db,(int)$pb['id']);$cast=array_values(array_filter($company,static fn(array $p):bool=>($p['participant_type']??'cast')==='cast'));$staff=ProductionTeamPublicationService::snapshot($db,(int)$pb['id']);$sections=array_values(array_filter($sections,static fn(array $r):bool=>$r['section_type']!=='production_team_snapshot'));foreach($company as $person)if(($person['participant_type']??'cast')!=='cast')$staff[]=['name'=>$person['display_name'],'participation_role'=>$person['role_title']?:ucfirst((string)$person['participant_type'])];$sponsors=array_values(array_filter(PlaybillEnhancementService::sponsors($db,(int)$pb['id']),static fn(array $s):bool=>(int)$s['attachment_active']===1&&$s['status']==='active'));
         PlaybillPublicRenderer::render($basePath,$pb,$sections,$company,$staff,$sponsors);
     }
 
@@ -90,7 +91,7 @@ final class Playbill2Experience
     private static function playbill(PDO $db,int $production):?array{$s=$db->prepare('SELECT pb.*,p.title production_title,p.season FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.production_id=:p ORDER BY pb.id DESC LIMIT 1');$s->execute(['p'=>$production]);return$s->fetch()?:null;}
     private static function publicPlaybill(PDO $db,string $slug):?array{$s=$db->prepare("SELECT pb.*,p.title production_title,p.season FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.public_slug=:slug AND pb.public_enabled=1 AND pb.editorial_status IN ('published','archived') LIMIT 1");$s->execute(['slug'=>$slug]);return$s->fetch()?:null;}
     private static function sections(PDO $db,int $id):array{$s=$db->prepare('SELECT * FROM playbill_sections WHERE playbill_id=:id AND active=1 ORDER BY sort_order,id');$s->execute(['id'=>$id]);return$s->fetchAll();}
-    private static function staff(PDO $db,int $production):array{$s=$db->prepare("SELECT CONCAT(u.first_name,' ',u.last_name) name,pm.participation_role FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:p AND pm.status='active' AND pm.audience_type='staff' ORDER BY pm.participation_role,u.last_name,u.first_name");$s->execute(['p'=>$production]);return$s->fetchAll();}
+
     private static function absoluteUrl(string $path):string{return((!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')?'https':'http').'://'.($_SERVER['HTTP_HOST']??'localhost').$path;}
     private static function flash(string $type,string $message):void{$_SESSION['pb2_flash']=['type'=>$type,'message'=>$message];}
     private static function takeFlash():?array{$v=$_SESSION['pb2_flash']??null;unset($_SESSION['pb2_flash']);return is_array($v)?$v:null;}

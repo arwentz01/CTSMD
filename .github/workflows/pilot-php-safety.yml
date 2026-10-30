@@ -11,6 +11,8 @@ on:
       - "assets/css/ux-operations.css"
       - "assets/css/operations-hub.css"
       - "assets/js/ux-operations.js"
+      - "assets/js/production-people.js"
+      - "assets/css/production-people.css"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -23,6 +25,8 @@ on:
       - "assets/css/ux-operations.css"
       - "assets/css/operations-hub.css"
       - "assets/js/ux-operations.js"
+      - "assets/js/production-people.js"
+      - "assets/css/production-people.css"
       - "assets/js/unified-navigation.js"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
@@ -54,8 +58,10 @@ jobs:
           node --check assets/js/unified-navigation.js
           node --check assets/js/ux-workspaces.js
           node --check assets/js/ux-operations.js
+          node --check assets/js/production-people.js
           node --check tests/ux_operations_browser.mjs
           node --check tests/ux_operations_interactions.mjs
+          node --check tests/production_people_browser.mjs
       - name: Staff production directory ordering and past grouping
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract

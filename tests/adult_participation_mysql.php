@@ -157,7 +157,7 @@ try{
     $assert($db->query('SELECT conversation_type FROM conversations WHERE id='.$direct)->fetchColumn()==='direct','Adult to Adult ordinary conversation');
     $denied(fn()=>$db->prepare("INSERT INTO conversation_participants(conversation_id,user_id,participant_role,guardian_required) VALUES(?,?,'student',0)")->execute([$direct,$student]),'Student cannot inherit Adult direct history');
     $membershipId=(int)$db->query("SELECT id FROM production_memberships WHERE production_id=$mixed AND user_id=$adult AND audience_type='adult'")->fetchColumn();
-    (new ReflectionMethod(ProductionPeopleExperience::class,'deactivateMember'))->invoke(null,$db,['id'=>$admin],$mixed,$membershipId);
+    CastingRosterService::remove($db,['id'=>$admin],$mixed,$membershipId);
     $assert($db->query('SELECT casting_status FROM production_casting_records WHERE id='.$record)->fetchColumn()==='withdrawn','Roster removal retains withdrawn casting history');
     $assert($db->query('SELECT status FROM production_cast_offers WHERE id='.$offer)->fetchColumn()==='accepted','Roster removal preserves accepted offer history');
     $assert((int)$db->query("SELECT COUNT(*) FROM production_memberships WHERE production_id=$adultOnly AND user_id=$adult AND audience_type='adult' AND status='active'")->fetchColumn()===1,'Roster removal leaves other production intact');
@@ -171,7 +171,7 @@ try{
     $historyCount=(int)$db->query('SELECT COUNT(*) FROM theatre_history_credits WHERE user_id='.$student)->fetchColumn();
     Auth::establishSession($db,$student);$assert(Auth::currentUser($db)!==null,'Student session exists before authorized role replacement');
     $membership=(int)$db->query("SELECT id FROM production_memberships WHERE production_id=$mixed AND user_id=$student AND audience_type='student'")->fetchColumn();
-    (new ReflectionMethod(ProductionPeopleExperience::class,'deactivateMember'))->invoke(null,$db,['id'=>$admin],$mixed,$membership);
+    CastingRosterService::remove($db,['id'=>$admin],$mixed,$membership);
     (new ReflectionMethod(AccountManagementExperience::class,'toggleStatus'))->invoke(null,$db,['id'=>$admin],$student);
     $db->prepare("UPDATE family_relationships SET status='inactive' WHERE student_user_id=?")->execute([$student]);
     $reviews=(int)$db->query('SELECT COUNT(*) FROM participant_transition_reviews')->fetchColumn();

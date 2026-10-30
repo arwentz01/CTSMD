@@ -69,8 +69,8 @@ final class ProductionParticipantFunctionService
     public static function save(PDO $db,int $production,int $person,int $actor,string $type,string $title,bool $active):void
     {
         if(!isset(self::CATEGORIES[$type]))throw new RuntimeException('Cast functions are managed in Casting.');
-        $q=$db->prepare('SELECT id,revision FROM production_participant_functions WHERE production_id=? AND user_id=? AND function_type=? AND title=?');$q->execute([$production,$person,$type,$title]);$row=$q->fetch();
+        $q=$db->prepare('SELECT id,revision,status FROM production_participant_functions WHERE production_id=? AND user_id=? AND function_type=? AND title=?');$q->execute([$production,$person,$type,$title]);$row=$q->fetch();
         if(!$active){if(!$row)throw new RuntimeException('Team assignment not found.');self::remove($db,$production,$actor,(int)$row['id'],(int)$row['revision']);return;}
-        self::saveAssignment($db,$production,$actor,['assignment_id'=>$row['id']??0,'revision'=>$row['revision']??0,'user_id'=>$person,'function_type'=>$type,'function_code'=>'custom','custom_title'=>$title]);
+        self::saveAssignment($db,$production,$actor,['assignment_id'=>($row&&$row['status']==='active')?$row['id']:0,'revision'=>$row['revision']??0,'user_id'=>$person,'function_type'=>$type,'function_code'=>'custom','custom_title'=>$title]);
     }
 }

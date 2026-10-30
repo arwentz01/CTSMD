@@ -9,6 +9,7 @@ require_once __DIR__.'/CastingRoleService.php';
 require_once __DIR__.'/ScheduleAudience.php';
 require_once __DIR__.'/TheatreHistoryService.php';
 require_once __DIR__.'/CastProductionEnrollmentService.php';
+require_once __DIR__.'/CastingRosterService.php';
 
 final class CastingService
 {
@@ -75,7 +76,11 @@ final class CastingService
                 $cancel=$db->prepare("UPDATE production_cast_offers SET status='cancelled',responded_at=NOW() WHERE casting_record_id=:record AND status='pending'");
                 $cancel->execute(['record'=>$recordId]);
             }
-            if(!empty($before['production_membership_id']))TheatreHistoryService::syncStudentCredit($db,$productionId,(int)$before['user_id'],$actorId);
+            if(in_array($status,['withdrawn','not_cast'],true)&&!empty($before['production_membership_id'])){
+                $active=$db->prepare("SELECT status FROM production_memberships WHERE id=?");$active->execute([(int)$before['production_membership_id']]);
+                if($active->fetchColumn()==='active')CastingRosterService::remove($db,['id'=>$actorId],$productionId,(int)$before['production_membership_id']);
+            }
+            if(!in_array($status,['withdrawn','not_cast'],true)&&!empty($before['production_membership_id']))TheatreHistoryService::syncStudentCredit($db,$productionId,(int)$before['user_id'],$actorId);
             self::audit($db,$actorId,'casting.decision_updated',$recordId,'Updated casting decision.',['production_id'=>$productionId,'before_status'=>$before['casting_status'],'after_status'=>$status,'role_title'=>$role?:null,'participation_track'=>$track?:null]);$db->commit();
         }catch(Throwable $e){
             if($db->inTransaction())$db->rollBack();

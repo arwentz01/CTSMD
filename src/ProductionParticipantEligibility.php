@@ -92,6 +92,6 @@ final class ProductionParticipantEligibility
 
     public static function audit(PDO $db,int $actor,int $subject,string $event,array $metadata):void
     {
-        $db->prepare("INSERT INTO audit_events(actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES(?,?,'user',?,'Updated participation eligibility.',?)")->execute([$actor,'participation.'.$event,$subject,json_encode($metadata,JSON_THROW_ON_ERROR)]);
+        $db->prepare("INSERT INTO audit_events(actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES(?,?,'user',?,?,?)")->execute([$actor,'participation.'.$event,$subject,str_starts_with($event,'team_')?'Updated Production Team responsibility or reviewed credits.':'Updated participation eligibility.',json_encode($metadata,JSON_THROW_ON_ERROR)]);
     }
 }

@@ -2,8 +2,8 @@
 declare(strict_types=1);
 $root=dirname(__DIR__).'/src/';
 $cases=[
- 'ProductionPeopleExperience.php'=>[
-  'ProductionLifecycleGuard::assertWritable($db,$productionId);',
+ 'CastingRosterService.php'=>[
+  'ProductionLifecycleGuard::assertWritable($db,$productionId,true);',
   "'casting.removed_with_production_membership'",
  ],
  'VolunteerShiftManagementExperience.php'=>[

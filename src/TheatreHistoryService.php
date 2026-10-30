@@ -26,7 +26,7 @@ final class TheatreHistoryService
 
     public static function closeStudentCredit(PDO $db,int $productionId,int $userId):void
     {
-        $s=$db->prepare("UPDATE theatre_history_credits SET participation_ended_at=COALESCE(participation_ended_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE production_id=:production AND user_id=:user AND (credit_kind='performance' OR credit_kind LIKE 'cast-%' OR credit_kind LIKE 'crew-%' OR credit_kind LIKE 'creative-%') AND verification_status='verified'");
+        $s=$db->prepare("UPDATE theatre_history_credits SET participation_ended_at=COALESCE(participation_ended_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE production_id=:production AND user_id=:user AND (credit_kind='performance' OR credit_kind LIKE 'cast-%') AND verification_status='verified'");
         $s->execute(['production'=>$productionId,'user'=>$userId]);
     }
 
