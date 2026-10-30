@@ -324,3 +324,10 @@ body.public-home{background:#f3eee8}
 .features-tour-end .stage-primary{background:#f2d6ae;color:#351728;border-radius:8px}
 .features-tour-end .stage-actions>a:not(.stage-primary){color:#fff4e3}
 @media(max-width:760px){.features-audience-grid{grid-template-columns:1fr}.features-directory>div,.features-detail-grid{grid-template-columns:1fr}.features-tour-hero{padding:36px 27px;margin-top:16px}.features-tour-section{padding:42px 0 50px}.features-tour-note{padding:23px}}
+
+
+/* Short, relatable examples ground the feature catalog in everyday theatre life. */
+.features-real-life{margin-top:22px;padding:22px 26px;background:#f4e8da;border-left:4px solid var(--stage-accent);border-radius:0 9px 9px 0}
+.features-real-life>span{display:block;color:var(--stage-primary);font-size:.7rem;font-weight:850;letter-spacing:.13em;margin-bottom:9px}
+.features-real-life p{max-width:85ch;color:#49353a;font-size:1rem;line-height:1.65;margin:0}
+@media(max-width:760px){.features-real-life{padding:19px 20px}}
