@@ -150,15 +150,15 @@ final class ScheduleAudience
         return array_values($byId);
     }
 
-    public static function userCanViewItem(PDO $db,array $user,array $item): bool
+    public static function userCanViewItem(PDO $db,array $user,array $item,bool $personal=false): bool
     {
-        if(AccessPolicy::canManageProduction($user)) return true;
+        if(!$personal&&AccessPolicy::canManageProduction($user)) return true;
         $productionId=(int)($item['production_id']??0);
         if($productionId<1) return false;
         $audienceType=self::productionAudienceType($db,(int)$user['id'],$productionId);
         if($audienceType===null) return false;
         $visibility=(string)($item['visibility']??'all');
-        if($audienceType==='adult'&&$visibility==='family'){
+        if(!$personal&&$audienceType==='adult'&&$visibility==='family'){
             // Independent Adult participation must not mask a real guardian path.
             $q=$db->prepare("SELECT 1 FROM family_relationships fr JOIN production_memberships child ON child.user_id=fr.student_user_id AND child.production_id=? AND child.audience_type='student' AND child.status='active' JOIN users u ON u.id=child.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=? AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$q->execute([$productionId,(int)$user['id']]);
             if($q->fetchColumn())$audienceType='guardian';
@@ -179,7 +179,7 @@ final class ScheduleAudience
         $direct->execute(['production'=>$productionId,'item'=>$scheduleItemId,'user'=>(int)$user['id']]);
         if($direct->fetchColumn()) return true;
 
-        if(in_array($audienceType,['guardian','adult'],true) && in_array($visibility,['family','all'],true)){
+        if(!$personal&&in_array($audienceType,['guardian','adult'],true) && in_array($visibility,['family','all'],true)){
             $guardian=$db->prepare("SELECT 1
                 FROM family_relationships fr
                 JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.production_id=:production AND spm.audience_type='student' AND spm.status='active'

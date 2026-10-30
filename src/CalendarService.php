@@ -6,14 +6,15 @@ require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/ScheduleAudience.php';
 require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__.'/MemberParticipationService.php';
 
 final class CalendarService
 {
-    public static function visibleEvents(PDO $db,array $user,?DateTimeImmutable $from=null,?DateTimeImmutable $to=null,?int $productionId=null):array
+    public static function visibleEvents(PDO $db,array $user,?DateTimeImmutable $from=null,?DateTimeImmutable $to=null,?int $productionId=null,bool $personal=false):array
     {
-        $productions=ProductionContext::activeProductions($db,$user);
-        if(!$productions)return [];
-        $allowedIds=array_map(static fn(array $p):int=>(int)$p['id'],$productions);
+        $productions=$personal?[]:ProductionContext::activeProductions($db,$user);
+        $allowedIds=$personal?MemberParticipationService::directProductionIds($db,(int)$user['id']):array_map(static fn(array $p):int=>(int)$p['id'],$productions);
+        if(!$allowedIds)return [];
         if($productionId!==null){if(!in_array($productionId,$allowedIds,true))return [];$allowedIds=[$productionId];}
         $ph=implode(',',array_fill(0,count($allowedIds),'?'));
         $params=$allowedIds;
@@ -23,7 +24,7 @@ final class CalendarService
         $sql="SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.family_call_at,si.location,si.notes,si.visibility,si.audience_mode,si.item_type,si.status,p.title production_title,p.season FROM schedule_items si JOIN productions p ON p.id=si.production_id WHERE ".implode(' AND ',$where)." ORDER BY si.starts_at,si.id";
         $stmt=$db->prepare($sql);$stmt->execute($params);$events=[];
         foreach($stmt->fetchAll() as $row){
-            if(!ScheduleAudience::userCanViewItem($db,$user,$row))continue;
+            if(!ScheduleAudience::userCanViewItem($db,$user,$row,$personal))continue;
             $row['group_ids']=$row['audience_mode']==='groups'?ScheduleAudience::groupIdsForItem($db,(int)$row['id']):[];
             $row['group_names']=$row['audience_mode']==='groups'?ScheduleAudience::groupNamesForItem($db,(int)$row['id']):[];
             $events[]=$row;

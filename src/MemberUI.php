@@ -20,7 +20,7 @@ final class MemberUI
     {
         $path=(string)parse_url((string)($_SERVER['REQUEST_URI']??''),PHP_URL_PATH);
         self::$route=$base!==''&&str_starts_with($path,$base.'/')?substr($path,strlen($base)):$path;
-        self::$enabled=$enabled&&isset(self::ROUTES[self::$route]);if(!self::$enabled)return;
+        self::$enabled=$enabled&&isset(self::ROUTES[self::$route])&&($_GET['print']??'')!=='1';if(!self::$enabled)return;
         WorkspaceUI::styles($base);
         $root=htmlspecialchars($base.'/assets/',ENT_QUOTES,'UTF-8');
         echo '<link rel="stylesheet" data-member-ui href="'.$root.'css/ux-member.css?v=20261029-member-1">';

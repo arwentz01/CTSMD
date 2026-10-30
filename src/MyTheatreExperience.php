@@ -1,93 +1,48 @@
 <?php
-
 declare(strict_types=1);
-
-require_once __DIR__ . '/Database.php';
-require_once __DIR__ . '/Auth.php';
-require_once __DIR__ . '/AppNavigation.php';
-require_once __DIR__ . '/AccessPolicy.php';
-require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/AppNavigation.php';
+require_once __DIR__.'/MemberUI.php';
+require_once __DIR__.'/MyTheatreService.php';
 
 final class MyTheatreExperience
 {
-    private const ROUTE = '/my-theatre';
-
-    public static function handles(string $route): bool
+    public static function handles(string $route):bool{return $route==='/my-theatre';}
+    public static function render(string $base):never
     {
-        return $route === self::ROUTE;
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user){header('Location: '.$base.'/login',true,303);exit;}
+        $context=(string)($_GET['context']??'household');$production=filter_input(INPUT_GET,'production',FILTER_VALIDATE_INT)?:null;$error=null;
+        try{$data=MyTheatreService::build($db,$user,$context,$production);}
+        catch(PDOException $e){http_response_code(503);$error='Your theatre information is temporarily unavailable. Please try again.';$data=MyTheatreService::empty();}
+        catch(RuntimeException $e){http_response_code(404);$error='This activity is not available in your current personal or household context.';$data=MyTheatreService::empty();$context='household';$production=null;}
+        self::page($base,$user,$data,$production,$error);
     }
-
-    public static function render(string $basePath): never
+    private static function page(string $base,array $user,array $data,?int $focus,?string $error):never
     {
-        Auth::startSession();
-        $db = Database::connect(dirname(__DIR__));
-        $user = Auth::currentUser($db);
-        if (!$user) self::redirect(($basePath ?: '') . '/login');
+        $e=static fn($v):string=>MemberUI::e((string)$v);$u=static fn(string $p):string=>$base.$p;$self=(int)$user['id'];$subjects=$data['subjects'];$actions=$data['actions'];$events=$data['events'];$current=array_values(array_filter($data['productions'],static fn(array $p):bool=>$p['bucket']!=='Past'));$past=array_values(array_filter($data['productions'],static fn(array $p):bool=>$p['bucket']==='Past'));
+        $calendar='/calendar?personal=1&view=agenda&context='.urlencode($data['context']).($focus?'&production='.$focus:'');
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>My Theatre · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><?php MemberUI::styles($base);?><link rel="stylesheet" href="<?=$u('/assets/css/my-theatre.css?v=20261029-member')?>"></head><body class="app-body<?=MemberUI::bodyClass()?>"><a class="ux-skip" href="#member-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar('/my-theatre',$base,$user);?><main class="unified-main" id="member-main" tabindex="-1"><?php AppNavigation::renderHeader('Your theatre','My Theatre',$base);?><div class="mytheatre-page">
+        <?php if($error):?><div class="member-message" role="alert"><p><?=$e($error)?></p><a href="<?=$u('/my-theatre')?>">Return to My Theatre</a></div><?php endif;?>
+        <header class="mytheatre-heading"><div><h2>Your backstage companion</h2><p>Productions, plans and next steps for you and your household.</p></div><?php if($actions):?><a class="button" href="<?=$u($actions[0]['href'])?>"><?=$e($actions[0]['action'])?></a><?php elseif($events):?><a class="button" href="<?=$u($calendar)?>">View schedule</a><?php endif;?></header>
+        <div class="mytheatre-context"><form method="get"><label for="theatre-context">Viewing</label><select name="context" id="theatre-context"><option value="household" <?=$data['context']==='household'?'selected':''?>><?=count($subjects)>1?'Household activities':'All my activities'?></option><option value="self" <?=$data['context']==='self'?'selected':''?>>My activities</option><?php foreach($subjects as $id=>$subject):if($id===$self)continue;?><option value="<?=$id?>" <?=$data['person']===$id?'selected':''?>><?=$e($subject['name'])?></option><?php endforeach;?></select><button type="submit" class="secondary">Apply</button></form><?php if($focus):?><a href="<?=$u('/my-theatre?context='.urlencode($data['context']))?>">All my productions</a><?php endif;?></div>
+        <div class="mytheatre-layout">        <section class="member-section member-attention" aria-labelledby="attention-title"><header class="member-section-heading"><h2 id="attention-title">Needs your attention</h2><span><?=count($actions)?></span></header>
+        <?php if(!$actions):?><div class="member-empty"><h3>You’re up to date</h3><p>No open actions are currently available in this view. Submitted forms awaiting staff review stay in Forms.</p></div><?php else:?><ol class="member-action-list"><?php foreach(array_slice($actions,0,5) as $action):?><li><span class="member-status"><?=$e($action['kind'])?></span><h3><?=$e($action['title'])?></h3><p><?=$e($action['person'])?> · <?=$e($action['production'])?></p><?php if($action['due_at']):?><p>Due <?=date('M j, g:i A',strtotime($action['due_at']))?></p><?php endif;?><a href="<?=$u($action['href'])?>"><?=$e($action['action'])?></a></li><?php endforeach;?></ol><?php if(count($actions)>5):?><details class="member-more-actions"><summary><?=count($actions)-5?> more actions</summary><ul><?php foreach(array_slice($actions,5) as $a):?><li><a href="<?=$u($a['href'])?>"><?=$e($a['title'])?></a><p><?=$e($a['person'])?> · <?=$e($a['production'])?></p></li><?php endforeach;?></ul></details><?php endif;?><?php endif;?></section><div class="mytheatre-primary">
+        <section class="member-section" id="my-productions" aria-labelledby="my-productions-title"><header class="member-section-heading"><h2 id="my-productions-title">My productions</h2><span><?=count($current)?> current or upcoming</span></header>
+        <?php if(!$current):?><div class="member-empty"><h3>No current productions in this view</h3><p>Your cast, team and volunteer involvement will appear here. Approved CTSMD membership alone does not enroll you in a production.</p><?php if($past):?><a href="#past-productions">Review your past participation</a><?php endif;?></div><?php else:?><div class="member-production-list"><?php foreach($current as $p):self::production($p,$data['context'],$base);endforeach;?></div><?php endif;?></section>
+        <section class="member-section" aria-labelledby="coming-up-title"><header class="member-section-heading"><h2 id="coming-up-title">Coming up</h2><a href="<?=$u($calendar)?>">Full schedule</a></header><p class="member-section-help">Group calls follow assigned groups. Production-wide events are shown for context; check the call details.</p>
+        <?php if(!$events):?><div class="member-empty"><h3>No upcoming events in this view</h3><p>There are no visible calls in the next 45 days. Check the schedule for other dates.</p></div><?php else:?><ol class="member-event-list"><?php $day='';foreach(array_slice($events,0,6) as $event):$date=date('D, M j',strtotime($event['starts_at']));?><li class="member-event <?=$event['status']==='cancelled'?'is-cancelled':''?>"><div class="member-event-date"><time datetime="<?=$e($event['starts_at'])?>"><?=$date?></time><b><?=date('g:i A',strtotime($event['starts_at']))?></b></div><div><h3><a href="<?=$u('/calendar?personal=1&view=agenda&context='.urlencode($data['context']).'&event='.(int)$event['id'].'&date='.substr($event['starts_at'],0,10))?>"><?=$e($event['title'])?></a></h3><p><?=$e($event['production_title'])?> · <?=$e($event['location']?:'Location to be confirmed')?></p><p><?=$e(implode(', ',$event['participants']))?> · <?=$e($event['target_label'])?></p><span class="member-status"><?=$event['status']==='cancelled'?'Cancelled':$e(ucfirst($event['item_type']))?></span></div></li><?php endforeach;?></ol><?php if(count($events)>6):?><a class="member-more" href="<?=$u($calendar)?>">View all <?=count($events)?> upcoming events</a><?php endif;?><?php endif;?></section>
+        <?php if($past):?><details class="member-section" id="past-productions"><summary>Past participation <span><?=count($past)?> productions</span></summary><div class="member-production-list"><?php foreach($past as $p):self::production($p,$data['context'],$base);endforeach;?></div></details><?php endif;?>
+        </div><aside class="mytheatre-secondary" aria-label="Your priorities and theatre information">
 
-        $productions = ProductionContext::activeProductions($db, $user);
-        $hasActiveProduction = (bool)$productions;
-        $hasArchive = self::hasArchive($db, $user);
-        $hasFamily = self::hasFamily($db, (int)$user['id']);
-        self::page($basePath, $user, $productions, $hasActiveProduction, $hasArchive, $hasFamily);
+        <?php if($data['commitments']):?><section class="member-section"><header class="member-section-heading"><h2>Volunteer commitments</h2></header><ul class="member-compact-list"><?php foreach(array_slice($data['commitments'],0,3) as $shift):?><li><a href="<?=$u('/volunteer/shift?id='.(int)$shift['shift_id'])?>"><?=$e($shift['title'])?></a><p><?=date('M j · g:i A',strtotime($shift['starts_at']))?> · <?=$e(match($shift['status']){'waitlisted'=>'On waiting list','checked_in'=>'Checked in',default=>'Signed up'})?></p></li><?php endforeach;?></ul><a href="<?=$u('/volunteer-shifts')?>">All opportunities &amp; commitments</a></section><?php endif;?>
+        <section class="member-section"><header class="member-section-heading"><h2>Production updates</h2></header><?php if(!$data['updates']):?><p class="member-section-help">No recent authorized updates in this view. Production announcements remain in Community.</p><?php else:?><ul class="member-compact-list"><?php foreach($data['updates'] as $notice):?><li><a href="<?=$u($notice['href'])?>"><?=$e($notice['title'])?></a><p><?=date('M j',strtotime($notice['created_at']))?><?=$notice['read_at']?' · Read':' · Unread'?></p></li><?php endforeach;?></ul><?php endif;?></section>
+        <nav class="member-section member-quick-access" aria-label="Quick access"><h2>Theatre information</h2><a href="<?=$u($calendar)?>">Schedule</a><a href="<?=$u('/forms')?>">Forms &amp; submissions</a><?php if($current):?><a href="<?=$u('/cast')?>">Published cast &amp; company</a><?php endif;?><?php if(Auth::isApprovedMember($user)||$current):?><a href="<?=$u('/resources')?>">Resources &amp; files</a><?php endif;?><?php if(!AccessPolicy::isStudent($user)):?><a href="<?=$u('/volunteer-readiness')?>">Volunteer opportunities &amp; readiness</a><?php endif;?><?php foreach($data['history_subjects'] as $id=>$name):?><a href="<?=$u('/theatre-history?student='.$id)?>"><?=$id===$self?'My Theatre History':$e($name).'’s Theatre History'?></a><?php endforeach;?><?php foreach($subjects as $id=>$subject):if($id===$self)continue;?><a href="<?=$u('/student-profile/family?student='.$id)?>">Family &amp; Pickup · <?=$e($subject['name'])?></a><?php endforeach;?></nav>
+        </aside></div></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
     }
-
-    private static function hasFamily(PDO $db, int $userId): bool
+    private static function production(array $p,string $context,string $base):void
     {
-        $stmt = $db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:user AND status='active' LIMIT 1");
-        $stmt->execute(['user'=>$userId]);
-        return (bool)$stmt->fetchColumn();
-    }
-
-    private static function hasArchive(PDO $db, array $user): bool
-    {
-        if (AccessPolicy::canManageProduction($user)) {
-            return (bool)$db->query("SELECT 1 FROM productions WHERE is_active=0 AND status='archived' LIMIT 1")->fetchColumn();
-        }
-        $stmt = $db->prepare("SELECT 1 FROM productions p WHERE p.is_active=0 AND p.status='archived' AND (EXISTS (SELECT 1 FROM production_memberships pm WHERE pm.production_id=p.id AND pm.user_id=:viewer) OR EXISTS (SELECT 1 FROM family_relationships fr JOIN production_memberships cpm ON cpm.user_id=fr.student_user_id AND cpm.audience_type='student' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND cpm.production_id=p.id)) LIMIT 1");
-        $stmt->execute(['viewer'=>(int)$user['id'],'guardian'=>(int)$user['id']]);
-        return (bool)$stmt->fetchColumn();
-    }
-
-    private static function page(string $basePath, array $user, array $productions, bool $hasActiveProduction, bool $hasArchive, bool $hasFamily): never
-    {
-        $url = static fn(string $path): string => ($basePath ?: '') . $path;
-        $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $approved = Auth::isApprovedMember($user);
-        $student = AccessPolicy::isStudent($user);
-        $staff = AccessPolicy::isStaff($user);
-        $cards = [];
-
-        if ($hasActiveProduction || $staff) {
-            $cards[] = ['icon'=>'◫','label'=>'Calendar','detail'=>'Rehearsals, performances, calls, conflicts and upcoming activity across your active shows.','href'=>'/calendar'];
-        }
-        if ($hasActiveProduction) {
-            $cards[] = ['icon'=>'★','label'=>'Cast','detail'=>'Published roles and casting information for productions connected to your account.','href'=>'/cast'];
-        }
-        if ($hasFamily || $student) {
-            $cards[] = ['icon'=>'✦','label'=>'Theatre History','detail'=>'Profiles, credits and acting résumé information that grows with each production.','href'=>'/theatre-history'];
-        }
-        if ($approved || $hasActiveProduction || $staff) {
-            $cards[] = ['icon'=>'▤','label'=>'Resources','detail'=>'CTSMD-wide information plus production files and links available to your account.','href'=>'/resources'];
-        }
-        if ($approved || $hasActiveProduction) {
-            $cards[] = ['icon'=>'♡','label'=>'Volunteer','detail'=>'Readiness, available shifts, training, approvals and your service record.','href'=>'/volunteer-readiness'];
-            $cards[] = ['icon'=>'✓','label'=>'Forms','detail'=>'Assigned forms, production requirements and household paperwork that needs attention.','href'=>'/forms'];
-        }
-        if ($hasArchive) {
-            $cards[] = ['icon'=>'◷','label'=>'Archive','detail'=>'Past productions, historical resources and Community content you are allowed to revisit.','href'=>'/archive'];
-        }
-
-        header('Content-Type:text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a6192e"><title>My Theatre · CTSMD Connect</title><link rel="stylesheet" href="<?=$url('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$url('/assets/css/my-theatre.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('CTSMD','My Theatre',$basePath);?><div class="mytheatre-page">
-        <section class="mytheatre-hero"><div><small>YOUR CTSMD EXPERIENCE</small><h2>Everything about your time in the theatre.</h2><p>Calendar, cast, forms, resources, volunteering and history live here so the main navigation can stay simple.</p></div><span><?=$e((string)count($productions))?> active show<?=count($productions)===1?'':'s'?></span></section>
-        <?php if($productions):?><section class="mytheatre-shows"><header><small>ACTIVE PRODUCTIONS</small><h3>Your current shows</h3></header><div><?php foreach($productions as $production):?><article><i>★</i><span><b><?=$e((string)$production['title'])?></b><small><?=$e((string)($production['season'] ?: 'Active production'))?></small></span></article><?php endforeach;?></div></section><?php endif;?>
-        <?php if($cards):?><section class="mytheatre-grid"><?php foreach($cards as $card):?><a href="<?=$url($card['href'])?>"><i><?=$e($card['icon'])?></i><div><h3><?=$e($card['label'])?></h3><p><?=$e($card['detail'])?></p><span>Open →</span></div></a><?php endforeach;?></section><?php else:?><section class="mytheatre-empty"><h3>Your theatre tools will appear here.</h3><p>Once your membership or production access is active, CTSMD Connect will place the relevant tools in this hub automatically.</p></section><?php endif;?>
-        </div></main></div><script src="<?=$url('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
-    }
-
-    private static function redirect(string $url): never
-    {
-        header('Location: ' . $url, true, 303);
-        exit;
+        $e=static fn($v):string=>MemberUI::e((string)$v);$u=static fn(string $path):string=>$base.$path;
+        ?><article class="member-production" data-production-id="<?=$p['id']?>"><?php if($p['artwork']):?><img class="member-production-art" src="<?=$u('/production?production_artwork=1&id='.$p['id'].'&role=banner')?>" alt="<?=$e($p['title'])?> production artwork" loading="lazy"><?php else:?><div class="member-production-monogram" aria-hidden="true"><?= $e(mb_strtoupper(mb_substr($p['title'],0,2)))?></div><?php endif;?><div class="member-production-copy"><header><h3><?=$e($p['title'])?></h3><?php MemberUI::badge($p['bucket']==='Past'?'Past participation':ucfirst(str_replace('_',' ',$p['lifecycle_stage'])));?></header><ul><?php foreach($p['contexts'] as $label):?><li><?=$e($label)?></li><?php endforeach;?></ul><?php if($p['next_event']):?><p class="member-next-event">Next: <?=date('D M j · g:i A',strtotime($p['next_event']['starts_at']))?> · <?=$e($p['next_event']['title'])?></p><?php endif;?><div class="member-production-links"><?php if($p['can_schedule']):?><a href="<?=$u('/calendar?personal=1&view=agenda&production='.$p['id'].'&context='.urlencode($context))?>">Schedule</a><a href="<?=$u('/cast?production='.$p['id'])?>">Published cast &amp; company</a><a href="<?=$u('/resources?production='.$p['id'])?>">Resources</a><?php elseif($p['archive_allowed']):?><a href="<?=$u('/archive/production?id='.$p['id'])?>">Production archive</a><?php elseif($p['history_subject']!==null):?><a href="<?=$u('/theatre-history?student='.(int)$p['history_subject'])?>">Review participation history</a><?php else:?><a href="<?=$u('/volunteer-shifts')?>">Volunteer opportunities &amp; commitments</a><?php endif;?></div></div></article><?php
     }
 }

@@ -60,3 +60,9 @@ Baseline `7de9adb`, existing `audit/board-pilot-readiness`, October 29, 2026. La
 ## Verification ledger
 
 Batch results, before/after captures, persona coverage, measured checks and deferred refinements will be appended as implementation proceeds. No screen is marked verified merely because its parent page was styled.
+
+## Batch B — personal/household hub
+
+Replaced the navigation-card grid with a prioritized action list, deduplicated production rows, upcoming events, concise authorized production updates and context-aware links. Personal participation is separate from staff-wide operational visibility. A household context is validated against current parent/guardian links and Student roles; self-only events exclude inherited child calls. Team and volunteer credits describe involvement without granting private production access. Upcoming inactive-planning participation is visible as metadata without opening its unpublished schedule.
+
+Initial verification: 30 real MySQL assertions across the required persona combinations; existing 173 HTTP/API acceptance checks and action-center source checks pass locally. Authenticated hub captures at 1440/390 for two multi-role households show no page overflow or server errors. Final full-route/role/browser evidence remains Batch F work. No migration or native API contract change was needed.
