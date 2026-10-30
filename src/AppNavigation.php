@@ -11,12 +11,14 @@ require_once __DIR__ . '/CommunicationReadStateService.php';
 final class AppNavigation
 {
     private static array $sidebarContextCache = [];
+    private static ?array $headerUser = null;
     private static array $notificationUnreadCache = [];
 
     public static function renderSidebar(string $route, string $basePath, array $user): void
     {
         $url = static fn(string $path): string => ($basePath ?: '') . $path;
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        self::$headerUser = $user;
         $staff = AccessPolicy::isStaff($user);
         $operations = $staff
             || AccessPolicy::canModerateCommunity($user)
@@ -108,12 +110,8 @@ final class AppNavigation
                 <?php endif; ?>
             </nav>
             <div class="unified-sidebar-foot">
-                <a href="<?=$url('/account')?>">My account</a>
-                <a href="<?=$url('/notifications')?>">Notifications</a>
-                <a href="<?=$url('/notification-preferences')?>">Notification preferences</a>
                 <?php if(AccessPolicy::localIdentitySwitchEnabled()):?><a href="<?=$url('/dev/identity')?>">Switch test identity</a><?php endif;?>
                 <div class="unified-user"><i><?=$esc((string)$user['initials'])?></i><span><b><?=$esc((string)$user['name'])?></b><small><?=$esc((string)$user['role'])?><?=$approved?' · CTSMD member':' · Membership pending'?></small></span></div>
-                <form method="post" action="<?=$url('/logout')?>"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['auth_csrf'])?>"><button type="submit">Sign out</button></form>
             </div>
         </aside>
         <div class="unified-nav-scrim" data-nav-scrim></div>
@@ -243,7 +241,13 @@ final class AppNavigation
             }
         } catch (Throwable) {
         }
-        ?><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation" aria-expanded="false">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a class="unified-inbox-link" href="<?=$url('/messages')?>" aria-label="Message inbox<?=$messageUnread>0?' · '.$messageUnread.' unread':''?>"><svg class="unified-message-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 4.7-7.6A8.4 8.4 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg><?php if($messageUnread>0):?><strong class="unified-unread"><?=$messageUnread>99?'99+':$messageUnread?></strong><?php endif;?></a><a href="<?=$url('/notifications')?>">Notifications<?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread?></strong><?php endif;?></a><span class="unified-avatar"><?=$esc(substr((string)$title,0,1))?></span></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active" aria-current="page"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
+        $account=self::$headerUser??[];
+        $accountName=trim((string)($account['first_name']??'').' '.(string)($account['last_name']??''));
+        if($accountName==='')$accountName=(string)($account['name']??'Your account');
+        $accountEmail=(string)($account['email']??'');
+        $initials=trim((string)($account['initials']??''));if($initials==='')$initials=mb_strtoupper(mb_substr($accountName,0,1));
+        Auth::startSession();$_SESSION['auth_csrf']??=bin2hex(random_bytes(24));
+        ?><link rel="stylesheet" href="<?=$url('/assets/css/navigation-controls.css?v=20261030-1')?>"><script defer src="<?=$url('/assets/js/account-menu.js?v=20261030-1')?>"></script><header class="unified-header"><button class="unified-menu" type="button" data-nav-open aria-label="Open navigation" aria-expanded="false">☰</button><div class="unified-title"><small><?=$esc($eyebrow)?></small><h1><?=$esc($title)?></h1></div><div class="unified-utilities"><a class="unified-inbox-link" href="<?=$url('/messages')?>" aria-label="Message inbox<?=$messageUnread>0?' · '.$messageUnread.' unread':''?>"><svg class="unified-message-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 4.7-7.6A8.4 8.4 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg><?php if($messageUnread>0):?><strong class="unified-unread"><?=$messageUnread>99?'99+':$messageUnread?></strong><?php endif;?></a><a class="unified-notifications-link" href="<?=$url('/notifications')?>" aria-label="Notifications<?=$notificationUnread>0?' · '.$notificationUnread.' unread':''?>"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><?php if($notificationUnread>0):?><strong class="unified-unread"><?=$notificationUnread>99?'99+':$notificationUnread?></strong><?php endif;?></a><details class="unified-account" data-account-menu><summary class="unified-avatar" aria-label="Account menu for <?=$esc($accountName)?>" aria-expanded="false"><span aria-hidden="true"><?=$esc($initials)?></span></summary><div class="unified-account-panel"><div class="unified-account-identity"><strong><?=$esc($accountName)?></strong><?php if($accountEmail!==''):?><span><?=$esc($accountEmail)?></span><?php endif;?></div><nav aria-label="Your account"><a href="<?=$url('/account')?>">My Account</a><a href="<?=$url('/notification-preferences')?>">Notification Preferences</a><a href="<?=$url('/help')?>">Help</a></nav><form method="post" action="<?=$url('/logout')?>"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['auth_csrf'])?>"><button type="submit">Sign Out</button></form></div></details></div></header><?php if($subnav):?><nav class="unified-subnav" aria-label="Section navigation"><?php foreach($subnav as $item):?><a href="<?=$url($item['href'])?>"<?=!empty($item['active'])?' class="active" aria-current="page"':''?>><?=$esc($item['label'])?></a><?php endforeach;?></nav><?php endif;?><?php
     }
 
     private static function notificationUnread(int $userId): int
