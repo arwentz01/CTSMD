@@ -120,7 +120,7 @@ final class ProductionGroupExperience
         $ids=array_values(array_unique(array_filter(array_map('intval',$membershipIds),static fn(int $id):bool=>$id>0)));
         if($ids){
             $ph=implode(',',array_fill(0,count($ids),'?'));
-            $stmt=$db->prepare("SELECT pm.id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.status='active' AND pm.id IN ($ph)");
+            $stmt=$db->prepare("SELECT pm.id FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=? AND pm.status='active' AND ".PerformerQuery::membership('pm','u')." AND pm.id IN ($ph)");
             $stmt->execute(array_merge([$productionId],$ids));
             $valid=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN)); sort($valid); $expected=$ids; sort($expected);
             if($valid!==$expected) throw new RuntimeException('One or more selected people are no longer available active members of this production.');
@@ -150,7 +150,7 @@ final class ProductionGroupExperience
     private static function group(PDO $db,int $productionId,int $groupId): ?array
     {
         if($groupId<1)return null;
-        $stmt=$db->prepare("SELECT pg.*,COUNT(DISTINCT CASE WHEN pgm.status='active' AND pm.status='active' AND u.id IS NOT NULL THEN pgm.production_membership_id END) member_count FROM production_groups pg LEFT JOIN production_group_members pgm ON pgm.group_id=pg.id LEFT JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=pg.production_id LEFT JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pg.id=:id AND pg.production_id=:production GROUP BY pg.id LIMIT 1");
+        $stmt=$db->prepare("SELECT pg.*,COUNT(DISTINCT CASE WHEN pgm.status='active' AND pm.status='active' AND ".PerformerQuery::membership('pm','u')." AND u.id IS NOT NULL THEN pgm.production_membership_id END) member_count FROM production_groups pg LEFT JOIN production_group_members pgm ON pgm.group_id=pg.id LEFT JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=pg.production_id LEFT JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pg.id=:id AND pg.production_id=:production GROUP BY pg.id LIMIT 1");
         $stmt->execute(['id'=>$groupId,'production'=>$productionId]); return $stmt->fetch()?:null;
     }
     private static function groupForUpdate(PDO $db,int $productionId,int $groupId): ?array
@@ -160,12 +160,12 @@ final class ProductionGroupExperience
     }
     private static function roster(PDO $db,int $productionId): array
     {
-        $stmt=$db->prepare("SELECT pm.id membership_id,pm.user_id,pm.audience_type,pm.participation_role,CONCAT(u.first_name,' ',u.last_name) name,u.initials FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.status='active' ORDER BY FIELD(pm.audience_type,'student','staff','guardian'),u.last_name,u.first_name");
+        $stmt=$db->prepare("SELECT pm.id membership_id,pm.user_id,pm.audience_type,pm.participation_role,CONCAT(u.first_name,' ',u.last_name) name,u.initials FROM production_memberships pm JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pm.production_id=:production AND pm.status='active' AND ".PerformerQuery::membership('pm','u')." ORDER BY FIELD(pm.audience_type,'student','adult','staff','guardian'),u.last_name,u.first_name");
         $stmt->execute(['production'=>$productionId]); return $stmt->fetchAll();
     }
     private static function selectedMembershipIds(PDO $db,int $groupId): array
     {
-        $stmt=$db->prepare("SELECT pgm.production_membership_id FROM production_group_members pgm JOIN production_groups pg ON pg.id=pgm.group_id JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=pg.production_id AND pm.status='active' JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pgm.group_id=:group_id AND pgm.status='active'");
+        $stmt=$db->prepare("SELECT pgm.production_membership_id FROM production_group_members pgm JOIN production_groups pg ON pg.id=pgm.group_id JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.production_id=pg.production_id AND pm.status='active' JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE pgm.group_id=:group_id AND pgm.status='active' AND ".PerformerQuery::membership('pm','u')."");
         $stmt->execute(['group_id'=>$groupId]); return array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
     }
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta): void

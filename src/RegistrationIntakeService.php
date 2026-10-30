@@ -79,9 +79,9 @@ final class RegistrationIntakeService
     private static function participantCandidates(PDO $db,array $submission): array
     {
         if($submission['participant_age_group']==='adult'){
-            $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,email,display_role,account_status FROM users WHERE active=1 AND account_status<>'disabled' AND LOWER(email)=LOWER(:email) ORDER BY id LIMIT 10");$stmt->execute(['email'=>$submission['registrant_email']]);return $stmt->fetchAll();
+            $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status FROM users u WHERE u.active=1 AND u.account_status<>'disabled' AND ".PerformerQuery::eligible('u')." AND LOWER(u.email)=LOWER(:email) ORDER BY u.id LIMIT 10");$stmt->execute(['email'=>$submission['registrant_email']]);return $stmt->fetchAll();
         }
-        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status,CONCAT(g.first_name,' ',g.last_name) guardian_name,g.email guardian_email FROM users u LEFT JOIN family_relationships fr ON fr.student_user_id=u.id AND fr.status='active' LEFT JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status<>'disabled' WHERE u.active=1 AND u.account_status<>'disabled' AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id LIMIT 20");$stmt->execute(['first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);return $stmt->fetchAll();
+        $stmt=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email,u.display_role,u.account_status,CONCAT(g.first_name,' ',g.last_name) guardian_name,g.email guardian_email FROM users u LEFT JOIN family_relationships fr ON fr.student_user_id=u.id AND fr.status='active' LEFT JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status<>'disabled' WHERE u.active=1 AND u.account_status<>'disabled' AND ".PerformerQuery::role('u','student')." AND LOWER(u.first_name)=LOWER(:first) AND LOWER(u.last_name)=LOWER(:last) ORDER BY u.id LIMIT 20");$stmt->execute(['first'=>$submission['participant_first_name'],'last'=>$submission['participant_last_name']]);return $stmt->fetchAll();
     }
 
     private static function guardianCandidates(PDO $db,array $submission): array

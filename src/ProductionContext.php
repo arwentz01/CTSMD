@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__.'/PerformerQuery.php';
 
 final class ProductionContext
 {
@@ -25,7 +26,7 @@ final class ProductionContext
                 SELECT pm.production_id
                 FROM production_memberships pm
                 JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
-                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian'
+                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian' AND ".PerformerQuery::membership('pm','u')."
                 UNION
                 SELECT pm.production_id
                 FROM family_relationships fr
@@ -89,7 +90,7 @@ final class ProductionContext
                 SELECT pm.production_id FROM production_memberships pm
                 JOIN users member ON member.id=pm.user_id AND member.active=1
                   AND member.account_status<>'disabled'
-                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian'
+                WHERE pm.user_id=:member AND pm.status='active' AND pm.audience_type<>'guardian' AND ".PerformerQuery::membership('pm','member')."
                 UNION
                 SELECT cpm.production_id FROM family_relationships fr
                 JOIN users child ON child.id=fr.student_user_id AND child.active=1
@@ -132,7 +133,7 @@ final class ProductionContext
             JOIN productions p ON p.id=pm.production_id AND p.is_active=1
             JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
             WHERE pm.production_id=:production AND pm.user_id=:user AND pm.status='active'
-            AND pm.audience_type<>'guardian'
+            AND pm.audience_type<>'guardian' AND ".PerformerQuery::membership('pm','u')."
             ORDER BY FIELD(pm.audience_type,'staff','student','adult') LIMIT 1");
         $direct->execute(['production'=>$productionId,'user'=>$userId]);
         $type=$direct->fetchColumn();

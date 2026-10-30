@@ -717,10 +717,10 @@ final class MobileApi
 
     private static function loadUser(PDO $db,int $id): array
     {
-        $s=$db->prepare("SELECT adult_participant,id,first_name,last_name,email,initials,display_role role,organization_membership_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$s->execute(['id'=>$id]);$u=$s->fetch();if(!$u)throw new RuntimeException('This account is unavailable.');$u['name']=trim($u['first_name'].' '.$u['last_name']);$u['roles']=Auth::roles($db,$id);$u['permissions']=Auth::permissions($db,$id);return $u;
+        $s=$db->prepare("SELECT id,first_name,last_name,email,initials,display_role role,organization_membership_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");$s->execute(['id'=>$id]);$u=$s->fetch();if(!$u)throw new RuntimeException('This account is unavailable.');$u['name']=trim($u['first_name'].' '.$u['last_name']);$u['roles']=Auth::roles($db,$id);$u['permissions']=Auth::permissions($db,$id);return $u;
     }
 
-    private static function publicUser(array $u): array{return ['participant_classification'=>in_array('student',$u['roles'],true)?'student':(!empty($u['adult_participant'])?'adult':'unclassified'),'id'=>(int)$u['id'],'name'=>$u['name'],'first_name'=>$u['first_name'],'last_name'=>$u['last_name'],'email'=>$u['email'],'initials'=>$u['initials'],'role'=>$u['role'],'roles'=>$u['roles']];}
+    private static function publicUser(array $u): array{return ['participant_classification'=>in_array('student',$u['roles'],true)?'student':(in_array('adult_performer',$u['roles'],true)?'adult':'unclassified'),'id'=>(int)$u['id'],'name'=>$u['name'],'first_name'=>$u['first_name'],'last_name'=>$u['last_name'],'email'=>$u['email'],'initials'=>$u['initials'],'role'=>$u['role'],'roles'=>$u['roles']];}
     private static function bearerToken(): ?string{$h=(string)($_SERVER['HTTP_AUTHORIZATION']??'');return preg_match('/^Bearer\s+(.+)$/i',$h,$m)?trim($m[1]):null;}
     private static function input(): array{$raw=file_get_contents('php://input')?:'';$data=json_decode($raw,true);return is_array($data)?$data:$_POST;}
     private static function requireMethod(string $method): void{if(($_SERVER['REQUEST_METHOD']??'GET')!==$method)self::json(['error'=>'Method not allowed.'],405);}

@@ -24,13 +24,13 @@ final class CastingService
 
     public static function intakeCandidates(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT rs.id submission_id,rsl.participant_user_id user_id,CONCAT(u.first_name,' ',u.last_name) person_name,rs.participant_age_group,rs.status registration_status,ro.title opportunity_title,rs.submitted_at FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id AND ro.production_id=:production AND ro.opportunity_type='audition' JOIN registration_submission_links rsl ON rsl.submission_id=rs.id JOIN users u ON u.id=rsl.participant_user_id AND u.active=1 AND u.account_status<>'disabled' LEFT JOIN production_casting_records cr ON cr.production_id=:production2 AND cr.user_id=rsl.participant_user_id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND rs.status NOT IN ('declined','cancelled') AND cr.id IS NULL ORDER BY rs.submitted_at,u.last_name,u.first_name");
+        $s=$db->prepare("SELECT rs.id submission_id,rsl.participant_user_id user_id,CONCAT(u.first_name,' ',u.last_name) person_name,rs.participant_age_group,rs.status registration_status,ro.title opportunity_title,rs.submitted_at FROM registration_submissions rs JOIN registration_opportunities ro ON ro.id=rs.opportunity_id AND ro.production_id=:production AND ro.opportunity_type='audition' JOIN registration_submission_links rsl ON rsl.submission_id=rs.id JOIN users u ON u.id=rsl.participant_user_id AND u.active=1 AND u.account_status<>'disabled' LEFT JOIN production_casting_records cr ON cr.production_id=:production2 AND cr.user_id=rsl.participant_user_id WHERE ".PerformerQuery::eligible('u')." AND rs.status NOT IN ('declined','cancelled') AND cr.id IS NULL ORDER BY rs.submitted_at,u.last_name,u.first_name");
         $s->execute(['production'=>$productionId,'production2'=>$productionId]);return $s->fetchAll();
     }
 
     public static function peopleCandidates(PDO $db,int $productionId):array
     {
-        $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.active=1 AND u.account_status<>'disabled' AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
+        $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role FROM users u LEFT JOIN production_casting_records cr ON cr.production_id=:production AND cr.user_id=u.id WHERE ".PerformerQuery::eligible('u')." AND u.active=1 AND u.account_status<>'disabled' AND cr.id IS NULL ORDER BY u.last_name,u.first_name");
         $s->execute(['production'=>$productionId]);return $s->fetchAll();
     }
 

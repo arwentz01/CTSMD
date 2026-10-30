@@ -281,7 +281,7 @@ final class ProductionPeopleExperience
 
     private static function candidates(PDO $db, int $productionId): array
     {
-        $stmt = $db->prepare("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.display_role AS role, u.initials, EXISTS(SELECT 1 FROM production_memberships pm WHERE pm.production_id = :production_id AND pm.user_id = u.id AND pm.status = 'active') AS already_active FROM users u WHERE u.active = 1 AND u.account_status<>'disabled' ORDER BY u.last_name, u.first_name");
+        $stmt = $db->prepare("SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, (SELECT GROUP_CONCAT(r.name ORDER BY r.name SEPARATOR ', ') FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 WHERE ur.user_id=u.id) AS role, u.initials, EXISTS(SELECT 1 FROM production_memberships pm WHERE pm.production_id = :production_id AND pm.user_id = u.id AND pm.status = 'active') AS already_active FROM users u WHERE (".PerformerQuery::eligible('u')." OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.code IN ('administrator','production_staff') AND r.active=1 WHERE ur.user_id=u.id) OR EXISTS(SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=u.id AND fr.status='active')) AND u.active = 1 AND u.account_status<>'disabled' ORDER BY u.last_name, u.first_name");
         $stmt->execute(['production_id' => $productionId]);
         return $stmt->fetchAll();
     }

@@ -33,7 +33,7 @@ final class TheatreHistoryService
     public static function subjectsForViewer(PDO $db,array $viewer):array
     {
         $viewerId=(int)$viewer['id'];$subjects=[];
-        if((self::isStudent($db,$viewerId)||IdentityRolePolicy::isAdult($db,$viewerId)))$subjects[$viewerId]=['id'=>$viewerId,'name'=>(string)$viewer['name'],'relationship'=>'Self'];
+        if((self::isStudent($db,$viewerId)||IdentityRolePolicy::isAdult($db,$viewerId)||IdentityRolePolicy::hasPerformerHistory($db,$viewerId)))$subjects[$viewerId]=['id'=>$viewerId,'name'=>(string)$viewer['name'],'relationship'=>'Self'];
         $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id WHERE fr.guardian_user_id=:guardian AND fr.status='active' ORDER BY u.last_name,u.first_name");
         $s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $row)$subjects[(int)$row['id']]=['id'=>(int)$row['id'],'name'=>(string)$row['name'],'relationship'=>ucfirst((string)$row['relationship_type'])];
         return array_values($subjects);
@@ -49,7 +49,7 @@ final class TheatreHistoryService
 
     public static function canViewerSeeSubject(PDO $db,int $viewerId,int $subjectId):bool
     {
-        if($viewerId===$subjectId&&(self::isStudent($db,$viewerId)||IdentityRolePolicy::isAdult($db,$viewerId)))return true;
+        if($viewerId===$subjectId&&(self::isStudent($db,$viewerId)||IdentityRolePolicy::isAdult($db,$viewerId)||IdentityRolePolicy::hasPerformerHistory($db,$viewerId)))return true;
         $s=$db->prepare("SELECT 1 FROM family_relationships WHERE guardian_user_id=:viewer AND student_user_id=:student AND status='active' LIMIT 1");$s->execute(['viewer'=>$viewerId,'student'=>$subjectId]);return(bool)$s->fetchColumn();
     }
 

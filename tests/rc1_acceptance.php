@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__).'/src/Database.php';
 require_once dirname(__DIR__).'/src/ReleaseCandidate.php';
 require_once dirname(__DIR__).'/src/CalendarService.php';
-require_once dirname(__DIR__).'/src/AdultParticipantService.php';
+require_once dirname(__DIR__).'/src/AccountManagementExperience.php';
 require_once dirname(__DIR__).'/src/CastingService.php';
 require_once dirname(__DIR__).'/src/CastingOfferService.php';
 require_once dirname(__DIR__).'/src/CastingCommunicationService.php';
@@ -18,7 +18,7 @@ $insert=static function(string $table,array $values)use($db):int{
 };
 $csrf=static function(string $html,?string $field=null,?string $value=null):string{
  $dom=new DOMDocument();@$dom->loadHTML($html);$xpath=new DOMXPath($dom);
- $query='//form'.($field?"[.//input[@name='$field'".($value!==null?" and @value='$value'":'').']]':'')."//input[@name='csrf_token']/@value";
+ $query='//form'.($field?"[.//*[@name='$field'".($value!==null?" and @value='$value'":'').']]':'')."//input[@name='csrf_token']/@value";
  $node=$xpath->query($query)->item(0);if(!$node)throw new RuntimeException('Expected CSRF field absent.');return $node->nodeValue;
 };
 try{
@@ -65,8 +65,23 @@ try{
  }
  // Adult performer + Guardian on one account, using actual mobile offer endpoints.
  $db->prepare("UPDATE users SET date_of_birth='1980-01-01' WHERE id=?")->execute([$users['Guardian']]);
- AdultParticipantService::classify($db,$users['Administrator'],$users['Guardian'],true,'Reviewed Adult fixture identity');
- $assert(($request('Guardian','/api/mobile/me','GET',null,true)['json']['user']['participant_classification']??'')==='adult','Native identity reports Adult classification separately from roles');
+ $roleIds=$db->query("SELECT id FROM auth_roles WHERE code IN ('member','adult_performer')")->fetchAll(PDO::FETCH_COLUMN);
+ $accountPath='/admin/accounts/view?id='.$users['Guardian'];
+ $account=$request('Administrator',$accountPath);
+ $assert($account['status']===200&&substr_count($account['body'],'Authorization roles')===1,'Account has one existing Authorization Roles section');
+ $assert(str_contains($account['body'],'Adult Performer')&&!str_contains($account['body'],'Save reviewed classification')&&!str_contains($account['body'],'transition_request'),'Adult Performer uses existing role checkbox without duplicate review panels');
+ $rolePost=static function(array $ids)use($request,$csrf,$accountPath,$users):array{
+  $page=$request('Administrator',$accountPath);
+  return $request('Administrator',$accountPath,'POST',['csrf_token'=>$csrf($page['body'],'action','save_roles'),'action'=>'save_roles','user_id'=>$users['Guardian'],'role_ids'=>$ids]);
+ };
+ $assert($rolePost($roleIds)['status']===303,'Existing account role POST assigns Adult Performer');
+ $nativeRoles=$request('Guardian','/api/mobile/me','GET',null,true)['json']['user']['roles']??[];
+ $assert(in_array('adult_performer',$nativeRoles,true),'Native API immediately exposes assigned authorization role');
+ $memberIds=$db->query("SELECT id FROM auth_roles WHERE code='member'")->fetchAll(PDO::FETCH_COLUMN);
+ $assert($rolePost($memberIds)['status']===303,'Existing account role POST removes Adult Performer');
+ $assert(!in_array('adult_performer',$request('Guardian','/api/mobile/me','GET',null,true)['json']['user']['roles']??[],true),'Native API immediately reflects revoked performer role');
+ $assert($rolePost($roleIds)['status']===303,'Existing role POST restores Adult Performer without review');
+ $assert(($request('Guardian','/api/mobile/me','GET',null,true)['json']['user']['participant_classification']??'')==='adult','Legacy native identity field is derived from Adult Performer role');
  $assert(($request('Student','/api/mobile/me','GET',null,true)['json']['user']['participant_classification']??'')==='student','Native identity preserves Student classification');
  foreach($productions as $p){
   ProductionParticipantEligibility::saveSettings($db,$p,$users['Administrator'],['participant_category'=>'mixed']);

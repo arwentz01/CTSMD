@@ -11,9 +11,9 @@ function load(file,session={},fetcher,dependencies={}){
  vm.runInNewContext(source,{exports,require:id=>{if(id==='../auth/session')return session;if(dependencies[id])return dependencies[id];throw new Error('Unexpected dependency '+id)},process:{env:{}},URLSearchParams,AbortController,setTimeout,clearTimeout,fetch:fetcher,FormData});
  return exports;
 }
-test('participant identity labels do not infer authority and web handoffs use configured HTTPS base',()=>{
- const {participantIdentityLabel:label}=load('src/participants/identity.ts');
- assert.equal(label('adult'),'Adult participant');assert.equal(label('student'),'Student');assert.equal(label(),'General member');
+test('authorization role labels do not infer authority and web handoffs use configured HTTPS base',()=>{
+ const {authorizationRoleLabels:label}=load('src/participants/identity.ts');
+ assert.equal(label(['member','adult_performer']),'Member, Adult Performer');assert.equal(label(['student']),'Student');assert.equal(label(),'No roles assigned');
  const {participantWebsite}=load('src/api/client.ts');
  assert.equal(participantWebsite('/student-profile'),'https://ctsmd.me/student-profile');
  assert.equal(participantWebsite('/theatre-history'),'https://ctsmd.me/theatre-history');

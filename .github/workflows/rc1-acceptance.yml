@@ -57,6 +57,7 @@ jobs:
         run: php tests/safeguarded_conversation.php
       - name: Adult enhancement isolated assertions (separate deployment scope)
         run: |
+          php tests/adult_performer_migration.php
           php tests/adult_participation_mysql.php
           php tests/adult_participation_concurrency.php
       - uses: actions/upload-artifact@v4

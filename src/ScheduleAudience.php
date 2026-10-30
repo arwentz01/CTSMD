@@ -93,7 +93,7 @@ final class ScheduleAudience
               JOIN production_groups pg ON pg.id=pgm.group_id AND pg.active=1
               JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
               JOIN users u ON u.id=pm.user_id AND u.active=1 AND u.account_status<>'disabled'
-              WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders) AND pm.audience_type IN ($typePh)
+              WHERE pg.production_id=? AND pgm.status='active' AND pg.id IN ($placeholders) AND pm.audience_type IN ($typePh) AND ".PerformerQuery::membership('pm','u')."
                 AND (pm.audience_type<>'guardian' OR EXISTS (
                     SELECT 1 FROM family_relationships fr
                     JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
@@ -137,7 +137,7 @@ final class ScheduleAudience
         $stmt=$db->prepare("SELECT DISTINCT u.id,CONCAT(u.first_name,' ',u.last_name) name,pm.audience_type,u.last_name sort_last_name,u.first_name sort_first_name
             FROM production_memberships pm
             JOIN users u ON u.id=pm.user_id
-            WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph)
+            WHERE pm.production_id=? AND pm.status='active' AND u.active=1 AND u.account_status<>'disabled' AND pm.audience_type IN ($ph) AND ".PerformerQuery::membership('pm','u')."
               AND (pm.audience_type<>'guardian' OR EXISTS (
                   SELECT 1 FROM family_relationships fr
                   JOIN production_memberships spm ON spm.user_id=fr.student_user_id AND spm.audience_type='student' AND spm.status='active'
@@ -174,7 +174,7 @@ final class ScheduleAudience
             JOIN production_group_members pgm ON pgm.group_id=pg.id AND pgm.status='active'
             JOIN production_memberships pm ON pm.id=pgm.production_membership_id AND pm.status='active'
             JOIN users participant ON participant.id=pm.user_id AND participant.active=1 AND participant.account_status<>'disabled'
-            WHERE sig.schedule_item_id=:item AND pm.user_id=:user LIMIT 1");
+            WHERE sig.schedule_item_id=:item AND pm.user_id=:user AND ".PerformerQuery::membership('pm','participant')." LIMIT 1");
         $direct->execute(['production'=>$productionId,'item'=>$scheduleItemId,'user'=>(int)$user['id']]);
         if($direct->fetchColumn()) return true;
 

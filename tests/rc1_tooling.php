@@ -34,6 +34,7 @@ try{
 final class Rc1MetadataPDO extends PDO {
  public function __construct(private array $contract,private bool $broken=false){}
  public function query(string $query,?int $fetchMode=null,mixed ...$fetchModeArgs):PDOStatement|false{
+  if(str_starts_with($query,'SELECT r.code,r.active,COUNT(rp.permission_id)'))return new Rc1MetadataStatement([]);
   if(!str_starts_with($query,'SELECT ')||!str_contains($query,'information_schema.'))throw new RuntimeException('Non-metadata read rejected.');
   $rows=[];
   if(str_contains($query,'information_schema.TABLES'))foreach($this->contract['tables'] as $table=>$_)$rows[]=['TABLE_NAME'=>$table,'ENGINE'=>'InnoDB'];
@@ -47,6 +48,7 @@ final class Rc1MetadataStatement extends PDOStatement {
  public function fetchAll(int $mode=PDO::FETCH_DEFAULT,mixed ...$args):array{return $this->rows;}
 }
 $result=ReleaseCandidate::inspect(new Rc1MetadataPDO($inventory,true),dirname(__DIR__));
+$assert(in_array('required active role: adult_performer',$result['issues'],true),'Missing performer role fails preflight');
 $assert(!$result['schema_matches_declared_contracts'],'Missing metadata fails closed');
 $assert(in_array('column: users.date_of_birth',$result['issues'],true),'DOB failure is actionable');
 $assert((bool)array_filter($result['issues'],static fn(string $s):bool=>str_starts_with($s,'trigger missing/drifted:')),'Trigger absence detected');

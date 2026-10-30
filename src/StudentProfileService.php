@@ -9,13 +9,13 @@ require_once __DIR__.'/PersonEligibility.php';
 
 final class StudentProfileService
 {
-    private static function isPerformer(PDO $db,int $id):bool{return self::isStudent($db,$id)||IdentityRolePolicy::isAdult($db,$id);}
+    private static function isPerformer(PDO $db,int $id):bool{return self::isStudent($db,$id)||IdentityRolePolicy::isAdult($db,$id)||IdentityRolePolicy::hasPerformerHistory($db,$id);}
     public static function subjectsForViewer(PDO $db,array $viewer):array
     {
         $viewerId=(int)$viewer['id'];$subjects=[];
         if(self::isPerformer($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
         $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
-        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u  WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
+        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u  WHERE ".PerformerQuery::eligible('u')." AND u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
         return array_values(array_filter($subjects));
     }
 
@@ -26,7 +26,7 @@ final class StudentProfileService
 
     public static function profile(PDO $db,int $studentId):?array
     {
-        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id,sp.photographer_credit FROM users u LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE (u.adult_participant=1 OR EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.code='student' AND ar.active=1 WHERE ur.user_id=u.id)) AND u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
+        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id,sp.photographer_credit FROM users u LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE ".PerformerQuery::profile('u')." AND u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
     }
 
     public static function save(PDO $db,string $projectRoot,array $viewer,int $studentId,array $input,array $upload):void

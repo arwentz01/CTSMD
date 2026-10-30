@@ -30,11 +30,11 @@ final class ProductionParticipantEligibility
         if($lock&&!$db->inTransaction())throw new LogicException('Locked eligibility requires a transaction.');
         $suffix=$lock?' FOR UPDATE':'';
         $q=$db->prepare('SELECT * FROM productions WHERE id=?'.$suffix);$q->execute([$productionId]);$production=$q->fetch();
-        $q=$db->prepare('SELECT active,account_status,date_of_birth,adult_participant FROM users WHERE id=?'.$suffix);$q->execute([$userId]);$person=$q->fetch();
+        $q=$db->prepare('SELECT active,account_status,date_of_birth FROM users WHERE id=?'.$suffix);$q->execute([$userId]);$person=$q->fetch();
         if(!$production||!$person||!(int)$person['active']||$person['account_status']==='disabled')return ['status'=>'unavailable','eligible'=>false];
-        // Student always wins over an inconsistent adult flag. DOB never changes classification.
+        // Student takes precedence even if malformed role data contains both roles.
         Auth::clearRequestCache($userId);
-        $category=IdentityRolePolicy::isStudent($db,$userId)?'student':((bool)$person['adult_participant']?'adult':'unknown');
+        $category=IdentityRolePolicy::isStudent($db,$userId)?'student':(IdentityRolePolicy::isAdult($db,$userId)?'adult':'unknown');
         $q=$db->prepare('SELECT id FROM production_age_exceptions WHERE production_id=? AND student_user_id=? AND revoked_at IS NULL'.$suffix);$q->execute([$productionId,$userId]);
         return self::evaluate($production,$category,$person['date_of_birth'],(bool)$q->fetchColumn())+['category'=>$category];
     }

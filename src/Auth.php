@@ -29,7 +29,7 @@ final class Auth
         $userId=self::userId();if(!$userId)return null;$local=!empty($_SESSION['auth_local_identity'])&&self::localIdentitySwitchEnabled();
         $cacheKey=$userId.':'.($local?'local':'active');
         if(isset(self::$userCache[$cacheKey]))return self::$userCache[$cacheKey];
-        $sql="SELECT identity_revision,adult_participant,id,first_name,last_name,email,initials,display_role AS role,active,account_status,organization_membership_status,organization_membership_reviewed_at,last_login_at FROM users WHERE id=:id AND active=1".($local?'':" AND account_status='active'")." LIMIT 1";
+        $sql="SELECT identity_revision,id,first_name,last_name,email,initials,display_role AS role,active,account_status,organization_membership_status,organization_membership_reviewed_at,last_login_at FROM users WHERE id=:id AND active=1".($local?'':" AND account_status='active'")." LIMIT 1";
         $stmt=$db->prepare($sql);$stmt->execute(['id'=>$userId]);$user=$stmt->fetch();if(!$user){self::logout();return null;}
         if((int)($_SESSION['auth_identity_revision']??0)!==(int)$user['identity_revision']){self::logout();return null;}
         $user['name']=trim((string)$user['first_name'].' '.(string)$user['last_name']);$user['roles']=self::roles($db,$userId);$user['permissions']=self::permissions($db,$userId);return self::$userCache[$cacheKey]=$user;

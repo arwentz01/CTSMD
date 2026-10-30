@@ -40,11 +40,11 @@ final class RegistrationService
         if(!empty($input['adult_self'])){
             if(!empty($input['student_user_id']))throw new RuntimeException('Choose either your own Adult registration or a Student registration.');
             $self=Auth::currentUser($db);
-            if(!$self||IdentityRolePolicy::isStudent($db,(int)$self['id']))throw new RuntimeException('Sign in with your reviewed Adult account to register independently.');
+            if(!$self||IdentityRolePolicy::isStudent($db,(int)$self['id']))throw new RuntimeException('Sign in with your Adult Performer account to register independently.');
             IdentityRolePolicy::assertProductionAudience($db,(int)$self['id'],'adult');
             $adultSelfId=(int)$self['id'];
             $q=$db->prepare('SELECT first_name,last_name,email,date_of_birth,contact_phone FROM users WHERE id=?');$q->execute([$adultSelfId]);$adult=$q->fetch();
-            if(!$adult||!$adult['date_of_birth'])throw new RuntimeException('Add a reviewed date of birth before registering independently.');
+            if(!$adult||!$adult['date_of_birth'])throw new RuntimeException('Add a date of birth before registering independently.');
             $input['participant_declared_age']=PersonEligibility::ageOn($adult['date_of_birth'],PersonEligibility::cutoff($opportunity)?:date('Y-m-d'));
             $first=$adult['first_name'];$last=$adult['last_name'];$email=$adult['email'];$phone=$adult['contact_phone']??'';
         }
@@ -90,7 +90,7 @@ final class RegistrationService
                 else{
                     $q=$db->prepare('SELECT * FROM productions WHERE id=? FOR UPDATE');$q->execute([(int)$current['production_id']]);$production=$q->fetch();
                     if(!$production)throw new RuntimeException('Production unavailable.');
-                    // Guest age declarations never confer Adult account classification or waive exact DOB rules.
+                    // Guest age declarations never confer Adult Performer authorization or waive exact DOB rules.
                     $result=ProductionParticipantEligibility::evaluate($production,$age==='adult'?'adult':'student',null);
                     if(!$result['eligible'])throw new RuntimeException('This production requires an eligible linked participant account: '.str_replace('_',' ',$result['status']).'.');
                 }

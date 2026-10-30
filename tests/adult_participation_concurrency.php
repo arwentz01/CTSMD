@@ -22,7 +22,7 @@ if(($argv[1]??'')==='worker'){
 $checks=0;$people=[];$productions=[];$children=[];
 $assert=static function(bool $ok,string $label)use(&$checks):void{if(!$ok)throw new RuntimeException($label);$checks++;echo "PASS $label\n";};
 $person=static function(string $role)use($db,&$people):int{
-    $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,account_status,organization_membership_status,date_of_birth,adult_participant) VALUES('Concurrent',?,?, 'CT',?,'active','approved',?,?)")->execute([$role,bin2hex(random_bytes(10)).'@rc1.invalid',$role,$role==='student'?'2015-01-01':'1980-01-01',(int)($role!=='student')]);$id=(int)$db->lastInsertId();$people[]=$id;
+    $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,account_status,organization_membership_status,date_of_birth) VALUES('Concurrent',?,?, 'CT',?,'active','approved',?)")->execute([$role,bin2hex(random_bytes(10)).'@rc1.invalid',$role,$role==='student'?'2015-01-01':'1980-01-01']);$id=(int)$db->lastInsertId();$people[]=$id;if($role!=='student')$db->prepare("INSERT INTO auth_user_roles(user_id,role_id) SELECT ?,id FROM auth_roles WHERE code='adult_performer'")->execute([$id]);
     $db->prepare('INSERT INTO auth_user_roles(user_id,role_id) SELECT ?,id FROM auth_roles WHERE code=?')->execute([$id,$role]);return $id;
 };
 $spawn=static function(string $operation,int $actor,int $target,int $student=0):array{

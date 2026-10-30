@@ -122,6 +122,11 @@ REGEX;
         foreach($expected['dropped'] as $name=>$_)if(isset($triggers[$name]))$missing[]='obsolete trigger: '.$name;
         foreach(['users.date_of_birth'=>'date','conversation_participants.history_through_message_id'=>'bigint unsigned','conversation_participants.access_revoked_at'=>'datetime'] as $key=>$type){[$table,$column]=explode('.',$key);$actual=$columns[$table][$column]??[];if(($actual['COLUMN_TYPE']??'')!==$type||($actual['IS_NULLABLE']??'')!=='YES')$missing[]='critical type/nullability: '.$key;}
         foreach(['production_memberships.audience_type'=>['student','guardian','staff','adult'],'productions.participant_category'=>['students','adults','mixed']] as $key=>$values){[$table,$column]=explode('.',$key);$type=$columns[$table][$column]['COLUMN_TYPE']??'';foreach($values as $value)if(!str_contains($type,"'".$value."'")){$missing[]='critical participant enum: '.$key;break;}}
+        if(isset($tables['auth_roles'],$tables['auth_role_permissions'])){
+            $roles=$db->query("SELECT r.code,r.active,COUNT(rp.permission_id) permission_count FROM auth_roles r LEFT JOIN auth_role_permissions rp ON rp.role_id=r.id WHERE r.code='adult_performer' GROUP BY r.id,r.code,r.active")->fetchAll(PDO::FETCH_ASSOC);
+            if(count($roles)!==1||(int)$roles[0]['active']!==1)$missing[]='required active role: adult_performer';
+            elseif((int)$roles[0]['permission_count']!==0)$missing[]='Adult Performer must not grant permissions';
+        }
         return ['schema_matches_declared_contracts'=>!$missing,'issues'=>$missing,'table_count'=>count($tables),'trigger_count'=>count($triggers),'migration_review'=>$expected['migrations'],'limitations'=>['Presence is not an applied-migration ledger; backfills, permissions, indexes, FK definitions and all type/default changes require review.','Trigger hashes are lexical drift checks, not proof of concurrency correctness.','No migration or delivery worker was executed.']];
     }
 }

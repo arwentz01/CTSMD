@@ -1,13 +1,13 @@
 {
     "AccountManagementExperience": {
-        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
-        "php": "4eb18d5a4fb3b76100511c052a5938eef4ce7cb9e4702503f553c0e8f07c7277",
+        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "b7d660f0942d67266946c700fcf380479381001d5d220dd6204fbdef8132436f",
         "forms": "4b3877af05e5e82e08adc5c242cd0df768f35be7c5f176eae83ec934b0ce27b7"
     },
     "ProductionLifecycleExperience": {
-        "reason": "Adult participation Batch 2: reviewed classification and production eligibility controls; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
-        "php": "3ee5eda69cd8dadfde9b6b813be8ed672e35b66282b7f612c1c4f8ba3bbd34ef",
-        "forms": "1fb04b92675403c15f2c90feea921b319d0e744693ceb523871180c2c1438f8e"
+        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
+        "php": "9dea9e46daf6e14b3fe2859da20f9e5158e8912ab64caafd36187a739fce5020",
+        "forms": "8748f89102da9dc0b0bbebb2934c816078a2a0339762a61a2666210c6e04d713"
     },
     "CastingExperience": {
         "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
@@ -15,12 +15,12 @@
         "forms": "619350a7fa0e7a5278133d2e54b4114a5c11e8d81b83232594d88be3ad060363"
     },
     "ProductionPeopleExperience": {
-        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
-        "php": "8fc5a92f30bf47f627c60cb5c7becfd867b9ab653b30a31d75ad5ced34a89e73",
+        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "e753fee94933ba48b74065eaaf1ceb30d9f2c8093f7c00f1103c090570e069b8",
         "forms": "86fd02a11422dfe95a9f6dc994b95869e13a2145fc523699faebc379c2b7a5bb"
     },
     "StudentProfileExperience": {
-        "reason": "Adult participation Batch 5: shared performer profile and consent copy",
+        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
         "php": "a319e341986a500abb80ac8828970eadb94cb366d8d187eb42d9043193d1719c",
         "forms": "8de6fa701c6b8cd352307bef0b21050f520a6e2188343e858a1fa53dfbbdf4d1"
     },
@@ -38,5 +38,20 @@
         "reason": "Adult participation: performer consent validation wording",
         "php": "da59fb92cb09926f5d04460760b0e854ee62009e401cf9a9e4a4dac6ddc4fbcf",
         "forms": "445a89c9f7f3570fb32e4f133a20081e94ad362d9190a7a4a731a4251fd07ce9"
+    },
+    "ProductionGroupExperience": {
+        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "1e8a5ab2e250d0f7c36e5650e73926caaed2f3b56d53bff593e41db7a35d4165",
+        "forms": "77ee0fb4a0cd9d9b0151259ecd54079142ebb58bd4c77be9076b61e86e715d7e"
+    },
+    "OperationsHubExperience": {
+        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
+        "php": "8be2184ff2a2cf4eb4a86082808cdcc260800a99a161519a2453a6ee281a9801",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "ProductionWorkspaceExperience": {
+        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
+        "php": "db85eeb734a31d8eef26cb986aa0b0bd01158c6fc7ac96c726a8583f7e05f31a",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
 }
