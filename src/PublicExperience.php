@@ -43,7 +43,7 @@ final class PublicExperience
         $brand=OrganizationBranding::fromEnvironment();self::head('What Connect offers',$basePath,$brand);?>
         <a class="stage-skip" href="#features-main">Skip to content</a>
         <main class="stage-home" id="features-main" tabindex="-1" style="<?=self::e(OrganizationBranding::css($brand))?>">
-        <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><span><strong><?=self::e($brand['name'])?></strong><span>Connect</span></span></a><nav aria-label="Public navigation"><a href="<?=self::u($basePath,'/')?>">Home</a><a href="<?=self::u($basePath,'/register')?>">Auditions &amp; signups</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in ↗</a></nav></header>
+        <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><span class="stage-brand-wordmark"><strong><?=self::e($brand['name'])?></strong><span>CONNECT</span></span></a><nav aria-label="Public navigation"><a href="<?=self::u($basePath,'/')?>">Home</a><a href="<?=self::u($basePath,'/register')?>">Auditions &amp; signups</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in ↗</a></nav></header>
         <section class="stage-features-intro"><p class="stage-eyebrow">ABOUT CONNECT</p><h1>One theatre.<br><em>Many ways to belong.</em></h1><p>Connect helps everyone in the company find the information and opportunities that matter to them. What you see depends on your involvement and account access.</p></section>
         <div class="stage-feature-grid">
           <section><span>01 / PERFORMERS</span><h2>Know your next cue.</h2><p>Find your schedule, casting information, production resources and theatre history in My Theatre.</p></section>
@@ -82,15 +82,10 @@ final class PublicExperience
         <section class="stage-welcome" aria-labelledby="stage-title">
           <div class="stage-welcome-content">
             <p class="stage-eyebrow">WELCOME TO <?=self::e($brand['name'])?> CONNECT</p>
-            <h1 id="stage-title">Where the whole<br><em>company connects.</em></h1>
+            <h1 id="stage-title">Welcome to <em>Connect.</em></h1>
             <p class="stage-welcome-lead">A place for the people who make theatre happen, on stage, backstage, and at home.</p>
             <p class="stage-welcome-support">Whether you're a performer, a parent or guardian, or helping behind the scenes, Connect brings your theatre experience together.</p>
             <div class="stage-actions"><a class="stage-primary" href="<?=self::u($basePath,'/login')?>">Sign in to Connect <span aria-hidden="true">↗</span></a><a href="<?=self::u($basePath,'/join')?>">Create an account <span aria-hidden="true">↗</span></a></div>
-          </div>
-          <div class="stage-welcome-side" aria-label="What you can do in Connect">
-            <span class="stage-side-number" aria-hidden="true">01 / 03</span>
-            <div><span class="stage-side-kicker">FOR OUR THEATRE COMMUNITY</span><h2>Every role.<br>One company.</h2></div>
-            <div class="stage-roles"><span>Performers &amp; Students</span><span>Parents &amp; Guardians</span><span>Volunteers &amp; Staff</span></div>
           </div>
         </section>
         <section class="stage-essentials" aria-label="Explore Connect">
@@ -100,7 +95,7 @@ final class PublicExperience
           <a href="<?=self::u($basePath,'/features')?>">Explore what Connect offers <span aria-hidden="true">↗</span></a>
         </section>
         <?php if($opportunities):?><section class="stage-opportunities" aria-labelledby="public-opportunities-title"><div class="stage-section-title"><div><p class="stage-eyebrow">YOUR NEXT OPPORTUNITY</p><h2 id="public-opportunities-title">Auditions &amp; signups.</h2></div><a href="<?=self::u($basePath,'/register')?>">View all <span aria-hidden="true">↗</span></a></div><div class="stage-open-list"><?php foreach($opportunities as $o):?><article><h3><a href="<?=self::u($basePath,'/register?slug='.rawurlencode($o['slug']))?>"><?=self::e($o['title'])?></a></h3><?php if($o['summary']):?><p><?=self::e($o['summary'])?></p><?php endif;?><a href="<?=self::u($basePath,'/register?slug='.rawurlencode($o['slug']))?>"><?=$o['is_full']?'Join waitlist':'View signup'?> ↗</a></article><?php endforeach;?></div></section><?php endif;?>
-        <?php if($playbills):?><section class="stage-programs stage-program-gallery" aria-labelledby="public-programs-title"><div class="stage-section-title"><div><p class="stage-eyebrow">FROM OUR STAGE</p><h2 id="public-programs-title">The Playbills.</h2></div></div><div class="stage-playbill-grid"><?php foreach($playbills as $pb):?><a class="stage-playbill-item" href="<?=self::u($basePath,'/playbill?slug='.rawurlencode($pb['public_slug']))?>"><?php if($pb['artwork_stored_file_id'] && in_array($pb,$artworks,true)):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/playbill/asset?kind=artwork&slug='.rawurlencode($pb['public_slug']))?>"><?php else:?><span class="stage-playbill-type" aria-hidden="true">PLAYBILL</span><?php endif;?><span class="stage-playbill-title"><?=self::e($pb['display_title']?:$pb['production_title'])?></span><span class="stage-playbill-view">View Playbill ↗</span></a><?php endforeach;?></div></section><?php endif;?>
+        <?php if($playbills):?><section class="stage-programs stage-program-gallery" aria-labelledby="public-programs-title"><div class="stage-section-title"><div><p class="stage-eyebrow">FROM OUR STAGE</p><h2 id="public-programs-title">The Playbills.</h2></div></div><div class="stage-playbill-grid" style="--playbill-count:<?=min(count($playbills),3)?>"><?php foreach($playbills as $pb):?><a class="stage-playbill-item" href="<?=self::u($basePath,'/playbill?slug='.rawurlencode($pb['public_slug']))?>"><?php if($pb['artwork_stored_file_id'] && in_array($pb,$artworks,true)):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/playbill/asset?kind=artwork&slug='.rawurlencode($pb['public_slug']))?>"><?php else:?><span class="stage-playbill-type" aria-hidden="true">PLAYBILL</span><?php endif;?><span class="stage-playbill-title"><?=self::e($pb['display_title']?:$pb['production_title'])?></span><span class="stage-playbill-view">View Playbill ↗</span></a><?php endforeach;?></div></section><?php endif;?>
         <footer class="stage-footer"><span><?=self::e($brand['name'])?> · Connect</span><?php if($brand['website']!==''):?><a href="<?=self::e($brand['website'])?>">Visit our website <span aria-hidden="true">↗</span></a><?php endif;?><a href="<?=self::u($basePath,'/login')?>">Member sign in</a></footer></main><?php self::foot();
     }
 
@@ -131,7 +126,7 @@ final class PublicExperience
 
     private static function head(string $title,string $basePath,?array $brand=null):void
     {
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="<?=self::e($brand['primary']??'#181416')?>"><title><?=self::e($title)?><?= $brand===null?' · CTSMD':''?></title><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public.css')?>"><?php if($brand!==null):?><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/ux-workspaces.css?v=20261027')?>"><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public-home.css?v=20261030-welcome')?>"><?php endif;?></head><body<?=$brand!==null?' class="ux-workspace public-home"':''?>><?php
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="<?=self::e($brand['primary']??'#181416')?>"><title><?=self::e($title)?><?= $brand===null?' · CTSMD':''?></title><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public.css')?>"><?php if($brand!==null):?><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/ux-workspaces.css?v=20261027')?>"><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public-home.css?v=20261030-lobby')?>"><?php endif;?></head><body<?=$brand!==null?' class="ux-workspace public-home"':''?>><?php
     }
     private static function foot():never{?></body></html><?php exit;}
     private static function e(string $v):string{return htmlspecialchars($v,ENT_QUOTES,'UTF-8');}
