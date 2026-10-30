@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/MemberUI.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
@@ -52,7 +53,7 @@ final class NotificationExperience
         }
 
         header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notifications · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/home-experience.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/persisted-notifications.css?v=20261026-task-button') ?>"><?php WorkspaceUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-notifications"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar('/notifications',$basePath,$user); ?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Home','Notifications',$basePath,$subnav); ?><div class="home-page notification-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notifications · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/home-experience.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/persisted-notifications.css?v=20261026-task-button') ?>"><?php WorkspaceUI::styles($basePath); ?><?php MemberUI::styles($basePath); ?></head><body class="app-body ux-workspace ux-notifications<?=MemberUI::bodyClass()?>"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar('/notifications',$basePath,$user); ?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Home','Notifications',$basePath,$subnav); MemberUI::wayfinding($basePath); ?><div class="home-page notification-page">
         <?php if($flash): ?><div class="notification-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <section class="home-hero compact"><div><span>NOTIFICATION CENTER</span><h2>Your updates and actions</h2><p>Respond to requests, check deadlines, and catch up on updates.</p></div><?php if($unread): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['notification_csrf']) ?>"><input type="hidden" name="action" value="mark_all_read"><button class="button" type="submit">Mark all read</button></form><?php endif; ?></section>
         <div class="notification-summary"><article><strong><?= $unread ?></strong><span>unread updates</span></article><article><strong><?= count($openForms) ?></strong><span>open forms</span></article></div>
@@ -65,7 +66,7 @@ final class NotificationExperience
             <p class="casting-offer-role"><?= $esc((string)$offer['role_snapshot']) ?></p>
             <p class="casting-offer-student">For <?= $esc((string)$offer['first_name'].' '.(string)$offer['last_name']) ?></p>
             <p class="casting-offer-instruction">Please review your offer and let the production team know whether you accept or decline.</p>
-            <form method="post" class="cast-offer-response" action="<?= $url('/notifications') ?>">
+            <?php if(!AccessPolicy::isStudent($user)):?><form method="post" class="cast-offer-response" action="<?= $url('/notifications') ?>">
               <input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['notification_csrf']) ?>">
               <input type="hidden" name="action" value="respond_cast_offer">
               <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
@@ -81,7 +82,7 @@ final class NotificationExperience
                   <button class="casting-offer-cancel" type="button">Cancel</button>
                 </div>
               </div>
-            </form>
+            </form><?php else:?><p class="member-section-help">Your guardian can review and respond to this offer from their own account.</p><?php endif;?>
           </div>
         </article>
         <?php endforeach;?><?php if($openForms): foreach($openForms as $form): ?><article class="notification-row <?= $form['status']==='missing'?'urgent':'' ?>"><i aria-hidden="true">!</i><div class="notification-form-copy"><b><?= $esc($form['title']) ?></b><span><?= $esc((string)$form['subject_name']) ?> · <?= $esc((string)($form['production_title'] ?: 'Organization-wide')) ?> · <?= $esc(ucwords(str_replace('_',' ',$form['status']))) ?><?= $form['due_at'] ? ' · Due '.$esc(date('M j',strtotime($form['due_at']))) : '' ?></span></div><a class="notification-form-action" href="<?= $url('/forms/view?id='.(int)$form['id']) ?>">Open form →</a></article><?php endforeach; elseif(!$castingOffers && !$todoItems): ?><div class="home-empty"><b>Nothing needs action.</b><span>You are caught up on assigned forms.</span></div><?php endif; ?></section>
@@ -146,7 +147,8 @@ document.querySelectorAll('.cast-offer-response').forEach(function(form){
         $activeIds = $db->query("SELECT id FROM productions WHERE is_active=1 AND lifecycle_stage IN ('upcoming','planning','in_production','performing')")->fetchAll(PDO::FETCH_COLUMN);
         $active = array_fill_keys(array_map('intval', $activeIds), true);
         return array_values(array_filter($assignments, static fn(array $form): bool =>
-            $form['status'] !== 'completed'
+            in_array($form['status'],['missing','due_soon'],true)
+            && !in_array($form['submission_status'],['submitted','approved'],true)
             && ($form['production_id'] === null || isset($active[(int)$form['production_id']]))
         ));
     }

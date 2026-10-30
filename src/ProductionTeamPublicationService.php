@@ -31,7 +31,7 @@ final class ProductionTeamPublicationService
             ProductionParticipantEligibility::audit($db,$actor,$actor,'team_credits_reviewed',['production_id'=>$production,'playbill_id'=>$playbill,'credits'=>$snapshot]);$db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
-    public static function snapshot(PDO $db,int $playbill):array
+    public static function snapshot(PDO $db,int $playbill,bool $withIdentity=false):array
     {
         $q=$db->prepare("SELECT body FROM playbill_sections WHERE playbill_id=? AND section_type='production_team_snapshot' AND active=1 ORDER BY id DESC LIMIT 1");$q->execute([$playbill]);$raw=$q->fetchColumn();if($raw===false)return [];
         $rows=json_decode((string)$raw,true,flags:JSON_THROW_ON_ERROR);$visible=[];
@@ -39,7 +39,7 @@ final class ProductionTeamPublicationService
             if(!empty($row['requires_student_approval'])){
                 $q=$db->prepare("SELECT id FROM playbill_cast_profiles WHERE playbill_id=? AND user_id=? AND visible=1 AND approval_status='approved'");$q->execute([$playbill,(int)$row['user_id']]);if(!$q->fetchColumn())continue;
             }
-            $visible[]=['name'=>(string)$row['name'],'participation_role'=>(string)$row['participation_role']];
+            $credit=['name'=>(string)$row['name'],'participation_role'=>(string)$row['participation_role']];if($withIdentity)$credit['user_id']=(int)($row['user_id']??0);$visible[]=$credit;
         }return $visible;
     }
 }

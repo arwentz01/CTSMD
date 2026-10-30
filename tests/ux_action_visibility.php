@@ -18,12 +18,15 @@ final class UXActionPDO extends PDO
     {
         $this->assignmentSql=$query;
         return new UXActionStatement([
-            ['id'=>1,'status'=>'missing','production_id'=>11],
-            ['id'=>2,'status'=>'due_soon','production_id'=>11],
-            ['id'=>3,'status'=>'completed','production_id'=>11],
-            ['id'=>4,'status'=>'missing','production_id'=>12],
-            ['id'=>5,'status'=>'requires_review','production_id'=>null],
-            ['id'=>6,'status'=>'missing','production_id'=>99],
+            ['id'=>1,'status'=>'missing','production_id'=>11,'submission_status'=>null],
+            ['id'=>2,'status'=>'due_soon','production_id'=>11,'submission_status'=>null],
+            ['id'=>3,'status'=>'completed','production_id'=>11,'submission_status'=>'approved'],
+            ['id'=>4,'status'=>'missing','production_id'=>12,'submission_status'=>null],
+            ['id'=>5,'status'=>'requires_review','production_id'=>null,'submission_status'=>'submitted'],
+            ['id'=>6,'status'=>'missing','production_id'=>99,'submission_status'=>null],
+            ['id'=>7,'status'=>'missing','production_id'=>null,'submission_status'=>null],
+            ['id'=>8,'status'=>'missing','production_id'=>11,'submission_status'=>'submitted'],
+            ['id'=>9,'status'=>'due_soon','production_id'=>11,'submission_status'=>'returned'],
         ],$this);
     }
     public function query(string $query,?int $fetchMode=null,...$fetchModeArgs): PDOStatement|false
@@ -35,7 +38,7 @@ final class UXActionPDO extends PDO
 $db=new UXActionPDO();
 $method=new ReflectionMethod(NotificationExperience::class,'openForms');
 $rows=$method->invoke(null,$db,7);
-if(array_column($rows,'id')!==[1,2,5])throw new RuntimeException('Only pending current-production or organization-wide assignments belong in actions.');
+if(array_column($rows,'id')!==[1,2,7,9])throw new RuntimeException('Only actionable current-production or organization-wide assignments belong in actions; pending staff review is informational.');
 if($db->params!==['viewer'=>7,'guardian'=>7])throw new RuntimeException('Reuse the existing viewer-scoped form service.');
 foreach(["fr.status='active'","fr.relationship_type IN ('parent','guardian')","fa.user_id=:viewer"] as $guard){
     if(!str_contains($db->assignmentSql,$guard))throw new RuntimeException('Existing guardian/own-assignment query boundary missing.');

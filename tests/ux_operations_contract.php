@@ -12,6 +12,10 @@ function operationsPhpContract(string $source): string
     $source = str_replace("<?=\$print?'':' ux-operations'?>", '', $source);
     // Hub decoration removed from inline HTML; these expressions never made decisions.
     $source = str_replace(['$e($eyebrow)', '$e($item[\'eyebrow\'])', '$e($item[\'icon\'])'], '', $source);
+    // MemberUI is an explicit presentation-only adoption layer, like WorkspaceUI.
+    $source=str_replace("require_once __DIR__.'/MemberUI.php';", '', $source);
+    $source=preg_replace('~MemberUI::(?:styles|wayfinding)\(\$(?:basePath|base)(?:,!\$staff)?\);~','',$source);
+    $source=str_replace('<?=MemberUI::bodyClass()?>','',$source);
     $tokens = [];
     foreach (token_get_all($source) as $token) {
         if (is_array($token)) {

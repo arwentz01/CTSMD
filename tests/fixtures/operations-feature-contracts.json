@@ -58,5 +58,15 @@
         "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
         "php": "b99b82630e30808b22b06f171f8d715ad9ce9f88ac738a1746a38c7634378c1f",
         "forms": "f85a03c1413d605ecf67509215ae56bafc7c4dce8bfecc7652e3087ac47ffc4d"
+    },
+    "CalendarExperience": {
+        "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "69e8f4860c310a3c7b4585b4656ef5b65a58ebae073374e8d241d6cb145e0a82",
+        "forms": "9b53fcc45977f28184e8eb3e21cd046ba434cad337eea314378adcb3d61801b6"
+    },
+    "NotificationExperience": {
+        "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "2ab7bace4e834b4a84a7aedde4cb39965b39a7bd607dc5c686a1d7172c3924c1",
+        "forms": "5555001c8c8886794773c7e3338d008cc037d8f67212f3ca88c6c4c8ab793eed"
     }
 }

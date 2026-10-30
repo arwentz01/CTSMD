@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/MemberUI.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
@@ -71,12 +72,12 @@ final class FamilyDashboardExperience
     <link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>">
     <link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>">
     <link rel="stylesheet" href="<?= $url('/assets/css/family-dashboard.css') ?>">
-<?php WorkspaceUI::styles($basePath); ?></head>
-<body class="app-body ux-workspace ux-family"><a class="ux-skip" href="#ux-main">Skip to main content</a>
+<?php WorkspaceUI::styles($basePath); ?><?php MemberUI::styles($basePath); ?></head>
+<body class="app-body ux-workspace ux-family<?=MemberUI::bodyClass()?>"><a class="ux-skip" href="#ux-main">Skip to main content</a>
 <div class="unified-shell">
 <?php AppNavigation::renderSidebar($route,$basePath,$user); ?>
 <main class="unified-main" id="ux-main" tabindex="-1">
-<?php AppNavigation::renderHeader('Home','My family',$basePath,$subnav); ?>
+<?php AppNavigation::renderHeader('Home','My family',$basePath,$subnav); MemberUI::wayfinding($basePath); ?>
 <div class="family-dashboard">
     <?php WorkspaceUI::pageHeader('Your household', 'Forms, offers and upcoming calls for every linked child and active production.', ['label'=>'Manage household', 'href'=>$url('/family/manage')]); ?>
 

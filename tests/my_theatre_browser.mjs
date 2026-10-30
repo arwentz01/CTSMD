@@ -19,7 +19,7 @@ try{
   for(const route of routes){
    for(const width of widths){await p.setViewport({width,height:950,mobile:width<=390});await p.goto(url.origin+route,{settleMs:70});await p.eval(async()=>{const button=document.querySelector('.mobile-engagement-later');if(button){button.click();await new Promise(resolve=>setTimeout(resolve,300));}});
     const state=await p.eval(async()=>{const r=await fetch(location.href,{cache:'no-store'}),html=await r.text();return {status:r.status,complete:/<\/html>\s*$/i.test(html),error:/Fatal error|SQLSTATE|Uncaught |Warning:|Deprecated:/.test(html),adopted:document.body.classList.contains('ux-member'),width:innerWidth,scrollWidth:document.documentElement.scrollWidth,title:document.title,productionIds:[...document.querySelectorAll('[data-production-id]')].map(e=>e.dataset.productionId),text:document.querySelector('main')?.innerText||''};});
-    const name=persona+'-'+route.split('?')[0].slice(1).replaceAll('/','-')+'-'+width;
+    const name=persona+'-'+route.slice(1).replace(/[^a-z0-9-]/gi,'-')+'-'+width;
     await p.screenshot({path:out+'/'+name+'.jpg',fullPage:true});writeFileSync(out+'/'+name+'.json',JSON.stringify(state,null,2));results.push({persona,route,width,...state,text:undefined});console.log(persona,route,width,state.status,state.scrollWidth,state.adopted);
    }
   }
