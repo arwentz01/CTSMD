@@ -764,7 +764,8 @@
       "owner": "Playbill2Experience",
       "batch": "F",
       "kind": "screen",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PlaybillStudio"
     },
     {
       "route": "/playbills",
@@ -778,7 +779,8 @@
       "owner": "PlaybillExperience",
       "batch": "F",
       "kind": "screen",
-      "baseline": "legacy; explicit adoption needed"
+      "baseline": "legacy; explicit adoption needed",
+      "renderOwner": "PlaybillStudio"
     },
     {
       "route": "/schedule",

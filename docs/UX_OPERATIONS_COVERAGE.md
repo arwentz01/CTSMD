@@ -598,3 +598,7 @@ node tests/ux_operations_interactions.mjs
 ```
 
 Run from the repository root. Choose `A`–`F` instead of `all`, or use `CTSMD_UX_ROUTES` with comma-separated screen paths for targeted checks. The render script currently exits **2** for the known Playbill pre-render blocker, **1** for unexpected render/adoption/overflow failures, and **0** for a selected subset without blockers. The interaction script exits nonzero for failed assertions. Neither script treats a compiled page as a successful workflow save. Test identity/production-context POSTs are local setup; business form submission is intercepted or not invoked. Raw evidence can contain authenticated context, so keep the output directory outside Git.
+
+## Playbill Studio follow-up
+
+The historical Playbill Media pre-render blocker above is superseded by the unified Studio implementation; `/admin/playbill/media` now delegates to it. All seven stages pass authenticated HTTP rendering in the isolated schema. See [PLAYBILL_STUDIO.md](PLAYBILL_STUDIO.md). Historical screenshots/measurements above have not been rerun and do not describe the new Studio.

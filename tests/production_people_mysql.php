@@ -86,7 +86,8 @@ try{
  ProductionTeamPublicationService::import($db,$a,$pb,$admin,ProductionTeamPublicationService::fingerprint($preview));
  $snapshot=ProductionTeamPublicationService::snapshot($db,$pb);
  $assert(count($snapshot)===2,'Explicitly reviewed eligible team credits available to Playbill');
- $assert(in_array('Student approved name',array_column($snapshot,'name'),true),'Student team credit uses approved display name rather than private account name');
+ $studentIdentity=$db->query('SELECT first_name,last_name FROM users WHERE id='.(int)$student)->fetch();$expectedStudent=$studentIdentity['first_name'].' '.mb_strtoupper(mb_substr($studentIdentity['last_name'],0,1)).'.';
+ $assert(in_array($expectedStudent,array_column($snapshot,'name'),true)&&!in_array('Student approved name',array_column($snapshot,'name'),true),'Student team credit enforces first name and last initial despite editorial override');
  $assert(!str_contains(json_encode($snapshot),'SECRET')&&!str_contains(json_encode($snapshot),'@rc1.invalid'),'Team publication exports no staff notes or contacts');
  $db->prepare("UPDATE playbill_cast_profiles SET approval_status='withdrawn' WHERE playbill_id=? AND user_id=?")->execute([$pb,$student]);
  $assert(count(ProductionTeamPublicationService::snapshot($db,$pb))===1,'Student approval withdrawal still gates public team credit');

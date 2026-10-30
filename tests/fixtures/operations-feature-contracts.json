@@ -35,9 +35,9 @@
         "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
     },
     "PlaybillExperience": {
-        "reason": "Production People publication: reviewed team snapshots reserved from generic editorial writes; docs/PRODUCTION_PEOPLE_REDESIGN.md",
-        "php": "7ef14443a7cd770693c66be210122a79e3af24c949b780319423149621f0a62a",
-        "forms": "ca24a55237d6681f21d70877862e680b88041c07138002a85e93987e7327dce7"
+        "reason": "Unified Playbill Studio: scoped editing, private shared-renderer preview, consent and explicit publication gates. docs/PLAYBILL_STUDIO.md",
+        "php": "bad0f8b8f18469953ef08f212aad1573d2fbbee4bdb435ad26212192d166b4f2",
+        "forms": "959ae161a81ca7d71e717cb210751989b3870c6affc7dcd2ecaf0f9060f028b4"
     },
     "ProductionGroupExperience": {
         "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
@@ -55,9 +55,9 @@
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "Playbill2Experience": {
-        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
-        "php": "b99b82630e30808b22b06f171f8d715ad9ce9f88ac738a1746a38c7634378c1f",
-        "forms": "f85a03c1413d605ecf67509215ae56bafc7c4dce8bfecc7652e3087ac47ffc4d"
+        "reason": "Unified Playbill Studio: scoped editing, private shared-renderer preview, consent and explicit publication gates. docs/PLAYBILL_STUDIO.md",
+        "php": "3c780539cf94fb4ca30e72d608b94e5ddab20072d73ee3ee7c1b8613d8636cb6",
+        "forms": "77a128a70a8ac7a4a26a203cdc598fd95c2329282e6299c5243d9a9c1c471bdd"
     },
     "CalendarExperience": {
         "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",

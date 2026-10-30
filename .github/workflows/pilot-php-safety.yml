@@ -9,6 +9,9 @@ on:
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-member.css"
       - "assets/css/my-theatre.css"
+      - "assets/css/playbill-studio.css"
+      - "assets/css/playbill-pages.css"
+      - "assets/js/playbill-studio.js"
       - "assets/js/ux-member.js"
       - "assets/css/ux-operational.css"
       - "assets/css/ux-operations.css"
@@ -30,6 +33,9 @@ on:
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-member.css"
       - "assets/css/my-theatre.css"
+      - "assets/css/playbill-studio.css"
+      - "assets/css/playbill-pages.css"
+      - "assets/js/playbill-studio.js"
       - "assets/js/ux-member.js"
       - "assets/css/ux-operational.css"
       - "assets/css/ux-operations.css"
@@ -72,6 +78,7 @@ jobs:
           node --check assets/js/unified-navigation.js
           node --check assets/js/ux-workspaces.js
           node --check assets/js/account-menu.js
+          node --check assets/js/playbill-studio.js
           node --check assets/js/ux-operations.js
           node --check assets/js/production-people.js
           node --check tests/ux_operations_browser.mjs

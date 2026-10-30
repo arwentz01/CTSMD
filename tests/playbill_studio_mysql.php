@@ -1,0 +1,44 @@
+<?php
+declare(strict_types=1);
+set_error_handler(static function(int $level,string $message,string $file,int $line):never{throw new ErrorException($message,0,$level,$file,$line);});
+require_once __DIR__.'/fixtures/my-theatre-personas.php';
+require_once dirname(__DIR__).'/src/PlaybillExperience.php';
+require_once dirname(__DIR__).'/src/ManualParticipantService.php';
+$db=Database::connect(dirname(__DIR__));$fixture=null;$checks=0;
+$ok=static function(bool $v,string $label)use(&$checks):void{if(!$v)throw new RuntimeException($label);++$checks;echo "PASS $label\n";};
+try{
+ $fixture=myTheatreFixture($db);extract($fixture);$production=$db->query('SELECT * FROM productions WHERE id='.(int)$productions['A'])->fetch();
+ $actor=static fn(string $who):array=>['id'=>$users[$who],'roles'=>$roles[$who],'permissions'=>Auth::permissions($db,$users[$who])];$admin=$actor('Admin');
+ $db->prepare("INSERT INTO playbills(production_id,display_title,public_slug,status,editorial_status,public_enabled,created_by_user_id) VALUES(?,?,?,'draft','draft',0,?)")->execute([$productions['A'],'Studio acceptance','studio-'.$suffix,$users['Admin']]);$pb=(int)$db->lastInsertId();
+ PlaybillEnhancementService::syncCastProfiles($db,$pb,$productions['A'],$users['Admin']);
+ $rows=PlaybillEnhancementService::playbillCastProfiles($db,$pb);$ok(count($rows)>=5,'Existing cast and eligible team accounts synchronize without new identities');
+ $ok(count(array_filter($rows,static fn(array $p):bool=>(int)$p['user_id']===$users['AdultParent']))===1,'Cast and team responsibilities share one profile');
+ $ok(PlaybillStudioService::canEdit($db,$admin,$productions['A']),'Authorized Administrator with Playbill permission can edit');
+ $ok(PlaybillStudioService::canEdit($db,$actor('StaffPerformer'),$productions['A'])&&!PlaybillStudioService::canEdit($db,$actor('StaffPerformer'),$productions['B']),'Staff editorial access is production scoped');
+ $ok(!PlaybillStudioService::canEdit($db,$actor('Member'),$productions['A']),'Ordinary Member cannot edit');
+ $copy=['display_name'=>'Editorial Student Name','role_title'=>'Company','biography'=>'A reviewed production biography.','display_order'=>10,'visible'=>1];
+ PlaybillEnhancementService::saveCastProfile($db,dirname(__DIR__),$pb,$users['StudentMulti'],$users['Admin'],$copy,[]);
+ $ok(!PlaybillEnhancementService::publicCastProfiles($db,$pb),'Pending profile excluded from public data');
+ $q=$db->prepare('SELECT id FROM playbill_cast_profiles WHERE playbill_id=? AND user_id=?');$q->execute([$pb,$users['StudentMulti']]);$profile=(int)$q->fetchColumn();
+ PlaybillEnhancementService::decideCastApproval($db,$actor('AdultParent'),$profile,'approved');
+ $public=PlaybillEnhancementService::publicCastProfiles($db,$pb);$ok($public[0]['display_name']==='Theatre S.','Student public name is first name and last initial despite editorial override');
+ $ok($db->query('SELECT short_bio FROM student_profiles WHERE user_id='.(int)$users['StudentMulti'])->fetchColumn()!==$copy['biography'],'Playbill biography does not overwrite reusable profile');
+ $change=new ReflectionMethod(PlaybillExperience::class,'changeStatus');$change->invoke(null,$db,$admin,$production,'published');
+ $record=$db->query('SELECT * FROM playbills WHERE id='.$pb)->fetch();$ok((bool)$record['public_enabled'],'Explicit publish enables audience access');
+ $denied=false;try{PlaybillStudioService::assertEditable($db,$admin,$production,$record);}catch(RuntimeException){$denied=true;}$ok($denied,'Live programs cannot be edited through Studio');
+ $ok((int)$db->query('SELECT COUNT(*) FROM playbill_editions WHERE playbill_id='.$pb)->fetchColumn()===1,'Publishing retains an edition audit');
+ $change->invoke(null,$db,$admin,$production,'archived');$archived=$db->query('SELECT * FROM playbills WHERE id='.$pb)->fetch();$ok((bool)$archived['public_enabled']&&$archived['editorial_status']==='archived','Archiving intentionally published program preserves audience history');
+ $closed=$production;$closed['lifecycle_stage']='archived';$denied=false;try{PlaybillStudioService::assertEditable($db,$admin,$closed,$archived);}catch(RuntimeException){$denied=true;}$ok($denied,'Historical program remains read-only');
+ $db->prepare("UPDATE playbills SET editorial_status='published',status='current' WHERE id=?")->execute([$pb]);$change->invoke(null,$db,$admin,$production,'unpublished');$record=$db->query('SELECT * FROM playbills WHERE id='.$pb)->fetch();$ok(!$record['public_enabled']&&$record['editorial_status']==='review'&&$record['status']==='draft','Unpublish disables public access and permits review');
+ $ok(PlaybillEnhancementService::publicAsset($db,$record['public_slug'],'artwork',0)===null,'Unpublished assets fail closed');
+ $change->invoke(null,$db,$admin,$production,'archived');$record=$db->query('SELECT * FROM playbills WHERE id='.$pb)->fetch();$ok(!$record['public_enabled']&&$record['editorial_status']==='archived','Archive cannot publish an unpublished draft');
+ $db->prepare("UPDATE playbills SET editorial_status='review',status='draft' WHERE id=?")->execute([$pb]);
+ PlaybillEnhancementService::saveCastProfile($db,dirname(__DIR__),$pb,$users['StudentMulti'],$users['Admin'],array_replace($copy,['biography'=>'An edited biography.']),[]);
+ $denied=false;try{$change->invoke(null,$db,$admin,$production,'published');}catch(RuntimeException){$denied=true;}$ok($denied,'Changed visible biography requires new consent before publish');
+ $db->prepare("INSERT INTO manual_participants(first_name,last_name,display_name,biography,created_by_user_id,updated_by_user_id) VALUES('Manual','Person','Reviewed manual name','Manual bio',?,?)")->execute([$users['Admin'],$users['Admin']]);$manual=(int)$db->lastInsertId();
+ $db->prepare("INSERT INTO manual_participant_credits(manual_participant_id,production_id,participant_type,role_title,casting_status,approve_public_name,approve_public_biography,created_by_user_id,updated_by_user_id) VALUES(?,?,'cast','Guest','cast',1,1,?,?)")->execute([$manual,$productions['A'],$users['Admin'],$users['Admin']]);$credit=(int)$db->lastInsertId();
+ PlaybillEnhancementService::syncCastProfiles($db,$pb,$productions['A'],$users['Admin']);$rows=PlaybillEnhancementService::playbillCastProfiles($db,$pb);$ok(count(array_filter($rows,static fn(array $p):bool=>(int)$p['user_id']===-$credit))===1,'Manual participant uses linked original credit');
+ ManualParticipantService::transfer($db,$productions['A'],$users['Admin'],$credit,$users['Adult'],[]);PlaybillEnhancementService::syncCastProfiles($db,$pb,$productions['A'],$users['Admin']);$rows=PlaybillEnhancementService::playbillCastProfiles($db,$pb);$ok(!array_filter($rows,static fn(array $p):bool=>(int)$p['user_id']===-$credit),'Transferred manual entry does not duplicate the account profile');
+ $ok((int)$db->query('SELECT COUNT(*) FROM playbill_manual_profiles WHERE playbill_id='.$pb.' AND manual_credit_id='.$credit)->fetchColumn()===1,'Manual publication history retained');
+ echo "PASS $checks Playbill Studio MySQL assertions.\n";
+}finally{if($db->inTransaction())$db->rollBack();if($fixture)retireMyTheatreFixture($db,$fixture);}

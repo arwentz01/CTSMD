@@ -409,3 +409,8 @@ The 20-item website checklist, mobile-app gates, and privacy decisions are folde
 - [x] Batches A–F: 38 routes, personal/household hub, targeted schedule details, published company/offers, forms/history, volunteer commitments, performer records and authorized resources. [Route evidence and screenshots](UX_MY_THEATRE_COVERAGE.md).
 - [x] Local 30 MySQL persona checks, 131 authenticated member HTTP assertions, 173 existing RC1 HTTP/API checks; 24 browser interaction/contrast checks and four-width route rendering. Android/iOS bundles, TypeScript and seven native integration checks pass.
 - [ ] Close existing Expo patch compatibility, hosted/staging dependencies, device/screen-reader, publication/media conditional-state and concurrency gates before pilot approval. These are not closed by the UI work. No deployment or default/production schema migration performed.
+
+### Playbill Studio follow-up
+- [x] Consolidate existing Playbill editors, scoped preview/publication and consent checks; see `docs/PLAYBILL_STUDIO.md`.
+- [ ] Perform staff/mobile/keyboard/print visual acceptance of the seven-stage Studio and audience program.
+- [ ] Evaluate immutable public edition rendering and concurrent editorial/publish serialization before promising zero-downtime publication updates.
