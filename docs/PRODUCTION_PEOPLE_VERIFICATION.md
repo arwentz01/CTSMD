@@ -55,3 +55,12 @@ HTTP tests additionally verify real team/account authorization routes, CSRF reje
 CI evidence will be appended after the implementation push.
 
 The repeatable HTTP harness explicitly selects its own production for each Staff browser session and archives only its own synthetic productions during cleanup. Retained records from earlier runs must not determine the next run's working-production selection.
+
+## Pushed CI and preflight
+
+- [`5bcee7d` web/PHP safety CI](https://github.com/arwentz01/CTSMD/actions/runs/40989124532): **success**, all steps.
+- [`5bcee7d` isolated MySQL/HTTP acceptance CI](https://github.com/arwentz01/CTSMD/actions/runs/40989124574): **success**, including fresh bootstrap, revision-bound manifest, read-only schema/file preflight, 173 HTTP checks, safeguarding, performer, concurrency and 56 People/team assertions.
+- Local clean-revision manifest/preflight at `5bcee7d`: no file or declared-schema issues, 114 tables/27 triggers, `release_authorized=false`. This is a local verification result, not hosting approval.
+- Expo checks in this task were run locally: TypeScript, seven integration tests and Android/iOS export pass; online dependency compatibility fails on existing patch mismatches. No mobile dependency/source change was made, so the mobile workflow was not triggered by this implementation push. No simulator/device or actual push-delivery success is claimed.
+
+Implementation commits: ownership audit `3c1fa9a`; team persistence/098 `725db32`; unified UI/workflows/publication/099 `3f27c81`; reserved editorial snapshot protection `0ee18fb`; repeatable fixture selection/cleanup `5bcee7d`. Final documentation records evidence without changing runtime behavior.
