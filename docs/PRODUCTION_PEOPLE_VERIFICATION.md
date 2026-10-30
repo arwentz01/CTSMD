@@ -9,7 +9,7 @@ October 29, 2026. Branch `audit/board-pilot-readiness`. No production deployment
 | Fresh complete source bootstrap through 099 | PASS on `ctsmd_rc1_teamfinal_20261029` |
 | Production People/team/permissions/publication | PASS, 56 real MySQL assertions |
 | Existing Adult/Student participation | PASS, 83 real MySQL assertions with cast-removal callers moved to Casting |
-| Real HTTP web/native personas | PASS, 170 checks, two productions |
+| Real HTTP web/native personas | PASS, 173 checks, two productions |
 | Safeguarding | PASS, 36 real transaction checks |
 | Multiprocess MySQL races | PASS, 16 checks |
 | PHP safety workflow equivalents | PASS locally: PHP lint, lifecycle/form/privacy/contracts and isolated regressions |
@@ -41,7 +41,7 @@ The existing source-contract baseline is unchanged. Reviewed functional extensio
 | No duplicate notifications | No team operation notifications; actual overlapping cast-parent and cast-Staff recipients deduplicated |
 | No duplicate directory people | User-ID-keyed All People and actual HTTP/browser row assertions |
 
-HTTP tests additionally verify real team/account authorization routes, CSRF rejection, obsolete generic removal rejection, native roles unchanged by team credit, private People route denial to ordinary parent/team members, and public program privacy. The public publication test found and now covers edition snapshot ordering for sponsor rows without an `id` column.
+HTTP tests additionally verify real team/account authorization routes, CSRF rejection, obsolete generic removal rejection, native roles unchanged by team credit, private People route denial to ordinary parent/team members, and public program privacy. Reserved team snapshot types cannot be created, edited or toggled through generic editorial actions. The public publication test found and now covers edition snapshot ordering for sponsor rows without an `id` column.
 
 ## Limits and rollout requirements
 

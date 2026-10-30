@@ -35,8 +35,8 @@
         "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
     },
     "PlaybillExperience": {
-        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
-        "php": "dc22988703785c064c77b5c5ea95db912b51eca6f904c1e0590e646887a1d874",
+        "reason": "Production People publication: reviewed team snapshots reserved from generic editorial writes; docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "7ef14443a7cd770693c66be210122a79e3af24c949b780319423149621f0a62a",
         "forms": "ca24a55237d6681f21d70877862e680b88041c07138002a85e93987e7327dce7"
     },
     "ProductionGroupExperience": {

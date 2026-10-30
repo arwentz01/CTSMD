@@ -152,6 +152,12 @@ try{
  $assert(!empty($fingerprint),'Program team import has revision-bound review fingerprint');
  $assert($request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','import_team'),'action'=>'import_team','team_fingerprint'=>$fingerprint])['status']===303,'Reviewed team names imported through actual Playbill POST');
  $editor=$request('Administrator','/admin/playbill');
+ $assert($request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','save_section'),'action'=>'save_section','section_type'=>'production_team_snapshot','heading'=>'Forged credit','body'=>'[{"name":"Unreviewed credit","participation_role":"Director"}]'])['status']===303,'Generic editorial route rejects reserved team snapshot creation');
+ $assert((int)$db->query("SELECT COUNT(*) FROM playbill_sections WHERE playbill_id=$program AND section_type='production_team_snapshot'")->fetchColumn()===1,'Reserved snapshot cannot bypass reviewed team source');
+ $snapshotId=(int)$db->query("SELECT id FROM playbill_sections WHERE playbill_id=$program AND section_type='production_team_snapshot'")->fetchColumn();
+ $request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','save_section'),'action'=>'toggle_section','section_id'=>$snapshotId]);
+ $assert((int)$db->query('SELECT active FROM playbill_sections WHERE id='.$snapshotId)->fetchColumn()===1,'Generic section visibility cannot reactivate or hide a reserved team snapshot');
+ $editor=$request('Administrator','/admin/playbill');
  $assert($request('Administrator','/admin/playbill','POST',['csrf_token'=>$csrf($editor['body'],'action','publish'),'action'=>'publish'])['status']===303,'Existing Playbill approval workflow publishes reviewed program');
  $programPage=$request('Anonymous','/playbill?slug=rc1-team-'.$suffix);
  $assert($programPage['status']===200&&str_contains($programPage['body'],'Director'),'Public program renders reviewed team snapshot');
