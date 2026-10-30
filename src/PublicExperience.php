@@ -11,7 +11,7 @@ require_once __DIR__.'/PlaybillEnhancementService.php';
 
 final class PublicExperience
 {
-    private const ROUTES=['/','/register','/register/manage'];
+    private const ROUTES=['/','/features','/register','/register/manage'];
     public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath):never
@@ -19,6 +19,7 @@ final class PublicExperience
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$_SESSION['public_registration_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath);
         if($route==='/')self::landing($db,$basePath);
+        if($route==='/features')self::features($basePath);
         if($route==='/register/manage')self::manage($db,$basePath);
         self::registration($db,$basePath);
     }
@@ -35,6 +36,23 @@ final class PublicExperience
             }
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());$suffix=$route==='/register'?('?slug='.rawurlencode((string)($_POST['slug']??''))):('?token='.rawurlencode((string)($_POST['token']??'')));self::redirect($basePath.$route.$suffix);}
         self::redirect($basePath.'/');
+    }
+
+    private static function features(string $basePath):never
+    {
+        $brand=OrganizationBranding::fromEnvironment();self::head('What Connect offers',$basePath,$brand);?>
+        <a class="stage-skip" href="#features-main">Skip to content</a>
+        <main class="stage-home" id="features-main" tabindex="-1" style="<?=self::e(OrganizationBranding::css($brand))?>">
+        <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><span><strong><?=self::e($brand['name'])?></strong><span>Connect</span></span></a><nav aria-label="Public navigation"><a href="<?=self::u($basePath,'/')?>">Home</a><a href="<?=self::u($basePath,'/register')?>">Auditions &amp; signups</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in ↗</a></nav></header>
+        <section class="stage-features-intro"><p class="stage-eyebrow">ABOUT CONNECT</p><h1>One theatre.<br><em>Many ways to belong.</em></h1><p>Connect helps everyone in the company find the information and opportunities that matter to them. What you see depends on your involvement and account access.</p></section>
+        <div class="stage-feature-grid">
+          <section><span>01 / PERFORMERS</span><h2>Know your next cue.</h2><p>Find your schedule, casting information, production resources and theatre history in My Theatre.</p></section>
+          <section><span>02 / FAMILIES</span><h2>Stay connected.</h2><p>Parents and guardians can stay on top of family schedules, forms and the information they need.</p></section>
+          <section><span>03 / VOLUNTEERS</span><h2>Be part of the work.</h2><p>Discover ways to help and keep track of your volunteer commitments.</p></section>
+          <section><span>04 / THE COMPANY</span><h2>Keep the conversation going.</h2><p>Use Community, Messages and shared updates to keep the company in touch.</p></section>
+        </div>
+        <section class="stage-features-end"><h2>Ready to join in?</h2><div class="stage-actions"><a class="stage-primary" href="<?=self::u($basePath,'/login')?>">Sign in <span aria-hidden="true">↗</span></a><a href="<?=self::u($basePath,'/join')?>">Create an account</a></div></section>
+        <footer class="stage-footer"><span><?=self::e($brand['name'])?> · Connect</span><a href="<?=self::u($basePath,'/')?>">Back to welcome</a></footer></main><?php self::foot();
     }
 
     private static function landing(PDO $db,string $basePath):never
