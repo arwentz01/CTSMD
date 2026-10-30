@@ -35,6 +35,7 @@ try{
  $r=$request('GuardianTwo','/calendar?personal=1&event='.$events['ChildCall']);$assert($r['status']===200&&str_contains($r['body'],'My Theatre ChildCall'),'Authorized exact group event detail');
  foreach(['GuardianOne','FormerGuardian','Member'] as $who){$r=$request($who,'/calendar?personal=1&event='.$events['ChildCall']);$assert($r['status']===404&&!str_contains($r['body'],'My Theatre ChildCall'),$who.' group event direct ID denied');}
  $r=$request('GuardianOne','/my-theatre?context='.$users['StudentB']);$assert($r['status']===404&&!str_contains($r['body'],'My Theatre AllB'),'Forged household context denied');
+ $history=$request('GuardianTwo','/forms?view=history');$assert(str_contains($history['body'],'My Theatre UnderReview')&&!str_contains($history['body'],'<h3>My Theatre StudentForm</h3>'),'Submission history includes awaiting-review responses without active missing forms');
  $r=$request('GuardianOne','/forms/view?id='.$forms['ClosedForm']);$assert($r['status']===200&&str_contains($r['body'],'Recorded response')&&!str_contains($r['body'],'class="ff-form ops-form"'),'Closed form renders history without completion controls');
  $index=$request('GuardianOne','/forms');
  // A real CSRF token from another editable assignment must not reopen this one.
