@@ -11,7 +11,7 @@ require_once __DIR__.'/PlaybillEnhancementService.php';
 
 final class PublicExperience
 {
-    private const ROUTES=['/','/features','/register','/register/manage'];
+    private const ROUTES=['/','/features','/playbills','/register','/register/manage'];
     public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath):never
@@ -20,6 +20,7 @@ final class PublicExperience
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$route,$basePath);
         if($route==='/')self::landing($db,$basePath);
         if($route==='/features')self::features($basePath);
+        if($route==='/playbills')self::playbills($db,$basePath);
         if($route==='/register/manage')self::manage($db,$basePath);
         self::registration($db,$basePath);
     }
@@ -59,9 +60,9 @@ final class PublicExperience
     {
         $opportunities=array_slice(RegistrationService::publicOpportunities($db),0,3);
         // Only deliberately announced basics. Never query casting, families or schedules here.
-        $productions=$db->query("SELECT id,title,season,lifecycle_stage,performance_starts_at FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing') ORDER BY COALESCE(performance_starts_at,audition_starts_at),id DESC LIMIT 6")->fetchAll();
+        $productions=$db->query("SELECT id,title,season,lifecycle_stage,audition_starts_at,performance_starts_at,performance_ends_at FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived') ORDER BY COALESCE(performance_starts_at,audition_starts_at),id DESC LIMIT 40")->fetchAll();
         // Match the existing public Playbill/asset publication policy, including revocation.
-        $playbills=$db->query("SELECT pb.production_id,pb.display_title,pb.subtitle,pb.public_slug,pb.artwork_stored_file_id,p.title production_title FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.public_enabled=1 AND pb.editorial_status IN ('published','archived') AND pb.public_slug IS NOT NULL ORDER BY pb.published_at DESC,pb.id DESC LIMIT 3")->fetchAll();
+        $playbills=$db->query("SELECT pb.production_id,pb.display_title,pb.subtitle,pb.public_slug,pb.artwork_stored_file_id,p.title production_title FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.public_enabled=1 AND pb.editorial_status IN ('published','archived') AND pb.public_slug IS NOT NULL ORDER BY pb.published_at DESC,pb.id DESC LIMIT 40")->fetchAll();
         // Public landing displays explicitly published Playbills, independently of the
         // current-season production list. Public assets remain authorization checked.
         $artworks=[];
