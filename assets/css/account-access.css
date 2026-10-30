@@ -92,3 +92,20 @@
 .acct-edit-dialog form>button[name=action]{margin-top:10px}
 @media(max-width:900px){.acct-profile-summary .acct-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:530px){.acct-profile-summary .acct-facts{grid-template-columns:1fr 1fr;gap:14px}.acct-profile-summary{padding:16px!important}.acct-edit-dialog{padding:16px}.acct-summary-head{align-items:start}.acct-contact-grid .acct-contact-field{grid-column:span 12!important}.acct-edit-dialog .acct-contact-actions button{flex:1}}
+
+
+/* Account-detail density: reduce empty vertical bands without changing account index. */
+.acct-page:has(.acct-profile-summary){gap:12px;padding-top:12px}
+.acct-page:has(.acct-profile-summary) .acct-head{padding:10px 4px 8px;background:transparent;border:0;border-radius:0;align-items:center}
+.acct-page:has(.acct-profile-summary) .acct-head h2{font-family:inherit;font-size:clamp(21px,2vw,26px);margin:3px 0}
+.acct-page:has(.acct-profile-summary) .acct-head p{margin:2px 0;font-size:13px}
+.acct-page:has(.acct-profile-summary) .acct-panel-heading{margin-bottom:12px}
+.acct-page:has(.acct-profile-summary) .acct-access-panel{padding:18px 20px}
+.acct-page:has(.acct-profile-summary) .acct-divider{margin:8px 0}
+.acct-page:has(.acct-profile-summary) .acct-lifecycle,.acct-page:has(.acct-profile-summary) .acct-family-card{padding:18px}
+.acct-page:has(.acct-profile-summary) .acct-section-head{padding-bottom:10px}
+.acct-verify-prompt{display:grid;align-content:start;gap:8px}
+.acct-verify-prompt h4,.acct-verify-prompt p{margin:0}
+.acct-verify-prompt .acct-edit-action{justify-self:start}
+.acct-edit-dialog .acct-cancel{justify-self:start}
+@media(max-width:600px){.acct-page:has(.acct-profile-summary) .acct-head{padding:10px 2px}.acct-summary-head{gap:8px}.acct-summary-head .acct-edit-action{padding:6px 10px!important}}
