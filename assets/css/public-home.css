@@ -131,3 +131,6 @@ body.public-home{background:#f3eee8}
 .stage-playbill-item:not(:has(img)):after{content:"";position:absolute;inset:9px;border:1px solid color-mix(in srgb,currentColor 30%,transparent);pointer-events:none}
 .stage-features-intro h1{font-size:clamp(2.9rem,5vw,5rem)}
 @media(max-width:680px){.stage-welcome{padding:38px 0}.stage-welcome h1{font-size:clamp(2.5rem,9.5vw,3.8rem)}.stage-welcome h1 em{white-space:normal}.stage-essentials{display:grid;grid-template-columns:1fr}.stage-playbill-grid{gap:12px}.stage-playbill-item{flex-basis:155px;width:155px;height:224px}.stage-playbill-title{font-size:1.2rem}.stage-brand-wordmark strong{font-size:1.25rem}}
+
+.stage-brand:not(:has(img)):before{content:none;display:none}
+.stage-brand-monogram{display:grid;place-items:center;width:39px;height:39px;flex:none;border-radius:50%;background:var(--stage-primary);color:var(--organization-on-primary,#fff);border:2px solid var(--stage-accent);font:700 1.35rem/1 Georgia,serif}
