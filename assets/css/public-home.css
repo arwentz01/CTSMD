@@ -102,3 +102,32 @@ body.public-home{margin:0;background:var(--ux-ground);color:var(--ux-ink)}.stage
 @media(max-width:850px){.stage-welcome{grid-template-columns:minmax(0,1fr);padding:56px 0}.stage-welcome-side{min-height:285px}.stage-welcome-side h2{font-size:3.5rem}.stage-essentials{gap:20px}.stage-essentials h2{font-size:1.65rem}}
 @media(max-width:600px){.stage-welcome{padding:38px 0 44px;gap:28px}.stage-welcome h1,.stage-features-intro h1{font-size:clamp(3.2rem,12vw,5.4rem)}.stage-welcome-side{min-height:290px;padding:25px}.stage-welcome-side h2{font-size:3rem}.stage-essentials,.stage-feature-grid{grid-template-columns:minmax(0,1fr)}.stage-essentials{gap:20px;padding:30px 0}.stage-essentials>div{border-bottom:1px solid var(--ux-line);padding-bottom:18px}.stage-playbill-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.stage-playbill-item{min-height:220px;padding:15px}.stage-playbill-title{font-size:1.4rem}.stage-feature-grid{gap:0}.stage-features-intro{padding-top:45px}}
 @media(prefers-reduced-motion:reduce){.stage-playbill-item img{transition:none}}
+
+
+/* Theatre lobby refinement: warm, welcoming and deliberately modest in scale. */
+body.public-home{background:#f3eee8}
+.stage-home{max-width:1320px}
+.stage-header{min-height:88px;border-bottom-color:#d4c7bc}
+.stage-brand{gap:11px}
+.stage-brand-wordmark{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:1px!important;line-height:1!important}
+.stage-brand-wordmark strong{font-size:1.45rem;letter-spacing:-.035em;font-weight:850}
+.stage-brand-wordmark>span{font-size:.66rem!important;font-weight:850!important;letter-spacing:.24em;color:var(--stage-primary)!important}
+.stage-brand:not(:has(img)):before{content:"";display:block;width:35px;height:35px;flex:none;border-radius:50%;background:var(--stage-primary);box-shadow:inset 0 0 0 2px var(--stage-accent),inset 0 0 0 5px var(--stage-primary);border:2px solid var(--stage-primary)}
+.stage-welcome{display:block;max-width:910px;padding:clamp(48px,6vw,85px) 0 clamp(38px,5vw,60px)}
+.stage-welcome-content{max-width:890px}
+.stage-welcome h1{max-width:none;font-size:clamp(2.8rem,5.5vw,5.25rem);line-height:1.08;letter-spacing:-.045em;margin:0 0 22px}
+.stage-welcome h1 em{white-space:nowrap}
+.stage-welcome-lead{max-width:55ch;font-size:clamp(1.15rem,1.6vw,1.38rem);line-height:1.5}
+.stage-welcome-support{max-width:64ch;font-size:.98rem}
+.stage-actions .stage-primary{min-width:0}
+.stage-essentials{padding:28px 0 45px;gap:24px;border-top-color:#d4c7bc}
+.stage-essentials h2{font-size:clamp(1.35rem,1.8vw,1.8rem)}
+.stage-program-gallery{padding-top:40px}
+.stage-playbill-grid{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px 22px}
+.stage-playbill-item{flex:0 0 205px;width:205px;height:292px;min-height:0;max-width:calc(50vw - 30px);border-radius:6px;box-shadow:0 7px 18px rgba(37,24,29,.14);background:var(--stage-primary)}
+.stage-playbill-item img{object-fit:cover}
+.stage-playbill-title{font-size:1.52rem;line-height:1.12}
+.stage-playbill-view{font-size:.72rem}
+.stage-playbill-item:not(:has(img)):after{content:"";position:absolute;inset:9px;border:1px solid color-mix(in srgb,currentColor 30%,transparent);pointer-events:none}
+.stage-features-intro h1{font-size:clamp(2.9rem,5vw,5rem)}
+@media(max-width:680px){.stage-welcome{padding:38px 0}.stage-welcome h1{font-size:clamp(2.5rem,9.5vw,3.8rem)}.stage-welcome h1 em{white-space:normal}.stage-essentials{display:grid;grid-template-columns:1fr}.stage-playbill-grid{gap:12px}.stage-playbill-item{flex-basis:155px;width:155px;height:224px}.stage-playbill-title{font-size:1.2rem}.stage-brand-wordmark strong{font-size:1.25rem}}
