@@ -19,6 +19,7 @@ on:
       - "assets/js/unified-navigation.js"
       - "assets/js/account-menu.js"
       - "assets/css/navigation-controls.css"
+      - "assets/css/home-experience.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   pull_request:
@@ -38,6 +39,7 @@ on:
       - "assets/js/unified-navigation.js"
       - "assets/js/account-menu.js"
       - "assets/css/navigation-controls.css"
+      - "assets/css/home-experience.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   workflow_dispatch:
@@ -96,6 +98,7 @@ jobs:
           php tests/ux_operational_presentation.php
           php tests/ux_operations_contract.php
           php tests/navigation_controls.php
+          php tests/homepage_presentation.php
       - name: Community search and safeguarding presentation regressions
         run: |
           php tests/community_search.php
