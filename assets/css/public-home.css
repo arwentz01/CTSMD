@@ -208,3 +208,6 @@ body.public-home{background:#f3eee8}
  .stage-welcome-theatrical h1{font-size:clamp(2.5rem,9.5vw,3.9rem)}
  .stage-welcome-theatrical:after{width:100%;right:-72%;top:-20%;height:100%}
 }
+
+/* Brand avatar is a circle, not the adjacent wordmark text wrapper. */
+.stage-header .stage-brand>.stage-brand-monogram{display:grid!important;place-items:center!important;align-items:center!important;justify-content:center!important;width:39px!important;height:39px!important;min-width:39px;flex:0 0 39px!important;line-height:1!important;font-family:Georgia,serif!important;font-size:1.3rem!important;font-weight:700!important;letter-spacing:0!important;padding:0!important;text-align:center!important}
