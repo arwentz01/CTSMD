@@ -20,6 +20,7 @@ on:
       - "assets/js/account-menu.js"
       - "assets/css/navigation-controls.css"
       - "assets/css/home-experience.css"
+      - "assets/css/public-home.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   pull_request:
@@ -40,6 +41,7 @@ on:
       - "assets/js/account-menu.js"
       - "assets/css/navigation-controls.css"
       - "assets/css/home-experience.css"
+      - "assets/css/public-home.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   workflow_dispatch:
