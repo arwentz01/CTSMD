@@ -20,6 +20,9 @@ final class MemberUI
     {
         $path=(string)parse_url((string)($_SERVER['REQUEST_URI']??''),PHP_URL_PATH);
         self::$route=$base!==''&&str_starts_with($path,$base.'/')?substr($path,strlen($base)):$path;
+        // Directories may resolve with a trailing slash (e.g. /my-theatre/).
+        // Normalize presentation lookup without changing routing or permissions.
+        self::$route=rtrim(self::$route,'/')?:'/';
         self::$enabled=$enabled&&isset(self::ROUTES[self::$route])&&($_GET['print']??'')!=='1';if(!self::$enabled)return;
         WorkspaceUI::styles($base);
         $root=htmlspecialchars($base.'/assets/',ENT_QUOTES,'UTF-8');
