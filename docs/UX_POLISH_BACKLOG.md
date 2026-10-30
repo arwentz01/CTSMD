@@ -24,3 +24,11 @@ Phase 2 prioritizes consistent working experiences. Items here are deferred cosm
 | Native | SDK 58 retained. Verify iPhone/iPad and Android phone/tablet, keyboard, large font settings, screen readers, dark appearance and back/deep-link behavior on simulator/hardware | Acceptance |
 | Native | Full dark-mode role mapping and expanded tablet navigation need a device-verified follow-up; the current warm light identity is not a dark-mode implementation | Medium |
 | Native/API | Structured forms, pickup editing and full staff attendance/readiness workflows must follow real API support; no local mock completion or offline mutation queue added | Dependency |
+
+## My Theatre acceptance follow-up — October 30, 2026
+
+- Physical-device/assistive-technology and Safari/Firefox checks remain acceptance work; Chromium reflow/root-font tests do not replace them.
+- Exercise populated conditional volunteer approval/training, multi-role publication and media playback states with reviewed staging fixtures. Existing capacity/closure concurrency gates remain RC1 work.
+- Native Theatre does not yet have the new web personal/household context filter; preserve existing API behavior and plan an API-backed parity follow-up. No Expo upgrade is included.
+- Reduce legacy mobile CSS layering after device review; current scoped title constraint prevents utilities overlap, and pale-gold capacity text now uses readable shared ink.
+- Validate task completion speed with families; the hierarchy is a design recommendation, not a measured usability gain.

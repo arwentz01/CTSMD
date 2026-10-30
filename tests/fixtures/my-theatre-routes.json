@@ -7,7 +7,8 @@
       "batch": "B",
       "purpose": "Hub, household and personal production focus",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/app",
@@ -15,7 +16,8 @@
       "batch": "A",
       "purpose": "Home / Action Center entry",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/family-hub",
@@ -23,7 +25,8 @@
       "batch": "A",
       "purpose": "Household overview and alternate entry",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/parent",
@@ -31,7 +34,8 @@
       "batch": "A",
       "purpose": "Household overview and alternate entry",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/onboarding",
@@ -39,7 +43,8 @@
       "batch": "A",
       "purpose": "Delegated authenticated household setup and management",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/family/manage",
@@ -47,7 +52,8 @@
       "batch": "A",
       "purpose": "Delegated authenticated household setup and management",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/calendar",
@@ -55,7 +61,8 @@
       "batch": "C",
       "purpose": "Month/week/agenda and event detail",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/schedule",
@@ -63,7 +70,8 @@
       "batch": "C",
       "purpose": "Existing production schedule",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/cast",
@@ -71,7 +79,8 @@
       "batch": "C",
       "purpose": "Published cast and approved team credits",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/notifications",
@@ -79,7 +88,8 @@
       "batch": "C",
       "purpose": "Casting offers, personal tasks and notices",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/forms",
@@ -87,7 +97,8 @@
       "batch": "D",
       "purpose": "Assignments, completion and response history",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/forms/view",
@@ -95,7 +106,8 @@
       "batch": "D",
       "purpose": "Assignments, completion and response history",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer-readiness",
@@ -103,7 +115,8 @@
       "batch": "D",
       "purpose": "Readiness, opportunities and commitment detail",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer-shifts",
@@ -111,7 +124,8 @@
       "batch": "D",
       "purpose": "Readiness, opportunities and commitment detail",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/shift",
@@ -119,7 +133,8 @@
       "batch": "D",
       "purpose": "Readiness, opportunities and commitment detail",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/approvals",
@@ -127,7 +142,8 @@
       "batch": "D",
       "purpose": "Own approval requests",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/history",
@@ -135,7 +151,8 @@
       "batch": "D",
       "purpose": "Own service record and printable certificate",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/service-record",
@@ -143,7 +160,8 @@
       "batch": "D",
       "purpose": "Own service record and printable certificate",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/training",
@@ -151,7 +169,8 @@
       "batch": "D",
       "purpose": "Training and requirements",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/verifications",
@@ -159,7 +178,8 @@
       "batch": "D",
       "purpose": "Own verified service letters",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/volunteer/verification",
@@ -167,7 +187,8 @@
       "batch": "D",
       "purpose": "Own verified service letters",
       "persona": "volunteer",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/theatre-history",
@@ -175,7 +196,8 @@
       "batch": "E",
       "purpose": "Personal and authorized Student credits",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/theatre-history/resume",
@@ -183,7 +205,8 @@
       "batch": "E",
       "purpose": "CV and printable credits",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/student-profile",
@@ -191,7 +214,8 @@
       "batch": "E",
       "purpose": "Shared performer profile, biography and headshot",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/student-profile/family",
@@ -199,7 +223,8 @@
       "batch": "E",
       "purpose": "Child-specific family and pickup workflow",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/family/caregiver-schedule",
@@ -207,7 +232,8 @@
       "batch": "E",
       "purpose": "Separate authorized caregiver logistics",
       "persona": "caregiver",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/resources",
@@ -215,7 +241,8 @@
       "batch": "E",
       "purpose": "First-dispatch organization and production libraries",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/resources/view",
@@ -223,7 +250,8 @@
       "batch": "E",
       "purpose": "First-dispatch organization and production libraries",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/files",
@@ -231,7 +259,8 @@
       "batch": "E",
       "purpose": "First-dispatch organization and production libraries",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/files/view",
@@ -239,7 +268,8 @@
       "batch": "E",
       "purpose": "First-dispatch organization and production libraries",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/videos",
@@ -247,7 +277,8 @@
       "batch": "E",
       "purpose": "Authorized video resources and detail",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/videos/view",
@@ -255,7 +286,8 @@
       "batch": "E",
       "purpose": "Authorized video resources and detail",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/archive",
@@ -263,7 +295,8 @@
       "batch": "E",
       "purpose": "Historical production and authorized Community",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/archive/production",
@@ -271,7 +304,8 @@
       "batch": "E",
       "purpose": "Historical production and authorized Community",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/archive/community",
@@ -279,7 +313,8 @@
       "batch": "E",
       "purpose": "Historical production and authorized Community",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/attendance",
@@ -287,7 +322,8 @@
       "batch": "C",
       "purpose": "Personal/family attendance and absence reporting",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/production",
@@ -295,7 +331,8 @@
       "batch": "C",
       "purpose": "Existing member production overview; staff mode preserved",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     },
     {
       "route": "/playbills",
@@ -303,7 +340,8 @@
       "batch": "E",
       "purpose": "Authenticated published program",
       "persona": "guardian",
-      "status": "inventoried"
+      "status": "implemented-rendered",
+      "evidence": "my-theatre-browser-evidence.json"
     }
   ]
 }

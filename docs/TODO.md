@@ -403,3 +403,9 @@ The 20-item website checklist, mobile-app gates, and privacy decisions are folde
 - [x] Source implementation: reusable team functions, accessible add/edit/remove drawers, deduplicated directory and filters, live guardian discovery, Casting-owned cast removal, account-owned scoped Staff access, retained Theatre History and reviewed Playbill team snapshots. [Architecture](PRODUCTION_PEOPLE_REDESIGN.md); [verification](PRODUCTION_PEOPLE_VERIFICATION.md).
 - [ ] Review populated prerequisites through 097 and migrations 098/099, preview legacy public-name snapshots, backup/restore and approved rollout. Default local `ctsmd` and production have not received these migrations; isolated preview/test schemas only.
 - [ ] Physical-device/screen-reader acceptance and existing Expo compatible patch gate remain open. Team-only Student name publication requires an approved visible existing performer profile; no substitute consent workflow introduced.
+
+## My Theatre member modernization — October 30, 2026
+
+- [x] Batches A–F: 38 routes, personal/household hub, targeted schedule details, published company/offers, forms/history, volunteer commitments, performer records and authorized resources. [Route evidence and screenshots](UX_MY_THEATRE_COVERAGE.md).
+- [x] Local 30 MySQL persona checks, 131 authenticated member HTTP assertions, 173 existing RC1 HTTP/API checks; 24 browser interaction/contrast checks and four-width route rendering. Android/iOS bundles, TypeScript and seven native integration checks pass.
+- [ ] Close existing Expo patch compatibility, hosted/staging dependencies, device/screen-reader, publication/media conditional-state and concurrency gates before pilot approval. These are not closed by the UI work. No deployment or default/production schema migration performed.

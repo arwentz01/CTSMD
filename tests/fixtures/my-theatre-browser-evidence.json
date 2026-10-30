@@ -1,0 +1,971 @@
+{
+  "schema_version": 1,
+  "code_revision": "c31590c495e038553e821cfa264b97e1edb5f97f",
+  "recorded_utc": "2026-10-30T13:04:56.887Z",
+  "environment": "Loopback Chromium, synthetic identities, isolated ctsmd_rc1 schema. No physical device or production verification.",
+  "successful_captures": 385,
+  "routes": 38,
+  "coverage": [
+    {
+      "route": "/my-theatre",
+      "owner": "MyTheatreExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "Volunteer",
+        "HistoryAdult",
+        "StudentSingle",
+        "StudentMulti",
+        "GuardianOne",
+        "Adult",
+        "StaffPerformer",
+        "FormerGuardian",
+        "Member"
+      ],
+      "views": [
+        "/my-theatre"
+      ],
+      "evidence_runs": [
+        "ctsmd-my-theatre-browser",
+        "ctsmd-mytheatre-history",
+        "ctsmd-mytheatre-personas",
+        "ctsmd-mytheatre-release-captures"
+      ]
+    },
+    {
+      "route": "/app",
+      "owner": "HomeExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/app"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/family-hub",
+      "owner": "FamilyDashboardExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/family-hub"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/parent",
+      "owner": "FamilyDashboardExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/parent"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details"
+      ]
+    },
+    {
+      "route": "/onboarding",
+      "owner": "PlatformOnboardingExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne",
+        "AdultParent",
+        "GuardianTwo"
+      ],
+      "views": [
+        "/onboarding"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-fixes",
+        "ctsmd-mytheatre-intentional-household"
+      ]
+    },
+    {
+      "route": "/family/manage",
+      "owner": "PlatformOnboardingExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne",
+        "AdultParent",
+        "GuardianTwo"
+      ],
+      "views": [
+        "/family/manage"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-fixes",
+        "ctsmd-mytheatre-intentional-household"
+      ]
+    },
+    {
+      "route": "/calendar",
+      "owner": "CalendarExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "StudentSingle",
+        "GuardianOne"
+      ],
+      "views": [
+        "/calendar?personal=1&view=agenda",
+        "/calendar?personal=1&view=month",
+        "/calendar?personal=1&view=week",
+        "/calendar?personal=1&event=41"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-c",
+        "ctsmd-mytheatre-details"
+      ]
+    },
+    {
+      "route": "/schedule",
+      "owner": "ProductionExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "StudentSingle",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/schedule"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-c",
+        "ctsmd-mytheatre-archive-and-production"
+      ]
+    },
+    {
+      "route": "/cast",
+      "owner": "MemberCastExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "StudentSingle"
+      ],
+      "views": [
+        "/cast"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-c",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/notifications",
+      "owner": "NotificationExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "StudentSingle",
+        "GuardianOne"
+      ],
+      "views": [
+        "/notifications"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-c",
+        "ctsmd-mytheatre-media"
+      ]
+    },
+    {
+      "route": "/forms",
+      "owner": "FamilyFormsExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "GuardianOne"
+      ],
+      "views": [
+        "/forms",
+        "/forms?view=history",
+        "/forms?view=action"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-details",
+        "ctsmd-mytheatre-fixes",
+        "ctsmd-mytheatre-release-captures",
+        "ctsmd-mytheatre-form-history"
+      ]
+    },
+    {
+      "route": "/forms/view",
+      "owner": "FamilyFormsExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/forms/view?id=54",
+        "/forms/view?id=57",
+        "/forms/view?id=58"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details",
+        "ctsmd-mytheatre-release-detail"
+      ]
+    },
+    {
+      "route": "/volunteer-readiness",
+      "owner": "VolunteerExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer-readiness"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/volunteer-shifts",
+      "owner": "VolunteerExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "Volunteer",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/volunteer-shifts"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-history"
+      ]
+    },
+    {
+      "route": "/volunteer/shift",
+      "owner": "VolunteerExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "Volunteer",
+        "HistoryAdult",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer/shift?id=24"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-history",
+        "ctsmd-mytheatre-vol-detail",
+        "ctsmd-mytheatre-final-polish",
+        "ctsmd-mytheatre-release-profile",
+        "ctsmd-mytheatre-release-volunteer"
+      ]
+    },
+    {
+      "route": "/volunteer/approvals",
+      "owner": "VolunteerApprovalExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer/approvals"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/volunteer/history",
+      "owner": "VolunteerServiceRecordExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer/history"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/volunteer/service-record",
+      "owner": "VolunteerServiceRecordExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/volunteer/service-record"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details"
+      ]
+    },
+    {
+      "route": "/volunteer/training",
+      "owner": "VolunteerDevelopmentExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer/training"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/volunteer/verifications",
+      "owner": "VolunteerVerificationExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/volunteer/verifications"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/volunteer/verification",
+      "owner": "VolunteerVerificationExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "Volunteer"
+      ],
+      "views": [
+        "/volunteer/verification?id=2"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-vol-detail"
+      ]
+    },
+    {
+      "route": "/theatre-history",
+      "owner": "TheatreHistoryExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "GuardianOne",
+        "Volunteer",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/theatre-history",
+        "/theatre-history?student=288"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-details",
+        "ctsmd-mytheatre-history"
+      ]
+    },
+    {
+      "route": "/theatre-history/resume",
+      "owner": "ActingResumeExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/theatre-history/resume?student=288",
+        "/theatre-history/resume"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details",
+        "ctsmd-mytheatre-history"
+      ]
+    },
+    {
+      "route": "/student-profile",
+      "owner": "StudentProfileExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "GuardianOne"
+      ],
+      "views": [
+        "/student-profile",
+        "/student-profile?student=288"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-fixes",
+        "ctsmd-mytheatre-media",
+        "ctsmd-mytheatre-final-polish",
+        "ctsmd-mytheatre-release-profile"
+      ]
+    },
+    {
+      "route": "/student-profile/family",
+      "owner": "FamilyPickupExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/student-profile/family?student=288"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details"
+      ]
+    },
+    {
+      "route": "/family/caregiver-schedule",
+      "owner": "CaregiverLogisticsExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "Member"
+      ],
+      "views": [
+        "/family/caregiver-schedule"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-caregiver"
+      ]
+    },
+    {
+      "route": "/resources",
+      "owner": "AccountLibraryExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/resources"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/resources/view",
+      "owner": "AccountLibraryExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/resources/view?id=4"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details"
+      ]
+    },
+    {
+      "route": "/files",
+      "owner": "AccountLibraryExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/files"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/files/view",
+      "owner": "AccountLibraryExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/files/view?id=0",
+        "/files/view?id=2"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-details",
+        "ctsmd-mytheatre-media",
+        "ctsmd-mytheatre-release-detail"
+      ]
+    },
+    {
+      "route": "/videos",
+      "owner": "RehearsalVideoExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/videos"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    },
+    {
+      "route": "/videos/view",
+      "owner": "RehearsalVideoExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianOne"
+      ],
+      "views": [
+        "/videos/view?id=2"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-media"
+      ]
+    },
+    {
+      "route": "/archive",
+      "owner": "ProductionArchiveExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent",
+        "Volunteer",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/archive"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-history"
+      ]
+    },
+    {
+      "route": "/archive/production",
+      "owner": "ProductionArchiveExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "HistoryAdult"
+      ],
+      "views": [
+        "/archive/production?id=74"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-archive-detail"
+      ]
+    },
+    {
+      "route": "/archive/community",
+      "owner": "ProductionArchiveExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "HistoryAdult"
+      ],
+      "views": [
+        "/archive/community?production=74&channel=4"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-archive-channel"
+      ]
+    },
+    {
+      "route": "/attendance",
+      "owner": "AttendanceExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "StudentSingle",
+        "HistoryAdult"
+      ],
+      "views": [
+        "/attendance"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-c",
+        "ctsmd-mytheatre-archive-and-production"
+      ]
+    },
+    {
+      "route": "/production",
+      "owner": "ProductionWorkspaceExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "HistoryAdult"
+      ],
+      "views": [
+        "/production?production=70"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-archive-and-production"
+      ]
+    },
+    {
+      "route": "/playbills",
+      "owner": "PlaybillExperience",
+      "status": "implemented-rendered",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "personas": [
+        "GuardianTwo",
+        "AdultParent"
+      ],
+      "views": [
+        "/playbills"
+      ],
+      "evidence_runs": [
+        "ctsmd-mytheatre-de",
+        "ctsmd-mytheatre-tablet"
+      ]
+    }
+  ],
+  "interaction_checks": [
+    "Profile disclosure opens by keyboard",
+    "Keyboard enters original profile controls",
+    "Disclosure closes with focus retained",
+    "200% root text reflow /my-theatre",
+    "Reduced-motion media active /my-theatre",
+    "200% root text reflow /forms",
+    "Reduced-motion media active /forms",
+    "200% root text reflow /calendar?personal=1&view=agenda",
+    "Reduced-motion media active /calendar?personal=1&view=agenda",
+    "200% root text reflow /student-profile",
+    "Reduced-motion media active /student-profile",
+    "200% root text reflow /resources",
+    "Reduced-motion media active /resources",
+    "200% root text reflow /volunteer-shifts",
+    "Reduced-motion media active /volunteer-shifts",
+    "200% root text reflow /theatre-history",
+    "Reduced-motion media active /theatre-history",
+    "Shared text token contrast --ux-ink on --ux-paper 15.45:1",
+    "Shared text token contrast --ux-muted on --ux-paper 6.37:1",
+    "Shared text token contrast --ux-wine on --ux-paper 8.75:1",
+    "Shared text token contrast --ux-ink on --ux-ivory 12.94:1",
+    "Shared text token contrast --ux-muted on --ux-ivory 5.33:1",
+    "Shared text token contrast --ux-paper on --ux-wine 8.75:1",
+    "Long phone title leaves room for inbox and account controls"
+  ],
+  "contrast_samples": [
+    {
+      "fg": "--ux-ink",
+      "bg": "--ux-paper",
+      "ratio": 15.452926245112533
+    },
+    {
+      "fg": "--ux-muted",
+      "bg": "--ux-paper",
+      "ratio": 6.366327001689789
+    },
+    {
+      "fg": "--ux-wine",
+      "bg": "--ux-paper",
+      "ratio": 8.745046020195433
+    },
+    {
+      "fg": "--ux-ink",
+      "bg": "--ux-ivory",
+      "ratio": 12.938801871020738
+    },
+    {
+      "fg": "--ux-muted",
+      "bg": "--ux-ivory",
+      "ratio": 5.330553088418874
+    },
+    {
+      "fg": "--ux-paper",
+      "bg": "--ux-wine",
+      "ratio": 8.745046020195433
+    }
+  ],
+  "source_sha256": {
+    "assets/css/ux-member.css": "f9ca39ad5c574743fd5e318d15552304cf5102e76cce50f023a0652577d4d23f",
+    "assets/css/my-theatre.css": "62a72da2f752109f90f923096e3c250fe4cdef46c03763ffb77e21c484d48b47",
+    "assets/js/ux-member.js": "0f6ed7b4eb992777e7aedd5908d4edf7da30935d23bc72cdf808bb8dabc938e9",
+    "src/MemberUI.php": "c2aa2ff056c2a27773a1bd9b55c54ee9a80f95dfd276b95b83583b3be6e58e4f",
+    "src/MyTheatreExperience.php": "a609866b05653afd6a890e6e08c62d2d7713805bac5f054d1e2a731e6a11896a"
+  },
+  "limitations": [
+    "Captures span incremental implementation revisions; corrected views were rerendered after observed failures. Representative release captures are committed under docs/assets/my-theatre.",
+    "Initial denied/invalid-ID attempts and superseded profile/delegation failures are excluded from successful captures; they are not evidence of complete allowed detail rendering.",
+    "Video/file detail fixtures contain metadata only. No media playback or download delivery is claimed from those screenshots. Existing isolated RC1 verifies authorized file delivery independently.",
+    "Root-font 200% emulation and reduced-motion media checks are not operating-system font settings or full screen-reader/WCAG certification.",
+    "Fixed mobile shell bars appear within full-page captures at capture-viewport position; responsive page scroll remains available."
+  ],
+  "ci": [
+    {
+      "revision": "c31590c",
+      "name": "PHP safety",
+      "status": "passed",
+      "url": "https://github.com/arwentz01/CTSMD/actions/runs/41060207419"
+    },
+    {
+      "revision": "c31590c",
+      "name": "Isolated RC1 MySQL/HTTP",
+      "status": "passed",
+      "url": "https://github.com/arwentz01/CTSMD/actions/runs/41060207412"
+    },
+    {
+      "revision": "78df6f5",
+      "name": "Expo",
+      "status": "failed_dependency_compatibility_only",
+      "passed_steps": [
+        "TypeScript",
+        "7 integration tests",
+        "Android export",
+        "iOS export"
+      ],
+      "url": "https://github.com/arwentz01/CTSMD/actions/runs/41059543277"
+    }
+  ]
+}
