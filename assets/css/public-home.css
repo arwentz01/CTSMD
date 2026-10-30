@@ -232,3 +232,39 @@ body.public-home{background:#f3eee8}
   transform:translateY(-1px);
 }
 @media(prefers-reduced-motion:reduce){.stage-header nav .stage-signin{transition:none}.stage-header nav .stage-signin:hover{transform:none}}
+
+
+/* Opening-night lighting: a quiet proscenium, one focused amber beam and stage depth. */
+.stage-home .stage-welcome-theatrical{
+  background:
+    radial-gradient(ellipse at 79% 35%,rgba(255,205,139,.21),transparent 32%),
+    radial-gradient(ellipse at 80% 90%,rgba(189,63,76,.30),transparent 54%),
+    linear-gradient(115deg,#26121e 0%,#46182a 52%,#75263a 100%);
+  box-shadow:0 18px 45px rgba(48,18,29,.19),inset 0 1px 0 rgba(255,237,205,.13);
+}
+.stage-welcome-theatrical:before{
+  opacity:1;
+  background:
+    linear-gradient(90deg,rgba(14,7,14,.24),transparent 22%,transparent 79%,rgba(21,8,19,.34)),
+    repeating-linear-gradient(90deg,transparent 0 86px,rgba(255,223,188,.035) 87px,transparent 89px 174px);
+}
+.stage-welcome-theatrical:after{
+  width:43%;height:105%;right:-8%;top:-27%;transform:rotate(-18deg);
+  border:1px solid rgba(255,215,163,.24);
+  box-shadow:0 0 0 42px rgba(255,215,163,.025),0 0 0 92px rgba(255,215,163,.02);
+}
+.stage-welcome-theatrical .stage-light-right{
+  width:54%;height:130%;right:-4%;top:-48%;bottom:auto;
+  background:conic-gradient(from 152deg at 52% 0%,transparent 0deg,rgba(255,205,133,.04) 9deg,rgba(255,205,133,.16) 18deg,rgba(255,205,133,.035) 31deg,transparent 44deg);
+  filter:blur(10px);transform:rotate(-11deg);
+}
+.stage-welcome-theatrical .stage-light-left{
+  width:52%;height:96%;left:-30%;top:23%;
+  background:radial-gradient(ellipse,rgba(174,53,77,.32),transparent 67%);
+}
+.stage-welcome-theatrical .stage-welcome-content{max-width:760px}
+.stage-welcome-theatrical .stage-primary{position:relative}
+@media(max-width:680px){
+ .stage-welcome-theatrical .stage-light-right{right:-48%;width:100%;opacity:.65}
+ .stage-welcome-theatrical:after{right:-65%;width:95%}
+}
