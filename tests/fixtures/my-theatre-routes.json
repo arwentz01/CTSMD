@@ -35,17 +35,17 @@
     },
     {
       "route": "/onboarding",
-      "owner": "FamilyDashboardExperience",
+      "owner": "PlatformOnboardingExperience",
       "batch": "A",
-      "purpose": "Household overview and alternate entry",
+      "purpose": "Delegated authenticated household setup and management",
       "persona": "guardian",
       "status": "inventoried"
     },
     {
       "route": "/family/manage",
-      "owner": "FamilyDashboardExperience",
+      "owner": "PlatformOnboardingExperience",
       "batch": "A",
-      "purpose": "Household overview and alternate entry",
+      "purpose": "Delegated authenticated household setup and management",
       "persona": "guardian",
       "status": "inventoried"
     },
