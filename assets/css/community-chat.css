@@ -96,3 +96,57 @@
 
 .comm-post .community-video-link{color:#a6192e;font-weight:750;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .comm-post .community-video-link:focus-visible{outline:2px solid #a6192e;outline-offset:3px;border-radius:3px}
+
+
+/* Compact post stream: content determines row height, not spare viewport space. */
+@media(min-width:781px){
+  body[data-native-route="channels-view"] .community-pane-feed{
+    display:block!important;
+    align-content:start!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post{
+    min-height:0!important;
+    height:auto!important;
+    align-content:start!important;
+    grid-auto-rows:min-content!important;
+    padding:10px 16px 9px!important;
+    row-gap:2px!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post header{
+    align-items:center!important;
+    min-height:28px!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post header>i{
+    width:30px!important;
+    height:30px!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post>p{
+    margin:0!important;
+    padding:0!important;
+    line-height:1.38!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post>.community-heart-form{
+    grid-column:2/-1!important;
+    justify-self:start!important;
+    align-self:start!important;
+    display:flex!important;
+    width:auto!important;
+    margin:1px 0 0!important;
+    padding:0!important;
+    min-height:0!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post>.community-heart-form button{
+    display:inline-flex!important;
+    gap:4px!important;
+    align-items:center!important;
+    min-height:26px!important;
+    line-height:1.2!important;
+    padding:3px 7px 3px 0!important;
+    white-space:nowrap!important;
+    font-size:12px!important;
+  }
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post .comm-attachments{margin-top:5px!important}
+  body[data-native-route="channels-view"] .community-pane-feed .comm-post.pinned{
+    box-shadow:inset 3px 0 0 var(--gold)!important;
+  }
+}
