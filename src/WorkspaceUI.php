@@ -5,8 +5,11 @@ declare(strict_types=1);
 /** Presentation only. Callers retain ownership of permissions, data and actions. */
 final class WorkspaceUI
 {
+    private static bool $foundationRendered=false;
     public static function styles(string $basePath): void
     {
+        if(self::$foundationRendered)return;
+        self::$foundationRendered=true;
         $href = htmlspecialchars(($basePath ?: '') . '/assets/css/ux-workspaces.css?v=20261027', ENT_QUOTES, 'UTF-8');
         echo '<link rel="stylesheet" data-ux-workspaces href="' . $href . '">';
         $operational = htmlspecialchars(($basePath ?: '') . '/assets/css/ux-operational.css?v=20261027', ENT_QUOTES, 'UTF-8');

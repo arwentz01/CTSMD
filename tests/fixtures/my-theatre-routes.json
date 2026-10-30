@@ -1,0 +1,309 @@
+{
+  "baseline": "7de9adb",
+  "rows": [
+    {
+      "route": "/my-theatre",
+      "owner": "MyTheatreExperience",
+      "batch": "B",
+      "purpose": "Hub, household and personal production focus",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/app",
+      "owner": "HomeExperience",
+      "batch": "A",
+      "purpose": "Home / Action Center entry",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/family-hub",
+      "owner": "FamilyDashboardExperience",
+      "batch": "A",
+      "purpose": "Household overview and alternate entry",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/parent",
+      "owner": "FamilyDashboardExperience",
+      "batch": "A",
+      "purpose": "Household overview and alternate entry",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/onboarding",
+      "owner": "FamilyDashboardExperience",
+      "batch": "A",
+      "purpose": "Household overview and alternate entry",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/family/manage",
+      "owner": "FamilyDashboardExperience",
+      "batch": "A",
+      "purpose": "Household overview and alternate entry",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/calendar",
+      "owner": "CalendarExperience",
+      "batch": "C",
+      "purpose": "Month/week/agenda and event detail",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/schedule",
+      "owner": "ProductionExperience",
+      "batch": "C",
+      "purpose": "Existing production schedule",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/cast",
+      "owner": "MemberCastExperience",
+      "batch": "C",
+      "purpose": "Published cast and approved team credits",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/notifications",
+      "owner": "NotificationExperience",
+      "batch": "C",
+      "purpose": "Casting offers, personal tasks and notices",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/forms",
+      "owner": "FamilyFormsExperience",
+      "batch": "D",
+      "purpose": "Assignments, completion and response history",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/forms/view",
+      "owner": "FamilyFormsExperience",
+      "batch": "D",
+      "purpose": "Assignments, completion and response history",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer-readiness",
+      "owner": "VolunteerExperience",
+      "batch": "D",
+      "purpose": "Readiness, opportunities and commitment detail",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer-shifts",
+      "owner": "VolunteerExperience",
+      "batch": "D",
+      "purpose": "Readiness, opportunities and commitment detail",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/shift",
+      "owner": "VolunteerExperience",
+      "batch": "D",
+      "purpose": "Readiness, opportunities and commitment detail",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/approvals",
+      "owner": "VolunteerApprovalExperience",
+      "batch": "D",
+      "purpose": "Own approval requests",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/history",
+      "owner": "VolunteerServiceRecordExperience",
+      "batch": "D",
+      "purpose": "Own service record and printable certificate",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/service-record",
+      "owner": "VolunteerServiceRecordExperience",
+      "batch": "D",
+      "purpose": "Own service record and printable certificate",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/training",
+      "owner": "VolunteerDevelopmentExperience",
+      "batch": "D",
+      "purpose": "Training and requirements",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/verifications",
+      "owner": "VolunteerVerificationExperience",
+      "batch": "D",
+      "purpose": "Own verified service letters",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/volunteer/verification",
+      "owner": "VolunteerVerificationExperience",
+      "batch": "D",
+      "purpose": "Own verified service letters",
+      "persona": "volunteer",
+      "status": "inventoried"
+    },
+    {
+      "route": "/theatre-history",
+      "owner": "TheatreHistoryExperience",
+      "batch": "E",
+      "purpose": "Personal and authorized Student credits",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/theatre-history/resume",
+      "owner": "ActingResumeExperience",
+      "batch": "E",
+      "purpose": "CV and printable credits",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/student-profile",
+      "owner": "StudentProfileExperience",
+      "batch": "E",
+      "purpose": "Shared performer profile, biography and headshot",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/student-profile/family",
+      "owner": "FamilyPickupExperience",
+      "batch": "E",
+      "purpose": "Child-specific family and pickup workflow",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/family/caregiver-schedule",
+      "owner": "CaregiverLogisticsExperience",
+      "batch": "E",
+      "purpose": "Separate authorized caregiver logistics",
+      "persona": "caregiver",
+      "status": "inventoried"
+    },
+    {
+      "route": "/resources",
+      "owner": "AccountLibraryExperience",
+      "batch": "E",
+      "purpose": "First-dispatch organization and production libraries",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/resources/view",
+      "owner": "AccountLibraryExperience",
+      "batch": "E",
+      "purpose": "First-dispatch organization and production libraries",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/files",
+      "owner": "AccountLibraryExperience",
+      "batch": "E",
+      "purpose": "First-dispatch organization and production libraries",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/files/view",
+      "owner": "AccountLibraryExperience",
+      "batch": "E",
+      "purpose": "First-dispatch organization and production libraries",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/videos",
+      "owner": "RehearsalVideoExperience",
+      "batch": "E",
+      "purpose": "Authorized video resources and detail",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/videos/view",
+      "owner": "RehearsalVideoExperience",
+      "batch": "E",
+      "purpose": "Authorized video resources and detail",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/archive",
+      "owner": "ProductionArchiveExperience",
+      "batch": "E",
+      "purpose": "Historical production and authorized Community",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/archive/production",
+      "owner": "ProductionArchiveExperience",
+      "batch": "E",
+      "purpose": "Historical production and authorized Community",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/archive/community",
+      "owner": "ProductionArchiveExperience",
+      "batch": "E",
+      "purpose": "Historical production and authorized Community",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/attendance",
+      "owner": "AttendanceExperience",
+      "batch": "C",
+      "purpose": "Personal/family attendance and absence reporting",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/production",
+      "owner": "ProductionWorkspaceExperience",
+      "batch": "C",
+      "purpose": "Existing member production overview; staff mode preserved",
+      "persona": "guardian",
+      "status": "inventoried"
+    },
+    {
+      "route": "/playbills",
+      "owner": "PlaybillExperience",
+      "batch": "E",
+      "purpose": "Authenticated published program",
+      "persona": "guardian",
+      "status": "inventoried"
+    }
+  ]
+}
