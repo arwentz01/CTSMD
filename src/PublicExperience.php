@@ -56,6 +56,18 @@ final class PublicExperience
         <footer class="stage-footer"><span><?=self::e($brand['name'])?> · Connect</span><a href="<?=self::u($basePath,'/')?>">Back to welcome</a></footer></main><?php self::foot();
     }
 
+    private static function playbills(PDO $db,string $basePath):never
+    {
+        $brand=OrganizationBranding::fromEnvironment();
+        $rows=$db->query("SELECT pb.public_slug,pb.display_title,pb.artwork_stored_file_id,p.title production_title FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.public_enabled=1 AND pb.editorial_status IN ('published','archived') AND pb.public_slug IS NOT NULL ORDER BY pb.published_at DESC,pb.id DESC LIMIT 60")->fetchAll();
+        self::head('Published Playbills',$basePath,$brand);?>
+        <main class="stage-home" style="<?=self::e(OrganizationBranding::css($brand))?>">
+        <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><span class="stage-brand-wordmark"><strong><?=self::e($brand['name'])?></strong><span>CONNECT</span></span></a><nav><a href="<?=self::u($basePath,'/')?>">Home</a><a href="<?=self::u($basePath,'/productions')?>">Productions</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in</a></nav></header>
+        <section class="stage-features-intro"><p class="stage-eyebrow">FROM OUR STAGE</p><h1>Our <em>Playbills.</em></h1><p>Explore programs shared with the audience.</p></section>
+        <?php if($rows):?><div class="stage-playbill-grid lobby-program-grid"><?php foreach($rows as $pb):$asset=$pb['artwork_stored_file_id']?PlaybillEnhancementService::publicAsset($db,(string)$pb['public_slug'],'artwork',0):null;$hasArt=$asset&&in_array($asset['mime_type'],['image/jpeg','image/png','image/webp'],true);?><a class="stage-playbill-item" href="<?=self::u($basePath,'/playbill?slug='.rawurlencode($pb['public_slug']))?>"><?php if($hasArt):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/playbill/asset?kind=artwork&slug='.rawurlencode($pb['public_slug']))?>"><?php else:?><span class="stage-playbill-type">PLAYBILL</span><?php endif;?><span class="stage-playbill-title"><?=self::e($pb['display_title']?:$pb['production_title'])?></span><span class="stage-playbill-view">View Playbill ↗</span></a><?php endforeach;?></div><?php else:?><p class="lobby-empty">No Playbills have been published yet. Please check back.</p><?php endif;?>
+        <footer class="stage-footer"><a href="<?=self::u($basePath,'/')?>">← Back to welcome</a></footer></main><?php self::foot();
+    }
+
     private static function landing(PDO $db,string $basePath):never
     {
         $opportunities=array_slice(RegistrationService::publicOpportunities($db),0,3);
