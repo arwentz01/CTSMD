@@ -107,7 +107,7 @@ final class PublicExperience
         <a class="stage-skip" href="#public-home-main">Skip to content</a>
         <main class="stage-home" id="public-home-main" tabindex="-1" style="<?=self::e(OrganizationBranding::css($brand))?>">
         <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><?php if($brand['logo']!==''):?><img src="<?=self::e($brand['logo'])?>" width="64" height="64" alt=""><?php else:?><span class="stage-brand-monogram" aria-hidden="true"><?=self::e(mb_strtoupper(mb_substr($brand['name'],0,1)))?></span><?php endif;?><span class="stage-brand-wordmark"><strong><?=self::e($brand['name'])?></strong><span>CONNECT</span></span></a><nav aria-label="Public navigation"><a href="<?=self::u($basePath,'/productions')?>">Productions</a><a href="<?=self::u($basePath,'/register')?>">Auditions &amp; signups</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in <span aria-hidden="true">↗</span></a></nav></header>
-        <section class="stage-welcome" aria-labelledby="stage-title">
+        <section class="stage-welcome stage-welcome-theatrical" aria-labelledby="stage-title"><div class="stage-light stage-light-left" aria-hidden="true"></div><div class="stage-light stage-light-right" aria-hidden="true"></div>
           <div class="stage-welcome-content">
             <p class="stage-eyebrow">WELCOME TO <?=self::e($brand['name'])?> CONNECT</p>
             <h1 id="stage-title">Welcome to <em>Connect.</em></h1>
@@ -152,7 +152,7 @@ final class PublicExperience
 
     private static function head(string $title,string $basePath,?array $brand=null):void
     {
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="<?=self::e($brand['primary']??'#181416')?>"><title><?=self::e($title)?><?= $brand===null?' · CTSMD':''?></title><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public.css')?>"><?php if($brand!==null):?><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/ux-workspaces.css?v=20261027')?>"><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public-home.css?v=20261030-upcoming-cards')?>"><?php endif;?></head><body<?=$brand!==null?' class="ux-workspace public-home"':''?>><?php
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="<?=self::e($brand['primary']??'#181416')?>"><title><?=self::e($title)?><?= $brand===null?' · CTSMD':''?></title><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public.css')?>"><?php if($brand!==null):?><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/ux-workspaces.css?v=20261027')?>"><link rel="stylesheet" href="<?=self::u($basePath,'/assets/css/public-home.css?v=20261030-stage-welcome')?>"><?php endif;?></head><body<?=$brand!==null?' class="ux-workspace public-home"':''?>><?php
     }
     private static function foot():never{?></body></html><?php exit;}
     private static function e(string $v):string{return htmlspecialchars($v,ENT_QUOTES,'UTF-8');}
