@@ -14,7 +14,7 @@ final class WorkspaceUI
         echo '<link rel="stylesheet" data-ux-workspaces href="' . $href . '">';
         $operational = htmlspecialchars(($basePath ?: '') . '/assets/css/ux-operational.css?v=20261027', ENT_QUOTES, 'UTF-8');
         echo '<link rel="stylesheet" data-ux-operational href="' . $operational . '">';
-        $script = htmlspecialchars(($basePath ?: '') . '/assets/js/ux-workspaces.js?v=20261027', ENT_QUOTES, 'UTF-8');
+        $script = htmlspecialchars(($basePath ?: '') . '/assets/js/ux-workspaces.js?v=20261030', ENT_QUOTES, 'UTF-8');
         echo '<script defer src="' . $script . '"></script>';
     }
 

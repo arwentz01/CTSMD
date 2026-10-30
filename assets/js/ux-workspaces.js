@@ -1,6 +1,5 @@
 /* Progressive presentation behavior. Does not submit or alter production data. */
 (() => {
-  if (!document.body.classList.contains('ux-workspace')) return;
   // One outline family for the existing destinations. Keep unread badges intact.
   const paths = {
     home: 'M3 10 12 3l9 7v11h-6v-7H9v7H3Z',
@@ -12,6 +11,16 @@
     video: 'M3 4h18v16H3Zm6 4 7 4-7 4Z',
     operations: 'M3 4h18v16H3Zm0 5h18M9 9v11',
     more: 'M4 12h2m5 0h2m5 0h2',
+    theatre: 'M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4Zm13 0v3m0 3v2m0 3v1',
+    account: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a8 8 0 0 1 16 0v2',
+    forms: 'M8 3h8v4H8ZM8 5H5v16h14V5h-3M8 12h8m-8 4h6',
+    attendance: 'M8 3h8v4H8ZM8 5H5v16h14V5h-3m-8 9 2 2 4-4',
+    volunteer: 'M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-4 5 2 9 8 15 6-6 12-10 8-15Z',
+    casting: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a8 8 0 0 1 16 0v2m-4-5 2 2 4-4',
+    resources: 'M3 4h7l2 2h9v15H3Z',
+    readiness: 'm12 2 9 4v6c0 5-5 8-9 10-4-2-9-5-9-10V6Zm-4 10 3 3 5-6',
+    tasks: 'M9 5h12M9 12h12M9 19h12M2 5l1 1 2-3M2 12l1 1 2-3M2 19l1 1 2-3',
+    bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
     star: 'm12 3 3 6 6 1-4.5 4.5 1 6.5-5.5-3-5.5 3 1-6.5L3 10l6-1Z',
   };
   const icon = (element, name) => {
@@ -25,14 +34,22 @@
     const badges = [...element.querySelectorAll('strong')];
     element.replaceChildren(svg, ...badges);
   };
-  document.querySelectorAll('.unified-nav-item > i,.mobile-app-tab-icon').forEach(element => {
-    const href = element.closest('a')?.getAttribute('href') || '';
-    const name = /\/app\/?$/.test(href) ? 'home' : /family/.test(href) ? 'family'
-      : /messages/.test(href) ? 'messages' : /channels/.test(href) ? 'community'
-      : /videos/.test(href) ? 'video' : /calendar/.test(href) ? 'calendar'
-      : /operations/.test(href) ? 'operations' : !href ? 'more' : 'production';
-    icon(element, name);
+  const destinationIcon = href => /\/app\/?(?:[?#]|$)/.test(href) ? 'home'
+    : /notification|push-settings/.test(href) ? 'bell'
+    : /family|parent|pickup|onboarding/.test(href) ? 'family'
+    : /messages/.test(href) ? 'messages' : /channels|community|teams/.test(href) ? 'community'
+    : /videos|rehearsal-library/.test(href) ? 'video' : /calendar|schedule|production\/day/.test(href) ? 'calendar'
+    : /casting|\/cast(?:[?#]|$)/.test(href) ? 'casting' : /attendance/.test(href) ? 'attendance'
+    : /forms/.test(href) ? 'forms' : /volunteer/.test(href) ? 'volunteer'
+    : /tasks/.test(href) ? 'tasks' : /readiness|safeguarding/.test(href) ? 'readiness'
+    : /resources|files|playbill/.test(href) ? 'resources' : /account|people|student-profile/.test(href) ? 'account'
+    : /operations|\/staff/.test(href) ? 'operations' : /my-theatre|history|archive/.test(href) ? 'theatre'
+    : !href ? 'more' : 'production';
+  document.querySelectorAll('.unified-nav-item > i,.mobile-app-tab-icon,.pw-tool-links a > i,.prod-resource-grid a > i,.home-action:not(.casting-response) > i').forEach(element => {
+    const href = element.closest('a')?.getAttribute('href') || element.closest('.home-action')?.querySelector('.home-action-links a')?.getAttribute('href') || '';
+    icon(element, destinationIcon(href));
   });
+  if (!document.body.classList.contains('ux-workspace')) return;
   document.querySelectorAll('.staffdash-productions article > span').forEach(element => icon(element, 'star'));
   document.querySelectorAll('.comm-conversation-icon').forEach(element => icon(element, 'messages'));
   document.querySelectorAll('.community-rail-item.active').forEach(link => link.setAttribute('aria-current', 'page'));

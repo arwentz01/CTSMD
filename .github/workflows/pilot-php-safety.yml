@@ -17,6 +17,8 @@ on:
       - "assets/js/production-people.js"
       - "assets/css/production-people.css"
       - "assets/js/unified-navigation.js"
+      - "assets/js/account-menu.js"
+      - "assets/css/navigation-controls.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   pull_request:
@@ -34,6 +36,8 @@ on:
       - "assets/js/production-people.js"
       - "assets/css/production-people.css"
       - "assets/js/unified-navigation.js"
+      - "assets/js/account-menu.js"
+      - "assets/css/navigation-controls.css"
       - "assets/js/ux-workspaces.js"
       - ".github/workflows/pilot-php-safety.yml"
   workflow_dispatch:
@@ -63,6 +67,7 @@ jobs:
           node --check assets/js/video-library-upload.js
           node --check assets/js/unified-navigation.js
           node --check assets/js/ux-workspaces.js
+          node --check assets/js/account-menu.js
           node --check assets/js/ux-operations.js
           node --check assets/js/production-people.js
           node --check tests/ux_operations_browser.mjs
@@ -90,6 +95,7 @@ jobs:
           php tests/ux_action_visibility.php
           php tests/ux_operational_presentation.php
           php tests/ux_operations_contract.php
+          php tests/navigation_controls.php
       - name: Community search and safeguarding presentation regressions
         run: |
           php tests/community_search.php

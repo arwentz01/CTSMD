@@ -45,7 +45,7 @@ final class FamilyPickupExperience {
                 elseif($action==='request_reject')FamilyPickupService::decide($db,$viewer,$student,(int)($_POST['request_id']??0),false);
                 else throw new RuntimeException('Unknown family management action.');
                 $_SESSION['family_pickup_flash']=['success','Changes saved.'];
-            }catch(RuntimeException|PDOException $e){$_SESSION['family_pickup_flash']=['error',$e instanceof PDOException?'Unable to save. Check that the family/pickup migration has been applied.':$e->getMessage()];}
+            }catch(RuntimeException|PDOException $e){$_SESSION['family_pickup_flash']=['error',$e instanceof PDOException?'Unable to save family and pickup changes right now. Please try again or contact CTSMD support.':$e->getMessage()];}
             self::go($basePath.'/student-profile/family?student='.$student);
         }
         $profile=StudentProfileService::profile($db,$student);

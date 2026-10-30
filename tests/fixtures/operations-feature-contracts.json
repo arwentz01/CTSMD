@@ -83,5 +83,15 @@
         "reason": "My Theatre batches D/E: Use current authoritative ProductionContext audience and guardian resolution, matching download authorization. docs/UX_MY_THEATRE_COVERAGE.md",
         "php": "1efba5436cb628557209ff7de84902ead6c853930ad3c3745eb83aa46268ef71",
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "FamilyPickupExperience": {
+        "reason": "Global UI consistency pass: User-facing save error wording only; authorization and save handling unchanged.",
+        "php": "6c41216df515e4f964d2bcc5fdfc1c85e26e690f5a97449a51232500e9843558",
+        "forms": "c8a5833df0748a7d99a1d7e98a0251e02b53b209eaa99dc5e3f7ffc8d5e47fc7"
+    },
+    "RehearsalVideoExperience": {
+        "reason": "Global UI consistency pass: User-facing storage/upload and delete-confirmation wording only; private paths omitted from explanatory copy; file routes, controls and permissions unchanged.",
+        "php": "51a6e0347ac8cd08919bc0beeea0293e3cb4b89e78ca670aa470eaccf5361d53",
+        "forms": "ce285dca3d53e3481c5ae72dec6b6acf055d7201d50108c738dca4b70a3015ed"
     }
 }

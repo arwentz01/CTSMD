@@ -125,7 +125,7 @@ final class RehearsalVideoService
             if(!$g->fetchColumn())throw new RuntimeException('The selected Production Group is no longer available.');
         }
         $error=(int)($file['error']??UPLOAD_ERR_NO_FILE);
-        if($error!==UPLOAD_ERR_OK)throw new RuntimeException($error===UPLOAD_ERR_INI_SIZE||$error===UPLOAD_ERR_FORM_SIZE?'The video exceeds the server upload limit. Check Bluehost PHP upload_max_filesize and post_max_size.':'Choose a video to upload and try again.');
+        if($error!==UPLOAD_ERR_OK)throw new RuntimeException($error===UPLOAD_ERR_INI_SIZE||$error===UPLOAD_ERR_FORM_SIZE?'The video exceeds the current upload limit. Try a smaller file or contact CTSMD support.':'Choose a video to upload and try again.');
         $tmp=(string)($file['tmp_name']??'');$size=(int)($file['size']??0);
         $maxMb=max(1,min(1024,(int)(getenv('CTSMD_VIDEO_MAX_MB')?:200)));
         if($tmp===''||!is_uploaded_file($tmp)||$size<1||$size>$maxMb*1048576)throw new RuntimeException('Video upload must be between 1 byte and '.$maxMb.' MB.');
@@ -141,7 +141,7 @@ final class RehearsalVideoService
         $directory=dirname($absolute);
         if(!is_dir($directory)&&!mkdir($directory,0750,true)&&!is_dir($directory))throw new RuntimeException('Cannot create private rehearsal video directory.');
         self::assertPrivateStorage();
-        if(!move_uploaded_file($tmp,$absolute))throw new RuntimeException('The video could not be stored on Bluehost.');
+        if(!move_uploaded_file($tmp,$absolute))throw new RuntimeException('The video could not be saved. Please try again or contact CTSMD support.');
         @chmod($absolute,0640);
         try{
             $db->beginTransaction();

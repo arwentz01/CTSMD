@@ -86,8 +86,8 @@ final class CastingService
             if($db->inTransaction())$db->rollBack();
             if($e instanceof PDOException){
                 error_log('Casting decision save database failure: '.$e->getMessage());
-                if(str_contains($e->getMessage(),'production_cast_offers'))throw new RuntimeException('Casting offer storage is unavailable. Ask an administrator to apply migration 080 before saving decisions.');
-                if(str_contains($e->getMessage(),'production_cast_role_assignments')||str_contains($e->getMessage(),'production_cast_roles'))throw new RuntimeException('Casting role storage is unavailable. Ask an administrator to apply migration 079 before saving decisions.');
+                if(str_contains($e->getMessage(),'production_cast_offers'))throw new RuntimeException('Casting offers are temporarily unavailable. Please contact CTSMD support before saving decisions.');
+                if(str_contains($e->getMessage(),'production_cast_role_assignments')||str_contains($e->getMessage(),'production_cast_roles'))throw new RuntimeException('Casting roles are temporarily unavailable. Please contact CTSMD support before saving decisions.');
                 throw new RuntimeException('The casting decision could not be saved due to a database error. Contact the administrator.');
             }
             if($e instanceof RuntimeException)throw $e;
