@@ -49,63 +49,81 @@ final class PublicExperience
                 ['Public audition and interest registration','Publish opportunities that visitors can discover and register for without first joining a production.'],
                 ['Registration review and casting intake','Review registrations, bring audition participants into the casting workflow, and manage callback and casting information.'],
                 ['Roles, offers and acceptance','Build cast and crew rosters, communicate role offers, and record responses within the production process.'],
-                ['Manual participants','Record performers or crew who do not yet have an account, including their role and profile information.'],
+                ['Manual participants','Include a performer or crew member who does not have a Connect account yet, without leaving them out of the roster or program.'],
+                ['Callbacks and casting conversations','Keep the steps between an audition, callbacks and an offer connected, so teams can see where each participant stands.'],
                 ['Production people and public casting','Maintain the production roster separately from what the organization deliberately publishes for public viewing.']]],
             ['id'=>'people','number'=>'02','title'=>'Accounts, roles & performer profiles','lead'=>'Different people need different access. Connect recognizes those distinctions.','items'=>[
                 ['Students and adult performers','Student accounts participate in an age-aware, family-linked experience. Adult performer accounts can participate independently without being treated as children.'],
                 ['Parents, guardians and caregivers','Authorized family relationships connect adults to the children they support. Caregiver access is distinct from full parent or guardian authority.'],
                 ['Production staff and administrators','Staff work in assigned production contexts; administrators have broader operational and account-management responsibilities.'],
                 ['Role-aware access','A person may have multiple responsibilities. Access is based on their roles, active relationships and applicable production permissions, not a single universal member view.'],
-                ['Profiles and acting history','Headshots, biographies, production participation and acting-resume tools help performers retain a record of their work.']]],
+                ['Profiles and acting history','Keep headshots, biographies and production credits together, including a performer résumé with clearly identified theatre credits and outside experience.'],
+                ['Growing with the company','Support the different needs of student and adult performers without giving every account the same access to family or staff information.']]],
             ['id'=>'families','number'=>'03','title'=>'Family coordination & safeguarding','lead'=>'Families can follow the theatre experience without receiving access they should not have.','items'=>[
                 ['Family dashboard and combined schedules','Parents and guardians can view relevant commitments for multiple linked children together.'],
                 ['Family relationships and delegated care','Manage relationships between students, parents, guardians and authorized caregivers with appropriate visibility boundaries.'],
-                ['Authorized pickup and day-of logistics','Maintain pickup authorizations and support production-day arrival, attendance and pickup workflows.'],
+                ['Authorized pickup and day-of logistics','See who is permitted to collect a child, manage pickup permissions and support arrival and departure on busy production days.'],
+                ['One family, multiple productions','See commitments across children and shows instead of checking a separate calendar for every participant.'],
+                ['Caregiver schedules','Give an authorized caregiver the practical schedule information needed to help, without automatically granting full guardian permissions.'],
                 ['Forms, consents and follow-up','Distribute and collect production and family forms, track completion, and give staff a clearer view of outstanding items.'],
                 ['Safeguarded communication','Apply role- and relationship-aware access to conversations involving students, including controls when family relationships change.']]],
             ['id'=>'safety','number'=>'04','title'=>'Safeguarding & incident management','lead'=>'Sensitive situations need a controlled process, not an ordinary group chat.','items'=>[
                 ['Incident and safeguarding cases','Authorized staff can document and manage sensitive matters in dedicated, restricted workflows.'],
                 ['External statement requests','Invite someone outside the platform to provide a statement through a private, time-limited request link without revealing the underlying case.'],
                 ['Controlled case access','Separate sensitive records from regular production communications and restrict who may view or handle them.'],
-                ['Review and audit-minded workflows','Preserve accountability and case history while supporting review and follow-up by authorized staff.']]],
+                ['Review and case history','Keep a record of decisions, statements and follow-up so authorized staff can understand what happened and what still needs attention.'],
+                ['Confidentiality by design','Sensitive case material is not placed on public production pages or ordinary member dashboards.']]],
             ['id'=>'schedule','number'=>'05','title'=>'Calendars, rehearsals & attendance','lead'=>'Turn scattered event information into a clearer picture of what happens next.','items'=>[
                 ['Production calendar and scheduling','Organize rehearsal, performance and other production events in a shared scheduling workspace.'],
-                ['Calendar file imports','Import iCalendar (.ics) event information instead of rebuilding every existing schedule by hand.'],
+                ['Calendar file imports','Bring in events from a standard .ics calendar file rather than entering every rehearsal or event again.'],
+                ['Calendar subscriptions','Follow relevant Connect schedules from familiar calendar applications such as Apple Calendar, Google Calendar or Outlook where subscriptions are supported.'],
                 ['Personal and family schedule views','Show members their relevant production commitments and provide combined views for connected families.'],
                 ['Attendance and production-day tools','Support check-in, attendance tracking and practical day-of coordination for authorized staff.'],
-                ['Changes and notices','Use scheduling notices and production communications to help members keep up with updates.']]],
+                ['Changes and notices','Communicate a schedule change without asking families to hunt through several different pages.'],
+                ['Call details','See the practical details of a scheduled call or event when they are available to your account.']]],
             ['id'=>'comms','number'=>'06','title'=>'Community, messages & notifications','lead'=>'Keep the conversation connected to the people and productions it concerns.','items'=>[
                 ['Community channels and updates','Share organization and production news in spaces intended for the appropriate audience.'],
                 ['Direct and group messaging','Communicate through access-controlled conversations, with special considerations for students and their guardians.'],
-                ['Attachments and moderation','Share supported resources and manage inappropriate or outdated community content.'],
+                ['Attachments and moderation','Add useful files to conversations and updates while giving moderators tools to handle content that needs attention.'],
+                ['Find past updates','Browse and search Community channels to locate information that was posted earlier.']
                 ['Notifications and preferences','Provide notification controls and supporting delivery workflows so members can follow important activity.']]],
             ['id'=>'media','number'=>'07','title'=>'Video library & production resources','lead'=>'One place for learning materials and show resources, without making every upload public.','items'=>[
                 ['Rehearsal video library','Organize and view rehearsal video resources in production-aware libraries.'],
                 ['Controlled access and archived media','Control who can view videos, with archived-media handling separate from normal active access.'],
                 ['Production files and shared materials','Keep documents and other practical production resources within the appropriate workspace.'],
-                ['Member-focused organization','Surface materials according to production involvement and access rather than a single public file list.']]],
+                ['Member-focused organization','Give people access to the material for their productions rather than exposing one enormous, public collection.'],
+                ['Video links in conversations','Share links to approved videos in the places members already communicate, while keeping viewing permissions in place.']]],
             ['id'=>'volunteers','number'=>'08','title'=>'Volunteers & operational support','lead'=>'Behind every show is a lot of work beyond the cast list.','items'=>[
                 ['Volunteer opportunities and commitments','Coordinate volunteer participation and give members a place to find relevant ways to help.'],
                 ['Approvals and cancellations','Support staff review and changes to volunteer participation within a controlled workflow.'],
                 ['Production tasks and checklists','Assign and track operational work across the production team.'],
-                ['People, support needs and readiness','Bring logistical information and outstanding production requirements into staff-facing operational views.']]],
+                ['Support needs and readiness','Help authorized staff coordinate accommodations, accessibility needs and other practical considerations with the care those details require.'],
+                ['Production-day coordination','Keep day-of tasks, attendance and essential logistics connected to the production rather than scattered across spreadsheets.']]],
             ['id'=>'publish','number'=>'09','title'=>'Public productions, playbills & show history','lead'=>'Share what audiences need while keeping internal work private.','items'=>[
                 ['Current, upcoming and past productions','Publish production basics, dates and posters on public-facing pages when approved for release.'],
                 ['Public audition entry points','Direct visitors from a show to its eligible public registration opportunity.'],
-                ['Digital playbills','Build and publish audience-facing programs with cast and crew information, biographies, headshots and sponsors.'],
+                ['Digital playbills','Create audience-facing programs with cast and crew credits, headshots, biographies and sponsor recognition.'],
+                ['Audience-friendly links and QR codes','Let audience members open a published digital program from a link or QR code without needing a Connect account.'],
+                ['Sponsor recognition','Include supporting businesses and community sponsors in an audience-facing program.']
                 ['Public visibility controls','Publish or unpublish audience-facing information separately from internal production management.'],
                 ['Performer credits and historical records','Preserve production history for members and support longer-term performer profiles.']]],
-            ['id'=>'lifecycle','number'=>'10','title'=>'Production management from start to finish','lead'=>'A theatre production is more than a calendar entry.','items'=>[
+            ['id'=>'forms','number'=>'10','title'=>'Forms, permissions & useful paperwork','lead'=>'Less paperwork to chase, with a clearer view of what is still needed.','items'=>[
+                ['Reusable form building','Create forms for the information a production needs rather than handing out unrelated paper copies.'],
+                ['Family and production forms','Give families a place to complete the forms that apply to their participants.'],
+                ['Completion tracking','Let authorized staff see which responses are outstanding and follow up on the right people.'],
+                ['Permission-sensitive information','Keep responses and private details within the access rules that apply to them.']]],
+            ['id'=>'lifecycle','number'=>'11','title'=>'Production management from start to finish','lead'=>'A theatre production is more than a calendar entry.','items'=>[
                 ['Production workspaces and staff roles','Keep planning, team responsibilities, artwork and production operations together.'],
                 ['Lifecycle and publishing','Track a show through planning, rehearsing, performing, completion and archival stages.'],
                 ['Completion and archive review','Support controlled closure of production work while retaining historical records.'],
-                ['Operational dashboards','Help staff identify the next action, incomplete information and readiness concerns.']]]
+                ['Operational dashboards','Help staff see what needs attention next instead of searching through every part of a production.'],
+                ['Production artwork and teams','Keep posters, other show artwork and production-team responsibilities tied to the correct show.']]]
         ];
         self::head('Features & capabilities',$basePath,$brand);?>
         <a class="stage-skip" href="#features-main">Skip to content</a>
         <main class="stage-home stage-features-tour" id="features-main" tabindex="-1" style="<?=self::e(OrganizationBranding::css($brand))?>">
         <header class="stage-header"><a class="stage-brand" href="<?=self::u($basePath,'/')?>"><span class="stage-brand-monogram" aria-hidden="true"><?=self::e(mb_strtoupper(mb_substr($brand['name'],0,1)))?></span><span class="stage-brand-wordmark"><strong><?=self::e($brand['name'])?></strong><span>CONNECT</span></span></a><nav aria-label="Public navigation"><a href="<?=self::u($basePath,'/')?>">Home</a><a href="<?=self::u($basePath,'/productions')?>">Productions</a><a class="stage-signin" href="<?=self::u($basePath,'/login')?>">Member sign in ↗</a></nav></header>
-        <section class="features-tour-hero"><p class="stage-eyebrow">BEHIND EVERY GREAT PRODUCTION</p><h1>One connected home for <em>the whole theatre.</em></h1><p>From the first audition to the final curtain call, Connect brings performers, families, volunteers and production teams into one coordinated experience.</p><div class="features-tour-actions"><a class="stage-primary" href="<?=self::u($basePath,'/join')?>">Create an account ↗</a><a href="#feature-directory">Explore the capabilities ↓</a></div></section>
+        <section class="features-tour-hero"><p class="stage-eyebrow">BEHIND EVERY GREAT PRODUCTION</p><h1>One connected home for <em>the whole theatre.</em></h1><p>Auditions, casting, family calendars, rehearsal videos, volunteer work, safety, playbills and more. Connect helps everyone involved in a production spend less time hunting for information and more time making theatre.</p><div class="features-tour-actions"><a class="stage-primary" href="<?=self::u($basePath,'/join')?>">Create an account ↗</a><a href="#feature-directory">Explore the capabilities ↓</a></div></section>
         <section class="features-tour-intro" aria-labelledby="tour-whom"><h2 id="tour-whom">Built for everyone who makes the show happen.</h2><div class="features-audience-grid"><article><span>ON STAGE</span><h3>Students &amp; adult performers</h3><p>Auditions, casting decisions, rehearsals, resources and a history of productions in one place.</p></article><article><span>AT HOME</span><h3>Parents &amp; guardians</h3><p>Family schedules, forms, safe communication and support for more than one participating child.</p></article><article><span>BACKSTAGE</span><h3>Staff &amp; volunteers</h3><p>Tools for coordinating people, safety, schedules, operations and the work audiences never see.</p></article></div></section>
         <nav class="features-directory" id="feature-directory" aria-label="Feature categories"><h2>Explore Connect</h2><div><?php foreach($sections as $section):?><a href="#<?=self::e($section['id'])?>"><span><?=self::e($section['number'])?></span><?=self::e($section['title'])?> <span aria-hidden="true">↗</span></a><?php endforeach;?></div></nav>
         <div class="features-tour-sections"><?php foreach($sections as $section):?><section class="features-tour-section" id="<?=self::e($section['id'])?>" aria-labelledby="heading-<?=self::e($section['id'])?>"><div class="features-section-heading"><span><?=self::e($section['number'])?> / CONNECT CAPABILITIES</span><h2 id="heading-<?=self::e($section['id'])?>"><?=self::e($section['title'])?></h2><p><?=self::e($section['lead'])?></p></div><div class="features-detail-grid"><?php foreach($section['items'] as $item):?><article><h3><?=self::e($item[0])?></h3><p><?=self::e($item[1])?></p></article><?php endforeach;?></div></section><?php endforeach;?></div>
