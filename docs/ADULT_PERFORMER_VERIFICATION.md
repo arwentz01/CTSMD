@@ -43,3 +43,10 @@ Local browser evidence: `/tmp/ctsmd-role-ui` contains screenshots and JSON for a
 - **Broader RC1 blockers:** existing TODO and release readiness gates remain open, including historical backfill review, closure/capacity concurrency and hosted acceptance. This role correction does not authorize a real-family pilot.
 
 CI results are recorded below after the pushed implementation is checked. Commands and isolated-fixture guards live in the committed workflows/tests so CI can repeat the checks without live accounts.
+
+## Pushed CI evidence
+
+- [`11a1d96` PHP safety](https://github.com/arwentz01/CTSMD/actions/runs/40984769199): **success**, all steps.
+- [`11a1d96` isolated MySQL/HTTP acceptance](https://github.com/arwentz01/CTSMD/actions/runs/40984769263): **success**, including manifest, fresh bootstrap, read-only preflight, HTTP personas, safeguarding and performer/migration/concurrency suites.
+- [`3537a55` Expo CI](https://github.com/arwentz01/CTSMD/actions/runs/40984654872): **failure at dependency compatibility only**. Install, TypeScript, seven integration contracts and Android/iOS export all succeeded. Subsequent intake/documentation changes do not modify mobile source or dependencies.
+- Local clean-revision manifest and read-only preflight at `11a1d96`: file issues empty, schema contracts match, `release_authorized=false`. These files are local evidence, not release authorization.
