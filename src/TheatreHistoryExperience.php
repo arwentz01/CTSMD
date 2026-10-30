@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__.'/MemberUI.php';
 
 require_once __DIR__.'/WorkspaceUI.php';
 
@@ -27,7 +28,7 @@ final class TheatreHistoryExperience
     {
         $u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');
         $subnav=[];if($subject){$sid=(int)$subject['id'];$subnav=[['label'=>'History','href'=>'/theatre-history?student='.$sid,'active'=>true],['label'=>'Theatre profile','href'=>'/student-profile?student='.$sid,'active'=>false],['label'=>'Acting résumé','href'=>'/theatre-history/resume?student='.$sid,'active'=>false]];}
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Theatre History · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/theatre-history.css')?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$viewer);?><main class="unified-main"><?php AppNavigation::renderHeader('Your CTSMD story','Theatre History',$basePath,$subnav);?><div class="history-page ops-page">
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Theatre History · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/theatre-history.css')?>"><?php WorkspaceUI::operationsStyles($basePath); ?><?php MemberUI::styles($basePath); ?></head><body class="app-body ux-operations ux-workspace<?=MemberUI::bodyClass()?>"><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$viewer);?><main class="unified-main"><?php AppNavigation::renderHeader('Your CTSMD story','Theatre History',$basePath,$subnav); MemberUI::wayfinding($basePath);?><div class="history-page ops-page">
         <section class="history-hero ops-heading"><div><small>CTSMD VERIFIED CREDITS</small><h2>Every show becomes part of the story.</h2><p>Roles and participation recorded by CTSMD stay here after a production closes. Your acting résumé can combine these verified credits with clearly labeled outside experience.</p></div><div class="history-seal"><b>CTSMD</b><span>VERIFIED</span></div></section>
         <?php if(count($subjects)>1):?><nav class="history-subjects" aria-label="Performer theatre history"><?php foreach($subjects as $s):?><a class="<?=($subject&&(int)$subject['id']===(int)$s['id'])?'active':''?>" href="<?=$u(self::ROUTE.'?student='.(int)$s['id'])?>"><b><?=$e((string)$s['name'])?></b><small><?=$e((string)$s['relationship'])?></small></a><?php endforeach;?></nav><?php endif;?>
         <?php if(!$subject):?><section class="history-empty"><h2>No Performer theatre history is connected to this account yet.</h2><p>Performer credits appear here after CTSMD adds the participant to a production roster.</p></section>

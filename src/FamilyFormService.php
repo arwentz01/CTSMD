@@ -8,35 +8,35 @@ require_once __DIR__.'/FormWriteGuard.php';
 
 final class FamilyFormService
 {
-    public static function assignmentsForViewer(PDO $db,int $viewerId):array
+    public static function assignmentsForViewer(PDO $db,int $viewerId,bool $includeClosed=false):array
     {
-        $s=$db->prepare("SELECT fa.id,fa.form_id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.production_id,fa.source_group_id,fa.status,fa.due_at,fa.completed_at,f.title,f.form_type,f.completion_mode,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
+        $s=$db->prepare("SELECT fa.id,fa.form_id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.production_id,fa.source_group_id,fa.status,fa.due_at,fa.completed_at,f.title,f.active form_active,f.form_type,f.completion_mode,f.review_required,f.definition_version,p.title production_title,p.lifecycle_stage production_stage,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
             FROM form_assignments fa
-            JOIN forms f ON f.id=fa.form_id AND f.active=1
+            JOIN forms f ON f.id=fa.form_id ".($includeClosed?'':'AND f.active=1')."
             JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id)
             LEFT JOIN productions p ON p.id=fa.production_id
             LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
             WHERE (subject.account_status<>'disabled' OR fa.status='completed') AND (
-                fa.user_id=:viewer
+                (fa.user_id=:viewer AND COALESCE(fa.subject_user_id,fa.user_id)=fa.user_id)
                 OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))
             )
             ORDER BY CASE fa.status WHEN 'missing' THEN 1 WHEN 'due_soon' THEN 2 WHEN 'requires_review' THEN 3 ELSE 4 END,fa.due_at IS NULL,fa.due_at,subject.last_name,subject.first_name,fa.id");
         $s->execute(['viewer'=>$viewerId,'guardian'=>$viewerId]);return$s->fetchAll();
     }
 
-    public static function assignmentForViewer(PDO $db,int $viewerId,int $assignmentId):?array
+    public static function assignmentForViewer(PDO $db,int $viewerId,int $assignmentId,bool $includeClosed=false):?array
     {
         if($assignmentId<1)return null;
-        $s=$db->prepare("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.status,fa.due_at,fa.completed_at,fa.production_id,fa.source_group_id,f.id form_id,f.title,f.form_type,f.instructions,f.completion_mode,f.review_required,f.definition_version,p.title production_title,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,fs.typed_signature,fs.response_text,fs.reviewer_note,fs.submitted_at,fs.reviewed_at,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
+        $s=$db->prepare("SELECT fa.id,fa.user_id,COALESCE(fa.subject_user_id,fa.user_id) subject_user_id,fa.status,fa.due_at,fa.completed_at,fa.production_id,fa.source_group_id,f.id form_id,f.title,f.active form_active,f.form_type,f.instructions,f.completion_mode,f.review_required,f.definition_version,p.title production_title,p.lifecycle_stage production_stage,CONCAT(subject.first_name,' ',subject.last_name) subject_name,fs.id submission_id,fs.status submission_status,fs.submitted_by_user_id,fs.typed_signature,fs.response_text,fs.reviewer_note,fs.submitted_at,fs.reviewed_at,CONCAT(submitter.first_name,' ',submitter.last_name) submitted_by_name
             FROM form_assignments fa
-            JOIN forms f ON f.id=fa.form_id AND f.active=1
+            JOIN forms f ON f.id=fa.form_id ".($includeClosed?'':'AND f.active=1')."
             JOIN users subject ON subject.id=COALESCE(fa.subject_user_id,fa.user_id)
             LEFT JOIN productions p ON p.id=fa.production_id
             LEFT JOIN form_submissions fs ON fs.assignment_id=fa.id
             LEFT JOIN users submitter ON submitter.id=fs.submitted_by_user_id
             WHERE fa.id=:id AND (subject.account_status<>'disabled' OR fa.status='completed') AND (
-                fa.user_id=:viewer
+                (fa.user_id=:viewer AND COALESCE(fa.subject_user_id,fa.user_id)=fa.user_id)
                 OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))
             ) LIMIT 1");
         $s->execute(['id'=>$assignmentId,'viewer'=>$viewerId,'guardian'=>$viewerId]);return$s->fetch()?:null;
@@ -68,7 +68,7 @@ final class FamilyFormService
 
     public static function groupAssignmentOptions(PDO $db):array
     {
-        return $db->query("SELECT pg.id group_id,pg.name group_name,pg.production_id,f.id form_id,f.title form_title,p.title production_title,p.season FROM production_groups pg JOIN productions p ON p.id=pg.production_id AND p.is_active=1 JOIN forms f ON f.production_id=pg.production_id AND f.active=1 WHERE pg.active=1 ORDER BY p.title,f.title,pg.name")->fetchAll();
+        return $db->query("SELECT pg.id group_id,pg.name group_name,pg.production_id,f.id form_id,f.title form_title,p.title production_title,p.lifecycle_stage production_stage,p.season FROM production_groups pg JOIN productions p ON p.id=pg.production_id AND p.is_active=1 JOIN forms f ON f.production_id=pg.production_id AND f.active=1 WHERE pg.active=1 ORDER BY p.title,f.title,pg.name")->fetchAll();
     }
 
     private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta):void{$s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$s->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}

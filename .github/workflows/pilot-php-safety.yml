@@ -62,6 +62,8 @@ jobs:
           node --check tests/ux_operations_browser.mjs
           node --check tests/ux_operations_interactions.mjs
           node --check tests/production_people_browser.mjs
+          node --check tests/my_theatre_browser.mjs
+          node --check assets/js/ux-member.js
       - name: Staff production directory ordering and past grouping
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract

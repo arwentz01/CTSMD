@@ -42,7 +42,7 @@ final class ProductionChecklistAssignmentService {
    if(!$role)throw new RuntimeException('This task is no longer assigned to an active production member.');
    if($viewer!==$target){
     if($role!=='student')throw new RuntimeException('Only the assigned person can complete this task.');
-    $g=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.guardian_user_id=:viewer AND fr.status='active'");
+    $g=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users u ON u.id=fr.guardian_user_id AND u.active=1 AND u.account_status='active' WHERE fr.student_user_id=:student AND fr.guardian_user_id=:viewer AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')");
     $g->execute(['student'=>$target,'viewer'=>$viewer]);if(!$g->fetchColumn())throw new RuntimeException('You cannot complete this student task.');
    }
    $db->prepare("UPDATE production_checklist_assignments SET completed_at=NOW(),completed_by_user_id=:viewer WHERE id=:id AND completed_at IS NULL")->execute(['viewer'=>$viewer,'id'=>$assignmentId]);

@@ -20,8 +20,8 @@
         "forms": "ed4dc9ce9e776a783988b2c1f0bcc1d42ed94a02e84fc1a68e1ba3ff1b3eb1fb"
     },
     "StudentProfileExperience": {
-        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
-        "php": "a319e341986a500abb80ac8828970eadb94cb366d8d187eb42d9043193d1719c",
+        "reason": "My Theatre batches D/E: Information-first performer summary and intentional native profile editing disclosure; original submission protocol retained. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "cfde32e9930d7f476f4c6d4832812dca79694ea4b1c5fc91ac8653fdd0788e30",
         "forms": "8de6fa701c6b8cd352307bef0b21050f520a6e2188343e858a1fa53dfbbdf4d1"
     },
     "ResourceExperience": {
@@ -68,5 +68,20 @@
         "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",
         "php": "2ab7bace4e834b4a84a7aedde4cb39965b39a7bd607dc5c686a1d7172c3924c1",
         "forms": "5555001c8c8886794773c7e3338d008cc037d8f67212f3ca88c6c4c8ab793eed"
+    },
+    "FamilyFormsExperience": {
+        "reason": "My Theatre batches D/E: Closed response history is read-only; active assignment filters and intentional completion disclosure. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "f74641fb4e221fc93981c83bf8d115fbd7733541ef0920c8c120e25c60de380d",
+        "forms": "cd1aa70186ac85e2e5da2357170cd91781ebf6135c47ef9858faf1f434adfe5b"
+    },
+    "VolunteerExperience": {
+        "reason": "My Theatre batches D/E: Separate owned commitments and approval requests from opportunities; waitlist is not a confirmed signup. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "ee9f8062149df34e0c528368357c7e8232d4d9f72a4f3dd598db9c5738288521",
+        "forms": "9800e2dd6385dd00855ecbb41aef150d518c789e3d806208e46cdf833e45d04c"
+    },
+    "AccountLibraryExperience": {
+        "reason": "My Theatre batches D/E: Use current authoritative ProductionContext audience and guardian resolution, matching download authorization. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "1efba5436cb628557209ff7de84902ead6c853930ad3c3745eb83aa46268ef71",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
 }

@@ -26,7 +26,7 @@ final class UXActionPDO extends PDO
             ['id'=>6,'status'=>'missing','production_id'=>99,'submission_status'=>null],
             ['id'=>7,'status'=>'missing','production_id'=>null,'submission_status'=>null],
             ['id'=>8,'status'=>'missing','production_id'=>11,'submission_status'=>'submitted'],
-            ['id'=>9,'status'=>'due_soon','production_id'=>11,'submission_status'=>'returned'],
+            ['id'=>9,'status'=>'due_soon','production_id'=>11,'submission_status'=>'rejected'],
         ],$this);
     }
     public function query(string $query,?int $fetchMode=null,...$fetchModeArgs): PDOStatement|false
