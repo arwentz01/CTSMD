@@ -65,8 +65,8 @@
         "forms": "9b53fcc45977f28184e8eb3e21cd046ba434cad337eea314378adcb3d61801b6"
     },
     "NotificationExperience": {
-        "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",
-        "php": "2ab7bace4e834b4a84a7aedde4cb39965b39a7bd607dc5c686a1d7172c3924c1",
+        "reason": "My Theatre: actionable vs review-only forms and Student offer guidance preserving existing active-guardian response policy. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "c1f846833dc4072b4662b9a4619c2be77080be40f1cd2dee7a8c28ede18edd3b",
         "forms": "5555001c8c8886794773c7e3338d008cc037d8f67212f3ca88c6c4c8ab793eed"
     },
     "FamilyFormsExperience": {

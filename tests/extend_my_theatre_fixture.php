@@ -1,0 +1,18 @@
+<?php
+declare(strict_types=1);
+/** Optional metadata fixtures for member detail rendering; no media-delivery claim. */
+require_once __DIR__.'/fixtures/my-theatre-personas.php';
+require_once dirname(__DIR__).'/src/VolunteerVerificationService.php';
+if(getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Disposable local schema required.');
+$path=sys_get_temp_dir().'/ctsmd-my-theatre-fixture.json';$f=json_decode(file_get_contents($path),true,flags:JSON_THROW_ON_ERROR);if(($f['isolated']??false)!==true)throw new RuntimeException('Synthetic fixture required.');$db=Database::connect(dirname(__DIR__));
+foreach($f['users'] as $id){$s=$db->prepare('SELECT email FROM users WHERE id=?');$s->execute([$id]);if(!str_ends_with((string)$s->fetchColumn(),'@rc1.invalid'))throw new RuntimeException('Owned synthetic identities required.');}
+if(isset($f['detail'])){echo "Detail fixtures already exist.\n";exit;}
+$insert=static function(string $table,array $values)use($db):int{$cols=array_keys($values);$q=$db->prepare('INSERT INTO '.$table.'('.implode(',',$cols).') VALUES('.implode(',',array_fill(0,count($cols),'?')).')');$q->execute(array_values($values));return(int)$db->lastInsertId();};
+$admin=$f['users']['Admin'];$vol=$f['users']['Volunteer'];$show=$f['productions']['A'];
+$insert('family_relationships',['guardian_user_id'=>$f['users']['Member'],'student_user_id'=>$f['users']['StudentMulti'],'relationship_type'=>'caregiver','status'=>'active']);
+$stored=$insert('stored_files',['created_by_user_id'=>$admin]);$insert('stored_file_versions',['stored_file_id'=>$stored,'version_number'=>1,'storage_key'=>'member-ui-metadata/'.bin2hex(random_bytes(8)).'.txt','original_name'=>'Synthetic rehearsal notes.txt','mime_type'=>'text/plain','extension'=>'txt','byte_size'=>0,'sha256'=>hash('sha256',''),'uploaded_by_user_id'=>$admin]);
+$file=$insert('production_files',['production_id'=>$show,'stored_file_id'=>$stored,'created_by_user_id'=>$admin,'title'=>'Synthetic rehearsal notes','category'=>'Rehearsals','description'=>'Detail-rendering metadata fixture. Download delivery is verified separately.','audiences_json'=>'["production_all"]']);
+$video=$insert('rehearsal_videos',['production_id'=>$show,'uploaded_by_user_id'=>$admin,'title'=>'Synthetic rehearsal video','description'=>'Detail-rendering metadata fixture. Playback is verified separately.','category'=>'choreography','original_filename'=>'synthetic.mp4','storage_key'=>'member-ui-metadata/'.bin2hex(random_bytes(8)).'.mp4','mime_type'=>'video/mp4','byte_size'=>0]);
+$insert('volunteer_hour_entries',['user_id'=>$vol,'production_id'=>$show,'minutes'=>60,'source_type'=>'manual','status'=>'verified','note'=>'Isolated synthetic service record','verified_by_user_id'=>$admin,'served_at'=>date('Y-m-d H:i:s')]);
+$verification=VolunteerVerificationService::issue($db,['id'=>$admin,'roles'=>['administrator'],'permissions'=>Auth::permissions($db,$admin)],$vol,date('Y-m-d'),date('Y-m-d'),'Synthetic rendering acceptance');
+$archivechannel=$insert('channels',['production_id'=>$f['productions']['Archive'],'name'=>'Synthetic historical company','channel_type'=>'production','description'=>'Read-only synthetic archived channel','access_mode'=>'audience','read_audiences_json'=>'["production_all"]','post_audiences_json'=>'[]','archived_at'=>date('Y-m-d H:i:s')]);$f['detail']=compact('file','video','verification','archivechannel');file_put_contents($path,json_encode($f,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));chmod($path,0600);echo json_encode($f['detail'])."\n";
