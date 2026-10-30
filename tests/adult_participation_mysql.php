@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__).'/src/Database.php';
 require_once dirname(__DIR__).'/src/AccountManagementExperience.php';
 require_once dirname(__DIR__).'/src/CastingService.php';
+require_once dirname(__DIR__).'/src/RegistrationIntakeService.php';
 require_once dirname(__DIR__).'/src/CastingOfferService.php';
 require_once dirname(__DIR__).'/src/ProductionPeopleExperience.php';
 require_once dirname(__DIR__).'/src/ProductionGroupExperience.php';
@@ -44,8 +45,13 @@ try{
     $assert(!in_array($plain,$candidateIds,true),'Ordinary Member excluded from casting selector');
     $assign($admin,$plain,['member','volunteer','adult_performer']);
     $assert(IdentityRolePolicy::isAdult($db,$plain)&&in_array('volunteer',Auth::roles($db,$plain),true),'Role assignment needs no DOB or second review and coexists with Volunteer');
+    $intake=new ReflectionMethod(RegistrationIntakeService::class,'participantCandidates');
+    $adultEmail=(string)$db->query('SELECT email FROM users WHERE id='.$adult)->fetchColumn();
+    $plainEmail=(string)$db->query('SELECT email FROM users WHERE id='.$plain)->fetchColumn();
+    $assert(array_map('intval',array_column($intake->invoke(null,$db,['participant_age_group'=>'adult','registrant_email'=>$adultEmail]),'id'))===[$adult],'Adult intake selector uses Adult Performer role');
     $assign($admin,$plain,['member','volunteer']);
     $assert(!in_array($plain,array_map('intval',array_column(CastingService::peopleCandidates($db,$mixed),'id')),true),'Role removal immediately removes casting candidacy');
+    $assert($intake->invoke(null,$db,['participant_age_group'=>'adult','registrant_email'=>$plainEmail])===[],'Adult intake excludes ordinary Members after performer role revocation');
 
     $denied(fn()=>$assign($admin,$student,['student','adult_performer']),'Student and Adult Performer conflict denied');
     $assert(ProductionParticipantEligibility::forUser($db,$mixed,$student)['status']==='below_minimum_age','Stored Student DOB enforced');

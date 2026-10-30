@@ -1,9 +1,5 @@
 # CTSMD Connect UX design system
 
-Reviewed Student transitions and participant functions reuse native disclosures, explicit reason fields and Operations controls. Transitions explain history/session effects before action and require a different authorized reviewer on the server. Native classification is display-only; profile, consent, registration and history have labeled website handoffs with separate-sign-in guidance. Casting offers remain native and use shared backend acceptance.
-
-Adult participation extension: account classification is a separate Operations panel from authorization roles. Production participation settings reuse `pl-panel`, `pl-detail-form` and `ops-form`, visible labels, native fieldsets/legends and explicit optional age bounds/cutoff help. Age exceptions live in a disclosure with required review reason and visible approval/revocation history. They never imply guardian or administrative authority. No second palette, navigation or decorative interaction was introduced.
-
 ## Phase 3 operational and native adoption
 
 Phase 4 follow-up: closed-form backend guards and legacy structured-submit rejection are now implemented with local API/lifecycle evidence; see [Native Phase 4 acceptance](NATIVE_PHASE4_ACCEPTANCE.md). The Phase 3 findings below remain historical context, not a claim that device or hosted closure acceptance has passed.
@@ -72,3 +68,5 @@ Phone fields use 16px text and at least 44px height. The approved `--ux-control`
 Emil informed the interaction/focus refinements; Impeccable informed measured contrast, field grouping and state review; Taste's app-screen framed-sheet direction (seed `123105929`, palette/type retained) informed quiet work surfaces and restrained headers. The approved CTSMD system and existing navigation override any generic drawn palette or shell geometry. No decorative motion, new font service, icon tiles or fabricated controls were introduced.
 
 This visual system does not own authorization, notifications, publication visibility, lifecycle state, roster membership, or family relationships. Document a backend dependency before changing any of those meanings.
+
+Adult Performer correction: use the existing Authorization roles checkbox list and description, with one section on account detail. No separate Adult classification or transition-review panels. Account lists search the existing role names. Production eligibility/age-exception controls retain existing Operations patterns and audited reasons; those production exceptions are independent of role assignment. Native Account displays authorization role names, with existing website handoffs for profile/history administration.
