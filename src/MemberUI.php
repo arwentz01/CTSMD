@@ -26,8 +26,8 @@ final class MemberUI
         self::$enabled=$enabled&&isset(self::ROUTES[self::$route])&&($_GET['print']??'')!=='1';if(!self::$enabled)return;
         WorkspaceUI::styles($base);
         $root=htmlspecialchars($base.'/assets/',ENT_QUOTES,'UTF-8');
-        echo '<link rel="stylesheet" data-member-ui href="'.$root.'css/ux-member.css?v=20261029-member-1">';
-        echo '<script defer src="'.$root.'js/ux-member.js?v=20261029-member-1"></script>';
+        echo '<link rel="stylesheet" data-member-ui href="'.$root.'css/ux-member.css?v=20261030-member-2">';
+        echo '<script defer src="'.$root.'js/ux-member.js?v=20261030-member-2"></script>';
     }
     public static function bodyClass():string{return self::$enabled?' ux-member ux-workspace':'';}
     public static function wayfinding(string $base):void

@@ -35,5 +35,7 @@ try{
  await p.goto(url.origin+'/my-theatre',{settleMs:100});
  const contrast=await p.eval(()=>{const style=getComputedStyle(document.body);const rgb=t=>{const e=document.createElement('i');e.style.color=style.getPropertyValue(t);document.body.append(e);const c=getComputedStyle(e).color.match(/[\d.]+/g).slice(0,3).map(Number);e.remove();return c};const lum=c=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);return [['--ux-ink','--ux-paper'],['--ux-muted','--ux-paper'],['--ux-wine','--ux-paper'],['--ux-ink','--ux-ivory'],['--ux-muted','--ux-ivory'],['--ux-paper','--ux-wine']].map(([fg,bg])=>{const a=lum(rgb(fg)),b=lum(rgb(bg));return{fg,bg,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)}})});
  for(const c of contrast)ok(c.ratio>=4.5,'Shared text token contrast '+c.fg+' on '+c.bg+' '+c.ratio.toFixed(2)+':1');
- writeFileSync(out+'/interactions.json',JSON.stringify({checks,results,contrast},null,2));
+ await p.goto(url.origin+'/volunteer/shift?id='+fixture.shift,{settleMs:100});
+ const header=await p.eval(()=>{const t=document.querySelector('.unified-title').getBoundingClientRect(),u=document.querySelector('.unified-utilities').getBoundingClientRect();return{titleRight:t.right,utilitiesLeft:u.left}});ok(header.titleRight<=header.utilitiesLeft,'Long phone title leaves room for inbox and account controls');
+ writeFileSync(out+'/interactions.json',JSON.stringify({checks,results,contrast,header},null,2));
 }finally{await browser.close();}
