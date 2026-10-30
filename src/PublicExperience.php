@@ -8,10 +8,11 @@ require_once __DIR__ . '/AuditionIntakeBridge.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__.'/OrganizationBranding.php';
 require_once __DIR__.'/PlaybillEnhancementService.php';
+require_once __DIR__.'/StorageService.php';
 
 final class PublicExperience
 {
-    private const ROUTES=['/','/features','/playbills','/register','/register/manage'];
+    private const ROUTES=['/','/features','/playbills','/production-poster','/register','/register/manage'];
     public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath):never
@@ -21,6 +22,7 @@ final class PublicExperience
         if($route==='/')self::landing($db,$basePath);
         if($route==='/features')self::features($basePath);
         if($route==='/playbills')self::playbills($db,$basePath);
+        if($route==='/production-poster')self::productionPoster($db);
         if($route==='/register/manage')self::manage($db,$basePath);
         self::registration($db,$basePath);
     }
@@ -56,6 +58,19 @@ final class PublicExperience
         <footer class="stage-footer"><span><?=self::e($brand['name'])?> · Connect</span><a href="<?=self::u($basePath,'/')?>">Back to welcome</a></footer></main><?php self::foot();
     }
 
+    private static function productionPoster(PDO $db):never
+    {
+        $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
+        if(!$id){http_response_code(404);exit;}
+        // Publishing production basics authorizes public show artwork. Never use
+        // the authenticated member artwork endpoint on a public page.
+        $s=$db->prepare("SELECT sv.* FROM productions p JOIN production_artwork a ON a.production_id=p.id AND a.role='poster' JOIN stored_file_versions sv ON sv.stored_file_id=a.stored_file_id WHERE p.id=:id AND p.announcement_published_at IS NOT NULL AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived') ORDER BY sv.version_number DESC LIMIT 1");
+        $s->execute(['id'=>$id]);$file=$s->fetch();
+        if(!$file||!in_array($file['mime_type'],['image/jpeg','image/png','image/webp'],true)){http_response_code(404);exit;}
+        header('Cache-Control: public, max-age=120');
+        StorageService::stream(dirname(__DIR__),$file,false);
+    }
+
     private static function playbills(PDO $db,string $basePath):never
     {
         $brand=OrganizationBranding::fromEnvironment();
@@ -72,7 +87,7 @@ final class PublicExperience
     {
         $opportunities=array_slice(RegistrationService::publicOpportunities($db),0,3);
         // Only deliberately announced basics. Never query casting, families or schedules here.
-        $productions=$db->query("SELECT id,title,season,lifecycle_stage,audition_starts_at,performance_starts_at,performance_ends_at FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived') ORDER BY COALESCE(performance_starts_at,audition_starts_at),id DESC LIMIT 40")->fetchAll();
+        $productions=$db->query("SELECT id,title,season,lifecycle_stage,audition_starts_at,performance_starts_at,performance_ends_at,EXISTS(SELECT 1 FROM production_artwork a WHERE a.production_id=productions.id AND a.role='poster') has_public_poster FROM productions WHERE announcement_published_at IS NOT NULL AND lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived') ORDER BY COALESCE(performance_starts_at,audition_starts_at),id DESC LIMIT 40")->fetchAll();
         // Match the existing public Playbill/asset publication policy, including revocation.
         $playbills=$db->query("SELECT pb.production_id,pb.display_title,pb.subtitle,pb.public_slug,pb.artwork_stored_file_id,p.title production_title FROM playbills pb JOIN productions p ON p.id=pb.production_id WHERE pb.public_enabled=1 AND pb.editorial_status IN ('published','archived') AND pb.public_slug IS NOT NULL ORDER BY pb.published_at DESC,pb.id DESC LIMIT 40")->fetchAll();
         // Public landing displays explicitly published Playbills, independently of the
@@ -102,7 +117,7 @@ final class PublicExperience
           </div>
         </section>
         <?php $current=array_values(array_filter($productions,static fn($p)=>in_array($p['lifecycle_stage'],['in_production','performing'],true)));$upcoming=array_values(array_filter($productions,static fn($p)=>in_array($p['lifecycle_stage'],['upcoming','planning'],true)));$past=array_values(array_filter($productions,static fn($p)=>in_array($p['lifecycle_stage'],['completed','archived'],true)));?>
-        <?php if($current):?><section class="lobby-section" aria-labelledby="lobby-current"><div class="lobby-heading"><div><p class="stage-eyebrow">ON STAGE</p><h2 id="lobby-current">Current shows</h2></div><a href="<?=self::u($basePath,'/productions')?>">All productions ↗</a></div><div class="lobby-show-grid"><?php foreach($current as $p):$image=null;foreach($artworks as $item){if((int)$item['production_id']===(int)$p['id']){$image=$item;break;}}?><article class="lobby-show"><a class="lobby-poster" href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>"><?php if($image):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/playbill/asset?kind=artwork&slug='.rawurlencode($image['public_slug']))?>"><?php else:?><span class="lobby-poster-type"><small><?=self::e($brand['name'])?></small><strong><?=self::e($p['title'])?></strong><small>ON STAGE</small></span><?php endif;?></a><div><span class="lobby-kicker"><?=self::e($p['season']?:'Now showing')?></span><h3><?=self::e($p['title'])?></h3><?php if($p['performance_starts_at']):?><p>From <?=self::e(date('M j, Y',strtotime($p['performance_starts_at'])))?></p><?php endif;?><a href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>">Explore production ↗</a></div></article><?php endforeach;?></div></section><?php endif;?>
+        <?php if($current):?><section class="lobby-section" aria-labelledby="lobby-current"><div class="lobby-heading"><div><p class="stage-eyebrow">ON STAGE</p><h2 id="lobby-current">Current shows</h2></div><a href="<?=self::u($basePath,'/productions')?>">All productions ↗</a></div><div class="lobby-show-grid"><?php foreach($current as $p):$image=null;foreach($artworks as $item){if((int)$item['production_id']===(int)$p['id']){$image=$item;break;}}?><article class="lobby-show"><a class="lobby-poster" href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>"><?php if(!empty($p['has_public_poster'])):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/production-poster?id='.(int)$p['id'])?>"><?php elseif($image):?><img loading="lazy" alt="" src="<?=self::u($basePath,'/playbill/asset?kind=artwork&slug='.rawurlencode($image['public_slug']))?>"><?php else:?><span class="lobby-poster-type"><small><?=self::e($brand['name'])?></small><strong><?=self::e($p['title'])?></strong><small>ON STAGE</small></span><?php endif;?></a><div><span class="lobby-kicker"><?=self::e($p['season']?:'Now showing')?></span><h3><?=self::e($p['title'])?></h3><?php if($p['performance_starts_at']):?><p>From <?=self::e(date('M j, Y',strtotime($p['performance_starts_at'])))?></p><?php endif;?><a href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>">Explore production ↗</a></div></article><?php endforeach;?></div></section><?php endif;?>
         <section class="lobby-section" aria-labelledby="lobby-upcoming"><div class="lobby-heading"><div><p class="stage-eyebrow">COMING SOON</p><h2 id="lobby-upcoming">Upcoming shows</h2></div></div><?php if($upcoming):?><div class="lobby-upcoming-list"><?php foreach($upcoming as $p):?><article><div><span class="lobby-kicker"><?=self::e($p['season']?:'Upcoming')?></span><h3><a href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>"><?=self::e($p['title'])?></a></h3></div><div><?php $open=null;foreach($opportunities as $candidate){if((int)($candidate['production_id']??0)===(int)$p['id']&&($candidate['opportunity_type']??'')==='audition'){$open=$candidate;break;}}?><?php if($open):?><a href="<?=self::u($basePath,'/register?slug='.rawurlencode($open['slug']))?>"><?=$open['is_full']?'Join waitlist':'Audition signup open'?> ↗</a><?php elseif($p['audition_starts_at']&&strtotime($p['audition_starts_at'])>time()):?><span>Auditions expected <?=self::e(date('M j, Y',strtotime($p['audition_starts_at'])))?></span><?php else:?><span>Check back for audition updates</span><?php endif;?></div></article><?php endforeach;?></div><?php else:?><p class="lobby-empty">More shows are on the horizon. Check back for announcements.</p><?php endif;?></section>
         <?php if($opportunities):?><section class="lobby-section" aria-labelledby="lobby-signups"><div class="lobby-heading"><div><p class="stage-eyebrow">GET INVOLVED</p><h2 id="lobby-signups">Open auditions &amp; signups</h2></div><a href="<?=self::u($basePath,'/register')?>">All signups ↗</a></div><div class="stage-open-list"><?php foreach($opportunities as $o):?><article><h3><a href="<?=self::u($basePath,'/register?slug='.rawurlencode($o['slug']))?>"><?=self::e($o['title'])?></a></h3><?php if($o['summary']):?><p><?=self::e($o['summary'])?></p><?php endif;?><a href="<?=self::u($basePath,'/register?slug='.rawurlencode($o['slug']))?>"><?=$o['is_full']?'Join waitlist':'View signup'?> ↗</a></article><?php endforeach;?></div></section><?php endif;?>
         <?php if($past):?><section class="lobby-section" aria-labelledby="lobby-past"><div class="lobby-heading"><div><p class="stage-eyebrow">OUR HISTORY</p><h2 id="lobby-past">Past productions</h2></div><a href="<?=self::u($basePath,'/productions')?>">View all ↗</a></div><div class="lobby-past-grid"><?php foreach(array_slice($past,0,6) as $p):?><a href="<?=self::u($basePath,'/productions/view?id='.(int)$p['id'])?>"><span><?=self::e($p['season']?:'Past production')?></span><strong><?=self::e($p['title'])?></strong><span>↗</span></a><?php endforeach;?></div></section><?php endif;?>
