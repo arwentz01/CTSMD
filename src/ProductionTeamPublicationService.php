@@ -37,7 +37,7 @@ final class ProductionTeamPublicationService
         $rows=json_decode((string)$raw,true,flags:JSON_THROW_ON_ERROR);$visible=[];
         foreach($rows as $row){
             if(!empty($row['requires_student_approval'])){
-                $q=$db->prepare("SELECT id FROM playbill_cast_profiles WHERE playbill_id=? AND user_id=? AND visible=1 AND approval_status='approved'");$q->execute([$playbill,(int)$row['user_id']]);if(!$q->fetchColumn())continue;
+                $q=$db->prepare("SELECT p.id,u.first_name,u.last_name FROM playbill_cast_profiles p JOIN users u ON u.id=p.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE p.playbill_id=? AND p.user_id=? AND p.visible=1 AND p.approval_status='approved'");$q->execute([$playbill,(int)$row['user_id']]);if(!$student=$q->fetch())continue;$row['name']=trim($student['first_name']).' '.mb_strtoupper(mb_substr(trim($student['last_name']),0,1)).'.';
             }
             $credit=['name'=>(string)$row['name'],'participation_role'=>(string)$row['participation_role']];if($withIdentity)$credit['user_id']=(int)($row['user_id']??0);$visible[]=$credit;
         }return $visible;

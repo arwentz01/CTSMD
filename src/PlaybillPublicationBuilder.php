@@ -16,7 +16,7 @@ final class PlaybillPublicationBuilder
         $sponsorTocAdded=false;foreach($sponsors as $sponsor){if($sponsor['tier']==='premium'||$sponsor['placement_format']==='full_page'){$content[]=['type'=>'sponsors','title'=>'Our sponsors','toc'=>!$sponsorTocAdded,'items'=>[$sponsor]];$sponsorTocAdded=true;}}
         $regular=array_values(array_filter($sponsors,static fn(array $s):bool=>$s['tier']!=='premium'&&$s['placement_format']!=='full_page'));
         foreach(array_chunk($regular,4) as $i=>$chunk){$content[]=['type'=>'sponsors','title'=>$sponsorTocAdded||$i?'Our sponsors · continued':'Our sponsors','toc'=>!$sponsorTocAdded,'items'=>$chunk];$sponsorTocAdded=true;}
-        $links=array_values(array_filter([['url'=>$playbill['website_url']??null,'label'=>'Visit CTSMD'],['url'=>$playbill['upcoming_url']??null,'label'=>'Upcoming productions'],['url'=>$playbill['donate_url']??null,'label'=>'Support CTSMD']],static fn(array $link):bool=>!empty($link['url'])));
+        $links=array_values(array_filter([['url'=>$playbill['website_url']??null,'label'=>'Visit our theatre'],['url'=>$playbill['upcoming_url']??null,'label'=>'Upcoming productions'],['url'=>$playbill['donate_url']??null,'label'=>'Support our theatre']],static fn(array $link):bool=>!empty($link['url'])));
         if($links)$content[]=['type'=>'closing','title'=>'Stay connected','toc'=>true,'links'=>$links];
         $toc=[];$pageNumber=3;foreach($content as $page){if(!empty($page['toc']))$toc[]=['title'=>$page['title'],'page'=>$pageNumber];++$pageNumber;}
         $pages[]=['type'=>'contents','title'=>'Contents','toc'=>false,'items'=>$toc];

@@ -114,7 +114,7 @@ $experienceRoutes=[
     ['ProductionFileExperience',['/files','/files/view','/files/download','/admin/files','/admin/files/edit'],'route'],
     ['ResourceExperience',['/resources','/resources/view','/admin/resources','/admin/resources/edit'],'route'],
     ['Playbill2Experience',['/playbill','/playbill/asset','/playbill/qr','/playbill/sign','/admin/playbill/media'],'route'],
-    ['PlaybillExperience',['/playbills','/admin/playbill'],'route'],
+    ['PlaybillExperience',['/playbills','/playbill/consent','/admin/playbill'],'route'],
     ['ProductionExperience',['/production','/schedule','/production/day','/production/edit','/resources','/playbills'],'route'],
     ['CommunicationExperience',['/messages','/messages/new','/messages/thread','/messages/attachment'],'route'],
     ['SafeguardingConversationReviewExperience',['/safeguarding/conversations','/safeguarding/conversations/attachment'],'route'],
