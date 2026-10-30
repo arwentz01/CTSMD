@@ -85,7 +85,7 @@ final class PublicExperience
                 ['Community channels and updates','Share organization and production news in spaces intended for the appropriate audience.'],
                 ['Direct and group messaging','Communicate through access-controlled conversations, with special considerations for students and their guardians.'],
                 ['Attachments and moderation','Add useful files to conversations and updates while giving moderators tools to handle content that needs attention.'],
-                ['Find past updates','Browse and search Community channels to locate information that was posted earlier.']
+                ['Find past updates','Browse and search Community channels to locate information that was posted earlier.'],
                 ['Notifications and preferences','Provide notification controls and supporting delivery workflows so members can follow important activity.']]],
             ['id'=>'media','number'=>'07','title'=>'Video library & production resources','lead'=>'One place for learning materials and show resources, without making every upload public.','example'=>'A performer misses a choreography rehearsal. They can review an approved video in their production library before the next call, without the footage being available to everyone online.','items'=>[
                 ['Rehearsal video library','Organize and view rehearsal video resources in production-aware libraries.'],
