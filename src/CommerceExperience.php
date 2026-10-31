@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/Database.php';
-require_once __DIR__.'/CommerceInventoryService.php';
+require_once __DIR__.'/CommercePaymentService.php';
+require_once __DIR__.'/CommerceReceiptService.php';
 require_once __DIR__.'/AppNavigation.php';
 require_once __DIR__.'/WorkspaceUI.php';
 /** Restricted local sandbox. All commands delegate to permission-enforcing services. */
@@ -65,6 +66,13 @@ final class CommerceExperience
             case 'hold':
                 $key=(string)($_POST['checkout_key']??'');$pending=$_SESSION['commerce_checkouts'][$key]??null;if(!$pending||(int)$pending['performance']!==$id)throw new RuntimeException('Checkout session expired. Reload seat selection.');$seats=(array)($_POST['seats']??[]);if(count(array_unique($seats))!==count($seats))throw new RuntimeException('Duplicate seat selection.');$selection=[];foreach($seats as $seat)$selection[$seat]=(string)($_POST['categories'][$seat]??'');
                 $order=CommerceInventoryService::hold($db,$u,$o,$id,$selection,(string)($_POST['customer_name']??''),(string)($_POST['customer_email']??''),(string)($_POST['customer_phone']??''),$key,$pending['token']);$_SESSION['commerce_orders'][$o.':'.$order['id']]=$pending['token'];return self::url('checkout',['id'=>$order['id']]);
+            case 'payment':case 'refresh_payment':case 'cancel_hold':case 'expire_simulation':
+                $token=(string)($_SESSION['commerce_orders'][$o.':'.$id]??'');
+                if($a==='payment'){CommercePaymentService::start($db,$u,$o,$id,$token,(string)($_POST['scenario']??''));CommercePaymentService::refresh($db,$u,$o,$id,$token);}
+                elseif($a==='refresh_payment')CommercePaymentService::refresh($db,$u,$o,$id,$token);
+                elseif($a==='expire_simulation')CommercePaymentService::expireSimulation($db,$u,$o,$id,$token);
+                else CommercePaymentService::cancelHeld($db,$u,$o,$id,$token);
+                return self::url('checkout',['id'=>$id]);
             default:return self::extensionCommand($a);
         }
     }
@@ -121,7 +129,18 @@ final class CommerceExperience
     }
     private static function totals(array $o):void
     {echo '<dl class="commerce-totals">';foreach(['subtotal'=>'Tickets','discount'=>'Discount','tax'=>'Tax','fee'=>'Order fee','total'=>'Total'] as $key=>$label)echo '<div class="'.($key==='total'?'commerce-total':'').'"><dt>'.$label.'</dt><dd>'.($key==='discount'?'−':'').self::money((int)$o[$key.'_minor'],$o['currency']).'</dd></div>';echo '</dl>';}
-    private static function checkoutActions(array $o):void{echo '<p>Payment simulation is the next milestone. Expired holds are released by the server.</p><a href="'.self::e(self::url('select',['id'=>$o['performance_id']])).'">Back to seat selection</a>';}
+    private static function checkoutActions(array $o):void
+    {
+        $id=(int)$o['id'];
+        if($o['state']==='held'){
+            self::form('payment',['id'=>$id]);echo '<h3>Simulate payment</h3><p>No card details. No financial transaction.</p><label>Test outcome<select name="scenario"><option value="success">Successful payment</option><option value="declined">Declined payment</option><option value="canceled">Canceled payment</option><option value="delayed">Delayed confirmation (15 seconds)</option><option value="timeout">Timeout / uncertain result</option></select></label><button>Run simulated payment</button></form><div class="commerce-actions">';self::form('expire_simulation',['id'=>$id]);echo '<button>Simulate expired checkout</button></form>';self::form('cancel_hold',['id'=>$id]);echo '<button>Cancel checkout & release seats</button></form></div>';
+        }elseif(in_array($o['state'],['payment_pending','exception'],true)){
+            echo '<h3>'.($o['state']==='exception'?'Confirmation is uncertain':'Waiting for simulator confirmation').'</h3><p>Your seats remain protected. Do not begin a replacement purchase while this attempt is unresolved. A timeout requires the Commerce administrator to record explicit simulator evidence in Orders.</p>';self::form('refresh_payment',['id'=>$id]);echo '<button>Check simulator confirmation</button></form>';
+        }elseif($o['state']==='paid'){
+            echo '<h3>Simulated purchase confirmed</h3><p>Your sandbox tickets are ready. Each QR contains only an unpredictable admission token. These tickets have no real-world validity.</p>';$token=(string)($_SESSION['commerce_orders'][self::$org.':'.$id]??'');$p=self::performanceContext((int)$o['performance_id']);foreach(CommerceReceiptService::ownedTickets(self::$db,self::$user,self::$org,$id,$token) as $t)echo '<article class="commerce-ticket"><h3>'.self::e($p['title']).'</h3><p>'.self::e($p['starts_at'].' · '.$p['venue']).'</p><p>'.self::e($t['description'].' · '.$t['category'].' · '.$t['state']).'</p>'.CommerceReceiptService::qr($t['token']).'<details><summary>Manual ticket code</summary><code class="commerce-token">CC1:'.self::e($t['token']).'</code></details></article>';echo CommerceReceiptService::preview(OrganizationBranding::fromEnvironment(),$o,$p);self::form('refresh_payment',['id'=>$id]);echo '<button>Replay duplicate simulator event</button></form>';
+        }else echo '<p>This checkout is '.self::e($o['state']).'. No new payment can start. Select seats again to retry with a new order.</p>';
+        echo '<p><a href="'.self::e(self::url('select',['id'=>$o['performance_id']])).'">Back to seat selection</a></p>';
+    }
 
     private static function extension(string $tab):void
     {
