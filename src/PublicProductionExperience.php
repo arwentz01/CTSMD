@@ -22,9 +22,25 @@ final class PublicProductionExperience
     {
         $db=Database::connect(dirname(__DIR__));$brand=OrganizationBranding::fromEnvironment();
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
-        $sql="SELECT p.id,p.title,p.season,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,EXISTS(SELECT 1 FROM production_artwork a WHERE a.production_id=p.id AND a.role='poster') has_poster,(SELECT external_url FROM production_external_playbills ep WHERE ep.production_id=p.id LIMIT 1) external_playbill_url FROM productions p WHERE p.announcement_published_at IS NOT NULL AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived')";
+        $sql="SELECT p.id,p.title,p.season,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,EXISTS(SELECT 1 FROM production_artwork a WHERE a.production_id=p.id AND a.role='poster') has_poster FROM productions p WHERE p.announcement_published_at IS NOT NULL AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived')";
         if($route==='/productions/view'){$q=$db->prepare($sql.' AND p.id=:id LIMIT 1');$q->execute(['id'=>$id]);$rows=$q->fetchAll();if(!$rows)http_response_code(404);}
         else $rows=$db->query($sql.' ORDER BY COALESCE(p.performance_starts_at,p.audition_starts_at) DESC,p.id DESC LIMIT 100')->fetchAll();
+        // Optional external program links are independently migrated; older installs
+        // remain able to display public productions before migration 100 is applied.
+        try{
+            $ids=array_map('intval',array_column($rows,'id'));
+            if($ids){
+                $ph=implode(',',array_fill(0,count($ids),'?'));
+                $q=$db->prepare("SELECT production_id,external_url FROM production_external_playbills WHERE production_id IN ($ph)");
+                $q->execute($ids);
+                $links=$q->fetchAll(PDO::FETCH_KEY_PAIR);
+                foreach($rows as &$row)$row['external_playbill_url']=$links[(int)$row['id']]??null;
+                unset($row);
+            }
+        }catch(PDOException $exception){
+            // A missing optional table never makes the main public page unavailable.
+            error_log('[Public productions] External Playbill lookup unavailable: '.$exception->getCode());
+        }
         $opportunities=RegistrationService::publicOpportunities($db);
         $e=static fn($v):string=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');
         $u=static fn(string $path):string=>$e(($basePath?:'').$path);
