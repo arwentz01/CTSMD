@@ -7,6 +7,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/ProductionContext.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
+require_once __DIR__.'/CommerceAccess.php';
 
 final class AppNavigation
 {
@@ -23,6 +24,7 @@ final class AppNavigation
         $operations = $staff
             || AccessPolicy::canModerateCommunity($user)
             || AccessPolicy::canManageSafeguarding($user);
+        $commerce = CommerceAccess::gate() && CommerceAccess::navigation(Database::connect(dirname(__DIR__)),$user);
         $approved = Auth::isApprovedMember($user);
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));
@@ -108,6 +110,7 @@ final class AppNavigation
                     <span class="unified-nav-label">Staff</span>
                     <a class="unified-nav-item<?=$active('operations')?>" href="<?=$url('/admin/operations')?>"><i>◎</i><span><b>Operations</b><small>Queues, people & administration</small></span></a>
                 <?php endif; ?>
+                <?php if($commerce&&!$operations):?><a class="unified-nav-item<?=$route==='/admin/commerce'?' active':''?>" href="<?=$url('/admin/commerce')?>"><span><b>Commerce sandbox</b><small>Tickets &amp; box office</small></span></a><?php endif;?>
             </nav>
             <div class="unified-sidebar-foot">
                 <?php if(AccessPolicy::localIdentitySwitchEnabled()):?><a href="<?=$url('/dev/identity')?>">Switch test identity</a><?php endif;?>

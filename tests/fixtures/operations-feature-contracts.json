@@ -5,9 +5,9 @@
         "forms": "52b3553b6c92b3b053e0e5cd2df85ed96becc04eb5317cf0cf1f09a12de83347"
     },
     "ProductionLifecycleExperience": {
-        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
-        "php": "9dea9e46daf6e14b3fe2859da20f9e5158e8912ab64caafd36187a739fce5020",
-        "forms": "8748f89102da9dc0b0bbebb2934c816078a2a0339762a61a2666210c6e04d713"
+        "reason": "Preserve reviewed upstream fd94feb/786e392/4238a55: publication poster explanation, optional external Playbill editor and missing-storage fallback; source unchanged by Commerce. docs/CONNECT_COMMERCE.md",
+        "php": "44321d11eacab99ec099e7296f3897b5775e5a4a8f13149c618f1a2f7078eca3",
+        "forms": "d22b207bd629f2981660a597767a5da3a6b6201d8083108c5e0ef730b87d5ff5"
     },
     "CastingExperience": {
         "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
@@ -45,8 +45,8 @@
         "forms": "77ee0fb4a0cd9d9b0151259ecd54079142ebb58bd4c77be9076b61e86e715d7e"
     },
     "OperationsHubExperience": {
-        "reason": "Preserve upstream bf2abeb: Operations stylesheet revision, production management drawers and lifecycle-based planning notice; no source changes in Adult Performer correction",
-        "php": "8be2184ff2a2cf4eb4a86082808cdcc260800a99a161519a2453a6ee281a9801",
+        "reason": "Reviewed optional local Commerce workspace entry, gated by environment and explicit Commerce authority; no existing tool authorization changes. docs/CONNECT_COMMERCE.md",
+        "php": "37333a3a70e2561516415f0ff1fb6115e5cc3104e58a38aa84108bb340b8c8ae",
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ProductionWorkspaceExperience": {

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__.'/WorkspaceUI.php';
+require_once __DIR__.'/CommerceAccess.php';
 
 require_once __DIR__.'/Database.php';
 require_once __DIR__.'/Auth.php';
@@ -60,6 +61,7 @@ final class OperationsHubExperience
             if(AccessPolicy::canManageAccounts($user)){
                 $items[]=['icon'=>'✉','eyebrow'=>'DELIVERY','label'=>'Email Operations','detail'=>'Review queued mail, delivery outcomes and failures without crowding everyday navigation.','href'=>'/admin/email'];
             }
+            if(CommerceAccess::gate()&&CommerceAccess::navigation(Database::connect(dirname(__DIR__)),$user))$items[]=['icon'=>'','eyebrow'=>'','label'=>'Commerce sandbox','detail'=>'Local-only venue layouts, ticket inventory, simulated checkout and box office. No real payments.','href'=>'/admin/commerce'];
             if(!$items)return ['Operations','STAFF TOOLS','',[]];
             return ['Operations','STAFF & ADMINISTRATION','One place for CTSMD-wide work. Your permissions determine which operational areas appear here.',$items];
         }

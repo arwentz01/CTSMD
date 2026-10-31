@@ -65,6 +65,15 @@ jobs:
           php tests/my_theatre_http.php
           php tests/playbill_studio_mysql.php
           php tests/playbill_studio_http.php
+      - name: Disabled Commerce synthetic integration and real concurrency
+        run: |
+          php tests/commerce_foundation.php
+          php tests/commerce_venues.php
+          php tests/commerce_inventory.php
+          php tests/commerce_concurrency.php
+          php tests/commerce_payments.php
+          php tests/commerce_tickets.php
+          php tests/commerce_http.php
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -27,7 +27,7 @@ final class CommerceStore
     public static function grant(PDO $db,array $user,int $org,int $recipient,string $role,bool $enabled):void
     {
         CommerceAccess::demand($db,$user,$org,'configure');if(!isset(CommerceAccess::ROLES[$role]))throw new RuntimeException('Choose a Commerce role.');
-        $q=$db->prepare("SELECT 1 FROM users u WHERE u.id=? AND u.active=1 AND u.account_status='active' AND NOT EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student')");$q->execute([$recipient]);if(!$q->fetchColumn())throw new RuntimeException('Choose an active adult testing or staff account.');
+        if($enabled){$q=$db->prepare("SELECT 1 FROM users u WHERE u.id=? AND u.active=1 AND u.account_status='active' AND u.date_of_birth IS NOT NULL AND u.date_of_birth<=DATE_SUB(CURDATE(),INTERVAL 18 YEAR) AND NOT EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student')");$q->execute([$recipient]);if(!$q->fetchColumn())throw new RuntimeException('Choose an active adult testing or staff account.');}
         self::tx($db,function()use($db,$org,$user,$recipient,$role,$enabled){$q=$enabled?$db->prepare('INSERT IGNORE INTO commerce_grants(organization_id,user_id,role_code) VALUES(?,?,?)'):$db->prepare('DELETE FROM commerce_grants WHERE organization_id=? AND user_id=? AND role_code=?');$q->execute([$org,$recipient,$role]);self::audit($db,$org,(int)$user['id'],'commerce.grant_changed','user',$recipient,['role'=>$role,'enabled'=>$enabled]);});
     }
 }

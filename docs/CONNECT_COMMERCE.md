@@ -71,3 +71,84 @@ State transitions: `held → payment_pending → paid | failed | canceled | exce
 Fulfillment issues one 256-bit unpredictable QR token per order seat. QR payload is `CC1:<random token>` with no purchaser identity or sequential ID. Receipt capture is escaped, authenticated and `.invalid`-only; it has no SMTP/queue/send path. Production title/artwork stays linked to the existing production; performance/layout/order line snapshots preserve seat identity.
 
 Verification: 32 MySQL payment/receipt assertions covering all outcomes, late success, browser abandonment, duplicate fulfillment/events, owner checks, protected pending/exception inventory, explicit timeout evidence, expired checkout, refunds, safe receipt capture and QR uniqueness. Real browser: a synthetic guest purchase transitioned from held to paid and rendered one QR ticket plus a clearly unsent receipt preview.
+
+## Milestone 6 — box office and final verification
+
+Box Office selects a performance, verifies `CC1:` QR/manual input, supports keyboard-wedge Enter submission, and shows current valid/admitted totals. Manual full-order-reference lookup returns admission details only; door authority cannot read purchaser contacts or financial reports. Online camera scanning uses native `BarcodeDetector` and requests a camera only after Start QR camera. Unsupported/denied cameras retain manual entry. A captured QR fills the field; a deliberate Verify & admit action requests authoritative server validation.
+
+Check-in locks the performance and ticket and conditionally admits only a valid paid ticket once. Wrong-performance, revoked, refunded, unpaid, closed-check-in and closed-production admission requests are rejected. Reversal needs a distinct permission and reason and retains previous admission/actor in the audit history. Revocation retains sold inventory; a separate full refund releases it safely. No offline state is accepted or synchronized.
+
+Orders provides explicit reporting access, server result inspection, full simulated refunds and ticket revocation. Only the Commerce administrator can resolve uncertain simulator evidence. Existing Operations receives one gated workspace entry. Authorized Commerce users who have no existing Operations access receive one sandbox navigation entry; individual tools remain in compact secondary navigation. Missing optional schema hides navigation safely. Commerce access, including local administrator bootstrap, requires an active adult-by-birthdate non-Student account. Grants can still be revoked after a recipient becomes ineligible. Disabling an account or revoking its grant immediately denies subsequent requests.
+
+### Verification evidence
+
+All runs were local; no production account, schema, payment, deployment or delivery worker was used.
+
+| Check | Result |
+| --- | --- |
+| Commerce foundation / venue / inventory suites | 10 / 12 / 18 assertions passed |
+| Separate-process seat race | Exactly one hold and one rejection |
+| Payment / receipt suite | 34 assertions passed |
+| Tickets / authorization suite | 20 assertions passed, including simultaneous two-process scans |
+| Authenticated Commerce HTTP suite | 23 assertions passed, including CSRF, forged totals, GET-paid forgery, malformed prices, ownership and session grant revocation |
+| Fresh schema bootstrap | Entire source schema and migrations, including 101/102, passed on a newly created disposable schema |
+| RC1 acceptance | 173 assertions passed, seven personas and two productions, on the fresh schema |
+| Existing safeguarding | 36 assertions passed |
+| Existing adult / people / My Theatre / Playbill suites | Migration 9; adult MySQL 83; adult concurrency 16; production people 56; My Theatre 30 + HTTP 131; Playbill 20 + HTTP 46 passed |
+| Existing PHP safety workflow checks | All locally executed PHP safety tests passed; source/test PHP lint, front.php lint and all 14 browser-JS syntax commands passed |
+| Responsive browser checks | Designer, selector, checkout and check-in at 1366×900, 820×1180 and 390×844; no document overflow, unnamed enabled form controls or buttons smaller than 24 CSS pixels in these samples |
+| Keyboard interactions | Editor seat selection/position save; map Enter selection; category changes; guest submission; scanner Enter; duplicate rejection; order lookup and reversal verified in a real local browser |
+| Browser warnings/errors | None recorded in the sampled Commerce session |
+
+[Machine-readable automated summary](evidence/connect-commerce-phase1/automated.json) · [responsive measurements](evidence/connect-commerce-phase1/responsive.json).
+
+Rendered text/background contrast samples calculated from browser-computed colors: body 13.43:1, serif heading 12.11:1, sandbox banner 7.87:1, button 10.04:1, navigation link 9.39:1. These meet AA text contrast thresholds for these samples. This is not a blanket WCAG certification: full assistive-technology testing, map target exceptions at small scales, real touch/zoom, and all application-shell states still need device/user verification.
+
+Screenshot evidence (all synthetic):
+
+| Screen | Desktop | Tablet | Mobile |
+| --- | --- | --- | --- |
+| Published designer preview | [Image](evidence/connect-commerce-phase1/designer-desktop.png) | [Image](evidence/connect-commerce-phase1/designer-tablet.png) | [Image](evidence/connect-commerce-phase1/designer-mobile.png) |
+| Seat selector | [Image](evidence/connect-commerce-phase1/selector-desktop.png) | [Image](evidence/connect-commerce-phase1/selector-tablet.png) | [Image](evidence/connect-commerce-phase1/selector-mobile.png) |
+| Confirmed checkout | [Image](evidence/connect-commerce-phase1/checkout-desktop.png) | [Image](evidence/connect-commerce-phase1/checkout-tablet.png) | [Image](evidence/connect-commerce-phase1/checkout-mobile.png) |
+| Box office | [Image](evidence/connect-commerce-phase1/checkin-desktop.png) | [Image](evidence/connect-commerce-phase1/checkin-tablet.png) | [Image](evidence/connect-commerce-phase1/checkin-mobile.png) |
+
+The first broad run encountered two environment issues: the older disposable schema lacked the already-committed external Playbill table, and the forward-migration test could not locate MAMP's MySQL client. Repeating on a freshly bootstrapped schema with `RC1_MYSQL_BIN` explicitly set passed both. No existing populated schema was reset. Two previously stale safety fixtures were updated to reflect reviewed upstream public-poster/external-Playbill changes: production-management contract hashes and complete public-render fixture data/assertions. Those application sources were not modified by Commerce. Upcoming, current and empty public render states remain covered, with publication gates retained.
+
+Remote CI has the seven Commerce commands added to isolated MySQL acceptance; the safety workflow includes Commerce JS/assets. Local results are evidence of execution, not a claim that a particular remote Actions run has completed.
+
+### Run the isolated sandbox
+
+Use a **new, explicitly disposable** `ctsmd_rc1_*` loopback database with the existing RC1 bootstrap recipe. `tests/rc1_bootstrap.php` refuses nonempty databases. Never point it at MAMP's normal application database or production. Configure `DB_USERNAME`, `DB_PASSWORD`, and `RC1_MYSQL_BIN` for your local installation; do not put credentials in Git.
+
+After the isolated schema is ready:
+
+```sh
+APP_ENV=rc1-test DB_HOST=127.0.0.1 DB_PORT=8889 DB_DATABASE=ctsmd_rc1_your_sandbox \
+  php bin/commerce-sandbox-fixture.php --create-synthetic
+```
+
+This CLI-only command creates synthetic personas, a published accessible layout and two open test performances. It prints private synthetic credentials and an organization key; it does not migrate, deploy, send mail or accept payment. Keep its output private. To serve it, pass the same isolated database variables plus the printed key to a loopback-only development server:
+
+```sh
+APP_ENV=rc1-test COMMERCE_SANDBOX_ENABLED=1 COMMERCE_ORGANIZATION_KEY=commerce_PRINTED_KEY \
+  DB_HOST=127.0.0.1 DB_PORT=8889 DB_DATABASE=ctsmd_rc1_your_sandbox \
+  php -S 127.0.0.1:8787 -t . tests/fixtures/commerce-router.php
+```
+
+Use your installed PHP/MySQL paths where needed. Sign in with a printed synthetic account, then open `/admin/commerce`. The environment key must match the printed key exactly. The restricted testing account represents sandbox authorization; enter a separate synthetic guest name and `.invalid` email at checkout. The fixture is intentionally optional and isolated; normal migrations and deployment never create it or turn ticketing on.
+
+To start from scratch within that synthetic owner, use Venues & seating → create venue/space → generate/edit seats → save → publish → Performances → select existing synthetic production and layout → configure/open sales → Overview → choose seats → guest review → simulator → Box Office. Test timeout reconciliation through administrator Orders, and use full-order-reference lookup at the door. Stop the local server after testing and retire disposable accounts using the existing RC1 fixture cleanup conventions; do not run delivery workers.
+
+### Remaining work before public or real-payment activation
+
+1. Real provider onboarding and merchant-account ownership, secret management, provider request idempotency, authenticated/replayed webhook handling, independent scheduled reconciliation and transport-failure recovery. No live adapter exists.
+2. Operator-reviewed deployment/migration preflight, backup/restore and load/deadlock recovery exercises on staging. Per-performance serialization favors correctness; it has not been load-certified for a large on-sale.
+3. Legal/operational tax, fee, refund and accessible-seating policies; jurisdictional calculation adapters, financial reporting/settlement and partial refund/exchange requirements. Current refund simulation is full-order only.
+4. Public guest entry, secure receipt recovery/delivery links, abuse/rate limits, real customer privacy/retention policy, and approved email fulfillment through Connect's existing queue. Current guest flow requires an authorized sandbox operator and never sends mail.
+5. Actual phone camera QR scans, camera-denied testing on supported devices, physical USB/Bluetooth scanners, VoiceOver/TalkBack and other assistive technology. Manual/wedge-style text input was tested; physical hardware and camera delivery were not.
+6. No reliable offline scanning or multi-device offline synchronization. Admission always requires the server.
+7. Full unrelated-organization ownership/isolation across identities, production, artwork/storage, messages and administration. Branding and Commerce owner keys do not create a tenant-isolated deployment.
+8. Merchandise stock/catalog and education enrollment adapters are future work despite independent configuration flags. Adjacent-seat recommendations, dedicated complimentary admission issuance, exchanges and bulk guest sales are deferred; complimentary seat allocation itself is implemented and audited.
+
+None of these remaining activation requirements is hidden behind a successful compile or simulated payment. Public ticket links and existing external ticketing/Playbill behavior remain unchanged.

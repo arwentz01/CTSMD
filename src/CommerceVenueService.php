@@ -17,9 +17,9 @@ final class CommerceVenueService
     {
         if(!isset($doc['sections'],$doc['rows'],$doc['items'])||!is_array($doc['sections'])||!is_array($doc['rows'])||!is_array($doc['items'])||count($doc['items'])>1500||count($doc['sections'])>100||count($doc['rows'])>300)throw new RuntimeException('Layouts support up to 1500 items, 300 rows and 100 sections.');
         $keys=[];$sections=[];$rows=[];$labels=[];
-        foreach($doc['sections'] as &$s){self::key($s['key']??'');self::label($s['name']??'');if(isset($sections[$s['key']]))throw new RuntimeException('Section keys must be unique.');$sections[$s['key']]=true;$s=['key'=>$s['key'],'name'=>$s['name'],'order'=>(int)($s['order']??0)];}unset($s);
-        foreach($doc['rows'] as &$r){self::key($r['key']??'');self::label($r['name']??'');if(isset($rows[$r['key']])||!isset($sections[$r['section']??'']))throw new RuntimeException('Rows need unique keys and a valid section.');$rows[$r['key']]=$r['section'];$r=['key'=>$r['key'],'section'=>$r['section'],'name'=>$r['name'],'order'=>(int)($r['order']??0)];}unset($r);
-        foreach($doc['items'] as &$s){self::key($s['key']??'');self::label($s['label']??'');if(isset($keys[$s['key']]))throw new RuntimeException('Seat/item keys must be unique.');$keys[$s['key']]=true;
+        foreach($doc['sections'] as &$s){if(!is_array($s))throw new RuntimeException('Invalid section document.');self::key($s['key']??'');self::label($s['name']??'');$s['name']=trim($s['name']);if(isset($sections[$s['key']]))throw new RuntimeException('Section keys must be unique.');$sections[$s['key']]=true;$s=['key'=>$s['key'],'name'=>$s['name'],'order'=>(int)($s['order']??0)];}unset($s);
+        foreach($doc['rows'] as &$r){if(!is_array($r))throw new RuntimeException('Invalid row document.');self::key($r['key']??'');self::label($r['name']??'');$r['name']=trim($r['name']);if(isset($rows[$r['key']])||!isset($sections[$r['section']??'']))throw new RuntimeException('Rows need unique keys and a valid section.');$rows[$r['key']]=$r['section'];$r=['key'=>$r['key'],'section'=>$r['section'],'name'=>$r['name'],'order'=>(int)($r['order']??0)];}unset($r);
+        foreach($doc['items'] as &$s){if(!is_array($s))throw new RuntimeException('Invalid seat document.');self::key($s['key']??'');self::label($s['label']??'');$s['label']=trim($s['label']);if(isset($keys[$s['key']]))throw new RuntimeException('Seat/item keys must be unique.');$keys[$s['key']]=true;
             if(!in_array($s['kind']??'',['seat','aisle','space','stage'],true))throw new RuntimeException('Choose seat, aisle, space or stage.');
             foreach(['x','y'] as $axis)if(!is_numeric($s[$axis]??null)||$s[$axis]<0||$s[$axis]>5000)throw new RuntimeException('Positions must be between 0 and 5000.');
             if($s['kind']==='seat'){
@@ -34,8 +34,8 @@ final class CommerceVenueService
         }
         return$doc;
     }
-    private static function key(string $v):void{if(!preg_match('/^[a-zA-Z0-9_-]{1,80}$/',$v))throw new RuntimeException('Keys use 1–80 letters, numbers, underscores or hyphens.');}
-    private static function label(string $v):void{if(trim($v)===''||mb_strlen($v)>100)throw new RuntimeException('Labels must contain 1–100 characters.');}
+    private static function key(mixed $v):void{if(!is_string($v)||!preg_match('/^[a-zA-Z0-9_-]{1,80}$/',$v))throw new RuntimeException('Keys use 1–80 letters, numbers, underscores or hyphens.');}
+    private static function label(mixed $v):void{if(!is_string($v)||trim($v)===''||mb_strlen($v)>100)throw new RuntimeException('Labels must contain 1–100 characters.');}
     public static function save(PDO $db,array $user,int $org,int $id,array $doc,string $expected):void
     {
         CommerceAccess::demand($db,$user,$org,'venues');$doc=self::validate($doc);
