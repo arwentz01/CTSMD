@@ -1,0 +1,42 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/fixtures/commerce.php';
+require_once dirname(__DIR__).'/src/CommerceBoxOfficeService.php';
+require_once dirname(__DIR__).'/src/CommerceReceiptService.php';
+$db=Database::connect(dirname(__DIR__));$f=null;$n=0;
+$ok=static function(bool $v,string $label)use(&$n){if(!$v)throw new RuntimeException($label);++$n;echo "PASS $label\n";};
+$reject=static function(callable $fn,string $label)use($ok){try{$fn();}catch(RuntimeException $e){$ok(true,$label);return;}throw new RuntimeException('Expected rejection: '.$label);};
+try{
+$f=commerceFixture($db);$u=$f['admin'];$org=$f['org'];$p=$f['performance'];$token=str_repeat('b',64);
+$reserve=fn($seats,$key=null)=>CommerceBoxOfficeService::reserve($db,$u,$org,$p,$seats,['standard'=>['Adult'=>count($seats)]],'','',$key??bin2hex(random_bytes(16)),$token);
+$o=$reserve(['a1','a2']);$id=(int)$o['id'];
+$ok($o['customer_name']==='Walk-in guest'&&$o['customer_email']==='walkin@commerce.invalid','Optional identity uses safe synthetic fallback');
+$reject(fn()=>CommerceBoxOfficeService::reserve($db,$f['tester'],$org,$p,['a3'],['standard'=>['Adult'=>1]],'','',bin2hex(random_bytes(16)),$token),'Tester cannot sell');
+$reject(fn()=>commerceHold($db,$f,['a1'=>'Adult']),'Staff hold unavailable to online channel');
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',5000,'','',false),'Explicit confirmation required');
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',1,'','',true),'Underpayment rejected');
+$ok(CommerceStore::row($db,'orders',$org,$id)['state']==='held','Failed tender keeps expiring hold, issues nothing');
+$paid=CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',5000,'','',true);$e=CommerceBoxOfficeService::evidence($db,$org,$id);
+$ok($paid['state']==='paid'&&(int)$e['change_due_minor']===5000-(int)$o['total_minor'],'Cash settlement calculates exact change');
+$ok(count(CommerceReceiptService::ownedTickets($db,$u,$org,$id,$token))===2,'One ticket for each staff-sold seat');
+CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',5000,'','',true);
+$ok(count(CommerceReceiptService::ownedTickets($db,$u,$org,$id,$token))===2,'Identical tender retry never duplicates tickets');
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',6000,'','',true),'Tender evidence immutable on retry');
+$reject(fn()=>commerceHold($db,$f,['a2'=>'Adult']),'Staff sold seats unavailable online');
+$q=$db->prepare('SELECT COUNT(*) FROM commerce_payment_attempts WHERE order_id=?');$q->execute([$id]);$ok((int)$q->fetchColumn()===0,'Cash never creates API or simulated provider attempt');
+$o2=$reserve(['a3']);$id2=(int)$o2['id'];
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id2,$token,'external_terminal',0,'','',true),'Terminal evidence required');
+$ok(CommerceBoxOfficeService::settle($db,$u,$org,$id2,$token,'external_terminal',0,'Synthetic terminal','TEST-123',true)['state']==='paid','Staff-attested terminal tender issues ticket');
+$e=CommerceBoxOfficeService::evidence($db,$org,$id2);$ok($e['terminal_reference']==='TEST-123'&&$e['cash_received_minor']===null,'External evidence stored distinctly from cash');
+$online=commerceHold($db,$f,['a4'=>'Adult']);$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,(int)$online['id'],str_repeat('a',64),'cash',5000,'','',true),'Cannot relabel online checkout as counter tender');
+$o3=$reserve(['a5']);$id3=(int)$o3['id'];$db->prepare('UPDATE commerce_orders SET expires_at=DATE_SUB(NOW(),INTERVAL 1 SECOND) WHERE id=?')->execute([$id3]);
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id3,$token,'cash',5000,'','',true),'Expired staff reservation cannot settle');
+$ok(CommerceStore::row($db,'orders',$org,$id3)['state']==='canceled','Expiry release commits despite rejected tender');
+$o4=$reserve(['a6']);$id4=(int)$o4['id'];CommercePaymentService::start($db,$u,$org,$id4,$token,'delayed');$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id4,$token,'cash',5000,'','',true),'Uncertain provider payment cannot accept second tender');
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$f['tester'],$org,$id,$token,'cash',5000,'','',true),'Tester cannot complete staff sale');
+$reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,str_repeat('c',64),'cash',5000,'','',true),'Ownership token enforced');
+$q=$db->prepare("SELECT COUNT(*) FROM commerce_audit WHERE organization_id=? AND entity_id=? AND action='commerce.staff_tender_confirmed'");$q->execute([$org,$id]);$ok((int)$q->fetchColumn()===1,'Tender audited exactly once');
+CommercePaymentService::refund($db,$u,$org,$id,'Synthetic cash returned to customer');$ok(CommerceStore::row($db,'orders',$org,$id)['state']==='refunded','Existing refund preserves staff tender history');
+$ok(CommerceBoxOfficeService::evidence($db,$org,$id)['method']==='cash','Refund retains original tender evidence');
+echo "PASS $n Box Office checks\n";
+}finally{if($f)retireMyTheatreFixture($db,$f);}
