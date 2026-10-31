@@ -17,3 +17,29 @@
 @media(max-width:600px){.commerce-page .commerce-totals{max-width:none}.commerce-storefront .commerce-page button[type=submit],.commerce-storefront .commerce-page form>button{width:100%}.commerce-storefront .commerce-production-intro .commerce-artwork{width:100px}.commerce-map-toolbar{gap:8px}.commerce-map-toolbar button{flex:1 0 auto}.commerce-ticket-types .commerce-quantity-grid label{flex:1 1 120px}}
 .commerce-table-scroll th,.commerce-table-scroll td:last-child{white-space:nowrap}
 .commerce-storefront .commerce-task-title{font-size:1.65rem;max-width:40ch;line-height:1.25}.commerce-preview-title{font:700 1.65rem Georgia,serif;color:#512230;letter-spacing:-.02em;margin:28px 0 10px}
+
+/* Venue management: prioritize reusable seating plans over setup forms. */
+.commerce-venue-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:24px}
+.commerce-venue-header h2{margin-bottom:8px}
+.commerce-venue-header p{margin:0;color:#67595c}
+.commerce-venue-schedule-link{white-space:nowrap;align-self:center}
+.commerce-venue-group{border:1px solid #e3d9d6;border-radius:12px;background:#fffdfa;padding:22px;margin:0 0 18px}
+.commerce-venue-group>h3{margin:0 0 8px}
+.commerce-venue-muted{color:#716468;font-size:.94rem;margin:4px 0 16px}
+.commerce-venue-layout-group{border-top:1px solid #ece3df;padding-top:14px;margin-top:14px}
+.commerce-venue-layout-group h4{font-size:1rem;margin:0 0 8px}
+.commerce-venue-layout-list{display:grid;gap:6px}
+.commerce-venue-layout{display:flex;align-items:center;gap:16px;padding:12px 14px;border-radius:8px;text-decoration:none;border:1px solid #eadfdc;background:#fff;color:#672738}
+.commerce-venue-layout:hover,.commerce-venue-layout:focus-visible{background:#f8f1ee;border-color:#bd9da4}
+.commerce-venue-layout>span:last-child{margin-left:auto}
+.commerce-venue-layout-status{color:#775725;font-size:.84rem;background:#f6e9d0;border-radius:12px;padding:3px 10px}
+.commerce-venue-layout-status.is-published{color:#236247;background:#e4f3eb}
+.commerce-venue-setting{display:grid;grid-template-columns:minmax(180px,1fr) minmax(240px,2fr);gap:20px;align-items:center;padding:16px 0;border-top:1px solid #eee5e1}
+.commerce-venue-setting p{margin:4px 0 0;color:#706267}
+.commerce-venue-setting form{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.commerce-venue-setting form label{flex:1 1 240px;margin:0}
+.commerce-venue-setting form button{white-space:nowrap}
+.commerce-venue-create{border:1px solid #e3d9d6;border-radius:12px;padding:4px 20px 20px;background:#fffdfa;margin:0 0 24px}
+.commerce-venue-create summary{font-weight:700;color:#652639}
+.commerce-venue-create .commerce-columns{margin-top:12px}
+@media(max-width:740px){.commerce-venue-header{display:block}.commerce-venue-schedule-link{display:inline-block;margin-top:12px}.commerce-venue-group{padding:16px}.commerce-venue-setting{grid-template-columns:1fr;gap:10px}.commerce-venue-setting form{display:block}.commerce-venue-setting form button{margin-top:10px}}
