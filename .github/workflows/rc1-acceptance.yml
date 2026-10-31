@@ -79,6 +79,11 @@ jobs:
           php tests/commerce_concurrency.php
           php tests/commerce_payments.php
           php tests/commerce_complimentary.php
+          php tests/commerce_box_office.php
+          php tests/commerce_admissions.php
+          php tests/commerce_ticket_changes.php
+          php tests/commerce_channel_concurrency.php
+          php tests/commerce_phase2_http.php
           php tests/commerce_tickets.php
           php tests/commerce_http.php
       - uses: actions/upload-artifact@v4

@@ -16,6 +16,7 @@ $reject(fn()=>commerceHold($db,$f,['a1'=>'Adult']),'Staff hold unavailable to on
 $reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',5000,'','',false),'Explicit confirmation required');
 $reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',1,'','',true),'Underpayment rejected');
 $ok(CommerceStore::row($db,'orders',$org,$id)['state']==='held','Failed tender keeps expiring hold, issues nothing');
+$reject(fn()=>CommerceBoxOfficeService::discount($db,$f['tester'],$org,$id,100,'Forged'),'Tester cannot discount');$reject(fn()=>CommerceBoxOfficeService::discount($db,$u,$org,$id,999999,'Too much'),'Discount cannot exceed subtotal');$db->prepare('UPDATE commerce_performances SET tax_basis_points=900 WHERE id=?')->execute([$p]);CommerceBoxOfficeService::discount($db,$u,$org,$id,100,'Synthetic authorized promotion');$o=CommerceStore::row($db,'orders',$org,$id);$ok((int)$o['discount_minor']===100&&(int)$o['tax_minor']===234,'Authorized discount uses captured tax rate despite later performance changes');
 $paid=CommerceBoxOfficeService::settle($db,$u,$org,$id,$token,'cash',5000,'','',true);$e=CommerceBoxOfficeService::evidence($db,$org,$id);
 $ok($paid['state']==='paid'&&(int)$e['change_due_minor']===5000-(int)$o['total_minor'],'Cash settlement calculates exact change');
 $ok(count(CommerceReceiptService::ownedTickets($db,$u,$org,$id,$token))===2,'One ticket for each staff-sold seat');
@@ -36,7 +37,7 @@ $o4=$reserve(['a6']);$id4=(int)$o4['id'];CommercePaymentService::start($db,$u,$o
 $reject(fn()=>CommerceBoxOfficeService::settle($db,$f['tester'],$org,$id,$token,'cash',5000,'','',true),'Tester cannot complete staff sale');
 $reject(fn()=>CommerceBoxOfficeService::settle($db,$u,$org,$id,str_repeat('c',64),'cash',5000,'','',true),'Ownership token enforced');
 $q=$db->prepare("SELECT COUNT(*) FROM commerce_audit WHERE organization_id=? AND entity_id=? AND action='commerce.staff_tender_confirmed'");$q->execute([$org,$id]);$ok((int)$q->fetchColumn()===1,'Tender audited exactly once');
-CommercePaymentService::refund($db,$u,$org,$id,'Synthetic cash returned to customer');$ok(CommerceStore::row($db,'orders',$org,$id)['state']==='refunded','Existing refund preserves staff tender history');
+CommercePaymentService::refund($db,$u,$org,$id,'Synthetic cash returned to customer',true);$ok(CommerceStore::row($db,'orders',$org,$id)['state']==='refunded','Existing refund preserves staff tender history');
 $ok(CommerceBoxOfficeService::evidence($db,$org,$id)['method']==='cash','Refund retains original tender evidence');
 echo "PASS $n Box Office checks\n";
 }finally{if($f)retireMyTheatreFixture($db,$f);}

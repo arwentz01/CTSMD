@@ -6,9 +6,9 @@ require_once __DIR__.'/OrganizationBranding.php';
 final class CommerceAccess
 {
     public const ROLES=[
-        'administrator'=>['configure','venues','inventory','sell','checkin','reverse','refund','report','test','complimentary'],
-        'box_office'=>['venues','inventory','sell','checkin','reverse','refund','report','test','complimentary'],
-        'seller'=>['sell','test'], 'door'=>['checkin'], 'reporter'=>['report'], 'tester'=>['test'],
+        'administrator'=>['configure','venues','inventory','sell','checkin','reverse','refund','report','test','complimentary','discount'],
+        'box_office'=>['venues','inventory','sell','checkin','reverse','refund','report','test','complimentary','discount'],
+        'seller'=>['sell','test'], 'door'=>['checkin'], 'reporter'=>['report'], 'tester'=>['test'], 'storefront_tester'=>['test'],
     ];
     public static function local():bool
     {
@@ -29,14 +29,15 @@ final class CommerceAccess
     }
     public static function navigation(PDO $db,array $user):bool
     {
-        if(!self::local())return self::hostedAdministrator($db,$user);
+        if(!self::local()&&self::hostedAdministrator($db,$user))return true;
         if(!self::gate())return false;
-        try{$owner=self::primary($db,$user);if(!$owner)return self::canBootstrap($db,$user);foreach(self::ROLES['administrator'] as $p)if(self::can($db,$user,(int)$owner['id'],$p))return true;}catch(PDOException $e){return false;}return false;
+        try{$owner=self::primary($db,$user);if(!$owner)return self::canBootstrap($db,$user);foreach(self::ROLES['administrator'] as $p){if(!self::local()&&$p==='test')continue;if(self::can($db,$user,(int)$owner['id'],$p))return true;}}catch(PDOException $e){return false;}return false;
     }
     public static function schemaReady(PDO $db):bool
     {
-        $tables=['commerce_organizations','commerce_grants','commerce_venues','commerce_spaces','commerce_layouts','commerce_performances','commerce_orders','commerce_inventory','commerce_order_lines','commerce_payment_attempts','commerce_payment_events','commerce_tickets','commerce_audit','commerce_simulated_results'];
+        $tables=['commerce_organizations','commerce_grants','commerce_venues','commerce_spaces','commerce_layouts','commerce_performances','commerce_orders','commerce_inventory','commerce_order_lines','commerce_payment_attempts','commerce_payment_events','commerce_tickets','commerce_audit','commerce_simulated_results','commerce_box_office_sales','commerce_storefront_performances','commerce_order_links'];
         $q=$db->prepare('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('.implode(',',array_fill(0,count($tables),'?')).')');$q->execute($tables);if((int)$q->fetchColumn()!==count($tables))return false;
+        $columns=$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND ((TABLE_NAME='commerce_performances' AND COLUMN_NAME='seating_mode') OR (TABLE_NAME='commerce_orders' AND COLUMN_NAME='tax_basis_points_snapshot'))");if((int)$columns->fetchColumn()!==2)return false;
         $names=['commerce_layout_immutable_update','commerce_layout_immutable_delete','commerce_performance_layout_immutable'];$q=$db->prepare('SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE() AND TRIGGER_NAME IN (?,?,?)');$q->execute($names);return(int)$q->fetchColumn()===count($names);
     }
     public static function primaryKey():string{return (string)(getenv('COMMERCE_ORGANIZATION_KEY')?:'primary');}
@@ -47,12 +48,12 @@ final class CommerceAccess
     public static function can(PDO $db,array $user,int $org,string $permission):bool
     {
         if(!self::gate()||empty($user['id'])||!in_array($permission,self::ROLES['administrator'],true))return false;
-        if(self::local()?!self::activeAdult($db,$user):!self::hostedAdministrator($db,$user))return false;
+        if(self::local()?!self::activeAdult($db,$user):(!self::hostedAdministrator($db,$user)&&!self::activeAdult($db,$user)))return false;
         $q=$db->prepare('SELECT organization_key FROM commerce_organizations WHERE id=?');$q->execute([$org]);$key=$q->fetchColumn();if(!$key)return false;
         // Existing app administrators bootstrap only this installation's configured owner.
         if($key===self::primaryKey()&&Auth::hasRole($user,'administrator'))return true;
         $q=$db->prepare('SELECT role_code FROM commerce_grants WHERE organization_id=? AND user_id=?');$q->execute([$org,(int)$user['id']]);
-        foreach($q->fetchAll(PDO::FETCH_COLUMN) as $role)if(in_array($permission,self::ROLES[$role]??[],true))return true;
+        foreach($q->fetchAll(PDO::FETCH_COLUMN) as $role){if(!self::local()&&$role==='tester')continue;if(in_array($permission,self::ROLES[$role]??[],true))return true;}
         return false;
     }
     public static function demand(PDO $db,array $user,int $org,string $permission):void
