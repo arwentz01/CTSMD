@@ -48,7 +48,7 @@ The global Apache policy denied cameras on every route, so supported browsers wo
 
 - Actual ctsmd.me file/schema state and administrator entry are not verified by these local tests. The user deploys by FTP; SQL imports are a separate reviewed hosting operation. No production migration was run.
 - Physical iOS/Android camera behavior, camera-denied behavior on actual devices, hardware scanners and screen-reader usability require direct testing. A hosting-level policy may also override the application header.
-- Adjacent-seat recommendation is deferred as the brief allows; selection and locking take priority.
+- Basic adjacent-seat recommendation is implemented as a non-reserving geometric suggestion. Actual venue plans and sightlines still require operator verification.
 - Complimentary allocation and issuance are implemented. Partial refunds and exchanges remain outside the current sandbox scope.
 - Merchandise and paid education have independent configuration/data boundaries, not completed selling/enrollment workflows. Reserved-seat ticketing is the implemented Phase 1 priority.
 - Real payments, public guest entry, production email fulfillment, financial/tax policy, settlement/recovery under load and full multi-organization isolation remain outside sandbox acceptance.
@@ -59,3 +59,7 @@ This is evidence of a working simulated core and explicit remaining limits, not 
 ## Subsequent completion: complimentary admissions
 
 Dedicated complimentary issuance is now implemented, with 28 service/concurrency checks and 37 HTTP/security checks. It uses the same inventory lock and ticket fulfillment as payment settlement, requires a distinct staff capability and reason, and creates no provider attempt. Cancellation/check-in retain the existing safeguards. This closes the complimentary-issuance gap identified above; [implementation details and screenshots](CONNECT_COMMERCE.md#complimentary-admission-issuance).
+
+## Subsequent completion: neighboring-seat suggestions
+
+The optional suggestion helper is implemented with 20 domain checks; the HTTP/security suite now has 42 assertions. Suggestions respect inventory, row/zone boundaries, aisles, large gaps and accessible positions, and do not reserve seats. Atomic checkout remains authoritative. Closed/archived productions now show read-only seat controls. [Implementation details and latest screenshots](CONNECT_COMMERCE.md#neighboring-seat-suggestions).

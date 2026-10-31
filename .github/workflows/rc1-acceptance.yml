@@ -75,6 +75,7 @@ jobs:
           php tests/commerce_landmarks.php
           php tests/commerce_inventory.php
           php tests/commerce_quantities.php
+          php tests/commerce_recommendations.php
           php tests/commerce_concurrency.php
           php tests/commerce_payments.php
           php tests/commerce_complimentary.php
