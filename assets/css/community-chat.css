@@ -171,3 +171,27 @@ body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .
 body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .comm-heart-icon{display:block!important;width:19px!important;height:19px!important;flex:none!important}
 body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .comm-heart-count{display:inline-block!important;line-height:1!important;font-size:12px!important}
 @media(max-width:600px){body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .community-heart-form button{min-width:34px!important;padding:4px!important}}
+
+
+/* Web + native: keep the per-user heart on the author row, never in its own grid row. */
+.community-pane-feed .comm-post>header{grid-template-columns:34px minmax(0,1fr) auto auto;align-items:center}
+.community-pane-feed .comm-post>header>.community-heart-form{
+  grid-column:4;grid-row:1;display:flex;align-items:center;justify-self:end;
+  margin:0;padding:0;min-width:0;width:auto;align-self:center;
+}
+.community-pane-feed .comm-post>header>.comm-post-actions{grid-column:3;grid-row:1}
+.community-pane-feed .comm-post>header>.community-heart-form button{
+  appearance:none;-webkit-appearance:none;display:inline-flex;gap:4px;align-items:center;
+  justify-content:center;min-width:35px;min-height:32px;padding:5px 7px;margin:0;
+  border:0;border-radius:999px;background:transparent;box-shadow:none;
+  color:#6f6470;font:600 12px/1 system-ui,sans-serif;cursor:pointer;
+}
+.community-pane-feed .comm-post>header>.community-heart-form button:hover{background:#f8e9ec;color:#8b233b}
+.community-pane-feed .comm-post>header>.community-heart-form.is-hearted button{color:#a61942}
+.community-pane-feed .comm-post>header>.community-heart-form button:focus-visible{outline:2px solid #8b233b;outline-offset:2px}
+.community-pane-feed .comm-post>header>.community-heart-form .comm-heart-icon{display:block;flex:none;width:18px;height:18px}
+.community-pane-feed .comm-post>header>.community-heart-form .comm-heart-count{display:inline;line-height:1;font-size:12px}
+@media(max-width:600px){
+ .community-pane-feed .comm-post>header{grid-template-columns:30px minmax(0,1fr) auto auto;gap:6px}
+ .community-pane-feed .comm-post>header>.community-heart-form button{padding:4px;min-width:30px}
+}
