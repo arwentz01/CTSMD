@@ -29,11 +29,15 @@ final class CommerceStorefrontService
     }
     public static function link(PDO $db,array $u,int $org,int $order,string $ownership):string
     {
-        $o=CommerceInventoryService::own($db,$u,$org,$order,$ownership);if($o['state']!=='paid')throw new RuntimeException('Only confirmed orders have retrieval links.');$token=bin2hex(random_bytes(32));$db->prepare('INSERT INTO commerce_order_links(organization_id,order_id,token_hash,expires_at,created_by_user_id) VALUES(?,?,?,DATE_ADD(NOW(),INTERVAL 24 HOUR),?)')->execute([$org,$order,hash('sha256',$token),$u['id']]);CommerceStore::audit($db,$org,(int)$u['id'],'commerce.order_link_created','order',$order,['expires_in_hours'=>24]);return $token;
+        CommerceInventoryService::own($db,$u,$org,$order,$ownership);return CommerceStore::tx($db,fn()=>self::issueLinkLocked($db,$org,$order,(int)$u['id']));
+    }
+    public static function issueLinkLocked(PDO $db,int $org,int $order,int $actor):string
+    {
+        if(!$db->inTransaction())throw new LogicException('Retrieval link requires a transaction.');$o=CommerceStore::row($db,'orders',$org,$order,true);if($o['state']!=='paid')throw new RuntimeException('Only confirmed orders have retrieval links.');$token=bin2hex(random_bytes(32));$db->prepare('INSERT INTO commerce_order_links(organization_id,order_id,token_hash,expires_at,expires_at_utc,created_by_user_id) VALUES(?,?,?,DATE_ADD(NOW(),INTERVAL 24 HOUR),DATE_ADD(UTC_TIMESTAMP(),INTERVAL 24 HOUR),?)')->execute([$org,$order,hash('sha256',$token),$actor]);CommerceStore::audit($db,$org,$actor,'commerce.order_link_created','order',$order,['expires_in_hours'=>24]);return$token;
     }
     public static function retrieve(PDO $db,array $u,int $org,string $token):array
     {
         CommerceAccess::demand($db,$u,$org,'test');if(!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('This order link is unavailable or expired.');
-        $q=$db->prepare('SELECT o.* FROM commerce_order_links l JOIN commerce_orders o ON o.id=l.order_id AND o.organization_id=l.organization_id WHERE l.organization_id=? AND l.token_hash=? AND l.expires_at>NOW() AND l.revoked_at IS NULL');$q->execute([$org,hash('sha256',$token)]);return $q->fetch()?:throw new RuntimeException('This order link is unavailable or expired.');
+        $q=$db->prepare('SELECT o.* FROM commerce_order_links l JOIN commerce_orders o ON o.id=l.order_id AND o.organization_id=l.organization_id WHERE l.organization_id=? AND l.token_hash=? AND ((l.expires_at_utc IS NOT NULL AND l.expires_at_utc>UTC_TIMESTAMP()) OR (l.expires_at_utc IS NULL AND l.expires_at>NOW())) AND l.revoked_at IS NULL');$q->execute([$org,hash('sha256',$token)]);return $q->fetch()?:throw new RuntimeException('This order link is unavailable or expired.');
     }
 }

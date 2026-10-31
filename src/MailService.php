@@ -10,7 +10,7 @@ final class MailService
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('A valid recipient email is required.');
         if ($subject === '' || mb_strlen($subject) > 255) throw new RuntimeException('Email subject is invalid.');
         if ($textBody === '') throw new RuntimeException('Email body is required.');
-        $allowed = ['account_security','schedule','forms','volunteer','community','digest','system'];
+        $allowed = ['account_security','schedule','forms','volunteer','community','digest','system','commerce'];
         if (!in_array($category, $allowed, true)) $category = 'system';
         if ($userId && !self::preferenceAllows($db, $userId, $category)) return 0;
         $stmt = $db->prepare("INSERT INTO email_queue (user_id,recipient_email,recipient_name,category,subject,text_body,html_body,status,available_at,dedupe_key) VALUES (:user,:email,:name,:category,:subject,:text,:html,'queued',:available,:dedupe)");
@@ -48,11 +48,11 @@ final class MailService
         if($minQueueId!==null&&$minQueueId<1)throw new InvalidArgumentException('Minimum queue ID must be a positive integer.');
         if($minQueueId!==null&&$queueId!==null&&$queueId<$minQueueId)throw new InvalidArgumentException('Requested queue ID is below the protected cutoff.');
         if($queueId===null){
-            $recoverSql="UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)";
+            $recoverSql="UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE category<>'commerce' AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)";
             if($minQueueId!==null)$recoverSql.=' AND id>='.(int)$minQueueId;
             $db->exec($recoverSql);
         }else{
-            $recover=$db->prepare("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE id=:id AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+            $recover=$db->prepare("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE id=:id AND category<>'commerce' AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
             $recover->execute(['id'=>$queueId]);
             $limit=1;
         }
@@ -60,11 +60,11 @@ final class MailService
             $db->beginTransaction();
             try{
                 if($queueId===null){
-                    $selectSql="SELECT * FROM email_queue WHERE status='queued' AND available_at<=NOW()";
+                    $selectSql="SELECT * FROM email_queue WHERE category<>'commerce' AND status='queued' AND available_at<=NOW()";
                     if($minQueueId!==null)$selectSql.=' AND id>='.(int)$minQueueId;
                     $row=$db->query($selectSql.' ORDER BY id ASC LIMIT 1 FOR UPDATE')->fetch();
                 }else{
-                    $select=$db->prepare("SELECT * FROM email_queue WHERE id=:id AND status='queued' AND available_at<=NOW() LIMIT 1 FOR UPDATE");
+                    $select=$db->prepare("SELECT * FROM email_queue WHERE id=:id AND category<>'commerce' AND status='queued' AND available_at<=NOW() LIMIT 1 FOR UPDATE");
                     $select->execute(['id'=>$queueId]);
                     $row=$select->fetch();
                 }
@@ -133,6 +133,14 @@ final class MailService
         return ['processed'=>$processed,'sent'=>$sent,'failed'=>$failed,'suppressed'=>$suppressed];
     }
 
+    /** Existing approved SMTP transport, explicitly gated for Commerce test recipients. */
+    public static function deliverCommerce(array $row):void
+    {
+        if(getenv('COMMERCE_MAIL_ENABLED')!=='1'||getenv('COMMERCE_MAIL_APPROVED')!=='1'||getenv('COMMERCE_MAIL_DRIVER')!=='smtp')throw new RuntimeException('Commerce SMTP is disabled.');
+        $allowed=array_filter(array_map('strtolower',array_map('trim',explode(',',(string)getenv('COMMERCE_MAIL_TEST_RECIPIENTS')))));$email=strtolower(trim((string)$row['recipient_email']));if(!filter_var($email,FILTER_VALIDATE_EMAIL)||!in_array($email,$allowed,true))throw new RuntimeException('Recipient is not an approved Commerce test destination.');
+        if(!in_array(strtolower(self::env('MAIL_ENCRYPTION','tls')),['ssl','tls'],true))throw new RuntimeException('Encrypted SMTP is required.');foreach([$row['recipient_name']??'',$row['subject']??'',self::env('MAIL_FROM_NAME',''),self::env('MAIL_FROM_ADDRESS','')] as $header)if(preg_match('/[\r\n]/',(string)$header))throw new RuntimeException('Invalid email header.');if(!filter_var(self::env('MAIL_FROM_ADDRESS',''),FILTER_VALIDATE_EMAIL))throw new RuntimeException('Configure an approved From address.');self::deliverSmtp($row);
+    }
+
     private static function deliver(string $projectRoot,array $row):void
     {
         $driver=self::driver();
@@ -161,19 +169,19 @@ final class MailService
         $host=self::env('MAIL_HOST','');$port=(int)self::env('MAIL_PORT','587');$encryption=strtolower(self::env('MAIL_ENCRYPTION','tls'));
         $user=self::env('MAIL_USERNAME','');$pass=self::env('MAIL_PASSWORD','');$from=self::env('MAIL_FROM_ADDRESS','');$fromName=self::env('MAIL_FROM_NAME','CTSMD Connect');
         if($host===''||$from==='')throw new RuntimeException('SMTP configuration is incomplete.');
-        $target=($encryption==='ssl'?'ssl://':'').$host.':'.$port;$socket=@stream_socket_client($target,$errno,$errstr,20,STREAM_CLIENT_CONNECT);
+        $target=($encryption==='ssl'?'ssl://':'').$host.':'.$port;$context=stream_context_create(['ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,'peer_name'=>$host]]);$socket=@stream_socket_client($target,$errno,$errstr,20,STREAM_CLIENT_CONNECT,$context);
         if(!$socket)throw new RuntimeException('SMTP connection failed: '.$errstr);stream_set_timeout($socket,20);
         $read=static function($s):string{$out='';while(($line=fgets($s,515))!==false){$out.=$line;if(strlen($line)<4||$line[3]===' ')break;}return $out;};
-        $cmd=static function($s,$read,string $command,array $ok):void{fwrite($s,$command."\r\n");$response=$read($s);$code=(int)substr($response,0,3);if(!in_array($code,$ok,true))throw new RuntimeException('SMTP error '.$code.': '.trim($response));};
+        $cmd=static function($s,$read,string $command,array $ok):void{fwrite($s,$command."\r\n");$response=$read($s);$code=(int)substr($response,0,3);if(!in_array($code,$ok,true))throw new RuntimeException('SMTP delivery rejected.', $code);};
         $greeting=$read($socket);if((int)substr($greeting,0,3)!==220)throw new RuntimeException('SMTP greeting failed.');
         $cmd($socket,$read,'EHLO '.($_SERVER['SERVER_NAME']??'localhost'),[250]);
         if($encryption==='tls'){$cmd($socket,$read,'STARTTLS',[220]);if(!stream_socket_enable_crypto($socket,true,STREAM_CRYPTO_METHOD_TLS_CLIENT))throw new RuntimeException('SMTP TLS negotiation failed.');$cmd($socket,$read,'EHLO '.($_SERVER['SERVER_NAME']??'localhost'),[250]);}
         if($user!==''){$cmd($socket,$read,'AUTH LOGIN',[334]);$cmd($socket,$read,base64_encode($user),[334]);$cmd($socket,$read,base64_encode($pass),[235]);}
         $cmd($socket,$read,'MAIL FROM:<'.$from.'>',[250]);$cmd($socket,$read,'RCPT TO:<'.$row['recipient_email'].'>',[250,251]);$cmd($socket,$read,'DATA',[354]);
         $boundary='=_ctsmd_'.bin2hex(random_bytes(8));$toName=trim((string)$row['recipient_name']);$to=($toName!==''?$toName.' ':'').'<'.$row['recipient_email'].'>';
-        $headers=['From: '.$fromName.' <'.$from.'>','To: '.$to,'Subject: '.$row['subject'],'MIME-Version: 1.0'];
+        $headers=['From: '.mb_encode_mimeheader($fromName,'UTF-8','B').' <'.$from.'>','To: '.($toName!==''?mb_encode_mimeheader($toName,'UTF-8','B').' ':'').'<'.$row['recipient_email'].'>','Subject: '.mb_encode_mimeheader($row['subject'],'UTF-8','B'),'MIME-Version: 1.0'];if(isset($row['commerce_reference'])&&preg_match('/^[a-f0-9]{32}$/',$row['commerce_reference'])){$headers[]='Message-ID: <commerce-'.$row['commerce_reference'].'@'.substr(strrchr($from,'@'),1).'>';$headers[]='X-Commerce-Delivery: '.$row['commerce_reference'];}
         if(!empty($row['html_body'])){$headers[]='Content-Type: multipart/alternative; boundary="'.$boundary.'"';$body="--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n{$row['text_body']}\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{$row['html_body']}\r\n--$boundary--";}else{$headers[]='Content-Type: text/plain; charset=UTF-8';$body=(string)$row['text_body'];}
-        $data=implode("\r\n",$headers)."\r\n\r\n".$body;$data=preg_replace('/(?m)^\./','..',$data)."\r\n.";
+        $data=implode("\r\n",$headers)."\r\n\r\n".$body;$data=str_replace("\n","\r\n",str_replace(["\r\n","\r"],"\n",$data));$data=preg_replace('/(?m)^\./','..',$data)."\r\n.";
         $cmd($socket,$read,$data,[250]);@fwrite($socket,"QUIT\r\n");fclose($socket);
     }
 

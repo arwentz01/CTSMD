@@ -61,7 +61,7 @@ final class CommerceBoxOfficeService
             CommerceFulfillmentService::issueLocked($db,$org,$o);
             $db->prepare("UPDATE commerce_orders SET state='paid' WHERE organization_id=? AND id=? AND state='held'")->execute([$org,$order]);
             $db->prepare('UPDATE commerce_box_office_sales SET method=?,cash_received_minor=?,change_due_minor=?,terminal_provider=?,terminal_reference=?,evidence_hash=?,confirmed_at=NOW() WHERE organization_id=? AND order_id=?')->execute([$method,$method==='cash'?$cash:null,$method==='cash'?$change:null,$provider?:null,$reference?:null,$hash,$org,$order]);
-            CommerceStore::audit($db,$org,(int)$u['id'],'commerce.staff_tender_confirmed','order',$order,['method'=>$method,'verification'=>'staff_attested_not_api_verified','total_minor'=>(int)$o['total_minor'],'cash_received_minor'=>$method==='cash'?$cash:null,'change_due_minor'=>$change,'provider'=>$provider,'reference'=>$reference]);
+            require_once __DIR__.'/CommerceDeliveryService.php';CommerceDeliveryService::enqueueLocked($db,$org,$order,(int)$u['id']);CommerceStore::audit($db,$org,(int)$u['id'],'commerce.staff_tender_confirmed','order',$order,['method'=>$method,'verification'=>'staff_attested_not_api_verified','total_minor'=>(int)$o['total_minor'],'cash_received_minor'=>$method==='cash'?$cash:null,'change_due_minor'=>$change,'provider'=>$provider,'reference'=>$reference]);
             return CommerceStore::row($db,'orders',$org,$order);
         });
     }

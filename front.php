@@ -32,6 +32,7 @@ foreach ($privateIndexRoutes as $privateRoute) {
     }
 }
 require_once __DIR__ . '/src/Auth.php';Auth::startSession();
+if($route==='/commerce/webhooks/mail'){require_once __DIR__.'/src/CommerceMailEndpoint.php';CommerceMailEndpoint::render();}
 if($route==='/commerce/webhooks/stripe'){require_once __DIR__.'/src/CommerceStripeEndpoint.php';CommerceStripeEndpoint::render();}
 require_once __DIR__ . '/src/MobileApi.php';if(MobileApi::handles($route))MobileApi::render($route);
 if ($route === '/dev/identity') {
