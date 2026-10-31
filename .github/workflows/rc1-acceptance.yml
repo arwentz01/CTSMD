@@ -78,6 +78,9 @@ jobs:
           php tests/commerce_recommendations.php
           php tests/commerce_concurrency.php
           php tests/commerce_payments.php
+          php tests/commerce_stripe.php
+          php tests/commerce_stripe_http.php
+          php tests/commerce_stripe_concurrency.php
           php tests/commerce_complimentary.php
           php tests/commerce_box_office.php
           php tests/commerce_admissions.php
