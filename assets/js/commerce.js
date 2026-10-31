@@ -32,3 +32,25 @@
  root.querySelector('[data-fit]').onclick=()=>{const xs=doc.items.map(i=>i.x),ys=doc.items.map(i=>i.y);view=[Math.min(0,...xs)-20,Math.min(0,...ys)-20,Math.max(400,...xs)+140,Math.max(250,...ys)+100];draw();};
  root.closest('form').addEventListener('submit',sync);structure();
 })();
+(() => {
+ const root=document.querySelector('[data-seat-selector]');if(!root)return;
+ const payload=JSON.parse(root.dataset.payload),svg=root.querySelector('[data-select-map]'),checks=[...root.querySelectorAll('[data-seat-check]')],ns='http://www.w3.org/2000/svg';let view=[0,0,800,420];
+ const make=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text)e.textContent=text;return e;};
+ const money=n=>`${payload.currency} ${(n/100).toFixed(2)}`;
+ const seats=payload.items.map(i=>({...i,seat:JSON.parse(i.seat_json)})),byKey=Object.fromEntries(seats.map(s=>[s.seat_key,s]));
+ function update(){
+  svg.replaceChildren();svg.setAttribute('viewBox',view.join(' '));
+  payload.document.items.filter(s=>s.kind!=='seat').forEach(s=>{const g=make('g',{transform:`translate(${s.x},${s.y})`});g.append(make('rect',{width:110,height:35,rx:5,fill:'#e2d9d6'}),make('text',{x:55,y:23,'text-anchor':'middle'},s.label));svg.append(g);});
+  checks.forEach(c=>{const i=byKey[c.value],s=i.seat,g=make('g',{transform:`translate(${s.x},${s.y})`,role:'button',tabindex:c.disabled?'-1':'0','data-choice':c.value,'aria-pressed':String(c.checked),'aria-disabled':String(c.disabled),'aria-label':`${s.section_name}, row ${s.row_name}, seat ${s.label}, ${c.checked?'selected':i.state}${s.wheelchair?', wheelchair position':''}${s.companion?', companion seat':''}${s.description?', '+s.description:''}`});const symbol=c.checked?'✓':i.state==='sold'?'S':i.state==='held'?'H':c.disabled?'X':s.label;g.append(make('rect',{width:40,height:40,rx:7,fill:'#f1e3cd',stroke:'#8c787b'}),make('text',{x:20,y:25,'text-anchor':'middle'},symbol));svg.append(g);});
+  const selected=checks.filter(c=>c.checked);let subtotal=0;selected.forEach(c=>{const row=c.closest('[data-seat-row]'),category=row.querySelector('[data-seat-category]').value;subtotal+=payload.prices[byKey[c.value].seat.zone][category];});const discount=Math.min(payload.discount,subtotal),tax=Math.floor(((subtotal-discount)*payload.tax+5000)/10000),total=subtotal-discount+tax+payload.fee;
+  root.querySelector('[data-selection-count]').textContent=`${selected.length} seat${selected.length===1?'':'s'} selected`;
+  root.querySelector('[data-selection-total]').textContent=selected.length?`Tickets ${money(subtotal)} − discount ${money(discount)} + tax ${money(tax)} + fee ${money(payload.fee)} = ${money(total)}`:'Choose seats to see your total.';
+ }
+ function toggle(key){const c=checks.find(c=>c.value===key);if(!c||c.disabled)return;if(!c.checked&&checks.filter(a=>a.checked).length>=12){root.querySelector('[data-selection-message]').textContent='Choose up to 12 seats per order.';return;}c.checked=!c.checked;update();}
+ svg.addEventListener('click',e=>{const g=e.target.closest('[data-choice]');if(g)toggle(g.dataset.choice);});svg.addEventListener('keydown',e=>{const g=e.target.closest('[data-choice]');if(g&&['Enter',' '].includes(e.key)){e.preventDefault();const key=g.dataset.choice;toggle(key);svg.querySelector(`[data-choice="${key}"]`)?.focus();}});
+ checks.forEach(c=>c.addEventListener('change',()=>{if(checks.filter(a=>a.checked).length>12){c.checked=false;root.querySelector('[data-selection-message]').textContent='Choose up to 12 seats per order.';}update();}));root.querySelectorAll('[data-seat-category]').forEach(s=>s.addEventListener('change',update));
+ root.querySelector('[data-access-filter]').addEventListener('change',e=>root.querySelectorAll('[data-seat-row]').forEach(row=>row.hidden=e.target.checked&&row.dataset.accessible!=='1'));
+ root.querySelectorAll('[data-select-zoom]').forEach(b=>b.onclick=()=>{const f=b.dataset.selectZoom==='in'?.8:1.25;view[2]*=f;view[3]*=f;update();});root.querySelectorAll('[data-select-pan]').forEach(b=>b.onclick=()=>{const dir=b.dataset.selectPan;view[0]+=(dir==='left'?-1:dir==='right'?1:0)*view[2]/4;view[1]+=(dir==='up'?-1:dir==='down'?1:0)*view[3]/4;update();});
+ function fit(){const xs=payload.document.items.map(i=>i.x),ys=payload.document.items.map(i=>i.y);view=[Math.min(0,...xs)-20,Math.min(0,...ys)-20,Math.max(400,...xs)+140,Math.max(250,...ys)+100];update();}root.querySelector('[data-select-fit]').onclick=fit;
+ root.closest('form').addEventListener('submit',e=>{if(!checks.some(c=>c.checked)){e.preventDefault();root.querySelector('[data-selection-message]').textContent='Select at least one seat before continuing.';checks.find(c=>!c.disabled)?.focus();}});fit();
+})();
