@@ -219,3 +219,16 @@ body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .
  .community-pane-feed .comm-post>header{gap:5px!important}
  .community-pane-feed .comm-post>header>.comm-post-byline>time{width:100%;font-size:9px!important}
 }
+
+
+/* Timestamp joins reaction and moderation on the right of the post header. */
+.community-pane-feed .comm-post>header{grid-template-columns:minmax(0,1fr) auto auto auto!important}
+.community-pane-feed .comm-post>header>.comm-post-timestamp{grid-column:2!important;grid-row:1!important;justify-self:end!important;white-space:nowrap;font-size:10px;color:#82777a}
+.community-pane-feed .comm-post>header>.community-heart-form{grid-column:3!important}
+.community-pane-feed .comm-post>header>.comm-post-actions{grid-column:4!important}
+@media(max-width:650px){
+ .community-pane-feed .comm-post>header{grid-template-columns:minmax(0,1fr) auto auto!important}
+ .community-pane-feed .comm-post>header>.comm-post-timestamp{grid-column:1!important;grid-row:2!important;justify-self:start!important;padding-top:0}
+ .community-pane-feed .comm-post>header>.community-heart-form{grid-column:2!important;grid-row:1!important}
+ .community-pane-feed .comm-post>header>.comm-post-actions{grid-column:3!important;grid-row:1!important}
+}
