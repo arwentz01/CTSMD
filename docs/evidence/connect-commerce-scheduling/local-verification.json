@@ -1,0 +1,216 @@
+{
+  "checked_at_utc": "2026-10-31T16:38:57.813108+00:00",
+  "implementation_revision": "3055782831f700ce6ad669cbe068f0a89b486179",
+  "database": "isolated synthetic loopback schema ctsmd_rc1_commerce_20261030",
+  "deployed": false,
+  "production_sql_executed": false,
+  "real_payments_enabled": false,
+  "remote_ci_verified": false,
+  "commerce_suites": [
+    {
+      "suite": "commerce_foundation",
+      "exit_code": 0,
+      "summary": "PASS 10 Commerce foundation checks"
+    },
+    {
+      "suite": "commerce_hosted",
+      "exit_code": 0,
+      "summary": "PASS 11 hosted Commerce access checks"
+    },
+    {
+      "suite": "commerce_hosted_http",
+      "exit_code": 0,
+      "summary": "PASS 22 hosted HTTP checks"
+    },
+    {
+      "suite": "commerce_venues",
+      "exit_code": 0,
+      "summary": "PASS 12 venue checks"
+    },
+    {
+      "suite": "commerce_landmarks",
+      "exit_code": 0,
+      "summary": "PASS 8 landmark checks"
+    },
+    {
+      "suite": "commerce_inventory",
+      "exit_code": 0,
+      "summary": "PASS 18 inventory checks"
+    },
+    {
+      "suite": "commerce_quantities",
+      "exit_code": 0,
+      "summary": "PASS 16 ticket quantity checks"
+    },
+    {
+      "suite": "commerce_recommendations",
+      "exit_code": 0,
+      "summary": "PASS 20 recommendation checks"
+    },
+    {
+      "suite": "commerce_concurrency",
+      "exit_code": 0,
+      "summary": "PASS Real competing processes: exactly one hold, one rejection"
+    },
+    {
+      "suite": "commerce_payments",
+      "exit_code": 0,
+      "summary": "PASS 34 payment and receipt checks"
+    },
+    {
+      "suite": "commerce_complimentary",
+      "exit_code": 0,
+      "summary": "PASS 28 complimentary assertions"
+    },
+    {
+      "suite": "commerce_box_office",
+      "exit_code": 0,
+      "summary": "PASS 27 Box Office checks"
+    },
+    {
+      "suite": "commerce_admissions",
+      "exit_code": 0,
+      "summary": "PASS 11 admission checks"
+    },
+    {
+      "suite": "commerce_ticket_changes",
+      "exit_code": 0,
+      "summary": "PASS 15 ticket-change checks"
+    },
+    {
+      "suite": "commerce_channel_concurrency",
+      "exit_code": 0,
+      "summary": "PASS mixed_ga_sale: one sale, one rejection, valid admission, duplicate scan denied, audited reversal/refund and inventory release"
+    },
+    {
+      "suite": "commerce_bulk_allocation",
+      "exit_code": 0,
+      "summary": "PASS 21 bulk-allocation checks"
+    },
+    {
+      "suite": "commerce_schedule_concurrency",
+      "exit_code": 0,
+      "summary": "PASS block_purchase: REJECT / WIN with no duplicate showtimes or incompatible seat mutation"
+    },
+    {
+      "suite": "commerce_planning_http",
+      "exit_code": 0,
+      "summary": "PASS 18 planning HTTP checks"
+    },
+    {
+      "suite": "commerce_tickets",
+      "exit_code": 0,
+      "summary": "PASS 20 ticket and authorization checks"
+    },
+    {
+      "suite": "commerce_http",
+      "exit_code": 0,
+      "summary": "PASS 42 Commerce HTTP/security checks"
+    },
+    {
+      "suite": "commerce_scheduling",
+      "exit_code": 0,
+      "summary": "PASS 36 schedule and sale-boundary checks"
+    },
+    {
+      "suite": "commerce_phase2_http",
+      "exit_code": 0,
+      "summary": "PASS 28 Phase 2 HTTP checks"
+    }
+  ],
+  "php_safety_suites": [
+    {
+      "suite": "tests/pilot_production_directory.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_lifecycle_write_boundaries.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/adult_participation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_closed_production_roster.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_closed_forms.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_member_roster_media.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_community_video_links.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_action_visibility.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_operational_presentation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_operations_contract.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/navigation_controls.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/homepage_presentation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/community_search.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/safeguarding_conversation_review.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_video_privacy.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_lifecycle.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_rate_limit.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_volunteer_cancellation.php",
+      "exit_code": 0
+    }
+  ],
+  "other_checks": [
+    "PHP lint for changed/new PHP files",
+    "JS syntax: commerce-planning.js",
+    "Existing geometry assertions",
+    "30 RC1 tooling contracts"
+  ],
+  "browser_checks": {
+    "desktop_width": 1440,
+    "mobile_width": 390,
+    "flows": [
+      "two actual showtimes created after review",
+      "four seat positions blocked across two performances",
+      "four positions released through one-day range review",
+      "stale preview refused apply",
+      "Enter key selects calendar date and focuses time input",
+      "customer matinee/evening choices grouped by actual date"
+    ],
+    "no_document_horizontal_overflow": true,
+    "screenshots": "synthetic data only",
+    "physical_device_tested": false
+  }
+}

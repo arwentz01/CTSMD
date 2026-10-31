@@ -1,5 +1,7 @@
 # Connect Commerce Phase 2 — Box Office and storefront preview
 
+Later scheduling and saleability requirements supersede parts of this historical Phase 2 snapshot: see [performance scheduling and migration 107](CONNECT_COMMERCE_SCHEDULING.md).
+
 Implementation on `audit/board-pilot-readiness`, October 31, 2026. Application milestones: `10d0b10` (staff tender), `5e41364` (general admission), `98035b2` (integrated staff/storefront, ticket changes and verification). No deployment, production migration, real payment, audience email or production-account test was performed.
 
 ## Entry points

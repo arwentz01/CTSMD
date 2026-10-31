@@ -229,3 +229,8 @@ Verification: 20 MySQL recommendation checks cover deterministic grouping, no ho
 ## Phase 2: Box Office sales and customer storefront
 
 The [Phase 2 implementation, migration preflight and acceptance boundaries](CONNECT_COMMERCE_PHASE2.md) supersede the earlier administrator-only hosted-preview policy in this document. Explicit active-adult Commerce staff grants now authorize their scoped hosted workflows; `storefront_tester` authorizes only the customer preview. Ordinary local tester grants still do not grant hosted preview access. Real public sales and audience delivery remain disabled. Deployments upgrading from Phase 1 require reviewed migrations 103–106 as well as matching files; no production import or deployment was performed.
+
+
+## Performance scheduling and multi-show seat management
+
+The [scheduling implementation and hosted migration guide](CONNECT_COMMERCE_SCHEDULING.md) supersede earlier showtime and closed-sales complimentary behavior. Calendar/weekly creation and single/multi-show allocation now require review; all new sales/issuance require a real registered future scheduled show with a published production and open sales. Migration 107 intentionally requires explicit historical timezone review before old performances resume sales; no historical time was guessed or production migration executed.
