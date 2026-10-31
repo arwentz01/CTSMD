@@ -69,6 +69,7 @@ jobs:
         run: |
           php tests/commerce_foundation.php
           php tests/commerce_venues.php
+          php tests/commerce_landmarks.php
           php tests/commerce_inventory.php
           php tests/commerce_quantities.php
           php tests/commerce_concurrency.php
