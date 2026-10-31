@@ -14,6 +14,7 @@ on:
       - "assets/css/playbill-pages.css"
       - "assets/js/playbill-studio.js"
       - "assets/js/commerce.js"
+      - "assets/js/commerce-planning.js"
       - "assets/js/commerce-geometry.js"
       - "assets/css/commerce.css"
       - "assets/js/ux-member.js"
@@ -42,6 +43,7 @@ on:
       - "assets/css/playbill-pages.css"
       - "assets/js/playbill-studio.js"
       - "assets/js/commerce.js"
+      - "assets/js/commerce-planning.js"
       - "assets/js/commerce-geometry.js"
       - "assets/css/commerce.css"
       - "assets/js/ux-member.js"
@@ -88,6 +90,7 @@ jobs:
           node --check assets/js/account-menu.js
           node --check assets/js/playbill-studio.js
           node --check assets/js/commerce.js
+          node --check assets/js/commerce-planning.js
           node --check assets/js/commerce-geometry.js
           node tests/commerce_geometry.cjs
           node --check assets/js/ux-operations.js
