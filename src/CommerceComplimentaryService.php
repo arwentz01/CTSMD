@@ -7,7 +7,7 @@ final class CommerceComplimentaryService
     public static function issue(PDO $db,array $u,int $org,int $performance,array $seats,string $name,string $email,string $reason,string $key,string $token):array
     {
         CommerceAccess::demand($db,$u,$org,'complimentary');$owner=CommerceStore::organization($db,$org,true);$name=trim($name);$email=strtolower(trim($email));$reason=trim($reason);
-        if($name===''||mb_strlen($name)>190||strlen($email)>254||!filter_var($email,FILTER_VALIDATE_EMAIL)||!str_ends_with($email,'.invalid'))throw new RuntimeException('Enter a recipient name and synthetic .invalid email. No email will be sent.');
+        if($name===''||mb_strlen($name)>190||!CommerceInventoryService::testEmailAllowed($email))throw new RuntimeException('Enter a recipient name and a synthetic .invalid email or explicitly approved pilot inbox.');
         if($reason===''||mb_strlen($reason)>500)throw new RuntimeException('Record a complimentary-issuance reason of up to 500 characters.');
         if(count($seats)<1||count($seats)>12||!preg_match('/^[a-zA-Z0-9_-]{16,100}$/',$key)||!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('Choose 1–12 seats and reload the complimentary form if its session expired.');
         $keys=[];foreach($seats as $seat){if(!is_string($seat)||isset($keys[$seat]))throw new RuntimeException('Choose unique seats.');$keys[$seat]=true;}ksort($keys);$keys=array_keys($keys);

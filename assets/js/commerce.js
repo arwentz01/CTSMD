@@ -89,3 +89,29 @@
 
 // Cash preview is advisory; integer server settlement remains authoritative.
 document.querySelectorAll('[data-cash-amount]').forEach(input=>{const output=input.form.querySelector('[data-change-due]');const method=input.form.querySelector('[name="method"]');const update=()=>{output.hidden=method.value!=='cash';const match=input.value.trim().match(/^(0|[1-9][0-9]{0,6})(?:\.([0-9]{1,2}))?$/);if(!match){output.textContent='Enter a cash amount such as 25.00.';return;}const received=Number(match[1])*100+Number((match[2]||'').padEnd(2,'0'));const change=received-Number(output.dataset.totalMinor);output.textContent=(change<0?'Still due: ':'Change due: ')+output.dataset.currency+' '+(Math.abs(change)/100).toFixed(2);};input.addEventListener('input',update);method.addEventListener('change',update);update();});
+
+// General admission shares the authoritative reserved-seat quote rules; no inventory is created here.
+(() => {
+ const root=document.querySelector('[data-admission-selector]');if(!root)return;
+ const p=JSON.parse(root.dataset.payload),inputs=[...root.querySelectorAll('[data-admission-quantity]')],button=root.querySelector('[data-admission-continue]');
+ const money=n=>`${p.currency} ${(n/100).toFixed(2)}`;
+ function update(){let count=0,subtotal=0,valid=true;const zones={};for(const input of inputs){const n=Number(input.value);if(input.value===''||!Number.isInteger(n)||n<0||n>12){valid=false;continue;}count+=n;zones[input.dataset.zone]=(zones[input.dataset.zone]||0)+n;subtotal+=n*p.prices[input.dataset.zone][input.dataset.category];}for(const [zone,n] of Object.entries(zones))if(n>(p.counts[zone]||0))valid=false;
+  valid=valid&&count>0&&count<=12;const discount=Math.min(p.discount,subtotal),tax=Math.floor(((subtotal-discount)*p.tax+5000)/10000);root.querySelector('[data-admission-total]').textContent=valid?`${count} admissions: tickets ${money(subtotal)} − discount ${money(discount)} + tax ${money(tax)} + fee ${money(p.fee)} = ${money(subtotal-discount+tax+p.fee)}`:'Choose 1–12 admissions within the available capacity. Your full total will appear here.';button.disabled=!p.open||!valid;
+ }inputs.forEach(input=>input.addEventListener('input',update));update();
+})();
+// Keep rejected holds recoverable, and prevent accidental repeat taps after native validation.
+(() => {
+ const error=document.querySelector('[data-commerce-error]');if(error)error.focus();
+ document.querySelectorAll('.commerce-page form[method="post"]').forEach(form=>form.addEventListener('submit',event=>{
+  if(event.defaultPrevented)return;const button=event.submitter;if(!button||button.disabled)return;
+  button.dataset.commerceBusy=button.textContent;button.disabled=true;button.textContent='Working…';form.setAttribute('aria-busy','true');
+ }));
+ window.addEventListener('pageshow',()=>document.querySelectorAll('[data-commerce-busy]').forEach(button=>{button.textContent=button.dataset.commerceBusy;delete button.dataset.commerceBusy;button.disabled=false;button.form?.removeAttribute('aria-busy');}));
+})();
+(() => {
+ const clock=document.querySelector('[data-hold-countdown]');if(!clock)return;
+ const end=Date.now()+Number(clock.dataset.seconds)*1000;
+ function update(){const left=Math.max(0,Math.ceil((end-Date.now())/1000));clock.textContent=`Hold time remaining: ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}. Refreshing does not extend it. The server checks expiry before payment.`;
+  if(!left){document.querySelector('[data-hold-expired]').textContent='This hold has expired. Return to seat selection to check current availability; do not pay for this order.';document.querySelectorAll('.commerce-page form').forEach(form=>{if(['payment','stripe_payment','staff_tender','staff_discount'].includes(form.querySelector('[name="action"]')?.value))form.querySelectorAll('button').forEach(button=>button.disabled=true);});return false;}return true;
+ }if(update()){const timer=setInterval(()=>{if(!update())clearInterval(timer);},1000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});}
+})();

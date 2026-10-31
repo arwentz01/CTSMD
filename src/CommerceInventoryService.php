@@ -5,6 +5,14 @@ require_once __DIR__.'/ProductionLifecycleGuard.php';
 require_once __DIR__.'/CommercePerformancePolicy.php';
 final class CommerceInventoryService
 {
+    /** Test-only customer policy; exact approved pilot inboxes supplement synthetic addresses. */
+    public static function testEmailAllowed(string $email):bool
+    {
+        $email=strtolower(trim($email));if(strlen($email)>254||!filter_var($email,FILTER_VALIDATE_EMAIL))return false;
+        if(str_ends_with($email,'.invalid'))return true;
+        $approved=array_map('strtolower',array_map('trim',explode(',',(string)getenv('COMMERCE_MAIL_TEST_RECIPIENTS'))));
+        return getenv('COMMERCE_MAIL_APPROVED')==='1'&&in_array($email,$approved,true);
+    }
     public static function prices(array $prices,array $seats):array
     {
         if(!$prices||count($prices)>100)throw new RuntimeException('Provide prices for each seat zone.');
@@ -112,7 +120,7 @@ final class CommerceInventoryService
     public static function hold(PDO $db,array $u,int $org,int $performance,array $selection,string $name,string $email,string $phone,string $key,string $token,?array $quantities=null,bool $admissions=false):array
     {
         CommerceAccess::demand($db,$u,$org,'test');$owner=CommerceStore::organization($db,$org,true);
-        $name=trim($name);$email=strtolower(trim($email));if($name===''||mb_strlen($name)>190||strlen($email)>254||!filter_var($email,FILTER_VALIDATE_EMAIL)||!str_ends_with($email,'.invalid')||mb_strlen($phone)>40)throw new RuntimeException('Use a purchaser name and synthetic .invalid email. Phone is optional. No email will be sent.');
+        $name=trim($name);$email=strtolower(trim($email));if($name===''||mb_strlen($name)>190||!self::testEmailAllowed($email)||mb_strlen($phone)>40)throw new RuntimeException('Enter a purchaser name and a synthetic .invalid email, or an explicitly approved pilot inbox. Phone is optional.');
         if(!preg_match('/^[a-zA-Z0-9_-]{16,100}$/',$key)||!preg_match('/^[a-f0-9]{64}$/',$token)||(!$admissions&&count($selection)<1)||count($selection)>12)throw new RuntimeException('Choose between 1 and 12 seats and retry with a valid checkout token.');
         $normalized=[];foreach($selection as $seat=>$category){if(!is_string($seat)||!is_string($category))throw new RuntimeException('Invalid seat selection.');$normalized[$seat]=$category;}ksort($normalized);
         $requestHash=hash('sha256',json_encode($quantities===null?[$performance,$normalized,$name,$email,$phone]:[$admissions?'admission_checkout':'quantity_checkout',$performance,array_keys($normalized),$quantities,$name,$email,$phone],JSON_THROW_ON_ERROR));

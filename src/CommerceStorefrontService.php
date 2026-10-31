@@ -6,8 +6,8 @@ final class CommerceStorefrontService
 {
     public static function publicSalesActive():bool
     {
-        // Activation request is separate from module/preview enablement. The only current
-        // adapter is simulated, so a requested live activation still fails closed.
+        // Activation request is separate from module/preview enablement. Both current
+        // adapters are test-only, so a requested live activation still fails closed.
         $requested=getenv('COMMERCE_PUBLIC_SALES_ENABLED')==='1';
         $verifiedRealProviderAvailable=false;
         return $requested&&$verifiedRealProviderAvailable;

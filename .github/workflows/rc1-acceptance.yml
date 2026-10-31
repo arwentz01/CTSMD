@@ -89,6 +89,7 @@ jobs:
           php tests/commerce_admissions.php
           php tests/commerce_ticket_changes.php
           php tests/commerce_channel_concurrency.php
+          php tests/commerce_customer_policy.php
           php tests/commerce_phase2_http.php
           php tests/commerce_scheduling.php
           php tests/commerce_bulk_allocation.php
