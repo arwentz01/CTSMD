@@ -68,6 +68,9 @@ jobs:
       - name: Disabled Commerce synthetic integration and real concurrency
         run: |
           php tests/commerce_foundation.php
+          php tests/commerce_hosted.php
+          php tests/commerce_hosted_http.php
+          php tests/commerce_hosted_http.php --copied-local-env
           php tests/commerce_venues.php
           php tests/commerce_landmarks.php
           php tests/commerce_inventory.php

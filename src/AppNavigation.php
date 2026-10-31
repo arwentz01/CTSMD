@@ -24,7 +24,7 @@ final class AppNavigation
         $operations = $staff
             || AccessPolicy::canModerateCommunity($user)
             || AccessPolicy::canManageSafeguarding($user);
-        $commerce = CommerceAccess::gate() && CommerceAccess::navigation(Database::connect(dirname(__DIR__)),$user);
+        $commerce = CommerceAccess::navigation(Database::connect(dirname(__DIR__)),$user);
         $approved = Auth::isApprovedMember($user);
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $_SESSION['production_context_csrf'] ??= bin2hex(random_bytes(24));

@@ -45,8 +45,8 @@
         "forms": "77ee0fb4a0cd9d9b0151259ecd54079142ebb58bd4c77be9076b61e86e715d7e"
     },
     "OperationsHubExperience": {
-        "reason": "Reviewed optional local Commerce workspace entry, gated by environment and explicit Commerce authority; no existing tool authorization changes. docs/CONNECT_COMMERCE.md",
-        "php": "37333a3a70e2561516415f0ff1fb6115e5cc3104e58a38aa84108bb340b8c8ae",
+        "reason": "Hosted administrator-only Commerce preview stays visible before optional Commerce schema/owner setup. Non-admin hosted access denied. docs/CONNECT_COMMERCE.md",
+        "php": "555ad37d0da235ba59d1a411d2e34d731ecfa38b5d9812a4f2cad794994f4019",
         "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ProductionWorkspaceExperience": {
