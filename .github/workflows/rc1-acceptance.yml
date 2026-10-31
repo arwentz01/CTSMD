@@ -11,7 +11,7 @@ permissions:
 jobs:
   isolated-mysql-http:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       mysql:
         image: mysql:8.0
@@ -89,6 +89,8 @@ jobs:
           php tests/commerce_admissions.php
           php tests/commerce_ticket_changes.php
           php tests/commerce_channel_concurrency.php
+          php tests/commerce_smtp.php
+          php tests/commerce_phase3_acceptance.php
           php tests/commerce_customer_policy.php
           php tests/commerce_phase2_http.php
           php tests/commerce_scheduling.php
@@ -97,6 +99,35 @@ jobs:
           php tests/commerce_planning_http.php
           php tests/commerce_tickets.php
           php tests/commerce_http.php
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Synthetic responsive Commerce browser acceptance
+        env:
+          CTSMD_COMMERCE_FIXTURE: ${{ runner.temp }}/ctsmd-commerce-browser-ci.json
+          CTSMD_COMMERCE_URL: http://127.0.0.1:8794
+          CTSMD_COMMERCE_OUTPUT: ${{ runner.temp }}/commerce-browser-evidence
+          COMMERCE_SANDBOX_ENABLED: "1"
+          COMMERCE_MAIL_DRIVER: capture
+          COMMERCE_MAIL_ENABLED: "0"
+          COMMERCE_MAIL_WORKER_ENABLED: "0"
+          COMMERCE_STRIPE_TEST_ENABLED: "0"
+          COMMERCE_PAYMENT_WORKER_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/commerce-browser" --no-package-lock --no-save playwright@1.56.1
+          node "$RUNNER_TEMP/commerce-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          export CTSMD_PLAYWRIGHT_MODULE="$RUNNER_TEMP/commerce-browser/node_modules/playwright/index.mjs"
+          php tests/fixtures/commerce-browser.php create
+          export COMMERCE_ORGANIZATION_KEY="$(python3 -c 'import json,os;print(json.load(open(os.environ["CTSMD_COMMERCE_FIXTURE"]))["organization_key"])')"
+          php -d display_errors=0 -S 127.0.0.1:8794 -t . tests/fixtures/commerce-router.php > "$RUNNER_TEMP/commerce-server.log" 2>&1 &
+          commerce_server_pid=$!
+          trap 'kill "$commerce_server_pid" 2>/dev/null || true; php tests/fixtures/commerce-browser.php retire' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8794/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/commerce_phase3_browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -106,3 +137,4 @@ jobs:
             ${{ runner.temp }}/rc1-manifest.json
             ${{ runner.temp }}/rc1-schema.json
             ${{ runner.temp }}/rc1-acceptance.json
+            ${{ runner.temp }}/commerce-browser-evidence/

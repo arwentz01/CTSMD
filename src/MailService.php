@@ -171,7 +171,7 @@ final class MailService
         if($host===''||$from==='')throw new RuntimeException('SMTP configuration is incomplete.');
         $target=($encryption==='ssl'?'ssl://':'').$host.':'.$port;$context=stream_context_create(['ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,'peer_name'=>$host]]);$socket=@stream_socket_client($target,$errno,$errstr,20,STREAM_CLIENT_CONNECT,$context);
         if(!$socket)throw new RuntimeException('SMTP connection failed: '.$errstr);stream_set_timeout($socket,20);
-        $read=static function($s):string{$out='';while(($line=fgets($s,515))!==false){$out.=$line;if(strlen($line)<4||$line[3]===' ')break;}return $out;};
+        $read=static function($s):string{$out='';while(($line=fgets($s,515))!==false){$out.=$line;if(strlen($out)>65536)throw new RuntimeException('SMTP response exceeded safe limit.');if(strlen($line)<4||$line[3]===' ')break;}return $out;};
         $cmd=static function($s,$read,string $command,array $ok):void{fwrite($s,$command."\r\n");$response=$read($s);$code=(int)substr($response,0,3);if(!in_array($code,$ok,true))throw new RuntimeException('SMTP delivery rejected.', $code);};
         $greeting=$read($socket);if((int)substr($greeting,0,3)!==220)throw new RuntimeException('SMTP greeting failed.');
         $cmd($socket,$read,'EHLO '.($_SERVER['SERVER_NAME']??'localhost'),[250]);
@@ -180,7 +180,8 @@ final class MailService
         $cmd($socket,$read,'MAIL FROM:<'.$from.'>',[250]);$cmd($socket,$read,'RCPT TO:<'.$row['recipient_email'].'>',[250,251]);$cmd($socket,$read,'DATA',[354]);
         $boundary='=_ctsmd_'.bin2hex(random_bytes(8));$toName=trim((string)$row['recipient_name']);$to=($toName!==''?$toName.' ':'').'<'.$row['recipient_email'].'>';
         $headers=['From: '.mb_encode_mimeheader($fromName,'UTF-8','B').' <'.$from.'>','To: '.($toName!==''?mb_encode_mimeheader($toName,'UTF-8','B').' ':'').'<'.$row['recipient_email'].'>','Subject: '.mb_encode_mimeheader($row['subject'],'UTF-8','B'),'MIME-Version: 1.0'];if(isset($row['commerce_reference'])&&preg_match('/^[a-f0-9]{32}$/',$row['commerce_reference'])){$headers[]='Message-ID: <commerce-'.$row['commerce_reference'].'@'.substr(strrchr($from,'@'),1).'>';$headers[]='X-Commerce-Delivery: '.$row['commerce_reference'];}
-        if(!empty($row['html_body'])){$headers[]='Content-Type: multipart/alternative; boundary="'.$boundary.'"';$body="--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n{$row['text_body']}\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{$row['html_body']}\r\n--$boundary--";}else{$headers[]='Content-Type: text/plain; charset=UTF-8';$body=(string)$row['text_body'];}
+        $encode=static fn(string $text):string=>quoted_printable_encode(str_replace("\n","\r\n",str_replace(["\r\n","\r"],"\n",$text)));
+        if(!empty($row['html_body'])){$headers[]='Content-Type: multipart/alternative; boundary="'.$boundary.'"';$body="--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n".$encode($row['text_body'])."\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n".$encode($row['html_body'])."\r\n--$boundary--";}else{$headers[]='Content-Type: text/plain; charset=UTF-8';$headers[]='Content-Transfer-Encoding: quoted-printable';$body=$encode((string)$row['text_body']);}
         $data=implode("\r\n",$headers)."\r\n\r\n".$body;$data=str_replace("\n","\r\n",str_replace(["\r\n","\r"],"\n",$data));$data=preg_replace('/(?m)^\./','..',$data)."\r\n.";
         $cmd($socket,$read,$data,[250]);@fwrite($socket,"QUIT\r\n");fclose($socket);
     }

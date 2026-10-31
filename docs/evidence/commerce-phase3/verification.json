@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-31",
+  "scope": "Local synthetic verification; not hosted acceptance",
+  "database": "fresh disposable loopback MySQL schema",
+  "commerce_suites": [
+    {
+      "suite": "commerce_foundation",
+      "exit_code": 0,
+      "summary": "PASS 10 Commerce foundation checks"
+    },
+    {
+      "suite": "commerce_hosted",
+      "exit_code": 0,
+      "summary": "PASS 11 hosted Commerce access checks"
+    },
+    {
+      "suite": "commerce_hosted_http",
+      "exit_code": 0,
+      "summary": "PASS 22 hosted HTTP checks"
+    },
+    {
+      "suite": "commerce_venues",
+      "exit_code": 0,
+      "summary": "PASS 12 venue checks"
+    },
+    {
+      "suite": "commerce_landmarks",
+      "exit_code": 0,
+      "summary": "PASS 8 landmark checks"
+    },
+    {
+      "suite": "commerce_inventory",
+      "exit_code": 0,
+      "summary": "PASS 18 inventory checks"
+    },
+    {
+      "suite": "commerce_quantities",
+      "exit_code": 0,
+      "summary": "PASS 16 ticket quantity checks"
+    },
+    {
+      "suite": "commerce_recommendations",
+      "exit_code": 0,
+      "summary": "PASS 20 recommendation checks"
+    },
+    {
+      "suite": "commerce_concurrency",
+      "exit_code": 0,
+      "summary": "PASS Real competing processes: exactly one hold, one rejection"
+    },
+    {
+      "suite": "commerce_payments",
+      "exit_code": 0,
+      "summary": "PASS 34 payment and receipt checks"
+    },
+    {
+      "suite": "commerce_stripe",
+      "exit_code": 0,
+      "summary": "PASS 36 Stripe test integration checks"
+    },
+    {
+      "suite": "commerce_stripe_http",
+      "exit_code": 0,
+      "summary": "PASS 8 Stripe HTTP checks"
+    },
+    {
+      "suite": "commerce_stripe_concurrency",
+      "exit_code": 0,
+      "summary": "PASS stripe_staff_sale: REJECT/WIN and exactly one ticket"
+    },
+    {
+      "suite": "commerce_delivery",
+      "exit_code": 0,
+      "summary": "PASS 31 ticket delivery checks"
+    },
+    {
+      "suite": "commerce_delivery_http",
+      "exit_code": 0,
+      "summary": "PASS 7 delivery HTTP checks"
+    },
+    {
+      "suite": "commerce_delivery_concurrency",
+      "exit_code": 0,
+      "summary": "PASS Two competing delivery workers: exactly one capture, one unchanged ticket"
+    },
+    {
+      "suite": "commerce_complimentary",
+      "exit_code": 0,
+      "summary": "PASS 28 complimentary assertions"
+    },
+    {
+      "suite": "commerce_box_office",
+      "exit_code": 0,
+      "summary": "PASS 27 Box Office checks"
+    },
+    {
+      "suite": "commerce_admissions",
+      "exit_code": 0,
+      "summary": "PASS 11 admission checks"
+    },
+    {
+      "suite": "commerce_ticket_changes",
+      "exit_code": 0,
+      "summary": "PASS 15 ticket-change checks"
+    },
+    {
+      "suite": "commerce_channel_concurrency",
+      "exit_code": 0,
+      "summary": "PASS mixed_ga_sale: one sale, one rejection, valid admission, duplicate scan denied, audited reversal/refund and inventory release"
+    },
+    {
+      "suite": "commerce_smtp",
+      "exit_code": 0,
+      "summary": "PASS 7 encrypted SMTP fixture checks (no audience delivery)"
+    },
+    {
+      "suite": "commerce_phase3_acceptance",
+      "exit_code": 0,
+      "summary": "PASS 24 Phase 3 end-to-end and read-only acceptance checks"
+    },
+    {
+      "suite": "commerce_customer_policy",
+      "exit_code": 0,
+      "summary": "PASS 8 customer policy checks"
+    },
+    {
+      "suite": "commerce_phase2_http",
+      "exit_code": 0,
+      "summary": "PASS 34 Phase 2 HTTP checks"
+    },
+    {
+      "suite": "commerce_scheduling",
+      "exit_code": 0,
+      "summary": "PASS 36 schedule and sale-boundary checks"
+    },
+    {
+      "suite": "commerce_bulk_allocation",
+      "exit_code": 0,
+      "summary": "PASS 21 bulk-allocation checks"
+    },
+    {
+      "suite": "commerce_schedule_concurrency",
+      "exit_code": 0,
+      "summary": "PASS block_purchase: REJECT / WIN with no duplicate showtimes or incompatible seat mutation"
+    },
+    {
+      "suite": "commerce_planning_http",
+      "exit_code": 0,
+      "summary": "PASS 18 planning HTTP checks"
+    },
+    {
+      "suite": "commerce_tickets",
+      "exit_code": 0,
+      "summary": "PASS 20 ticket and authorization checks"
+    },
+    {
+      "suite": "commerce_http",
+      "exit_code": 0,
+      "summary": "PASS 42 Commerce HTTP/security checks"
+    }
+  ],
+  "commerce_suites_passed": 31,
+  "copied_local_hosted_http": "22 checks passed separately",
+  "web_safety_suites_passed": 18,
+  "php_lint_files_passed": 291,
+  "javascript": [
+    "commerce.js syntax",
+    "commerce_phase3_browser.mjs syntax",
+    "commerce_geometry.cjs passed"
+  ],
+  "apache_camera_policy_cases_passed": 12,
+  "rc1_tooling_contracts_passed": 30,
+  "fresh_schema_bootstrap": "base and every migration through 109 passed; no demo seed",
+  "read_only_commerce_preflight": {
+    "schema_ready": true,
+    "acceptance_ready": true,
+    "provider_network_verified": false,
+    "smtp_network_verified": false
+  },
+  "browser_execution": {
+    "method": "CUA browser automation, real synthetic sign-in",
+    "responsive_pages": 12,
+    "widths": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "surfaces": [
+      "discovery",
+      "reserved",
+      "general admission"
+    ],
+    "interactions": [
+      "wheelchair and companion selection",
+      "mixed ticket types",
+      "guest validation rejection and retained draft",
+      "full price equals server quote",
+      "simulated confirmation and two QR entitlements",
+      "general admission full quote and hold",
+      "keyboard Space map toggle",
+      "Escape hides tooltip",
+      "skip link focuses seat-list heading"
+    ],
+    "playwright_script_local_execution": "not executed locally; syntax checked and configured for CI"
+  },
+  "smtp": "7 actual encrypted loopback fixture checks; no external inbox",
+  "ci_review": {
+    "M1": "RC1 and safety passed",
+    "M2": "RC1 and safety passed",
+    "M3": "safety passed; RC1 obsolete literal receipt copy assertion failed, fixed for M4",
+    "M4": "awaiting final push/run review"
+  },
+  "unverified": [
+    "hosted migrations and file hashes",
+    "Stripe account/network and signed hosted destination",
+    "external SMTP/inbox/domain authentication and bounce bridge",
+    "physical iOS/Android, screen readers and scanners"
+  ],
+  "production_writes": false,
+  "deployment": false,
+  "live_payments": false,
+  "audience_email": false
+}

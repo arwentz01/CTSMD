@@ -4,14 +4,18 @@ require_once __DIR__.'/CommerceInventoryService.php';
 /** Preview publication is separate from both module enablement and future public activation. */
 final class CommerceStorefrontService
 {
-    public static function publicSalesActive():bool
+    /** Independent launch gates. A test provider can never satisfy live-provider readiness. */
+    public static function readiness(array $organization=[]):array
     {
-        // Activation request is separate from module/preview enablement. Both current
-        // adapters are test-only, so a requested live activation still fails closed.
-        $requested=getenv('COMMERCE_PUBLIC_SALES_ENABLED')==='1';
-        $verifiedRealProviderAvailable=false;
-        return $requested&&$verifiedRealProviderAvailable;
+        $gates=['commerce_enabled'=>!empty($organization['ticketing_enabled']),
+            'preview_enabled'=>getenv('COMMERCE_STOREFRONT_PREVIEW_ENABLED')!=='0',
+            'public_sales_requested'=>getenv('COMMERCE_PUBLIC_SALES_ENABLED')==='1',
+            'public_sales_approved'=>getenv('COMMERCE_PUBLIC_SALES_APPROVED')==='1',
+            'organization_activated'=>!empty($organization['public_sales_enabled']),
+            'verified_live_provider'=>false]; // This release implements simulation and Stripe TEST only.
+        $gates['active']=$gates['commerce_enabled']&&$gates['public_sales_requested']&&$gates['public_sales_approved']&&$gates['organization_activated']&&$gates['verified_live_provider'];return $gates;
     }
+    public static function publicSalesActive():bool{return self::readiness()['active'];}
     public static function approve(PDO $db,array $u,int $org,int $performance,bool $enabled):void
     {
         CommerceAccess::demand($db,$u,$org,'configure');
