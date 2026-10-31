@@ -1,12 +1,7 @@
--- Test-mode provider only. Review SHOW CREATE TABLE on partially migrated hosts.
--- MariaDB uses DROP CONSTRAINT rather than MySQL's DROP CHECK.
--- Verify the actual CHECK name via information_schema.TABLE_CONSTRAINTS before executing:
--- SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
--- WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='commerce_payment_attempts' AND CONSTRAINT_TYPE='CHECK';
--- If a host auto-generated a different CHECK name, replace this identifier accordingly.
-ALTER TABLE commerce_payment_attempts DROP CONSTRAINT commerce_payment_attempts_chk_1;
+-- MySQL 5.7 compatibility: this server ignores CHECK constraints and has
+-- no existing CHECK to drop. Provider choices are enforced in application code.
+-- Review actual column/index definitions before running on a partially migrated host.
 ALTER TABLE commerce_payment_attempts
- ADD CONSTRAINT commerce_payment_provider_allowed CHECK(provider IN ('simulated','stripe_test')),
  MODIFY scenario ENUM('success','declined','canceled','delayed','timeout') NULL,
  ADD COLUMN expected_minor INT UNSIGNED NULL,
  ADD COLUMN currency CHAR(3) NULL,
