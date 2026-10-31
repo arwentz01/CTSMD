@@ -33,3 +33,11 @@ Commerce-owned foreign keys and queries are organization-scoped. The existing `p
 ## Migration / rollback
 
 Do not run migration 101 against production during Phase 1. Test on a new disposable loopback schema or an explicitly designated synthetic schema only. Runtime Commerce stays off if schema/configuration is absent. Rollback means disable the sandbox flag and retain Commerce records; do not drop transactional history as a rollback shortcut. Back up and review the migration under the existing release process before any future deployment.
+
+## Milestone 2 — venue designer
+
+`/admin/commerce?tab=venues` and `tab=layout&id=…` are authenticated, local-only routes, with the same Commerce service authorization on every POST and a separate CSRF token. Configure the sandbox flag and owner key only on an isolated synthetic database. Neither routing nor migration enables the module.
+
+The editor supports arbitrary coordinates, drag placement, keyboard seat selection/arrow movement, numeric position fields, sections/rows with editable names and order, bulk seat generation, stage/aisle/non-seat items, price zones, wheelchair positions, companion relationships and view/access descriptions. Save drafts before publishing. Published versions cannot be updated or deleted, including direct database writes; clone to edit the next version. Draft saves reject stale content hashes. No existing production workflow changes.
+
+Verification: PHP syntax, JS syntax, 12 MySQL venue checks (including immutable published versions, stale save, malformed coordinates, companion integrity, duplicate row seat labels, permissions and owner scoping). Real local browser: synthetic administrator login, generated eight seats, saved/reloaded and used keyboard selection/position editing. Further responsive and end-to-end verification follows with checkout.

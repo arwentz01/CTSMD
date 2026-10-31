@@ -59,6 +59,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){require_once __DIR__.'/src/Iden
 if(in_array($route,['/messages/thread','/channels/view'],true)){require_once __DIR__.'/src/CommunicationReadStateService.php';if($route==='/messages/thread'){$conversationId=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;if($conversationId>0)CommunicationReadStateService::markConversationRead($dbForAuth,(int)$currentAuthUser['id'],(int)$conversationId);}if($route==='/channels/view'){$channelId=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;if($channelId>0&&CommunicationReadStateService::canAccessChannel($dbForAuth,$currentAuthUser,(int)$channelId))CommunicationReadStateService::markChannelRead($dbForAuth,(int)$currentAuthUser['id'],(int)$channelId);}}
 unset($currentAuthUser,$dbForAuth);
 $experienceRoutes=[
+    ['CommerceExperience',['/admin/commerce'],'route'],
     ['AccountManagementExperience',['/admin/accounts','/admin/accounts/view'],'route'],
     ['RegistrationOperationsExperience',['/admin/registrations','/admin/registrations/edit','/admin/registrations/view','/admin/registrations/intake'],'route'],
     ['EmailOperationsExperience',['/admin/email'],'base'],
