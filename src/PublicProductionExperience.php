@@ -22,7 +22,7 @@ final class PublicProductionExperience
     {
         $db=Database::connect(dirname(__DIR__));$brand=OrganizationBranding::fromEnvironment();
         $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;
-        $sql="SELECT p.id,p.title,p.season,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,EXISTS(SELECT 1 FROM production_artwork a WHERE a.production_id=p.id AND a.role='poster') has_poster FROM productions p WHERE p.announcement_published_at IS NOT NULL AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived')";
+        $sql="SELECT p.id,p.title,p.season,p.lifecycle_stage,p.audition_starts_at,p.audition_ends_at,p.performance_starts_at,p.performance_ends_at,EXISTS(SELECT 1 FROM production_artwork a WHERE a.production_id=p.id AND a.role='poster') has_poster,(SELECT external_url FROM production_external_playbills ep WHERE ep.production_id=p.id LIMIT 1) external_playbill_url FROM productions p WHERE p.announcement_published_at IS NOT NULL AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing','completed','archived')";
         if($route==='/productions/view'){$q=$db->prepare($sql.' AND p.id=:id LIMIT 1');$q->execute(['id'=>$id]);$rows=$q->fetchAll();if(!$rows)http_response_code(404);}
         else $rows=$db->query($sql.' ORDER BY COALESCE(p.performance_starts_at,p.audition_starts_at) DESC,p.id DESC LIMIT 100')->fetchAll();
         $opportunities=RegistrationService::publicOpportunities($db);
@@ -41,7 +41,7 @@ final class PublicProductionExperience
             <?php if($p['audition_starts_at']&&(!$p['audition_ends_at']||strtotime($p['audition_ends_at'])>=time())):?><div><dt>Auditions</dt><dd><?= $e(date('M j, Y',strtotime($p['audition_starts_at']))) ?><?php if($p['audition_ends_at']):?> – <?= $e(date('M j, Y',strtotime($p['audition_ends_at']))) ?><?php endif;?></dd></div><?php endif;?>
             <?php if($p['performance_starts_at']):?><div><dt>Performances</dt><dd><?= $e(date('M j, Y',strtotime($p['performance_starts_at']))) ?><?php if($p['performance_ends_at']):?> – <?= $e(date('M j, Y',strtotime($p['performance_ends_at']))) ?><?php endif;?></dd></div><?php endif;?>
             </dl>
-            <div class="production-public-actions"><?php if($audition):?><a class="stage-primary" href="<?= $u('/register?slug='.rawurlencode($audition['slug'])) ?>"><?= $audition['is_full']?'Join audition waitlist':'Sign up to audition' ?> ↗</a><?php elseif(in_array($p['lifecycle_stage'],['upcoming','planning'],true)):?><p>Check back soon for audition and signup details.</p><?php endif;?><a href="<?= $u('/productions') ?>">View all productions ↗</a></div>
+            <div class="production-public-actions"><?php if($audition):?><a class="stage-primary" href="<?= $u('/register?slug='.rawurlencode($audition['slug'])) ?>"><?= $audition['is_full']?'Join audition waitlist':'Sign up to audition' ?> ↗</a><?php elseif(in_array($p['lifecycle_stage'],['upcoming','planning'],true)):?><p>Check back soon for audition and signup details.</p><?php endif;?><?php if(!empty($p['external_playbill_url'])):?><a href="<?= $e($p['external_playbill_url']) ?>" target="_blank" rel="noopener noreferrer">View external Playbill ↗</a><?php endif;?><a href="<?= $u('/productions') ?>">View all productions ↗</a></div>
             <p class="production-private-note">Rehearsal schedules and company communications are available to authorized members in Connect.</p>
           </div>
         </article>
