@@ -1,0 +1,19 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "routes": [
+    "/",
+    { "name": "login", "path": "/login" },
+    { "name": "dashboard", "path": "/dashboard" },
+    { "name": "settings", "path": "/settings" }
+  ],
+  "viewports": [
+    { "name": "mobile", "width": 390, "height": 844 },
+    { "name": "tablet", "width": 768, "height": 1024 },
+    { "name": "desktop", "width": 1440, "height": 900 }
+  ],
+  "storageState": null,
+  "fullPage": true,
+  "waitMs": 600,
+  "waitUntil": "networkidle",
+  "outDir": ".uxui-audit-runs"
+}
