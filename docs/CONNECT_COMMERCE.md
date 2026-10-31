@@ -152,3 +152,13 @@ To start from scratch within that synthetic owner, use Venues & seating → crea
 8. Merchandise stock/catalog and education enrollment adapters are future work despite independent configuration flags. Adjacent-seat recommendations, dedicated complimentary admission issuance, exchanges and bulk guest sales are deferred; complimentary seat allocation itself is implemented and audited.
 
 None of these remaining activation requirements is hidden behind a successful compile or simulated payment. Public ticket links and existing external ticketing/Playbill behavior remain unchanged.
+
+## Ticket-type quantity refinement
+
+Seat selection now uses one **Ticket types** block instead of category dropdowns beside every seat. For example, select four seats and enter two Adult and two Student tickets. Category names and prices come from performance configuration; they are not hardcoded to these examples. The block shows assigned tickets versus selected seats, then itemized totals once counts match. Multiple price zones have separate quantity groups inside the same block, so an inexpensive-zone ticket cannot be applied to a premium-zone seat. Unselected groups reset to zero; a zone with only one ticket type follows its selected seat count automatically.
+
+The server independently validates whole-number quantities, existing zones/categories and an exact seat count per zone. It assigns categories to seats in deterministic key order inside the existing performance-locked hold transaction, then prices/holds the complete selection using the existing inventory rules. Retry payload order does not change the assignment or extend the hold; changing quantities with the same idempotency key is rejected. Order review and digital tickets retain per-seat ticket types for admission.
+
+Verification: 16 dedicated quantity assertions cover mixed types, mismatches, malformed/negative/oversized counts, forged categories/zones, price-zone isolation, unavailable-seat atomic failure and retries. The authenticated HTTP suite now has 25 checks and verifies the new form protocol through checkout/payment. Real desktop/mobile browser verification selected four seats, confirmed Continue was disabled with only two ticket types assigned, then entered two Adult plus two Student tickets and completed server order review at USD 68.31 (including configured discount/tax/fee). No per-seat category dropdowns remain. This is a local synthetic test, not deployment.
+
+Latest screenshots: [desktop quantity block](evidence/connect-commerce-phase1/ticket-quantities-desktop.png) · [mobile quantity block](evidence/connect-commerce-phase1/ticket-quantities-mobile.png). Earlier selector screenshots above record the original milestone; these images show the revised purchase flow.

@@ -70,6 +70,7 @@ jobs:
           php tests/commerce_foundation.php
           php tests/commerce_venues.php
           php tests/commerce_inventory.php
+          php tests/commerce_quantities.php
           php tests/commerce_concurrency.php
           php tests/commerce_payments.php
           php tests/commerce_tickets.php
