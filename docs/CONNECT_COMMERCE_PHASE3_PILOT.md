@@ -4,7 +4,7 @@ Scope: [issue #4](https://github.com/arwentz01/CTSMD/issues/4), existing `audit/
 
 ## Release contents and compatibility
 
-Milestones 1–3: `9bc13ea` (Stripe test provider), `5d17882` (delivery outbox), `c973be9` (customer checkout). The final milestone adds this playbook, read-only Commerce preflight, a revision-bound manifest wrapper, encrypted SMTP fixture, end-to-end acceptance and repeatable browser coverage. See [implementation details](CONNECT_COMMERCE_PHASE3.md) and [local results](evidence/commerce-phase3/verification.json).
+Milestones 1–3: `9bc13ea` (Stripe test provider), `5d17882` (delivery outbox), `c973be9` (customer checkout). Milestone 4 is `3285081`, followed by `3eaaee7` for deterministic deferred-script browser verification. It adds this playbook, read-only Commerce preflight, a revision-bound manifest wrapper, encrypted SMTP fixture, end-to-end acceptance and repeatable browser coverage. See [implementation details](CONNECT_COMMERCE_PHASE3.md) and [local results](evidence/commerce-phase3/verification.json).
 
 The existing simulator, performance-first inventory locks, immutable seating snapshots, Box Office tender, complimentary tickets, discounts, reserved/general admission, explicit scheduling/DST, multi-show blocks, QR tokens and check-in remain the underlying services. There is no new inventory, order, identity or notification system. Existing external production ticket links and Playbill pathways were not changed. Commerce's configured merchant owner is not whole-platform tenant isolation.
 
@@ -87,7 +87,7 @@ Run destructive/concurrency fixtures **only** against the guarded `APP_ENV=rc1-t
 
 The CI workflow `.github/workflows/rc1-acceptance.yml` is the repeatable suite list: fresh schema, RC1 tooling/file preflight, persona/safeguarding regressions, Commerce services/real HTTP/process races, SMTP TLS fixture and browser acceptance. The browser job uses pinned Playwright 1.56.1 installed only into a temporary test directory, real login (no `/dev/identity`), private fixture credentials, loopback-only URL, capture/no-provider flags, screenshots and JSON results. It refuses hosted URLs. It retires fixture users and stops its server on exit. Do not upload its private fixture JSON or server/auth logs as artifacts.
 
-To repeat the browser job locally, follow that workflow's environment/fixture/server commands using a disposable database. `tests/commerce_phase3_browser.mjs` covers 12 responsive pages at 1440/768/390/320px, labels, keyboard map control, mixed ticket quantities, rejected-field recovery, exact totals, simulator confirmation, one QR per ticket and queued-not-sent status. In this development session, equivalent local CUA browser interactions and responsive measurements were executed; the separate Playwright script's local execution is not claimed. Its actual CI result must be reviewed after push.
+To repeat the browser job locally, follow that workflow's environment/fixture/server commands using a disposable database. `tests/commerce_phase3_browser.mjs` covers 12 responsive pages at 1440/768/390/320px, labels, keyboard map control, mixed ticket quantities, rejected-field recovery, exact totals, simulator confirmation, one QR per ticket and queued-not-sent status. In this development session, equivalent local CUA browser interactions and responsive measurements were executed; the separate Playwright script's local execution is not claimed. Its actual CI execution passed 34 checks on `3eaaee7`; see the run links below.
 
 | Area | Executed local evidence |
 | --- | --- |
@@ -101,7 +101,7 @@ To repeat the browser job locally, follow that workflow's environment/fixture/se
 | Measured accessibility | 390px inputs 16px, inspected seat-list target 63px, confirmation buttons 44px; sampled text/control contrast 8.17–15.45:1; 768px skip link focuses the seat-list heading. These are targeted checks, not full WCAG certification. |
 | Safety/tooling | 18 web safety suites, PHP lint across source/bin/tests, JS syntax/geometry, 12 actual Apache camera-policy cases and 30 RC1 tooling contracts. |
 
-The M1 and M2 commits passed remote RC1/safety CI. M3's safety CI passed; RC1 failed an obsolete literal receipt-copy assertion. M4 updates that assertion to check the new preview-versus-delivery wording and retains the security checks. Review the final commit's actual CI run, including the new browser job, before signoff. Do not label an empty connector status response a CI pass; the connector run listing filters PR events and omits these branch push runs.
+The M1 and M2 commits passed remote RC1/safety CI. M3's RC1 run found an obsolete literal receipt-copy assertion; M4 corrected it while retaining the security checks. The first M4 browser run checked focus before the deferred script ran; `3eaaee7` waits for the actual focus condition. **Final implementation CI at `3eaaee7` passed:** [RC1 including all backend, safeguarding, Commerce and 34 Playwright checks](https://github.com/arwentz01/CTSMD/actions/runs/41233229572), [PHP safety and Apache camera-policy jobs](https://github.com/arwentz01/CTSMD/actions/runs/41233205982). Actual job conclusions and logs were reviewed. The subsequent evidence-only closeout changes documentation only. Do not label an empty connector response a CI pass; its run listing filters PR events and omits branch push runs.
 
 For an authorized hosted pilot, record operator/date/revision and private evidence references for these steps. Leave unchecked until actually executed:
 
@@ -134,8 +134,10 @@ Prefer a **forward repair with Commerce paused**, retaining new schema/history, 
 | Hosted migrations/file parity not executed | Authorized operator backup/restore proof, reviewed 107–109 definitions/import evidence and revision hash/preflight report. |
 | Stripe merchant credentials/destination unavailable to development | Correct test account/key permissions, matching account ID, actual signed test webhook receipt, Dashboard/API reconciliation and refund proof. |
 | External mail/provider configuration absent | Approved From/inbox, verified TLS/SMTP, domain authentication, inbox/link test, failure monitoring and authenticated bounce bridge. Loopback TLS is not inbox proof. |
-| Final CI/browser result pending final push | Review the final branch push's RC1 and safety runs and browser artifacts; resolve failures before pilot. |
+| Implementation CI resolved; release provenance still required | RC1, safety and 34 browser checks passed at `3eaaee7` (links above). Bind any hosted file set to a freshly generated clean-revision manifest and rerun checks after runtime changes. |
 | Physical mobile, screen reader and scanners unverified | Named operator/device/browser matrix and synthetic results, including Stripe return, denied permissions and duplicate scans. |
 | Real customer transactions intentionally unsupported | This release has only simulated/Stripe-test providers, no public activation, no anonymous audience retrieval and no audience email approval. A separately authorized live-provider/public-readiness release is required; configuring a live key is deliberately insufficient. |
 
 No hosted deployment, hosted migration, actual Stripe charge/refund, real audience email, notification-worker activation or physical-device pass is claimed.
+
+Final local release-tool evidence: a clean `3285081` manifest contained 920 classified files; revision-bound Commerce preflight reported zero file mismatches, schema/invariant checks passing, public sales false and no data modification. Regenerate the manifest for the final evidence-only checkout before any approved FTP preparation. Synthetic UI/CI fixtures were retired and the dedicated local browser server stopped; financial/ticket/audit history was retained.

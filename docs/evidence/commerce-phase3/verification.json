@@ -202,14 +202,15 @@
       "Escape hides tooltip",
       "skip link focuses seat-list heading"
     ],
-    "playwright_script_local_execution": "not executed locally; syntax checked and configured for CI"
+    "playwright_script_local_execution": "not executed locally; syntax checked and configured for CI",
+    "playwright_ci_execution": "34 checks passed on 3eaaee7; local standalone execution not claimed"
   },
   "smtp": "7 actual encrypted loopback fixture checks; no external inbox",
   "ci_review": {
     "M1": "RC1 and safety passed",
     "M2": "RC1 and safety passed",
     "M3": "safety passed; RC1 obsolete literal receipt copy assertion failed, fixed for M4",
-    "M4": "awaiting final push/run review"
+    "M4": "3285081 backend/safety passed; browser deferred-focus wait fixed in 3eaaee7; final RC1 and safety passed"
   },
   "unverified": [
     "hosted migrations and file hashes",
@@ -220,5 +221,34 @@
   "production_writes": false,
   "deployment": false,
   "live_payments": false,
-  "audience_email": false
+  "audience_email": false,
+  "ci_final": {
+    "tested_revision": "3eaaee7bd860464995b171b409af18d62cda8a8e",
+    "rc1": {
+      "url": "https://github.com/arwentz01/CTSMD/actions/runs/41233229572",
+      "job_id": 124631570461,
+      "conclusion": "success"
+    },
+    "safety": {
+      "url": "https://github.com/arwentz01/CTSMD/actions/runs/41233205982",
+      "conclusion": "success",
+      "jobs": [
+        "safety-tests",
+        "commerce-camera-policy"
+      ]
+    },
+    "playwright_checks_passed": 34,
+    "browser_screenshots": "CI rc1-evidence artifact, synthetic data only",
+    "review_method": "Actual push run IDs located in GitHub Actions UI, jobs and logs confirmed through GitHub connector"
+  },
+  "manifest_verification": {
+    "tested_revision": "3285081eb673d54f69e65d1c81ac7d5247549269",
+    "files": 920,
+    "file_mismatches": 0,
+    "schema_ready": true,
+    "aggregate_invariants_passed": true,
+    "data_modified": false,
+    "public_sales_active": false,
+    "note": "Regenerate from clean final checkout after evidence-only closeout."
+  }
 }
