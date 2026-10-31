@@ -36,6 +36,9 @@ DirectoryIndex front.php index.php
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    # Door scanning may request the same-origin camera after a user gesture.
+    # THE_REQUEST retains the original path/query after front-controller rewrites.
+    Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=()" "expr=%{THE_REQUEST} =~ m#\s/+(?:[^/?\s]+/)*admin/commerce/?\?(?:[^\s]*&)?tab=checkin(?:&[^\s]*)?\s#"
 
     <FilesMatch "\.(?:css|js|svg|webmanifest|png|jpe?g|gif|webp|ico|woff2?)$">
         Header set Cache-Control "public, max-age=604800"

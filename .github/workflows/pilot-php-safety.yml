@@ -5,6 +5,7 @@ on:
       - audit/board-pilot-readiness
     paths:
       - "src/**"
+      - ".htaccess"
       - "tests/**"
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-member.css"
@@ -32,6 +33,7 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - ".htaccess"
       - "tests/**"
       - "assets/css/ux-workspaces.css"
       - "assets/css/ux-member.css"
@@ -129,3 +131,16 @@ jobs:
           php tests/pilot_lifecycle.php
           php tests/pilot_rate_limit.php
           php tests/pilot_volunteer_cancellation.php
+
+  commerce-camera-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Apache for the isolated header fixture
+        run: sudo apt-get update -qq && sudo apt-get install -y apache2
+      - name: Check scoped camera policy through actual Apache rewrites
+        env:
+          CTSMD_APACHE_BIN: /usr/sbin/apache2
+          CTSMD_APACHE_MODULES: /usr/lib/apache2/modules
+        run: python3 tests/commerce_camera_policy.py
