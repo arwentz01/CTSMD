@@ -128,9 +128,39 @@ final class CommerceExperience
     }
     private static function venues():void
     {
-        CommerceAccess::demand(self::$db,self::$user,self::$org,'venues');echo '<h2>Venues & seating</h2><p>Create a space, arrange its seats, then publish a reusable version. Publishing freezes the layout.</p><div class="commerce-columns"><section><h3>Add venue</h3>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>Add performance space</h3>';self::form('space');echo '<label>Venue<select name="venue" required>';foreach(self::rows('SELECT * FROM commerce_venues WHERE organization_id=? ORDER BY name',[self::$org]) as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form></section></div><h3>Layout versions</h3><div class="commerce-records">';
-        foreach(self::rows('SELECT l.*,s.name space_name,v.name venue_name FROM commerce_layouts l JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE l.organization_id=? ORDER BY s.id,l.version_number DESC',[self::$org]) as $l)echo '<a href="'.self::e(self::url('layout',['id'=>$l['id']])).'">'.self::e($l['venue_name'].' / '.$l['space_name']).' · Version '.(int)$l['version_number'].' · '.self::e($l['status']).'</a>';
-        echo '</div><h3>Venue timezones</h3><p>Use IANA names. Changes affect future creation only; existing showtimes retain their saved timezone.</p>';foreach(self::rows('SELECT * FROM commerce_venues WHERE organization_id=? ORDER BY name',[self::$org]) as $venue){self::form('venue_timezone',['id'=>$venue['id']]);self::input('timezone',$venue['name'].' timezone','text',$venue['timezone_name']?:((string)(getenv('COMMERCE_VENUE_TIMEZONE')?:getenv('APP_TIMEZONE')?:'America/New_York')),'required maxlength="64"');echo '<button>Save venue timezone</button></form>';}
+        CommerceAccess::demand(self::$db,self::$user,self::$org,'venues');
+        $venues=self::rows('SELECT * FROM commerce_venues WHERE organization_id=? ORDER BY name',[self::$org]);
+        $layouts=self::rows('SELECT l.*,s.name space_name,v.name venue_name,v.id venue_id FROM commerce_layouts l JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE l.organization_id=? ORDER BY v.name,s.name,l.version_number DESC',[self::$org]);
+        echo '<div class="commerce-venue-header"><div><h2>Venues & seating</h2><p>Manage your theatres and their seating plans. Publish a layout when it is ready to use for performances.</p></div><a class="commerce-venue-schedule-link" href="'.self::e(self::url('schedule')).'">Performance schedule &rarr;</a></div>';
+        echo '<div class="commerce-venue-group"><h3>Seating layouts</h3>';
+        if(!$layouts)echo '<p class="commerce-venue-muted">No seating layouts yet. Create a venue and performance space below to get started.</p>';
+        else {
+            $last='';
+            foreach($layouts as $l){
+                $group=$l['venue_id'].'/'.$l['space_name'];
+                if($group!==$last){if($last!=='')echo '</div></div>';echo '<div class="commerce-venue-layout-group"><h4>'.self::e($l['venue_name'].' / '.$l['space_name']).'</h4><div class="commerce-venue-layout-list">';$last=$group;}
+                echo '<a class="commerce-venue-layout" href="'.self::e(self::url('layout',['id'=>$l['id']])).'"><span>Version '.(int)$l['version_number'].'</span><span class="commerce-venue-layout-status '.($l['status']==='published'?'is-published':'').'">'.self::e(ucfirst($l['status'])).'</span><span aria-hidden="true">&rarr;</span></a>';
+            }
+            if($last!=='')echo '</div></div>';
+        }
+        echo '</div>';
+        echo '<div class="commerce-venue-group"><h3>Venue settings</h3><p class="commerce-venue-muted">Choose a timezone for each venue. Existing performance times will not change.</p>';
+        if(!$venues)echo '<p>No venues created yet.</p>';
+        foreach($venues as $venue){
+            $default=(string)($venue['timezone_name']?:getenv('COMMERCE_VENUE_TIMEZONE')?:getenv('APP_TIMEZONE')?:'America/New_York');
+            $zones=DateTimeZone::listIdentifiers();
+            if(!in_array($default,$zones,true))array_unshift($zones,$default);
+            echo '<div class="commerce-venue-setting"><div><strong>'.self::e($venue['name']).'</strong>';if(trim((string)$venue['location'])!=='')echo '<p>'.self::e($venue['location']).'</p>';echo '</div>';
+            self::form('venue_timezone',['id'=>$venue['id']]);
+            echo '<label>Timezone<select name="timezone" required>';
+            foreach($zones as $zone){$label=str_replace('_',' ',str_replace('/',' / ',$zone));echo '<option value="'.self::e($zone).'"'.($zone===$default?' selected':'').'>'.self::e($label).'</option>';}
+            echo '</select></label><button>Save timezone</button></form></div>';
+        }
+        echo '</div>';
+        echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an existing venue.</p>';
+        if($venues){self::form('space');echo '<label>Venue<select name="venue" required>';foreach($venues as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
+        else echo '<p>Create your first venue before adding a performance space.</p>';
+        echo '</section></div></details>';
     }
     private static function layout():void
     {
