@@ -7,7 +7,7 @@ final class CommerceFulfillmentService
     public static function issueLocked(PDO $db,int $org,array $order):void
     {
         if(!$db->inTransaction())throw new LogicException('Ticket fulfillment requires a transaction.');
-        $id=(int)$order['id'];$performance=(int)$order['performance_id'];
+        $id=(int)$order['id'];$performance=(int)$order['performance_id'];CommercePerformancePolicy::demand($db,$org,CommerceStore::row($db,'performances',$org,$performance));
         $q=$db->prepare('SELECT * FROM commerce_order_lines WHERE organization_id=? AND order_id=? ORDER BY id');$q->execute([$org,$id]);$lines=$q->fetchAll();$inventory=array_column(CommerceInventoryService::inventory($db,$org,$performance),null,'seat_key');
         if(!$lines)throw new RuntimeException('Order has no fulfillable seats; manual reconciliation required.');
         foreach($lines as $line){$seat=$inventory[$line['seat_key']]??null;if(!$seat||$seat['state']!=='held'||(int)$seat['order_id']!==$id)throw new RuntimeException('Inventory does not match settlement; manual reconciliation required.');}

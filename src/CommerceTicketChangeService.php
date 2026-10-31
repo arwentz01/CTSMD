@@ -7,7 +7,7 @@ final class CommerceTicketChangeService
     public static function change(PDO $db,array $u,int $org,int $ticket,string $target,string $reason,string $expectedTokenHash):array
     {
         CommerceAccess::demand($db,$u,$org,'refund');$reason=trim($reason);if($reason===''||mb_strlen($reason)>500||!preg_match('/^[a-f0-9]{64}$/',$expectedTokenHash))throw new RuntimeException('Record a reason and reload the current ticket before changing it.');$before=CommerceStore::row($db,'tickets',$org,$ticket);
-        return CommerceStore::tx($db,function()use($db,$u,$org,$ticket,$target,$reason,$expectedTokenHash,$before){$p=CommerceStore::row($db,'performances',$org,(int)$before['performance_id'],true);ProductionLifecycleGuard::assertWritable($db,(int)$p['production_id'],true);$t=CommerceStore::row($db,'tickets',$org,$ticket,true);$order=CommerceStore::row($db,'orders',$org,(int)$t['order_id'],true);
+        return CommerceStore::tx($db,function()use($db,$u,$org,$ticket,$target,$reason,$expectedTokenHash,$before){$p=CommerceStore::row($db,'performances',$org,(int)$before['performance_id'],true);CommercePerformancePolicy::demand($db,$org,$p,false);$t=CommerceStore::row($db,'tickets',$org,$ticket,true);$order=CommerceStore::row($db,'orders',$org,(int)$t['order_id'],true);
             if($order['state']!=='paid'||$t['state']!=='valid'||$t['checked_in_at'])throw new RuntimeException('Only valid, unadmitted tickets on paid orders can be changed. Reverse admission first.');
             if(!hash_equals(hash('sha256',$t['token']),$expectedTokenHash))throw new RuntimeException('This ticket already changed. Reload its current status before retrying.');
             $priorHash=hash('sha256',$t['token']);$token=bin2hex(random_bytes(32));
