@@ -6,8 +6,8 @@ require_once __DIR__.'/OrganizationBranding.php';
 final class CommerceAccess
 {
     public const ROLES=[
-        'administrator'=>['configure','venues','inventory','sell','checkin','reverse','refund','report','test'],
-        'box_office'=>['venues','inventory','sell','checkin','reverse','refund','report','test'],
+        'administrator'=>['configure','venues','inventory','sell','checkin','reverse','refund','report','test','complimentary'],
+        'box_office'=>['venues','inventory','sell','checkin','reverse','refund','report','test','complimentary'],
         'seller'=>['sell','test'], 'door'=>['checkin'], 'reporter'=>['report'], 'tester'=>['test'],
     ];
     public static function local():bool

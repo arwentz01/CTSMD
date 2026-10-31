@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/CommerceInventoryService.php';
 require_once __DIR__.'/CommercePaymentProvider.php';
+require_once __DIR__.'/CommerceFulfillmentService.php';
 final class CommercePaymentService
 {
     public static function start(PDO $db,array $u,int $org,int $order,string $token,string $scenario):array
@@ -23,8 +24,7 @@ final class CommercePaymentService
             $event='simulated-'.$a['provider_reference'].'-'.$status;$db->prepare('INSERT IGNORE INTO commerce_payment_events(organization_id,attempt_id,event_key,outcome) VALUES(?,?,?,?)')->execute([$org,$a['id'],$event,$status]);$db->prepare('UPDATE commerce_payment_attempts SET state=? WHERE organization_id=? AND id=?')->execute([$status,$org,$a['id']]);
             if($status==='unknown'){$state='exception';}
             elseif($status==='succeeded'){
-                $q=$db->prepare('SELECT * FROM commerce_order_lines WHERE organization_id=? AND order_id=? ORDER BY id');$q->execute([$org,$order]);$lines=$q->fetchAll();$inventory=array_column(CommerceInventoryService::inventory($db,$org,(int)$o['performance_id']),null,'seat_key');if(!$lines)throw new RuntimeException('Order has no fulfillable seats; manual reconciliation required.');foreach($lines as $l){$i=$inventory[$l['seat_key']]??null;if(!$i||$i['state']!=='held'||(int)$i['order_id']!==$order)throw new RuntimeException('Inventory does not match payment; manual reconciliation required.');}
-                foreach($lines as $l){$db->prepare("INSERT INTO commerce_tickets(organization_id,order_id,performance_id,seat_key,token) VALUES(?,?,?,?,?)")->execute([$org,$order,$o['performance_id'],$l['seat_key'],bin2hex(random_bytes(32))]);$db->prepare("UPDATE commerce_inventory SET state='sold' WHERE organization_id=? AND performance_id=? AND seat_key=? AND order_id=?")->execute([$org,$o['performance_id'],$l['seat_key'],$order]);}$state='paid';
+                CommerceFulfillmentService::issueLocked($db,$org,$o);$state='paid';
             }else{$state=$status==='canceled'?'canceled':'failed';$db->prepare("UPDATE commerce_inventory SET state='released',order_id=NULL WHERE organization_id=? AND performance_id=? AND order_id=? AND state='held'")->execute([$org,$o['performance_id'],$order]);}
             $db->prepare('UPDATE commerce_orders SET state=? WHERE organization_id=? AND id=?')->execute([$state,$org,$order]);if($o['state']!==$state)CommerceStore::audit($db,$org,(int)$u['id'],'commerce.payment_'.$state,'order',$order,['attempt'=>$a['id'],'provider'=>'simulated']);return CommerceStore::row($db,'orders',$org,$order);
         });
