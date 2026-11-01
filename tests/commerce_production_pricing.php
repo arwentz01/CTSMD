@@ -1,0 +1,35 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/fixtures/commerce.php';
+require_once dirname(__DIR__).'/src/CommercePricingService.php';
+require_once dirname(__DIR__).'/src/CommerceProductionService.php';
+require_once dirname(__DIR__).'/src/CommerceScheduleService.php';
+require_once dirname(__DIR__).'/src/CommercePaymentService.php';
+$db=Database::connect(dirname(__DIR__));$f=null;$n=0;
+$ok=static function(bool $v,string $label)use(&$n){if(!$v)throw new RuntimeException($label);$n++;echo "PASS $label\n";};
+$reject=static function(callable $work,string $label)use($ok){try{$work();}catch(RuntimeException){$ok(true,$label);return;}throw new RuntimeException('Expected rejection: '.$label);};
+try{
+$f=commerceFixture($db);$org=$f['org'];$u=$f['admin'];$production=$f['productions']['A'];
+$review=CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>2500,'Child'=>1000]],'Set synthetic defaults',false);$key=bin2hex(random_bytes(16));CommercePricingService::apply($db,$u,$org,$review,$review['hash'],$key);
+$ok(CommercePricingService::defaults($db,$org,$production)['prices']['standard']['Adult']===2500,'Production defaults persisted');
+$ok(CommerceStore::row($db,'performances',$org,$f['performance'])['prices_json']!==''&&json_decode(CommerceStore::row($db,'performances',$org,$f['performance'])['prices_json'],true)===$f['prices'],'Existing performances remain overrides until explicitly inherited');
+$r=CommercePricingService::preview($db,$u,$org,$production,'inherit',[$f['performance']],[],'Enable inheritance',false);CommercePricingService::apply($db,$u,$org,$r,$r['hash'],bin2hex(random_bytes(16)));
+$input=['dates'=>[date('Y-m-d',time()+4*86400),date('Y-m-d',time()+4*86400)],'times'=>['14:00','19:00'],'pricing_source'=>'production','seating_mode'=>'general_admission'];$prices=CommercePricingService::defaults($db,$org,$production)['prices'];$preview=CommerceScheduleService::preview($db,$u,$org,$production,$f['layout'],$prices,$input);$ids=CommerceScheduleService::create($db,$u,$org,$production,$f['layout'],$prices,$input,$preview['hash'],bin2hex(random_bytes(16)));
+$ok(count($ids)===2&&CommerceStore::row($db,'performances',$org,$ids[0])['seating_mode']==='general_admission','Same-day matinee and evening use atomic existing creator with GA inheritance');
+$token=bin2hex(random_bytes(32));$o=CommerceInventoryService::holdQuantities($db,$u,$org,$f['performance'],['a1'],['standard'=>['Adult'=>1]],'Synthetic Pricing Guest','pricing@commerce.invalid','',bin2hex(random_bytes(16)),$token);CommercePaymentService::start($db,$u,$org,$o['id'],$token,'success');CommercePaymentService::refresh($db,$u,$org,$o['id'],$token);
+$reject(fn()=>CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>3000]],'Missing acknowledgement',false),'Orders require explicit acknowledgement');
+$r=CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>3000]],'Reviewed default increase',true);$key=bin2hex(random_bytes(16));$result=CommercePricingService::apply($db,$u,$org,$r,$r['hash'],$key);$ok(count($result['performances'])===3,'Default update includes all future inherited performances');$ok(CommercePricingService::apply($db,$u,$org,$r,$r['hash'],$key)==$result,'Pricing apply retry is idempotent');
+$ok((int)CommerceStore::row($db,'orders',$org,$o['id'])['subtotal_minor']===2500,'Paid order price snapshot unchanged');
+$ok(json_decode(CommerceStore::row($db,'performances',$org,$ids[0])['prices_json'],true)['standard']['Adult']===3000,'GA inherits updated prices');
+$r=CommercePricingService::preview($db,$u,$org,$production,'override',[$ids[0]],['standard'=>['Adult'=>3500]],'Selected override',true);CommercePricingService::apply($db,$u,$org,$r,$r['hash'],bin2hex(random_bytes(16)));
+$r=CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>3100]],'Another default revision',true);CommercePricingService::apply($db,$u,$org,$r,$r['hash'],bin2hex(random_bytes(16)));$ok(json_decode(CommerceStore::row($db,'performances',$org,$ids[0])['prices_json'],true)['standard']['Adult']===3500,'Selected override remains detached from default revisions');
+$stale=CommercePricingService::preview($db,$u,$org,$production,'override',[$ids[1]],['standard'=>['Adult'=>3700]],'Stale review',true);CommerceInventoryService::configure($db,$u,$org,$ids[1],['standard'=>['Adult'=>3200]],'closed',false,0,0,0);$reject(fn()=>CommercePricingService::apply($db,$u,$org,$stale,$stale['hash'],bin2hex(random_bytes(16))),'Stale pricing review rejected atomically');
+$reject(fn()=>CommercePricingService::preview($db,$u,$org,$production,'override',[$f['performance2']],$f['prices'],'Foreign production',true),'Cross-production pricing selection rejected');
+$reject(fn()=>CommercePricingService::preview($db,$f['tester'],$org,$production,'defaults',[],$f['prices'],'Unauthorized',true),'Tester cannot manage pricing');
+$reject(fn()=>CommercePricingService::parse([['zone'=>'standard','category'=>'Adult','amount'=>'1.001']]),'Fractional cents rejected');$ok(CommercePricingService::parse([['zone'=>'standard','category'=>'Adult','amount'=>'12.34']])['standard']['Adult']===1234,'Currency parsing exact');
+CommerceInventoryService::allocate($db,$u,$org,$f['performance'],['a2'],'blocked','Metrics block');$groups=CommerceProductionService::productions($db,$u,$org);$group=array_values(array_filter($groups,fn($p)=>(int)$p['id']===$production))[0];$show=array_values(array_filter($group['shows'],fn($p)=>(int)$p['id']===$f['performance']))[0];$ok($show['capacity']===20&&$show['sold']===1&&$show['blocked']===1&&$show['sellable']===18&&!$show['sold_out'],'Physical capacity, sold, blocked and actual sellable inventory reconcile');$ok($group['totals']['capacity']===60,'Production capacity sums actual performance inventory');$ok($show['net_minor']===(int)$o['total_minor'],'Production projection uses settled revenue');
+CommercePaymentService::refund($db,$u,$org,$o['id'],'Synthetic refund for metrics');$group=array_values(array_filter(CommerceProductionService::productions($db,$u,$org),fn($p)=>(int)$p['id']===$production))[0];$ok($group['revenue']['USD']===0,'Revenue reflects refunds');
+CommerceInventoryService::configure($db,$u,$org,$ids[0],['standard'=>['Adult'=>3500]],'open',false,0,0,0);CommerceInventoryService::allocate($db,$u,$org,$ids[0],array_map(fn($i)=>'a'.$i,range(1,20)),'blocked','All blocked is not sold out');$group=array_values(array_filter(CommerceProductionService::productions($db,$u,$org),fn($p)=>(int)$p['id']===$production))[0];$show=array_values(array_filter($group['shows'],fn($p)=>(int)$p['id']===$ids[0]))[0];$ok(!$show['sold_out']&&$show['sellable']===0&&str_contains($show['readiness'],'allocated'),'Blocked capacity is unavailable rather than sold out');
+$reject(fn()=>CommerceProductionService::productions($db,$f['tester'],$org),'Storefront tester cannot read staff projections');
+echo "PASS $n production, pricing, inheritance and reporting checks\n";
+}finally{if($f)retireMyTheatreFixture($db,$f);}

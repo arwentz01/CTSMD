@@ -46,8 +46,24 @@ final class CommerceInventoryService
     public static function configure(PDO $db,array $u,int $org,int $id,array $prices,string $sales,bool $checkin,int $fee,int $tax,int $discount):void
     {
         CommerceAccess::demand($db,$u,$org,'inventory');if(!in_array($sales,['open','closed'],true)||$fee<0||$fee>100000||$tax<0||$tax>10000||$discount<0||$discount>1000000)throw new RuntimeException('Check sales status, fees, tax and discount amounts.');
-        CommerceStore::tx($db,function()use($db,$u,$org,$id,$prices,$sales,$checkin,$fee,$tax,$discount){$p=CommerceStore::row($db,'performances',$org,$id,true);ProductionLifecycleGuard::assertWritable($db,(int)$p['production_id'],true);if($sales==='open')CommercePerformancePolicy::demand($db,$org,$p,false);self::prices($prices,array_map(fn($i)=>json_decode($i['seat_json'],true),self::inventory($db,$org,$id)));$db->prepare('UPDATE commerce_performances SET prices_json=?,sales_status=?,checkin_enabled=?,fee_minor=?,tax_basis_points=?,discount_minor=? WHERE id=? AND organization_id=?')->execute([json_encode($prices),$sales,$checkin?1:0,$fee,$tax,$discount,$id,$org]);CommerceStore::audit($db,$org,(int)$u['id'],'commerce.performance_configured','performance',$id,['sales'=>$sales,'checkin'=>$checkin]);});
+        CommerceStore::tx($db,function()use($db,$u,$org,$id,$prices,$sales,$checkin,$fee,$tax,$discount){
+            $before=CommerceStore::row($db,'performances',$org,$id,true);$changed=json_decode($before['prices_json'],true)!=$prices;
+            if($changed){$q=$db->prepare('SELECT COUNT(*) FROM commerce_orders WHERE organization_id=? AND performance_id=?');$q->execute([$org,$id]);if((int)$q->fetchColumn()>0)throw new RuntimeException('Use reviewed pricing management and acknowledge existing order snapshots before changing prices.');}
+            self::configureLocked($db,$u,$org,$id,$prices,$sales,$checkin,$fee,$tax,$discount);
+            require_once __DIR__.'/CommercePricingService.php';
+            if($changed)CommerceStore::audit($db,$org,(int)$u['id'],'commerce.performance_prices_changed','performance',$id,['before'=>json_decode($before['prices_json'],true),'after'=>$prices,'existing_order_count'=>0,'order_snapshots_unchanged'=>true]);
+            // Legacy single-performance price edits explicitly detach inherited pricing.
+            if($changed&&CommercePricingService::ready($db))CommercePricingService::bindLocked($db,$org,$id,'override');
+        });
     }
+    public static function configureLocked(PDO $db,array $u,int $org,int $id,array $prices,string $sales,bool $checkin,int $fee,int $tax,int $discount):void
+    {
+        if(!$db->inTransaction())throw new LogicException('Performance configuration requires a transaction.');
+        CommerceAccess::demand($db,$u,$org,'inventory');
+        if(!in_array($sales,['open','closed'],true)||$fee<0||$fee>100000||$tax<0||$tax>10000||$discount<0||$discount>1000000)throw new RuntimeException('Check sales status, fees, tax and discount amounts.');
+        $p=CommerceStore::row($db,'performances',$org,$id,true);ProductionLifecycleGuard::assertWritable($db,(int)$p['production_id'],true);if($sales==='open')CommercePerformancePolicy::demand($db,$org,$p,false);self::prices($prices,array_map(fn($i)=>json_decode($i['seat_json'],true),self::inventory($db,$org,$id)));$db->prepare('UPDATE commerce_performances SET prices_json=?,sales_status=?,checkin_enabled=?,fee_minor=?,tax_basis_points=?,discount_minor=? WHERE id=? AND organization_id=?')->execute([json_encode($prices),$sales,$checkin?1:0,$fee,$tax,$discount,$id,$org]);CommerceStore::audit($db,$org,(int)$u['id'],'commerce.performance_configured','performance',$id,['sales'=>$sales,'checkin'=>$checkin]);
+    }
+
     public static function allocate(PDO $db,array $u,int $org,int $id,array $keys,string $state,string $reason):void
     {
         self::allocateMany($db,$u,$org,[$id],$keys,$state,$reason);
