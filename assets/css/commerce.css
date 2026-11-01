@@ -151,3 +151,10 @@
 .commerce-storefront .commerce-cart-item p{margin:5px 0 12px}
 .commerce-storefront .commerce-cart-item form{margin:0}
 .commerce-storefront .commerce-cart-item button{background:#f8eeee;color:#702a3f;border:1px solid #d9bfc7}
+
+.commerce-storefront .commerce-cart-tickets{list-style:none;padding:0;margin:12px 0;border-block:1px solid #eadfe0}
+.commerce-storefront .commerce-cart-tickets li{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid #f1e9ea;font-size:13px}
+.commerce-storefront .commerce-cart-tickets li:last-child{border-bottom:0}
+.commerce-storefront .commerce-cart-tickets li strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+.commerce-storefront .commerce-cart-item-total{display:flex;justify-content:space-between;gap:16px;align-items:baseline;font-size:13px}
+@media(max-width:520px){.commerce-storefront .commerce-cart-item-total{display:block}.commerce-storefront .commerce-cart-item-total strong{display:block;margin-top:5px}}
