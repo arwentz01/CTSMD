@@ -75,12 +75,36 @@ final class CommerceCartService
         });
     }
 
+    /** Validate the entire cart against current holds before any payment integration. */
+    public static function readiness(PDO $db,array $user,int $organization,int $cart,string $token):array
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        return CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$token):array{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$token);
+            if($c['state']!=='open')throw new RuntimeException('This cart is no longer open.');
+            $q=$db->prepare("SELECT o.id,o.state,o.expires_at,o.currency,o.customer_name,o.customer_email,
+                  (o.expires_at>NOW()) AS active_hold,o.total_minor
+                  FROM commerce_cart_orders co
+                  JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id
+                  WHERE co.organization_id=? AND co.cart_id=? ORDER BY o.id FOR UPDATE");
+            $q->execute([$organization,$cart]);$orders=$q->fetchAll();
+            if(!$orders)throw new RuntimeException('Add tickets to your cart before checkout.');
+            $first=$orders[0];$total=0;
+            foreach($orders as $order){
+                if($order['state']!=='held'||!(bool)$order['active_hold'])throw new RuntimeException('One or more ticket holds expired. Remove expired selections and choose tickets again.');
+                if($order['currency']!==$first['currency']||$order['customer_name']!==$first['customer_name']||$order['customer_email']!==$first['customer_email'])throw new RuntimeException('Cart selections must have the same purchaser and currency.');
+                $total+=(int)$order['total_minor'];
+            }
+            return ['ready'=>true,'order_count'=>count($orders),'total_minor'=>$total,'currency'=>$first['currency']];
+        });
+    }
+
     public static function summary(PDO $db,array $user,int $organization,int $cart,string $token):array
     {
         CommerceAccess::demand($db,$user,$organization,'test');
         return CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$token):array{
             $c=self::ownedLocked($db,$user,$organization,$cart,$token);
-            $q=$db->prepare('SELECT o.id,o.performance_id,o.state,o.expires_at,(o.state='held' AND o.expires_at>NOW()) AS active_hold,o.currency,o.subtotal_minor,o.discount_minor,o.tax_minor,o.fee_minor,o.total_minor FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? ORDER BY co.added_at,o.id');
+            $q=$db->prepare('SELECT o.id,o.performance_id,o.state,o.expires_at,(o.state=\'held\' AND o.expires_at>NOW()) AS active_hold,o.currency,o.subtotal_minor,o.discount_minor,o.tax_minor,o.fee_minor,o.total_minor FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? ORDER BY co.added_at,o.id');
             $q->execute([$organization,$cart]);$orders=$q->fetchAll();
             $totals=['subtotal_minor'=>0,'discount_minor'=>0,'tax_minor'=>0,'fee_minor'=>0,'total_minor'=>0];
             foreach($orders as $o){if(!(bool)$o['active_hold'])continue;foreach($totals as $key=>$_)$totals[$key]+=(int)$o[$key];}
