@@ -22,7 +22,7 @@
     });
     root.querySelectorAll('[data-schedule-layout]').forEach(layout=>{
       if(layout.dataset.initialized)return;layout.dataset.initialized='1';const form=layout.closest('form'),space=form.querySelector('[data-space-choice]'),status=form.querySelector('[data-schedule-timezone]');
-      const update=()=>{status.textContent=`Venue timezone: ${layout.selectedOptions[0]?.dataset.timezone||'Choose a layout'}. Showtimes use this local timezone.`;};layout.addEventListener('change',update);update();
+      const update=()=>{form.querySelector('[data-schedule-zones]').textContent=`Seating zones to price: ${layout.selectedOptions[0]?.dataset.zones||'none'}`;status.textContent=`Venue timezone: ${layout.selectedOptions[0]?.dataset.timezone||'Choose a layout'}. Showtimes use this local timezone.`;};layout.addEventListener('change',update);update();
       space?.addEventListener('change',()=>{[...layout.options].forEach(option=>{option.hidden=!!space.value&&option.dataset.space!==space.value;option.disabled=option.hidden;});if(layout.selectedOptions[0]?.disabled)layout.value=[...layout.options].find(option=>!option.disabled)?.value||'';update();});
       const production=form.querySelector('[data-production-choice]'),source=form.querySelector('[data-pricing-source]'),defaults=JSON.parse(root.querySelector('[data-production-defaults]')?.textContent||'{}');
       production?.addEventListener('change',()=>{const option=source.querySelector('[value=production]');option.disabled=!defaults[production.value];if(option.disabled&&source.value==='production'){source.value='override';source.dispatchEvent(new Event('change'));}});
@@ -38,7 +38,7 @@
       if(body!==target||version!==loadVersion)return;
       if(!response.ok)throw Error('The request could not be completed. Reload this view and try again.');
       const error=doc.querySelector('[role=alert]');if(error&&options.method==='POST'){showError(error.textContent);return;}
-      const content=doc.querySelector('[data-production-drawer]');
+      const content=doc.querySelector('[data-production-drawer],[data-order-detail]');
       if(!content){if(error){showError(error.textContent);return;}window.location.assign(response.url);return;}
       currentUrl=response.url;content.querySelectorAll('form').forEach(form=>form.setAttribute('action',currentUrl));
       body.replaceChildren(content);if(error)showError(error.textContent);initialize(body);

@@ -94,6 +94,7 @@ jobs:
           php tests/commerce_customer_policy.php
           php tests/commerce_phase2_http.php
           php tests/commerce_production_pricing.php
+          php tests/commerce_production_concurrency.php
           php tests/commerce_scheduling.php
           php tests/commerce_bulk_allocation.php
           php tests/commerce_schedule_concurrency.php

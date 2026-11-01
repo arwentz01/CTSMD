@@ -1,0 +1,42 @@
+{
+  "environment": "Disposable synthetic loopback schema only; no deployment or live payment activation",
+  "production_pricing": [
+    "PASS Production defaults persisted",
+    "PASS Existing performances remain overrides until explicitly inherited",
+    "PASS Same-day matinee and evening use atomic existing creator with GA inheritance",
+    "PASS Orders require explicit acknowledgement",
+    "PASS Default update includes all future inherited performances",
+    "PASS Pricing apply retry is idempotent",
+    "PASS Paid order price snapshot unchanged",
+    "PASS GA inherits updated prices",
+    "PASS Selected override remains detached from default revisions",
+    "PASS Stale pricing review rejected atomically",
+    "PASS Cross-production pricing selection rejected",
+    "PASS Tester cannot manage pricing",
+    "PASS Fractional cents rejected",
+    "PASS Currency parsing exact",
+    "PASS Physical capacity, sold, blocked and actual sellable inventory reconcile",
+    "PASS Production capacity sums actual performance inventory",
+    "PASS Production projection uses settled revenue",
+    "PASS Revenue reflects refunds",
+    "PASS Blocked capacity is unavailable rather than sold out",
+    "PASS Expired unpaid holds are effectively free in read-only reporting",
+    "PASS Uncertain payment holds stay protected after original deadline",
+    "PASS Legacy direct configuration cannot bypass post-sale pricing review",
+    "PASS Sold out requires all physical positions sold",
+    "PASS Seller-only access cannot read revenue",
+    "PASS Storefront tester cannot read staff projections",
+    "PASS 25 production, pricing, inheritance and reporting checks"
+  ],
+  "pricing_purchase_race": "PASS Concurrent pricing/purchase: atomic review or safe rollback, coherent old/new quote, no duplicate or partial hold (REJECT/WIN)",
+  "hosted_copied_environment": "PASS 22 hosted HTTP checks",
+  "planning_http_final": "PASS 18 planning HTTP checks",
+  "targeted_browser": "Authorized existing order opened in the same management drawer with audit trail; no mutation",
+  "static_checks": [
+    "Changed PHP lint",
+    "Changed JavaScript syntax",
+    "git diff --check",
+    "Existing seat geometry checks",
+    "12 Apache camera policy cases"
+  ]
+}
