@@ -64,7 +64,10 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
-  document.querySelectorAll('[data-allocation-map]').forEach(root => {
+  window.initializeCommerceAllocations = scope => scope.querySelectorAll('[data-allocation-map]').forEach(root => {
+    if(root.dataset.initialized)return;root.dataset.initialized='1';
+    const form=root.closest('form'),scope=form.querySelector('select[name=scope]');
+    if(scope){const selected=form.querySelector('fieldset'),range=form.querySelector('[name=from]')?.closest('.commerce-columns');const update=()=>{selected.hidden=scope.value!=='selected';if(range)range.hidden=scope.value!=='range';};scope.addEventListener('change',update);update();}
     const doc = JSON.parse(root.querySelector('[data-allocation-document]').textContent);
     const svg = root.querySelector('svg');
     const checks = [...root.closest('form').querySelectorAll('input[name="seats[]"]')];
@@ -102,6 +105,7 @@
     root.querySelector('[data-allocation-fit]').addEventListener('click',()=>{view=window.CommerceGeometry.bounds(doc.items);render();});
     render();
   });
+  window.initializeCommerceAllocations(document);
 })();
 
 (() => {

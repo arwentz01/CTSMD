@@ -31,37 +31,72 @@
     });
   };
   initialize(document);
-  let drawer=null,body=null,returnFocus=null,currentUrl='',loadVersion=0;
+  let drawer=null,body=null,returnFocus=null,currentUrl='',loadVersion=0,dirty=false,headerTitle=null,context=null,ignorePop=false;
+  const views=[], session=Date.now().toString(36);
+  let index=-1,baseScroll=0;
+  const mayLeave=()=>!dirty||window.confirm('Discard unsaved changes?');
+  const saveView=()=>{if(index>=0)views[index].scroll=drawer.scrollTop;};
   const showError=message=>{let error=body.querySelector('[data-drawer-error]');if(!error){error=document.createElement('div');error.dataset.drawerError='';error.className='commerce-error';error.setAttribute('role','alert');error.tabIndex=-1;body.prepend(error);}error.textContent=message;error.focus();};
-  const load=async(url,options={})=>{
+  const dispose=()=>{loadVersion++;drawer?.remove();drawer=null;body=null;dirty=false;returnFocus?.focus({preventScroll:true});window.scrollTo(0,baseScroll);};
+  const load=async(url,options={},navigation='push')=>{
     const target=body,version=++loadVersion;target.setAttribute('aria-busy','true');
     try{
       const response=await fetch(url,{credentials:'same-origin',...options}),doc=new DOMParser().parseFromString(await response.text(),'text/html');
       if(body!==target||version!==loadVersion)return;
-      if(!response.ok)throw Error('The request could not be completed. Reload this view and try again.');
+      if(!response.ok)throw Error('The request could not be completed. Try again.');
       const error=doc.querySelector('[role=alert]');if(error&&options.method==='POST'){showError(error.textContent);return;}
-      const content=doc.querySelector('[data-production-drawer],[data-order-detail]');
-      if(!content){if(error){showError(error.textContent);return;}window.location.assign(response.url);return;}
-      currentUrl=response.url;content.querySelectorAll('form').forEach(form=>form.setAttribute('action',currentUrl));
-      body.replaceChildren(content);if(error)showError(error.textContent);initialize(body);
-      const heading=body.querySelector('h2,h1');if(heading){heading.tabIndex=-1;heading.focus();}
-    }catch(error){if(body===target&&version===loadVersion)showError(error.message||'Unable to load this view. Try again.');}
+      const content=doc.querySelector('[data-production-drawer],[data-order-detail]')||doc.querySelector('.commerce-content');
+      if(!content){throw Error('This view is unavailable. Close this drawer and reload the page.');}
+      if(error){showError(error.textContent);return;}
+      if(navigation!=='restore')saveView();currentUrl=response.url;content.querySelectorAll('form').forEach(form=>form.setAttribute('action',currentUrl));
+      if(navigation==='push'){views.splice(index+1);views.push({url:currentUrl,scroll:0});index++;history.pushState({commerceDrawer:session,index},'',currentUrl);}
+      else if(navigation==='replace'){views[index]={url:currentUrl,scroll:0};history.replaceState({commerceDrawer:session,index},'',currentUrl);}
+      const performance=content.querySelector('[data-performance-context]');
+      if(performance){context.replaceChildren(performance.cloneNode(true));performance.hidden=true;}
+      else if(navigation==='restore'){context.innerHTML=views[index]?.context||'';}
+      if(navigation!=='restore')views[index].context=context.innerHTML;
+      body.replaceChildren(content);dirty=false;initialize(body);window.initializeCommerceAllocations?.(body);
+      const heading=body.querySelector('h2,h1,h3');headerTitle.textContent=heading?.textContent||'Performance';if(heading)heading.hidden=true;
+      drawer.querySelector('[data-drawer-back]').textContent=index>0?'Back':'Back to workspace';
+      drawer.scrollTop=views[index]?.scroll||0;headerTitle.focus({preventScroll:true});
+    }catch(error){if(body===target&&version===loadVersion)showError(error.message||'Unable to load this view.');}
     finally{if(version===loadVersion)target.removeAttribute('aria-busy');}
   };
+  const close=()=>{if(mayLeave()){if(index<0)dispose();else{dirty=false;history.go(-(index+1));}}};
+  window.addEventListener('popstate',event=>{
+    if(!drawer){if(event.state?.commerceDrawer===session){openDrawer();index=event.state.index;void load(views[index].url,{},'restore');}return;}if(ignorePop){ignorePop=false;return;}
+    const next=event.state?.commerceDrawer===session?event.state.index:-1;
+    if(!mayLeave()){ignorePop=true;history.go(index-next);return;}
+    dirty=false;saveView();if(next<0){dispose();return;}index=next;void load(views[index].url,{},'restore');
+  });
+  window.addEventListener('beforeunload',event=>{if(drawer&&dirty){event.preventDefault();event.returnValue='';}});
+  document.addEventListener('input',event=>{if(body?.contains(event.target))dirty=true;});
+  document.addEventListener('change',event=>{if(body?.contains(event.target))dirty=true;});
+  const openDrawer=()=>{
+      drawer=document.createElement('dialog');drawer.className='commerce-page commerce-drawer commerce-production-drawer';drawer.setAttribute('aria-labelledby','commerce-drawer-title');
+      const header=document.createElement('header');header.className='commerce-drawer-header';
+      const back=document.createElement('button');back.type='button';back.dataset.drawerBack='';back.textContent='Back to workspace';back.addEventListener('click',()=>{if(index<0){close();return;}if(mayLeave()){dirty=false;history.back();}});
+      headerTitle=document.createElement('h2');headerTitle.id='commerce-drawer-title';headerTitle.tabIndex=-1;headerTitle.textContent='Loading performance';
+      const button=document.createElement('button');button.type='button';button.textContent='Close';button.addEventListener('click',close);
+      context=document.createElement('div');context.className='commerce-drawer-context';
+      body=document.createElement('div');body.className='commerce-drawer-body';header.append(back,headerTitle,button);drawer.append(header,context,body);document.body.append(drawer);
+      drawer.addEventListener('cancel',event=>{event.preventDefault();close();});drawer.showModal();headerTitle.focus();
+  };
   document.addEventListener('click',event=>{
-    const link=event.target.closest('[data-commerce-drawer-link]');if(!link||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return;
-    event.preventDefault();
-    if(!drawer){
-      returnFocus=link;drawer=document.createElement('dialog');drawer.className='commerce-page commerce-drawer commerce-production-drawer';drawer.setAttribute('aria-label','Production and performance management');
-      const close=document.createElement('button');close.type='button';close.className='commerce-drawer-close';close.textContent='Close';close.addEventListener('click',()=>drawer.close());body=document.createElement('div');body.className='commerce-drawer-body';drawer.append(close,body);document.body.append(drawer);drawer.addEventListener('close',()=>{drawer.remove();drawer=null;body=null;loadVersion++;returnFocus?.focus();});drawer.showModal();close.focus();
-    }
+    if(body?.contains(event.target)&&event.target.closest('[data-add-price],[data-remove-price],[data-add-compact-showtime],[data-remove-compact-showtime]'))dirty=true;
+    const link=event.target.closest('a[href]');if(!link||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey||event.defaultPrevented)return;
+    const inside=body?.contains(link),url=new URL(link.href);
+    if(!link.matches('[data-commerce-drawer-link]')&&!(inside&&url.origin===location.origin&&url.pathname.endsWith('/admin/commerce')&&!link.target&&!link.download))return;
+    if(inside&&url.hash&&url.search===new URL(currentUrl).search){event.preventDefault();body.querySelector(url.hash)?.scrollIntoView();return;}
+    event.preventDefault();if(drawer&&!mayLeave())return;
+    if(!drawer){baseScroll=window.scrollY;views.length=0;index=-1;returnFocus=link;openDrawer();}
     void load(link.href);
   });
   document.addEventListener('submit',event=>{
     if(!drawer||!drawer.contains(event.target))return;
-    const form=event.target;if(form.method.toLowerCase()!=='post')return;event.preventDefault();
-    if(body.getAttribute('aria-busy')==='true')return;
-    void load(form.getAttribute('action')||currentUrl,{method:'POST',body:new URLSearchParams(new FormData(form))});
+    const form=event.target;event.preventDefault();if(body.getAttribute('aria-busy')==='true')return;
+    if(form.method.toLowerCase()==='post')void load(form.getAttribute('action')||currentUrl,{method:'POST',body:new URLSearchParams(new FormData(form,event.submitter))},'replace');
+    else{if(!mayLeave())return;const url=new URL(form.getAttribute('action')||currentUrl);url.search=new URLSearchParams(new FormData(form,event.submitter));void load(url.href);}
   });
 })();
 
