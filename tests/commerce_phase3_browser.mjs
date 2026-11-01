@@ -7,7 +7,7 @@ const fixture=JSON.parse(readFileSync(process.env.CTSMD_COMMERCE_FIXTURE,'utf8')
 assert.equal(fixture.isolated,true);assert.match(fixture.database,/^ctsmd_rc1_/);assert.match(fixture.suffix,/^[a-f0-9]{12}$/);
 const {chromium}=await import(process.env.CTSMD_PLAYWRIGHT_MODULE?pathToFileURL(process.env.CTSMD_PLAYWRIGHT_MODULE).href:'playwright');
 const out=process.env.CTSMD_COMMERCE_OUTPUT||'/tmp/ctsmd-commerce-browser-evidence';mkdirSync(out,{recursive:true});
-const browser=await chromium.launch({headless:true}),checks=[];
+const browser=await chromium.launch({headless:true,...(process.env.CTSMD_CHROMIUM_EXECUTABLE?{executablePath:process.env.CTSMD_CHROMIUM_EXECUTABLE}:{})}),checks=[];
 const ok=(condition,label)=>{assert.ok(condition,label);checks.push(label);console.log('PASS',label);};
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce',serviceWorkers:'block'}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
