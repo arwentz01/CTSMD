@@ -38,6 +38,20 @@ foreach([range(1,12),range(13,20)] as $batch){$token=bin2hex(random_bytes(32));$
 $group=array_values(array_filter(CommerceProductionService::productions($db,$u,$org),fn($p)=>(int)$p['id']===$f['productions']['B']))[0];$ok($group['shows'][0]['sold_out']&&$group['shows'][0]['sold']===20&&$group['shows'][0]['sellable']===0,'Sold out requires all physical positions sold');
 // Seller projection has inventory, but no financial fields.
 $seller=['id'=>$f['users']['Volunteer'],'roles'=>['member','volunteer']];CommerceStore::grant($db,$u,$org,$seller['id'],'seller',true);$sellerGroups=CommerceProductionService::productions($db,$seller,$org);$ok(!isset($sellerGroups[0]['shows'][0]['net_minor'])&&!array_filter(array_column($sellerGroups,'revenue')),'Seller-only access cannot read revenue');
+// Organization fallback is opt-in for new scheduling, never a rewrite of saved prices.
+$beforePrices=CommerceStore::row($db,'performances',$org,$f['performance'])['prices_json'];$beforeOrder=CommerceStore::row($db,'orders',$org,$o['id'])['total_minor'];
+CommercePricingService::saveOrganizationDefaults($db,$u,$org,['standard'=>['Adult'=>2700]],'Organization starting prices',0);
+$ok(CommercePricingService::defaults($db,$org,$f['productions']['Upcoming'])['source']==='organization','Production without defaults inherits organization pricing');
+$ok(CommercePricingService::defaults($db,$org,$production)['source']==='production','Production-specific defaults take precedence');
+CommercePricingService::saveOrganizationDefaults($db,$u,$org,['standard'=>['Adult'=>2800]],'Organization revision',1);
+$ok(CommerceStore::row($db,'performances',$org,$f['performance'])['prices_json']===$beforePrices&&CommerceStore::row($db,'orders',$org,$o['id'])['total_minor']===$beforeOrder,'Organization updates preserve existing performance and order prices');
+$reject(fn()=>CommercePricingService::saveOrganizationDefaults($db,$u,$org,['standard'=>['Adult'=>2900]],'Stale organization edit',1),'Stale organization pricing update rejected');
+$reject(fn()=>CommercePricingService::saveOrganizationDefaults($db,$f['tester'],$org,$f['prices'],'Unauthorized defaults',2),'Tester cannot edit organization defaults');
+$reject(fn()=>CommercePricingService::saveOrganizationDefaults($db,$u,$org,['forged'=>['Adult'=>100]],'Unknown layout zone',2),'Organization default zones come from published layouts');
+$input=['dates'=>[date('Y-m-d',time()+40*86400)],'times'=>['14:15'],'pricing_source'=>'production','seating_mode'=>'general_admission'];$fallback=CommercePricingService::defaults($db,$org,$f['productions']['Upcoming']);$review=CommerceScheduleService::preview($db,$u,$org,$f['productions']['Upcoming'],$f['layout'],$fallback['prices'],$input);$created=CommerceScheduleService::create($db,$u,$org,$f['productions']['Upcoming'],$f['layout'],$fallback['prices'],$input,$review['hash'],bin2hex(random_bytes(16)));
+$ok(json_decode(CommerceStore::row($db,'performances',$org,$created[0])['prices_json'],true)['standard']['Adult']===2800,'New GA performance snapshots inherited organization prices');
+$input['dates']=[date('Y-m-d',time()+41*86400)];$review=CommerceScheduleService::preview($db,$u,$org,$f['productions']['Upcoming'],$f['layout'],$fallback['prices'],$input);CommercePricingService::saveOrganizationDefaults($db,$u,$org,['standard'=>['Adult'=>2900]],'Change after scheduling review',2);
+$reject(fn()=>CommerceScheduleService::create($db,$u,$org,$f['productions']['Upcoming'],$f['layout'],$fallback['prices'],$input,$review['hash'],bin2hex(random_bytes(16))),'Changed organization fallback invalidates a scheduling review');
 $reject(fn()=>CommerceProductionService::productions($db,$f['tester'],$org),'Storefront tester cannot read staff projections');
 echo "PASS $n production, pricing, inheritance and reporting checks\n";
 }finally{if($f)retireMyTheatreFixture($db,$f);}

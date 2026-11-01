@@ -7,8 +7,36 @@ final class CommercePricingService
     private static function rows(PDO $db,string $sql,array $args=[]):array{$q=$db->prepare($sql);$q->execute($args);return$q->fetchAll();}
     public static function ready(PDO $db):bool
     {return(int)$db->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('commerce_production_pricing','commerce_performance_pricing','commerce_pricing_batches')")->fetchColumn()===3;}
+    public static function organizationReady(PDO $db):bool
+    {return(bool)$db->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='commerce_organization_pricing'")->fetchColumn();}
+    public static function organizationDefaults(PDO $db,int $org):?array
+    {
+        if(!self::organizationReady($db))return null;
+        $rows=self::rows($db,'SELECT * FROM commerce_organization_pricing WHERE organization_id=?'.($db->inTransaction()?' FOR UPDATE':''),[$org]);
+        return$rows?['prices'=>json_decode($rows[0]['prices_json'],true),'revision'=>(int)$rows[0]['revision'],'source'=>'organization']:null;
+    }
     public static function defaults(PDO $db,int $org,int $production):?array
-    {$rows=self::rows($db,'SELECT * FROM commerce_production_pricing WHERE organization_id=? AND production_id=?',[$org,$production]);return$rows?['prices'=>json_decode($rows[0]['prices_json'],true),'revision'=>(int)$rows[0]['revision']]:null;}
+    {
+        $rows=self::rows($db,'SELECT * FROM commerce_production_pricing WHERE organization_id=? AND production_id=?',[$org,$production]);
+        return$rows?['prices'=>json_decode($rows[0]['prices_json'],true),'revision'=>(int)$rows[0]['revision'],'source'=>'production']:self::organizationDefaults($db,$org);
+    }
+    public static function organizationZones(PDO $db,int $org):array
+    {
+        $zones=[];foreach(self::rows($db,"SELECT document_json FROM commerce_layouts WHERE organization_id=? AND status='published'",[$org]) as $layout)foreach(json_decode($layout['document_json'],true)['items'] as $item)if($item['kind']==='seat')$zones[(string)$item['zone']]=true;
+        return array_map('strval',array_keys($zones));
+    }
+    public static function saveOrganizationDefaults(PDO $db,array $u,int $org,array $prices,string $reason,int $expectedRevision):void
+    {
+        CommerceAccess::demand($db,$u,$org,'configure');if(!self::organizationReady($db))throw new RuntimeException('Organization pricing requires migration 111.');CommerceInventoryService::prices($prices,[]);
+        if(trim($reason)===''||mb_strlen($reason)>500)throw new RuntimeException('Record a reason of up to 500 characters.');
+        CommerceStore::tx($db,function()use($db,$u,$org,$prices,$reason,$expectedRevision){
+            self::rows($db,'SELECT id FROM commerce_organizations WHERE id=? FOR UPDATE',[$org]);$before=self::organizationDefaults($db,$org);
+            if(($before['revision']??0)!==$expectedRevision)throw new RuntimeException('Organization defaults changed. Reload before saving.');
+            $zones=self::organizationZones($db,$org);foreach(array_keys($prices) as $zone)if(!in_array((string)$zone,$zones,true))throw new RuntimeException('Choose zones from a published organization layout.');
+            $db->prepare('INSERT INTO commerce_organization_pricing(organization_id,prices_json) VALUES(?,?) ON DUPLICATE KEY UPDATE prices_json=VALUES(prices_json),revision=revision+1')->execute([$org,json_encode($prices)]);
+            CommerceStore::audit($db,$org,(int)$u['id'],'commerce.organization_pricing_changed','organization',$org,['reason'=>$reason,'before'=>$before,'prices'=>$prices,'existing_prices_unchanged'=>true]);
+        });
+    }
     private static function access(PDO $db,array $u,int $org,int $production):void
     {
         CommerceAccess::demand($db,$u,$org,'inventory');$owner=CommerceStore::organization($db,$org);
