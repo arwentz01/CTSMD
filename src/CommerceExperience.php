@@ -151,7 +151,6 @@ final class CommerceExperience
             case 'ticket_change':CommerceTicketChangeService::change($db,$u,$o,(int)($_POST['ticket']??0),(string)($_POST['target']??''),(string)($_POST['reason']??''),(string)($_POST['expected_token_hash']??''));return self::url('tickets',['id'=>$id]);
             case 'void_reservation':CommerceBoxOfficeService::void($db,$u,$o,$id,(string)($_POST['reason']??''));return self::url('tickets',['id'=>$id]);
             case 'seating_mode':CommerceInventoryService::admissionMode($db,$u,$o,$id,($_POST['mode']??'')==='general_admission');return self::url('performance',['id'=>$id]);
-            case 'preview_approve':CommerceStorefrontService::approve($db,$u,$o,$id,!empty($_POST['approved']));return self::url('performance',['id'=>$id]);
             case 'delivery_resend':
                 $key=(string)($_POST['resend_key']??'');if(($_SESSION['commerce_delivery_forms'][$key]??0)!==$id)throw new RuntimeException('Reload this order before requesting delivery.');
                 CommerceDeliveryService::resend($db,$u,$o,$id,$key,(string)($_SESSION['commerce_orders'][$o.':'.$id]??''));$_SESSION['commerce_notice']='Ticket delivery queued. Check delivery status below; this is not an email delivery confirmation.';return self::url('checkout',['id'=>$id]);
