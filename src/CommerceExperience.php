@@ -319,8 +319,13 @@ final class CommerceExperience
             $p=self::performanceContext((int)$order['performance_id']);
             $seconds=self::rows('SELECT GREATEST(0,TIMESTAMPDIFF(SECOND,NOW(),expires_at)) seconds FROM commerce_orders WHERE organization_id=? AND id=?',[self::$org,$order['id']]);
             $active=$order['state']==='held'&&(int)$seconds[0]['seconds']>0;
-            echo '<article class="commerce-cart-item"><h2>'.self::e($p['title']).'</h2><p>'.self::e(self::staffDate($p).' · '.$p['venue']).'</p><p>'.self::money((int)$order['total_minor'],$order['currency']).' · '.($active?'Held for '.(int)ceil((int)$seconds[0]['seconds']/60).' more minutes':self::e(self::staffStatus($order['state']))).'</p>';
-            if($order['state']==='held'){self::form('cart_remove',['id'=>$order['id']]);echo '<button type="submit">Remove tickets</button></form>';}
+            $lines=self::rows('SELECT description,category,unit_minor FROM commerce_order_lines WHERE organization_id=? AND order_id=? ORDER BY id',[self::$org,$order['id']]);
+            echo '<article class="commerce-cart-item"><h2>'.self::e($p['title']).'</h2><p>'.self::e(self::staffDate($p).' · '.$p['venue']).'</p>';
+            echo '<p><strong>'.count($lines).' '.(count($lines)===1?'ticket':'tickets').'</strong> · '.($active?'Reserved for '.(int)ceil((int)$seconds[0]['seconds']/60).' more minutes':($order['state']==='held'?'Hold expired':self::e(self::staffStatus($order['state'])))).'</p>';
+            echo '<ul class="commerce-cart-tickets">';
+            foreach($lines as $line)echo '<li><span>'.self::e($line['description']).' · '.self::e($line['category']).'</span><strong>'.self::money((int)$line['unit_minor'],$order['currency']).'</strong></li>';
+            echo '</ul><p class="commerce-cart-item-total">Performance total (including applicable fees and taxes): <strong>'.self::money((int)$order['total_minor'],$order['currency']).'</strong></p>';
+            if($order['state']==='held'){self::form('cart_remove',['id'=>$order['id']]);echo '<button type="submit">'.($active?'Remove tickets':'Remove expired selection').'</button></form>';}
             echo '</article>';
         }
         echo '<p><strong>Cart total: '.self::money((int)$summary['totals']['total_minor'],$summary['orders'][0]['currency']).'</strong></p>';
