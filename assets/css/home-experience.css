@@ -21,3 +21,31 @@
 .home-action-links .home-action-dismiss:focus-visible{outline:3px solid #d5a143;outline-offset:2px}
 @media(max-width:650px){.home-action-links .home-action-dismiss{min-height:40px;padding:9px 14px}}
 @media(max-width:650px){.home-action-links{grid-column:2;justify-content:flex-start}}
+
+/* Casting responses are routine actionable notices, not full-width error banners.
+   Keep notification copy and actions aligned at desktop and mobile widths. */
+.home-action.casting-response{
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  padding:13px 0;
+  margin:0;
+  background:transparent;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0;
+}
+.home-action.casting-response>i{display:none}
+.home-action.casting-response>div:nth-of-type(1){min-width:0;display:flex;flex-direction:column;gap:3px}
+.home-action.casting-response small{font-size:10px;letter-spacing:.035em}
+.home-action.casting-response b{font-size:13px;line-height:1.4}
+.home-action.casting-response span{font-size:12px;line-height:1.45}
+.home-action.casting-response.casting-declined{background:transparent;border-color:var(--line)}
+.home-action.casting-response.casting-declined small{color:#962f43}
+.home-action.casting-response .home-action-links{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;min-width:0}
+.home-action.casting-response .home-action-links>a{min-height:40px;display:inline-flex;align-items:center;font-size:12px}
+.home-action.casting-response .home-action-dismiss{min-height:36px}
+@media(max-width:700px){
+ .home-action.casting-response{grid-template-columns:minmax(0,1fr);gap:7px}
+ .home-action.casting-response .home-action-links{grid-column:1;justify-content:flex-start;gap:12px}
+}
