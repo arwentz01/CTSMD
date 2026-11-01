@@ -26,7 +26,7 @@
         const detail = doc.querySelector('[data-order-detail]');
         if (!detail) throw Error();
         // Submitting a drawer form uses the original detail URL, preserving CSRF and redirects.
-        detail.querySelectorAll('form').forEach(form => form.action = link.href);
+        detail.querySelectorAll('form').forEach(form => form.setAttribute('action', link.href));
         openDrawer(detail, 'Order management', link);
       } catch { window.location.assign(link.href); }
       finally { link.removeAttribute('aria-busy'); }
