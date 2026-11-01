@@ -2,6 +2,10 @@
 (() => {
   const setZones=(select,zones)=>{const value=select.value;select.replaceChildren(new Option('Choose zone',''),...zones.map(zone=>new Option(zone,zone)));select.value=zones.includes(value)?value:'';};
   const initialize = root => {
+    root.querySelectorAll('input[name="starts"],input[name="timezone"]').forEach(input=>{
+      if(input.dataset.timeReviewInitialized)return;input.dataset.timeReviewInitialized='1';
+      input.addEventListener('input',()=>{const choice=input.closest('form').querySelector('select[name="offset"]');if(choice)choice.closest('label').remove();});
+    });
     root.querySelectorAll('[data-price-editor]').forEach(editor => {
       if(editor.dataset.initialized)return;editor.dataset.initialized='1';
       const rows=editor.querySelector('[data-price-rows]');let index=rows.children.length;

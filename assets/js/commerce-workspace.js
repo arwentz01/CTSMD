@@ -90,7 +90,7 @@
         }
         svg.append(group);
       }
-      root.querySelector('[data-allocation-count]').textContent = `${checks.filter(input=>input.checked).length} positions selected`;
+      root.querySelector('[data-allocation-count]').textContent = `${checks.filter(input=>input.checked).length} seats selected`;
     };
     const toggle = group => {
       const input=checks.find(check=>check.value===group.dataset.allocationSeat);

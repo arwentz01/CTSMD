@@ -8,7 +8,6 @@
     for (const field of [
       ['Exact date', 'date', 'dates[]'],
       ['Local time', 'time', 'times[]'],
-      ['UTC offset if needed', 'text', 'offsets[]'],
     ]) {
       const label = document.createElement('label');
       label.textContent = field[0];
@@ -19,6 +18,7 @@
       if (field[1] === 'text') { input.placeholder = 'For example -04:00'; input.maxLength = 6; }
       label.append(input); row.append(label);
     }
+    const offset=document.createElement('input');offset.type='hidden';offset.name='offsets[]';row.append(offset);
     const remove = document.createElement('button');
     remove.type = 'button'; remove.dataset.removeShowtime = ''; remove.textContent = 'Remove showtime';
     row.append(remove); rows.append(row); return row;
