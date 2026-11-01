@@ -100,3 +100,47 @@
  .commerce-performance-nav{justify-content:flex-start}
  .commerce-performance-nav a{flex:0 0 auto;padding:12px 15px}
 }
+
+/* Customer discovery: compact production feature and clear performance choices. */
+.commerce-storefront .commerce-customer-header{display:flex;align-items:center;max-width:1100px;margin:0 auto;padding:18px 18px 10px;font-size:17px;font-weight:750}
+.commerce-customer-header>a{text-decoration:none;color:#69283e}
+.commerce-customer-header span{font-weight:450;color:#40363a}
+.commerce-storefront .commerce-preview-title{font-size:12px;font-weight:600;color:#715b48;margin:0 0 5px}
+.commerce-storefront .commerce-banner{font-size:12px;padding:9px 12px;margin:0 0 16px}
+.commerce-storefront .commerce-discovery-heading{margin:0 0 26px}
+.commerce-storefront .commerce-discovery-heading h1{font-size:clamp(26px,3vw,38px);max-width:none;line-height:1.15;margin:3px 0 8px}
+.commerce-storefront .commerce-discovery-heading p:last-child{color:#6b5c5f;margin:0}
+.commerce-storefront .commerce-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:750;color:#89374e;margin:0 0 6px}
+.commerce-storefront .commerce-showtimes{padding:22px 0 30px;border-top:1px solid #e7dade;border-bottom:0}
+.commerce-storefront .commerce-showtimes .commerce-production-intro{display:flex;align-items:center;gap:22px;margin:0 0 24px;padding:0;border:0}
+.commerce-storefront .commerce-production-intro .commerce-artwork{width:116px;max-height:174px;object-fit:contain;flex:none;margin:0;float:none}
+.commerce-storefront .commerce-show-overview{min-width:0}
+.commerce-storefront .commerce-show-overview h2{font-size:clamp(20px,2.4vw,29px);line-height:1.2;margin:0 0 9px}
+.commerce-storefront .commerce-show-overview p{margin:5px 0}
+.commerce-storefront .commerce-starting-price{font-weight:750;color:#642739}
+.commerce-storefront .commerce-choose-heading{font-size:18px;margin:0 0 12px}
+.commerce-storefront .commerce-performance-choices{display:grid;gap:10px}
+.commerce-storefront .commerce-performance-choice{display:flex;gap:16px;align-items:center;min-width:0;padding:12px 14px;border:1px solid #e5d9db;border-radius:10px;background:#fff}
+.commerce-storefront .commerce-date-tile{display:flex;flex:0 0 62px;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:65px;background:#f7f0ed;border-radius:7px;color:#5f2639;text-transform:uppercase;font-size:11px;font-weight:700}
+.commerce-storefront .commerce-date-tile strong{font-size:25px;line-height:1.1}
+.commerce-storefront .commerce-choice-details{flex:1;min-width:0}
+.commerce-storefront .commerce-choice-details h4{font-size:18px;margin:0 0 3px}
+.commerce-storefront .commerce-choice-details p{margin:2px 0;font-size:13px}
+.commerce-storefront .commerce-choice-availability{color:#5e5c56}
+.commerce-storefront .commerce-choice-action{flex:none}
+.commerce-storefront .commerce-choice-action .button{white-space:nowrap;border-radius:7px;padding:11px 15px}
+.commerce-storefront .commerce-choice-disabled{font-size:13px;color:#71686b}
+.commerce-storefront .commerce-discovery-note{font-size:12px;color:#71666a;margin:22px 0}
+@media(max-width:600px){
+ .commerce-storefront .commerce-customer-header{padding:14px 12px}
+ .commerce-storefront .commerce-showtimes .commerce-production-intro{align-items:flex-start;gap:13px}
+ .commerce-storefront .commerce-production-intro .commerce-artwork{width:88px;max-height:130px}
+ .commerce-storefront .commerce-show-overview h2{font-size:20px}
+ .commerce-storefront .commerce-performance-choice{gap:10px;padding:10px}
+ .commerce-storefront .commerce-date-tile{flex-basis:53px;min-height:58px}
+ .commerce-storefront .commerce-date-tile strong{font-size:22px}
+ .commerce-storefront .commerce-choice-details h4{font-size:16px}
+ .commerce-storefront .commerce-choice-details p{font-size:12px}
+ .commerce-storefront .commerce-choice-action .button{padding:10px;min-height:44px}
+}
+@media(max-width:380px){.commerce-storefront .commerce-performance-choice{flex-wrap:wrap}.commerce-storefront .commerce-choice-action{width:100%}.commerce-storefront .commerce-choice-action .button{display:block;text-align:center}}
