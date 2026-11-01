@@ -164,3 +164,21 @@
     toolbar.querySelectorAll('[data-select-pan]').forEach(button=>tools.append(button));toolbar.after(details);
   }
 })();
+
+(() => {
+  const local=document.querySelector('.commerce-workspace-nav');
+  const current=local?.querySelector('.commerce-nav-group nav');
+  if(current){
+    const tools=document.createElement('details'),summary=document.createElement('summary');
+    tools.className='commerce-mobile-tools';summary.textContent=current.getAttribute('aria-label');
+    const links=current.cloneNode(true);tools.append(summary,links);local.append(tools);
+  }
+  const selector=document.querySelector('[data-seat-selector]');
+  if(selector){
+    const form=selector.closest('form'),terms=form.previousElementSibling?.previousElementSibling;
+    const pricing=form.previousElementSibling;
+    const purchase=selector.querySelector('.commerce-selection-purchase');
+    if(pricing?.tagName==='DETAILS'&&pricing.querySelector('summary')?.textContent==='Prices by zone')purchase.prepend(pricing);
+    if(terms?.classList.contains('commerce-pricing-terms'))purchase.prepend(terms);
+  }
+})();

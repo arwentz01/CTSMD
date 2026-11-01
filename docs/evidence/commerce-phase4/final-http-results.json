@@ -1,0 +1,22 @@
+[
+  {
+    "suite": "commerce_http",
+    "exit_code": 0,
+    "summary": "PASS 42 Commerce HTTP/security checks"
+  },
+  {
+    "suite": "commerce_planning_http",
+    "exit_code": 0,
+    "summary": "PASS 18 planning HTTP checks"
+  },
+  {
+    "suite": "commerce_phase2_http",
+    "exit_code": 0,
+    "summary": "PASS 34 Phase 2 HTTP checks"
+  },
+  {
+    "suite": "commerce_hosted_http",
+    "exit_code": 0,
+    "summary": "PASS 22 hosted HTTP checks"
+  }
+]
