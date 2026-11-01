@@ -50,6 +50,12 @@ final class CommerceCartService
             $q=$db->prepare('SELECT o.currency,o.customer_name,o.customer_email FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? LIMIT 1');
             $q->execute([$organization,$cart]);$existing=$q->fetch();
             if($existing&&($existing['currency']!==$locked['currency']||$existing['customer_name']!==$locked['customer_name']||$existing['customer_email']!==$locked['customer_email']))throw new RuntimeException('All cart selections must use the same purchaser and currency.');
+            $q=$db->prepare('SELECT cart_id FROM commerce_cart_orders WHERE organization_id=? AND order_id=?');
+            $q->execute([$organization,$order]);$prior=$q->fetchColumn();
+            if($prior!==false){
+                if((int)$prior===$cart)return;
+                throw new RuntimeException('This ticket selection is already in another cart.');
+            }
             $q=$db->prepare('INSERT INTO commerce_cart_orders(organization_id,cart_id,order_id) VALUES(?,?,?)');
             $q->execute([$organization,$cart,$order]);
         });
@@ -82,7 +88,7 @@ final class CommerceCartService
         return CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$token):array{
             $c=self::ownedLocked($db,$user,$organization,$cart,$token);
             if($c['state']!=='open')throw new RuntimeException('This cart is no longer open.');
-            $q=$db->prepare("SELECT o.id,o.state,o.expires_at,o.currency,o.customer_name,o.customer_email,
+            $q=$db->prepare("SELECT o.id,o.performance_id,o.state,o.expires_at,o.currency,o.customer_name,o.customer_email,
                   (o.expires_at>NOW()) AS active_hold,o.total_minor
                   FROM commerce_cart_orders co
                   JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id
@@ -93,6 +99,17 @@ final class CommerceCartService
             foreach($orders as $order){
                 if($order['state']!=='held'||!(bool)$order['active_hold'])throw new RuntimeException('One or more ticket holds expired. Remove expired selections and choose tickets again.');
                 if($order['currency']!==$first['currency']||$order['customer_name']!==$first['customer_name']||$order['customer_email']!==$first['customer_email'])throw new RuntimeException('Cart selections must have the same purchaser and currency.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_order_lines WHERE organization_id=? AND order_id=?");
+                $q->execute([$organization,$order['id']]);$expected=(int)$q->fetchColumn();
+                if($expected<1)throw new RuntimeException('This ticket selection is empty. Remove it and select tickets again.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_inventory WHERE organization_id=? AND order_id=? AND state='held'");
+                $q->execute([$organization,$order['id']]);
+                if((int)$q->fetchColumn()!==$expected)throw new RuntimeException('One or more reserved seats changed. Review the cart before checkout.');
+                $q=$db->prepare("SELECT 1 FROM commerce_payment_attempts WHERE organization_id=? AND order_id=? LIMIT 1");
+                $q->execute([$organization,$order['id']]);
+                if($q->fetchColumn())throw new RuntimeException('A selection already has a payment attempt. Contact the Box Office to reconcile it.');
+                $p=CommerceStore::row($db,'performances',$organization,(int)$order['performance_id']);
+                CommercePerformancePolicy::demand($db,$organization,$p);
                 $total+=(int)$order['total_minor'];
             }
             return ['ready'=>true,'order_count'=>count($orders),'total_minor'=>$total,'currency'=>$first['currency']];
