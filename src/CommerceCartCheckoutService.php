@@ -58,6 +58,7 @@ final class CommerceCartCheckoutService
             $q->execute([$org,$cart,$reference,$first['currency'],$total]);$payment=(int)$db->lastInsertId();
             $insert=$db->prepare('INSERT INTO commerce_cart_payment_orders(organization_id,payment_id,order_id,expected_minor) VALUES(?,?,?,?)');
             foreach($orders as $o)$insert->execute([$org,$payment,$o['id'],$o['total_minor']]);
+            $db->prepare("UPDATE commerce_carts SET state='checkout_pending' WHERE organization_id=? AND id=? AND state='open'")->execute([$org,$cart]);
             CommerceStore::audit($db,$org,(int)$user['id'],'commerce.cart_payment_prepared','cart',$cart,['payment_id'=>$payment,'order_count'=>count($orders),'amount_minor'=>$total]);
             $q=$db->prepare('SELECT * FROM commerce_cart_payments WHERE id=? AND organization_id=?');
             $q->execute([$payment,$org]);return $q->fetch();
