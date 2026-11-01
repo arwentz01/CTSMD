@@ -21,12 +21,16 @@ final class CommerceCartCheckoutService
         return CommerceStore::tx($db,function()use($db,$user,$org,$cart,$token,$quote):array{
             $q=$db->prepare('SELECT id,state,tester_user_id,ownership_hash FROM commerce_carts WHERE organization_id=? AND id=? FOR UPDATE');
             $q->execute([$org,$cart]);$owner=$q->fetch();
-            if(!$owner||(int)$owner['tester_user_id']!==(int)$user['id']||!preg_match('/^[a-f0-9]{64}$/',$token)||!hash_equals((string)$owner['ownership_hash'],hash('sha256',$token))||$owner['state']!=='open'){
+            if(!$owner||(int)$owner['tester_user_id']!==(int)$user['id']||!preg_match('/^[a-f0-9]{64}$/',$token)||!hash_equals((string)$owner['ownership_hash'],hash('sha256',$token))||!in_array($owner['state'],['open','checkout_pending'],true)){
                 throw new RuntimeException('This cart is unavailable for checkout.');
             }
             $q=$db->prepare('SELECT * FROM commerce_cart_payments WHERE organization_id=? AND cart_id=? FOR UPDATE');
             $q->execute([$org,$cart]);
-            if($existing=$q->fetch())return $existing;
+            if($existing=$q->fetch()){
+                if($owner['state']!=='checkout_pending')throw new RuntimeException('Cart payment state requires reconciliation.');
+                return $existing;
+            }
+            if($owner['state']!=='open')throw new RuntimeException('This cart cannot start a new checkout.');
             $q=$db->prepare("SELECT o.id,o.performance_id,o.state,o.expires_at,o.currency,o.customer_name,o.customer_email,o.total_minor,
                 (o.expires_at>NOW()) AS hold_valid
                 FROM commerce_cart_orders co JOIN commerce_orders o
@@ -49,7 +53,14 @@ final class CommerceCartCheckoutService
                 $q=$db->prepare("SELECT COUNT(*) FROM commerce_inventory WHERE organization_id=? AND order_id=? AND state='held'");
                 $q->execute([$org,$o['id']]);
                 if($expected<1||(int)$q->fetchColumn()!==$expected)throw new RuntimeException('Cart inventory changed.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_order_lines l LEFT JOIN commerce_inventory i
+                    ON i.organization_id=l.organization_id AND i.performance_id=?
+                    AND i.order_id=l.order_id AND i.seat_key=l.seat_key AND i.state='held'
+                    WHERE l.organization_id=? AND l.order_id=? AND i.seat_key IS NULL");
+                $q->execute([$o['performance_id'],$org,$o['id']]);
+                if((int)$q->fetchColumn()!==0)throw new RuntimeException('Reserved ticket inventory changed.');
                 CommercePerformancePolicy::demand($db,$org,CommerceStore::row($db,'performances',$org,(int)$o['performance_id']));
+                if((int)$o['total_minor']<0||$total>PHP_INT_MAX-(int)$o['total_minor'])throw new RuntimeException('Invalid cart payment amount.');
                 $total+=(int)$o['total_minor'];
             }
             if($total!==(int)$quote['total_minor']||$first['currency']!==$quote['currency'])throw new RuntimeException('Cart total changed. Review your selections again.');
