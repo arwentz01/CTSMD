@@ -9,26 +9,74 @@ final class CommerceProductionExperience
     private static function rows(PDO $db,string $sql,array $args=[]):array{$q=$db->prepare($sql);$q->execute($args);return$q->fetchAll();}
     private static function money(int $n,string $currency):string{return self::e($currency).' '.number_format($n/100,2);}
     private static function link(string $tab,string $label,array $args=[],bool $drawer=false):string{return '<a '.($drawer?'data-commerce-drawer-link ':'').'href="'.self::e(CommerceExperience::url($tab,$args)).'">'.self::e($label).'</a>';}
-    public static function hub(PDO $db,array $u,int $org,bool $manage,string $base):void
+    private static function filtered(PDO $db,array $u,int $org,bool $management):array
     {
-        if($manage)CommerceAccess::demand($db,$u,$org,'inventory');
-        $groups=CommerceProductionService::productions($db,$u,$org);$q=mb_substr(trim((string)($_GET['q']??'')),0,190);$filter=(string)($_GET['sales_filter']??'all');$tab=$manage?'performances':'overview';
-        echo '<div class="commerce-heading"><div><h1>'.($manage?'Productions & Performances':'Production ticket sales').'</h1><p>Sales and availability by actual showtime.</p></div>';if(CommerceAccess::can($db,$u,$org,'inventory'))echo '<div class="commerce-actions">'.self::link('add_performance','Add Performance',[],true).'</div>';echo '</div>';
-        echo '<form method="get" class="commerce-filter"><input type="hidden" name="tab" value="'.$tab.'">';CommerceExperience::input('q','Find production or venue','search',$q,'maxlength="190"');echo '<label>Performances<select name="sales_filter">';foreach(['all'=>'All performances','on_sale'=>'On sale','needs_attention'=>'Needs attention','sold_out'=>'Sold out'] as $value=>$name)echo '<option value="'.$value.'" '.($filter===$value?'selected':'').'>'.$name.'</option>';echo '</select></label><button>Filter</button></form><p class="commerce-muted">Physical capacity includes sold, held and allocated positions. Sellable availability excludes closed or unready shows. Revenue is net of confirmed refunds and includes fees and tax.</p>';
-        $active=[];$past=[];
-        foreach($groups as $p){if($q!==''&&mb_stripos($p['title'].' '.implode(' ',$p['venues']),$q)===false)continue;$original=$p['shows'];$p['range']=array_column($original,'starts_at');if($filter!=='all')$p['shows']=array_values(array_filter($p['shows'],fn($show)=>match($filter){'on_sale'=>$show['sellable']>0,'sold_out'=>$show['sold_out'],'needs_attention'=>$show['problem']!==null||(!$show['sold_out']&&$show['sellable']===0),default=>true}));if(!$p['shows']&&$original)continue;if($p['past'])$past[]=$p;else$active[]=$p;}
-        if(!$active)echo '<p class="commerce-empty">No active productions match this view. Adjust the filter or add a performance.</p>';
-        foreach($active as $p)self::card($db,$u,$org,$p,$manage,$base);
-        echo '<details class="commerce-past-productions"><summary>Past productions ('.count($past).')</summary>';foreach($past as $p)self::card($db,$u,$org,$p,$manage,$base);if(!$past)echo '<p>No past productions match.</p>';echo '</details>';
+        $groups=CommerceProductionService::productions($db,$u,$org);$q=mb_substr(trim((string)($_GET['q']??'')),0,190);$filter=(string)($_GET['sales_filter']??'all');$active=[];$past=[];
+        foreach($groups as $p){
+            if(!$management&&!$p['shows'])continue;
+            if($q!==''&&mb_stripos($p['title'].' '.implode(' ',$p['venues']),$q)===false)continue;
+            $p['range']=array_column($p['shows'],'starts_at');$original=$p['shows'];
+            if(!$management&&$filter!=='all')$p['shows']=array_values(array_filter($original,fn($show)=>match($filter){'on_sale'=>$show['sellable']>0,'sold_out'=>$show['sold_out'],'needs_attention'=>$show['problem']!==null||(!$show['sold_out']&&$show['sellable']===0),default=>true}));
+            if(!$p['shows']&&$original)continue;
+            if($p['past'])$past[]=$p;else$active[]=$p;
+        }
+        return[$active,$past];
     }
-    private static function card(PDO $db,array $u,int $org,array $p,bool $manage,string $base):void
+    private static function search(bool $management):void
     {
-        echo '<article class="commerce-production-card"><header class="commerce-production-card-header">';if($manage&&$p['has_poster']&&$p['announcement_published_at'])echo '<img class="commerce-production-thumbnail" alt="" src="'.self::e($base.'/production-poster?id='.(int)$p['id']).'">';echo '<div><h2>'.self::e($p['title']).'</h2><p>'.self::e(implode(' · ',$p['venues'])?:'Venue not yet scheduled').'</p>';if($p['shows']){$times=$p['range']??array_column($p['shows'],'starts_at');sort($times);echo '<p class="commerce-muted">'.self::e(substr($times[0],0,10).' – '.substr($times[count($times)-1],0,10)).'</p>';}echo '</div></header>';
-        $n=$p['totals'];echo '<div class="commerce-production-totals"><span><strong>'.$n['sold'].' / '.$n['capacity'].'</strong> sold / physical capacity</span><span><strong>'.$n['sellable'].'</strong> sellable now</span><span>'.$n['held'].' held · '.$n['blocked'].' allocated</span>';foreach($p['revenue'] as $currency=>$net)echo '<span><strong>'.self::money($net,$currency).'</strong> net revenue</span>';echo '</div>';
-        if(CommerceAccess::can($db,$u,$org,'inventory')&&!in_array($p['lifecycle_stage'],['archived','completed'],true))echo '<div class="commerce-actions">'.self::link('add_performance','Add Performance',['production'=>$p['id']],true).' '.self::link('pricing','Production pricing',['production'=>$p['id']],true).'</div>';
-        if(!$p['shows'])echo '<p>No performances scheduled.</p>';
-        $date='';foreach($p['shows'] as $show){$day=substr($show['starts_at'],0,10);if($date!==$day){echo '<h3 class="commerce-date-heading">'.self::e((new DateTimeImmutable($day))->format('D, M j, Y')).'</h3>';$date=$day;}echo '<div class="commerce-production-showtime"><div>';if(CommerceAccess::can($db,$u,$org,'inventory'))echo self::link('performance',(new DateTimeImmutable($show['starts_at']))->format('g:i A'),['id'=>$show['id']],true);else echo '<strong>'.self::e((new DateTimeImmutable($show['starts_at']))->format('g:i A')).'</strong>';echo ''.(count($p['venues'])>1?'<small>'.self::e($show['venue'].' / '.$show['space_name']).'</small>':'').'<small>'.self::e(explode(' · ',CommercePerformancePolicy::label($show),2)[1]??'Timezone review needed').'</small></div><div><strong>'.$show['sold'].' / '.$show['capacity'].'</strong> sold<small>'.$show['sellable'].' sellable · '.$show['held'].' held · '.$show['blocked'].' allocated</small></div><div><span class="commerce-status">'.self::e($show['readiness']).'</span>';if(isset($show['net_minor']))echo '<small>'.self::money($show['net_minor'],$show['currency']).' net'.($show['refunded_minor']?' · '.self::money($show['refunded_minor'],$show['currency']).' returned':'').'</small>';echo '</div>';if(CommerceAccess::can($db,$u,$org,'inventory'))echo '<div>'.self::link('performance','Manage',['id'=>$show['id']],true).'</div>';echo '</div>';}
-        if((string)($_GET['sales_filter']??'all')!=='all')echo '<p class="commerce-muted">Production totals include all performances, including those hidden by this filter.</p>';echo '</article>';
+        echo '<form method="get" class="commerce-filter"><input type="hidden" name="tab" value="'.($management?'performances':'overview').'">';CommerceExperience::input('q','Find production or venue','search',mb_substr((string)($_GET['q']??''),0,190),'maxlength="190"');
+        if(!$management){echo '<label>Performances<select name="sales_filter">';foreach(['all'=>'All performances','on_sale'=>'On sale','needs_attention'=>'Needs attention','sold_out'=>'Sold out'] as $value=>$name)echo '<option value="'.$value.'" '.(($_GET['sales_filter']??'all')===$value?'selected':'').'>'.$name.'</option>';echo '</select></label>';}
+        echo '<button>Filter</button></form>';
+    }
+    private static function when(array $show):string
+    {return self::e((new DateTimeImmutable($show['starts_at']))->format('D, M j · g:i A')).'<small>'.self::e(explode(' · ',CommercePerformancePolicy::label($show),2)[1]??'Timezone review needed').'</small>';}
+    private static function progress(int $sold,int $capacity,string $label):string
+    {
+        if($capacity<1)return '<span class="commerce-muted">No seating capacity configured</span>';
+        return '<div class="commerce-sales-progress"><progress value="'.$sold.'" max="'.$capacity.'" aria-label="'.self::e($label).'">'.$sold.' of '.$capacity.'</progress><span>'.$sold.' / '.$capacity.' sold · '.number_format($sold/$capacity*100,0).'% occupancy</span></div>';
+    }
+    public static function overview(PDO $db,array $u,int $org):void
+    {
+        [$active,$past]=self::filtered($db,$u,$org,false);
+        echo '<div class="commerce-heading"><div><h1>Ticket sales overview</h1><p>Sales progress, available inventory and upcoming performances.</p></div></div>';self::search(false);
+        $totals=['sold'=>0,'capacity'=>0,'sellable'=>0];$revenue=[];$upcoming=[];
+        foreach($active as $p){foreach($totals as $key=>$_)$totals[$key]+=$p['totals'][$key];foreach($p['revenue'] as $currency=>$amount)$revenue[$currency]=($revenue[$currency]??0)+$amount;foreach($p['shows'] as $show)if($show['schedule_status']==='scheduled'&&$show['starts_at_utc']>gmdate('Y-m-d H:i:s'))$upcoming[]=$show+['title'=>$p['title']];}
+        if($active){echo '<section class="commerce-sales-summary" aria-label="Active production sales summary"><div><span>Tickets sold</span><strong>'.$totals['sold'].'</strong></div><div><span>Physical capacity</span><strong>'.$totals['capacity'].'</strong></div><div><span>Occupancy</span><strong>'.($totals['capacity']?number_format($totals['sold']/$totals['capacity']*100,0).'%':'—').'</strong></div><div><span>Sellable now</span><strong>'.$totals['sellable'].'</strong></div>';foreach($revenue as $currency=>$amount)echo '<div><span>Net revenue</span><strong>'.self::money($amount,$currency).'</strong></div>';echo '</section>';}
+        if(!$active&&!$past)echo '<div class="commerce-empty"><h2>No scheduled performances in this view</h2><p>Ticket sales appear here once performances have been scheduled in Productions &amp; Performances. Adjust the filter if you expected existing sales.</p></div>';
+        if($upcoming){usort($upcoming,fn($a,$b)=>strcmp($a['starts_at_utc'],$b['starts_at_utc']));echo '<section class="commerce-upcoming"><h2>Upcoming performances</h2>';foreach(array_slice($upcoming,0,3) as $show)echo '<div><strong>'.self::e($show['title']).'</strong><span>'.self::when($show).'</span><span>'.self::e($show['readiness']).'</span></div>';echo '</section>';}
+        echo '<p class="commerce-muted">Capacity is physical inventory. Closed or unready shows have no sellable availability. Net revenue includes fees and tax, less confirmed refunds. Summary totals cover the active productions matching this view.</p>';
+        foreach($active as $p)self::salesGroup($p);
+        if($past){echo '<details class="commerce-past-productions"><summary>Past production sales ('.count($past).')</summary>';foreach($past as $p)self::salesGroup($p);echo '</details>';}
+    }
+    private static function salesGroup(array $p):void
+    {
+        echo '<section class="commerce-sales-group"><header><h2>'.self::e($p['title']).'</h2><p>'.self::e(implode(' · ',$p['venues'])).'</p></header>';echo self::progress($p['totals']['sold'],$p['totals']['capacity'],$p['title'].' production occupancy');echo '<div class="commerce-sales-facts"><span>'.$p['totals']['sellable'].' sellable · '.$p['totals']['held'].' held · '.$p['totals']['blocked'].' allocated</span>';foreach($p['revenue'] as $currency=>$amount)echo '<strong>'.self::money($amount,$currency).' net</strong>';echo '</div>';
+        foreach($p['shows'] as $show){echo '<div class="commerce-sales-row"><div>'.self::when($show).'</div><div>'.self::progress($show['sold'],$show['capacity'],'Performance '.$show['id'].' occupancy').'<small>'.$show['sellable'].' sellable · '.$show['held'].' held · '.$show['blocked'].' allocated</small></div><div><span class="commerce-status">'.self::e($show['readiness']).'</span>';if(isset($show['net_minor']))echo '<small>'.self::money($show['net_minor'],$show['currency']).' net</small>';echo '</div></div>';}
+        if(($_GET['sales_filter']??'all')!=='all')echo '<p class="commerce-muted">Production totals include all its performances; the rows follow the selected filter.</p>';echo '</section>';
+    }
+    public static function productions(PDO $db,array $u,int $org,string $base):void
+    {
+        CommerceAccess::demand($db,$u,$org,'inventory');[$active,$past]=self::filtered($db,$u,$org,true);
+        echo '<div class="commerce-heading"><div><h1>Productions &amp; Performances</h1><p>Manage artwork, showtimes, pricing and sales readiness.</p></div><div class="commerce-actions">'.self::link('add_performance','Add Performance',[],true).'</div></div>';self::search(true);
+        if(!$active)echo '<p class="commerce-empty">No active productions match. Adjust the search or use the production administration workspace to create a production.</p>';
+        foreach($active as $p)self::card($db,$u,$org,$p,$base);
+        if($past){echo '<details class="commerce-past-productions"><summary>Past productions ('.count($past).')</summary>';foreach($past as $p)self::card($db,$u,$org,$p,$base);echo '</details>';}
+    }
+    private static function card(PDO $db,array $u,int $org,array $p,string $base):void
+    {
+        echo '<article class="commerce-production-card commerce-management-card'.(!$p['shows']?' commerce-unscheduled':'').'"><header class="commerce-production-card-header"><div class="commerce-poster-frame"><span data-poster-fallback'.($p['has_poster']?' hidden':'').'>'.($p['has_poster']?'Image unavailable':'No poster').'</span>';
+        if($p['has_poster'])echo '<img data-commerce-poster class="commerce-production-thumbnail" alt="" loading="lazy" src="'.self::e(CommerceExperience::url('poster',['id'=>$p['id']])).'">';
+        echo '</div><div><h2>'.self::e($p['title']).'</h2><p>'.self::e(implode(' · ',$p['venues'])?:'Venue assigned when scheduled').'</p>';
+        if($p['range']){$times=$p['range'];sort($times);echo '<p class="commerce-muted">'.self::e(substr($times[0],0,10).' – '.substr($times[count($times)-1],0,10)).'</p>';}else echo '<p class="commerce-muted">No performances scheduled</p>';
+        echo '<span class="commerce-status">'.($p['announcement_published_at']?'Announcement published':'Announcement unpublished').'</span></div></header>';
+        if(!in_array($p['lifecycle_stage'],['archived','completed'],true)){
+            echo '<div class="commerce-actions">'.self::link('add_performance','Add Performance',['production'=>$p['id']],true);
+            if(!$p['shows'])echo '<details class="commerce-setup-tools"><summary aria-label="'.self::e('More controls for '.$p['title']).'">More</summary><div>';
+            echo self::link('pricing','Production pricing',['production'=>$p['id']],true);if(AccessPolicy::canManageProduction($u))echo '<a href="'.self::e($base.'/admin/productions/view?id='.(int)$p['id']).'">Artwork &amp; publication</a>';
+            if(!$p['shows'])echo '</div></details>';echo '</div>';
+        }
+        foreach($p['shows'] as $show)echo '<div class="commerce-management-showtime"><div>'.self::when($show).'</div><span>'.self::e($show['readiness']).'</span>'.self::link('performance','Manage',['id'=>$show['id']],true).'</div>';
+        echo '</article>';
     }
     public static function priceEditor(array $prices):void
     {

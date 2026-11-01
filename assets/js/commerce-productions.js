@@ -62,3 +62,10 @@
     void load(form.getAttribute('action')||currentUrl,{method:'POST',body:new URLSearchParams(new FormData(form))});
   });
 })();
+
+// Keep the text fallback if a private poster is missing or fails to decode.
+(() => {
+  const fallback=image=>{if(image.matches?.('[data-commerce-poster]')){image.hidden=true;const text=image.parentElement.querySelector('[data-poster-fallback]');if(text)text.hidden=false;}};
+  document.addEventListener('error',event=>fallback(event.target),true);
+  document.querySelectorAll('[data-commerce-poster]').forEach(image=>{if(image.complete&&!image.naturalWidth)fallback(image);});
+})();

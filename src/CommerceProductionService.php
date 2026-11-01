@@ -1,10 +1,18 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/CommerceInventoryService.php';
+require_once __DIR__.'/StorageService.php';
 /** Read-only operational projection. Physical inventory and financial settlement stay separate. */
 final class CommerceProductionService
 {
     private static function rows(PDO $db,string $sql,array $args=[]):array{$q=$db->prepare($sql);$q->execute($args);return$q->fetchAll();}
+    /** Same visibility boundary as production management; never a public-artwork bypass. */
+    public static function poster(PDO $db,array $u,int $org,int $production):?array
+    {
+        CommerceAccess::demand($db,$u,$org,'inventory');$owner=CommerceStore::organization($db,$org);
+        $rows=self::rows($db,"SELECT sv.* FROM productions p JOIN production_artwork a ON a.production_id=p.id AND a.role='poster' JOIN stored_files f ON f.id=a.stored_file_id AND f.status='active' JOIN stored_file_versions sv ON sv.stored_file_id=f.id WHERE p.id=? AND (EXISTS(SELECT 1 FROM commerce_performances c WHERE c.organization_id=? AND c.production_id=p.id) OR (?=1 AND p.lifecycle_stage IN ('planning','upcoming','in_production','performing'))) ORDER BY sv.version_number DESC LIMIT 1",[$production,$org,$owner['organization_key']===CommerceAccess::primaryKey()?1:0]);
+        $file=$rows[0]??null;return$file&&in_array($file['mime_type'],['image/png','image/jpeg','image/webp'],true)?$file:null;
+    }
     public static function productions(PDO $db,array $u,int $org):array
     {
         $caps=[];foreach(['inventory','report','sell','checkin'] as $cap)$caps[$cap]=CommerceAccess::can($db,$u,$org,$cap);if(!array_filter($caps))throw new RuntimeException('Commerce staff access is required.');

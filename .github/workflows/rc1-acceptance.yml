@@ -93,6 +93,7 @@ jobs:
           php tests/commerce_phase3_acceptance.php
           php tests/commerce_customer_policy.php
           php tests/commerce_phase2_http.php
+          php tests/commerce_workspace_http.php
           php tests/commerce_production_pricing.php
           php tests/commerce_production_concurrency.php
           php tests/commerce_scheduling.php
@@ -106,6 +107,7 @@ jobs:
           node-version: "22"
       - name: Synthetic responsive Commerce browser acceptance
         env:
+          STORAGE_PATH: ${{ runner.temp }}/commerce-private-art
           CTSMD_COMMERCE_FIXTURE: ${{ runner.temp }}/ctsmd-commerce-browser-ci.json
           CTSMD_COMMERCE_URL: http://127.0.0.1:8794
           CTSMD_COMMERCE_OUTPUT: ${{ runner.temp }}/commerce-browser-evidence
@@ -124,13 +126,15 @@ jobs:
           export COMMERCE_ORGANIZATION_KEY="$(python3 -c 'import json,os;print(json.load(open(os.environ["CTSMD_COMMERCE_FIXTURE"]))["organization_key"])')"
           php -d display_errors=0 -S 127.0.0.1:8794 -t . tests/fixtures/commerce-router.php > "$RUNNER_TEMP/commerce-server.log" 2>&1 &
           commerce_server_pid=$!
-          trap 'kill "$commerce_server_pid" 2>/dev/null || true; php tests/fixtures/commerce-browser.php retire' EXIT
+          trap 'kill "$commerce_server_pid" 2>/dev/null || true; php tests/fixtures/commerce-workspace-browser.php retire; php tests/fixtures/commerce-browser.php retire' EXIT
           for attempt in $(seq 1 30); do
             if curl --silent --fail http://127.0.0.1:8794/login > /dev/null; then break; fi
             sleep 1
           done
           node tests/commerce_phase3_browser.mjs
           node tests/commerce_productions_browser.mjs
+          php tests/fixtures/commerce-workspace-browser.php
+          node tests/commerce_workspaces_browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

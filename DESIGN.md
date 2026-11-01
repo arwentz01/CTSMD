@@ -13,6 +13,9 @@ Status messages use text as well as color. Sales readiness, provider status and 
 
 ## Production sales and performance management
 
-Overview and Productions share production cards with chronological date groups and individual showtime rows. Sold / physical capacity, sellable inventory, holds, allocations and net settled revenue remain separate values. Closed or unready shows have zero sellable inventory; an allocation or temporary hold is not a sold-out ticket. UTC offsets accompany venue-local showtimes, including repeated daylight-saving hours.
+Overview uses sales summaries, native progress bars and production-grouped reporting rows. Productions uses separate artwork-led management cards and compact showtime lists; empty cards have no sales metrics. Sold / physical capacity, sellable inventory, holds, allocations and net settled revenue remain separate values. Closed or unready shows have zero sellable inventory; an allocation or temporary hold is not a sold-out ticket. UTC offsets accompany venue-local showtimes, including repeated daylight-saving hours.
 
 Add Performance, production pricing and individual management use native drawers with focus return and normal-route fallbacks. Date/time rows support multiple same-day shows and retain input after review errors. Pricing uses editable category/zone rows and decimal currency fields, including the calendar workflow. Existing performances remain overrides until staff explicitly choose inheritance. Default revisions affect only future inheriting performances; existing orders and historical pricing remain frozen.
+
+
+Administrative Commerce posters use the authenticated `tab=poster` route, guarded by Commerce inventory permission and the management production scope. Public announcement status never determines administrative artwork visibility. The public poster endpoint retains its publication requirement. Missing or undecodable images reveal a text fallback; successful images do not announce an unavailable-image fallback to assistive technology.
