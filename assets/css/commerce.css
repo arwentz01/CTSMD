@@ -158,3 +158,11 @@
 .commerce-storefront .commerce-cart-tickets li strong{white-space:nowrap;font-variant-numeric:tabular-nums}
 .commerce-storefront .commerce-cart-item-total{display:flex;justify-content:space-between;gap:16px;align-items:baseline;font-size:13px}
 @media(max-width:520px){.commerce-storefront .commerce-cart-item-total{display:block}.commerce-storefront .commerce-cart-item-total strong{display:block;margin-top:5px}}
+
+/* Customer cart totals, separated from each performance's individual pricing. */
+.commerce-storefront .commerce-cart-summary{margin:22px 0;padding:18px;border:1px solid #e5d9db;border-radius:10px;background:#fff}
+.commerce-storefront .commerce-cart-summary h2{font-size:18px;margin:0 0 10px}
+.commerce-storefront .commerce-cart-summary dl{margin:0}
+.commerce-storefront .commerce-cart-summary dl>div{display:flex;justify-content:space-between;gap:16px;padding:8px 0;font-size:14px}
+.commerce-storefront .commerce-cart-summary dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.commerce-storefront .commerce-cart-summary .commerce-cart-grand-total{border-top:1px solid #e5d9db;margin-top:6px;padding-top:14px;font-size:18px;font-weight:750}
