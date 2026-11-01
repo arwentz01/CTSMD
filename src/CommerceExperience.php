@@ -328,7 +328,14 @@ final class CommerceExperience
             if($order['state']==='held'){self::form('cart_remove',['id'=>$order['id']]);echo '<button type="submit">'.($active?'Remove tickets':'Remove expired selection').'</button></form>';}
             echo '</article>';
         }
-        echo '<p><strong>Cart total: '.self::money((int)$summary['totals']['total_minor'],$summary['orders'][0]['currency']).'</strong></p>';
+        $currency=(string)$summary['orders'][0]['currency'];
+        echo '<section class="commerce-cart-summary" aria-label="Cart price breakdown"><h2>Order summary</h2><dl>';
+        foreach(['subtotal_minor'=>'Tickets','discount_minor'=>'Discounts','tax_minor'=>'Taxes','fee_minor'=>'Fees'] as $field=>$label){
+            $amount=(int)$summary['totals'][$field];
+            if($amount===0)continue;
+            echo '<div><dt>'.self::e($label).'</dt><dd>'.($field==='discount_minor'?'−':'').self::money($amount,$currency).'</dd></div>';
+        }
+        echo '<div class="commerce-cart-grand-total"><dt>Total</dt><dd>'.self::money((int)$summary['totals']['total_minor'],$currency).'</dd></div></dl></section>';
         try{
             $readiness=CommerceCartService::readiness(self::$db,self::$user,self::$org,(int)$cart['id'],(string)$cart['token']);
             echo '<p role="status">'.(int)$readiness['order_count'].' performance selections are held and ready for a future combined checkout. No payment is available yet.</p>';
