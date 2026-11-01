@@ -35,24 +35,70 @@ final class CommerceProductionExperience
         if($capacity<1)return '<span class="commerce-muted">No seating capacity configured</span>';
         return '<div class="commerce-sales-progress"><progress value="'.$sold.'" max="'.$capacity.'" aria-label="'.self::e($label).'">'.$sold.' of '.$capacity.'</progress><span>'.$sold.' / '.$capacity.' sold · '.number_format($sold/$capacity*100,0).'% occupancy</span></div>';
     }
+    private static function overviewGroups(PDO $db,array $u,int $org):array
+    {
+        $groups=['active'=>[],'upcoming'=>[],'past'=>[]];$query=mb_substr(trim((string)($_GET['q']??'')),0,190);$filter=(string)($_GET['sales_filter']??'all');$now=gmdate('Y-m-d H:i:s');
+        foreach(CommerceProductionService::productions($db,$u,$org,true) as $production){
+            if($query!==''&&mb_stripos($production['title'].' '.implode(' ',$production['venues']),$query)===false)continue;
+            $nearest=null;foreach($production['shows'] as $show)if(in_array($show['schedule_status'],['scheduled','draft'],true)&&$show['starts_at_utc']&&$show['starts_at_utc']>$now&&($nearest===null||$show['starts_at_utc']<$nearest))$nearest=$show['starts_at_utc'];
+            $production['nearest_future']=$nearest;$production['has_performances']=(bool)$production['shows'];
+            if($filter!=='all'){$production['shows']=array_values(array_filter($production['shows'],fn($show)=>match($filter){'on_sale'=>$show['sellable']>0,'sold_out'=>$show['sold_out'],'needs_attention'=>$show['problem']!==null||(!$show['sold_out']&&$show['sellable']===0),default=>true}));if(!$production['shows'])continue;}
+            usort($production['shows'],fn($a,$b)=>[$a['starts_at'],$a['starts_at_utc'],$a['id']]<=>[$b['starts_at'],$b['starts_at_utc'],$b['id']]);
+            $section=match($production['lifecycle_stage']){'upcoming'=>'upcoming','completed','archived'=>'past',default=>'active'};$groups[$section][]=$production;
+        }
+        foreach($groups as &$productions)usort($productions,fn($a,$b)=>[!$a['has_performances'],$a['nearest_future']??'9999',mb_strtolower($a['title']),$a['id']]<=>[!$b['has_performances'],$b['nearest_future']??'9999',mb_strtolower($b['title']),$b['id']]);unset($productions);
+        return$groups;
+    }
+    private static function localWhen(array $show):string
+    {return self::e((new DateTimeImmutable($show['starts_at']))->format('D, M j, Y · g:i A'));}
+    private static function salesStatus(array $show,array $production):string
+    {
+        if($show['problem']===null)return$show['sold_out']?'Sold out':($show['sellable']>0?'On sale':($show['held']>0?'Temporarily unavailable':'Unavailable'));
+        if($show['schedule_status']!=='scheduled')return ucfirst($show['schedule_status']);
+        if(!$show['starts_at_utc'])return'Timezone review needed';
+        if($show['starts_at_utc']<=gmdate('Y-m-d H:i:s'))return'Sales ended';
+        if($show['problem']==='Ticketing is disabled.')return'Ticketing disabled';
+        if($show['sales_status']!=='open')return'Sales closed';
+        if(!$production['announcement_published_at'])return'Unpublished';
+        return'Unavailable';
+    }
     public static function overview(PDO $db,array $u,int $org):void
     {
-        [$active,$past]=self::filtered($db,$u,$org,false);
-        echo '<div class="commerce-heading"><div><h1>Ticket sales overview</h1><p>Sales progress, available inventory and upcoming performances.</p></div></div>';self::search(false);
-        $totals=['sold'=>0,'capacity'=>0,'sellable'=>0];$revenue=[];$upcoming=[];
-        foreach($active as $p){foreach($totals as $key=>$_)$totals[$key]+=$p['totals'][$key];foreach($p['revenue'] as $currency=>$amount)$revenue[$currency]=($revenue[$currency]??0)+$amount;foreach($p['shows'] as $show)if($show['schedule_status']==='scheduled'&&$show['starts_at_utc']>gmdate('Y-m-d H:i:s'))$upcoming[]=$show+['title'=>$p['title']];}
-        if($active){echo '<section class="commerce-sales-summary" aria-label="Active production sales summary"><div><span>Tickets sold</span><strong>'.$totals['sold'].'</strong></div><div><span>Physical capacity</span><strong>'.$totals['capacity'].'</strong></div><div><span>Occupancy</span><strong>'.($totals['capacity']?number_format($totals['sold']/$totals['capacity']*100,0).'%':'—').'</strong></div><div><span>Sellable now</span><strong>'.$totals['sellable'].'</strong></div>';foreach($revenue as $currency=>$amount)echo '<div><span>Net revenue</span><strong>'.self::money($amount,$currency).'</strong></div>';echo '</section>';}
-        if(!$active&&!$past)echo '<div class="commerce-empty"><h2>No scheduled performances in this view</h2><p>Ticket sales appear here once performances have been scheduled in Productions &amp; Performances. Adjust the filter if you expected existing sales.</p></div>';
-        if($upcoming){usort($upcoming,fn($a,$b)=>strcmp($a['starts_at_utc'],$b['starts_at_utc']));echo '<section class="commerce-upcoming"><h2>Upcoming performances</h2>';foreach(array_slice($upcoming,0,3) as $show)echo '<div><strong>'.self::e($show['title']).'</strong><span>'.self::when($show).'</span><span>'.self::e($show['readiness']).'</span></div>';echo '</section>';}
-        echo '<p class="commerce-muted">Capacity is physical inventory. Closed or unready shows have no sellable availability. Net revenue includes fees and tax, less confirmed refunds. Summary totals cover the active productions matching this view.</p>';
-        foreach($active as $p)self::salesGroup($p);
-        if($past){echo '<details class="commerce-past-productions"><summary>Past production sales ('.count($past).')</summary>';foreach($past as $p)self::salesGroup($p);echo '</details>';}
+        $groups=self::overviewGroups($db,$u,$org);$current=array_merge($groups['active'],$groups['upcoming']);
+        echo '<div class="commerce-heading"><h1>Ticket sales overview</h1></div>';self::search(false);
+        $totals=['sold'=>0,'capacity'=>0,'sellable'=>0];$revenue=[];
+        foreach($current as $production){foreach($totals as $key=>$_)$totals[$key]+=$production['totals'][$key];foreach($production['revenue'] as $currency=>$amount)$revenue[$currency]=($revenue[$currency]??0)+$amount;}
+        echo '<section class="commerce-sales-summary" aria-label="Current production sales summary"><div><span>Tickets sold</span><strong>'.$totals['sold'].'</strong></div><div><span>Capacity</span><strong>'.$totals['capacity'].'</strong></div><div><span>Occupancy</span><strong>'.($totals['capacity']?number_format($totals['sold']/$totals['capacity']*100,0).'%':'—').'</strong></div><div><span>Sellable now</span><strong>'.$totals['sellable'].'</strong></div>';foreach($revenue as $currency=>$amount)echo '<div><span>Net revenue</span><strong>'.self::money($amount,$currency).'</strong></div>';echo '</section>';
+        if(!$current&&!$groups['past'])echo '<p class="commerce-empty">No productions match this view. Try a different search or filter.</p>';
+        foreach(['active'=>'Active & In Development','upcoming'=>'Upcoming Shows','past'=>'Past Productions'] as $key=>$label){
+            if($key==='past')echo '<details class="commerce-past-productions" data-overview-section="past"><summary>'.$label.' ('.count($groups[$key]).')</summary>';
+            else echo '<section class="commerce-overview-section" data-overview-section="'.$key.'"><h2>'.self::e($label).'</h2>';
+            if(!$groups[$key])echo '<p class="commerce-muted">No matching productions.</p>';
+            foreach($groups[$key] as $production)self::overviewProduction($u,$db,$org,$production);
+            echo $key==='past'?'</details>':'</section>';
+        }
     }
-    private static function salesGroup(array $p):void
+    private static function overviewProduction(array $u,PDO $db,int $org,array $production):void
     {
-        echo '<section class="commerce-sales-group"><header><h2>'.self::e($p['title']).'</h2><p>'.self::e(implode(' · ',$p['venues'])).'</p></header>';echo self::progress($p['totals']['sold'],$p['totals']['capacity'],$p['title'].' production occupancy');echo '<div class="commerce-sales-facts"><span>'.$p['totals']['sellable'].' sellable · '.$p['totals']['held'].' held · '.$p['totals']['blocked'].' allocated</span>';foreach($p['revenue'] as $currency=>$amount)echo '<strong>'.self::money($amount,$currency).' net</strong>';echo '</div>';
-        foreach($p['shows'] as $show){echo '<div class="commerce-sales-row"><div>'.self::when($show).'</div><div>'.self::progress($show['sold'],$show['capacity'],'Performance '.$show['id'].' occupancy').'<small>'.$show['sellable'].' sellable · '.$show['held'].' held · '.$show['blocked'].' allocated</small></div><div><span class="commerce-status">'.self::e($show['readiness']).'</span>';if(isset($show['net_minor']))echo '<small>'.self::money($show['net_minor'],$show['currency']).' net</small>';echo '</div></div>';}
-        if(($_GET['sales_filter']??'all')!=='all')echo '<p class="commerce-muted">Production totals include all its performances; the rows follow the selected filter.</p>';echo '</section>';
+        echo '<article class="commerce-overview-production" data-overview-production="'.(int)$production['id'].'"><header><h3>'.self::e($production['title']).'</h3>';if($production['venues'])echo '<p>'.self::e(implode(' · ',$production['venues'])).'</p>';echo '</header>';
+        if(!$production['shows'])echo '<p class="commerce-overview-empty">No ticket performances scheduled.</p>';
+        $manage=CommerceAccess::can($db,$u,$org,'inventory');foreach($production['shows'] as $show){echo '<div class="commerce-overview-showtime" data-overview-performance="'.(int)$show['id'].'"><div>'.self::localWhen($show).'</div>'.self::progress($show['sold'],$show['capacity'],'Showtime occupancy').'<span class="commerce-status">'.self::e(self::salesStatus($show,$production)).'</span><div class="commerce-overview-row-actions">'.self::link('performance_details','Details',['id'=>$show['id']],true);if($manage)echo self::link('performance','Manage',['id'=>$show['id']],true);echo '</div></div>';}
+        echo '</article>';
+    }
+    public static function performanceDetails(PDO $db,array $u,int $org,int $id):void
+    {
+        $production=null;$show=null;foreach(CommerceProductionService::productions($db,$u,$org) as $p)foreach($p['shows'] as $candidate)if((int)$candidate['id']===$id){$production=$p;$show=$candidate;}
+        if(!$show)throw new RuntimeException('Performance unavailable for this organization.');
+        echo '<div data-production-drawer data-performance-sales-details><h2>Performance sales details</h2><h3>'.self::e($production['title']).'</h3><p>'.self::localWhen($show).'</p><p>'.self::e($show['venue'].' / '.$show['space_name']).'</p><p class="commerce-status">'.self::e(self::salesStatus($show,$production)).'</p>'.self::progress($show['sold'],$show['capacity'],'Performance occupancy');
+        $counts=array_column(self::rows($db,'SELECT state,COUNT(*) positions FROM commerce_inventory WHERE organization_id=? AND performance_id=? GROUP BY state',[$org,$id]),'positions','state');
+        echo '<dl class="commerce-detail-stats">';foreach(['Physical capacity'=>$show['capacity'],'Sold positions'=>$show['sold'],'Free positions'=>$show['free'],'Sellable now'=>$show['sellable'],'Held positions'=>$show['held'],'Blocked positions'=>(int)($counts['blocked']??0),'House holds'=>(int)($counts['house']??0),'Complimentary allocations'=>(int)($counts['complimentary']??0)] as $label=>$count)echo '<div><dt>'.$label.'</dt><dd>'.$count.'</dd></div>';echo '</dl>';
+        if(CommerceAccess::can($db,$u,$org,'report')){
+            echo '<h3>Revenue &amp; refunds</h3><dl class="commerce-detail-stats"><div><dt>Net revenue</dt><dd>'.self::money($show['net_minor'],$show['currency']).'</dd></div><div><dt>Confirmed refunds</dt><dd>'.self::money($show['refunded_minor'],$show['currency']).'</dd></div></dl><p class="commerce-muted">Revenue includes fees and tax, less confirmed refunds.</p>';
+            $types=self::rows($db,"SELECT l.category,COUNT(*) issued,SUM(t.state='refunded') refunded,SUM(l.product_type='complimentary_ticket') complimentary FROM commerce_tickets t JOIN commerce_orders o ON o.id=t.order_id AND o.organization_id=t.organization_id JOIN commerce_order_lines l ON l.order_id=t.order_id AND l.organization_id=t.organization_id AND l.seat_key=t.seat_key WHERE t.organization_id=? AND t.performance_id=? GROUP BY l.category ORDER BY l.category",[$org,$id]);
+            echo '<h3>Ticket-type breakdown</h3>';if(!$types)echo '<p>No tickets issued yet.</p>';else{echo '<div class="commerce-table-scroll"><table><caption>Issued tickets, including refunded tickets</caption><thead><tr><th>Ticket type</th><th>Issued</th><th>Refunded</th><th>Complimentary</th></tr></thead><tbody>';foreach($types as $type)echo '<tr><td>'.self::e($type['category']).'</td><td>'.(int)$type['issued'].'</td><td>'.(int)$type['refunded'].'</td><td>'.(int)$type['complimentary'].'</td></tr>';echo '</tbody></table></div>';}
+            echo '<h3>Orders</h3><div class="commerce-actions">'.self::link('orders','All performance orders',['performance'=>$id]).self::link('orders','Held orders',['performance'=>$id,'status'=>'held']).self::link('orders','Refunded orders',['performance'=>$id,'status'=>'refunded']).self::link('orders','Pending refunds',['performance'=>$id,'status'=>'refund_pending']).'</div>';
+        }else echo '<p class="commerce-muted">Revenue, ticket reporting and order shortcuts require reporting permission.</p>';
+        echo '</div>';
     }
     public static function productions(PDO $db,array $u,int $org,string $base):void
     {
