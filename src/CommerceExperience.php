@@ -380,6 +380,10 @@ final class CommerceExperience
     private static function checkoutActions(array $o):void
     {
         $id=(int)$o['id'];$staffSale=CommerceBoxOfficeService::evidence(self::$db,self::$org,$id);
+        if(self::cartEnabled()&&self::$storefront){
+            $cartMember=self::rows('SELECT 1 FROM commerce_cart_orders WHERE organization_id=? AND order_id=? LIMIT 1',[self::$org,$id]);
+            if($cartMember){echo '<p>This selection is in your cart. Payment is disabled here so tickets from different shows are not charged separately.</p><p><a class="button" href="'.self::e(self::url('cart')).'">View cart</a></p>';return;}
+        }
         if($staffSale&&$staffSale['method'])echo '<p><strong>'.self::e($staffSale['method']==='cash'?'Cash receipt confirmed by staff':'External terminal payment recorded by staff').'</strong> · Not API verified'.($staffSale['method']==='cash'?' · Change due '.self::money((int)$staffSale['change_due_minor'],$o['currency']):' · '.self::e($staffSale['terminal_provider'].' / '.$staffSale['terminal_reference'])).'</p>';
         if($o['state']==='held'){
             if(self::cartEnabled()){self::form('cart_add',['id'=>$id]);echo '<button type="submit">Add tickets to cart</button></form><p><a href="'.self::e(self::url('cart')).'">View cart</a> · Multi-show payment is not yet available.</p>';}
