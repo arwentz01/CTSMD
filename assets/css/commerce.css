@@ -144,3 +144,10 @@
  .commerce-storefront .commerce-choice-action .button{padding:10px;min-height:44px}
 }
 @media(max-width:380px){.commerce-storefront .commerce-performance-choice{flex-wrap:wrap}.commerce-storefront .commerce-choice-action{width:100%}.commerce-storefront .commerce-choice-action .button{display:block;text-align:center}}
+
+/* Restricted cart review uses existing order holds; checkout remains disabled. */
+.commerce-storefront .commerce-cart-item{padding:16px;margin:12px 0;border:1px solid #e5d9db;background:#fff;border-radius:10px}
+.commerce-storefront .commerce-cart-item h2{font-size:18px;margin:0 0 6px}
+.commerce-storefront .commerce-cart-item p{margin:5px 0 12px}
+.commerce-storefront .commerce-cart-item form{margin:0}
+.commerce-storefront .commerce-cart-item button{background:#f8eeee;color:#702a3f;border:1px solid #d9bfc7}
