@@ -274,7 +274,9 @@ final class CommerceExperience
     private static function money(int $minor,string $currency):string{return self::e($currency).' '.number_format($minor/100,2);}
     private static function storefront():void
     {
-        echo '<div class="commerce-discovery-heading"><p class="commerce-eyebrow">CTSMD Connect Tickets</p><h1>Find your next show</h1><p>Choose a performance to see ticket options and select your seats.</p></div>';
+        echo '<div class="commerce-discovery-heading"><p class="commerce-eyebrow">CTSMD Connect Tickets</p><h1>Find your next show</h1><p>Choose a performance to see ticket options and select your seats.</p>';
+        if(self::cartEnabled())echo '<p><a class="button" href="'.self::e(self::url('cart')).'">View cart</a></p>';
+        echo '</div>';
         $performances=CommerceStorefrontService::performances(self::$db,self::$user,self::$org,(int)($_GET['production']??0));
         if(!$performances){echo '<p>No upcoming performances are available right now.</p>';return;}
         $productions=[];
