@@ -35,9 +35,9 @@ final class CommerceCartService
             $c=self::ownedLocked($db,$user,$organization,$cart,$cartToken);
             if($c['state']!=='open')throw new RuntimeException('This cart can no longer be changed.');
             $o=CommerceInventoryService::own($db,$user,$organization,$order,$orderToken);
-            $q=$db->prepare('SELECT state,expires_at,currency,customer_name,customer_email FROM commerce_orders WHERE id=? AND organization_id=? FOR UPDATE');
+            $q=$db->prepare('SELECT state,(expires_at>NOW()) AS hold_valid,currency,customer_name,customer_email FROM commerce_orders WHERE id=? AND organization_id=? FOR UPDATE');
             $q->execute([$order,$organization]);$locked=$q->fetch();
-            if(!$locked||$locked['state']!=='held'||strtotime($locked['expires_at'])<=time())throw new RuntimeException('This seat hold has expired or is no longer available.');
+            if(!$locked||$locked['state']!=='held'||!(bool)$locked['hold_valid'])throw new RuntimeException('This seat hold has expired or is no longer available.');
             $q=$db->prepare('SELECT o.currency,o.customer_name,o.customer_email FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? LIMIT 1');
             $q->execute([$organization,$cart]);$existing=$q->fetch();
             if($existing&&($existing['currency']!==$locked['currency']||$existing['customer_name']!==$locked['customer_name']||$existing['customer_email']!==$locked['customer_email']))throw new RuntimeException('All cart selections must use the same purchaser and currency.');
