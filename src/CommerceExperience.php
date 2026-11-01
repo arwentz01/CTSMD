@@ -187,9 +187,12 @@ final class CommerceExperience
             case 'issue_complimentary':
                 $key=(string)($_POST['issuance_key']??'');$form=$_SESSION['commerce_comp_forms'][$key]??null;if(!$form||(int)$form['performance']!==$id)throw new RuntimeException('Complimentary form expired. Reload it before retrying.');
                 $order=CommerceComplimentaryService::issue($db,$u,$o,$id,(array)($_POST['seats']??[]),(string)($_POST['customer_name']??''),(string)($_POST['customer_email']??''),(string)($_POST['reason']??''),$key,$form['token']);$_SESSION['commerce_orders'][$o.':'.$order['id']]=$form['token'];return self::url('checkout',['id'=>$order['id']]);
-            case 'stripe_payment':$token=(string)($_SESSION['commerce_orders'][$o.':'.$id]??'');$attempt=CommerceStripeService::start($db,$u,$o,$id,$token);$order=CommerceStore::row($db,'orders',$o,$id);return in_array($order['state'],['payment_pending','exception'],true)&&$attempt['checkout_url']?$attempt['checkout_url']:self::url('checkout',['id'=>$id]);
+            case 'stripe_payment':
+                if(self::cartEnabled()&&self::rows('SELECT 1 FROM commerce_cart_orders WHERE organization_id=? AND order_id=? LIMIT 1',[$o,$id]))throw new RuntimeException('This order belongs to a cart. Separate payment is disabled.');
+                $token=(string)($_SESSION['commerce_orders'][$o.':'.$id]??'');$attempt=CommerceStripeService::start($db,$u,$o,$id,$token);$order=CommerceStore::row($db,'orders',$o,$id);return in_array($order['state'],['payment_pending','exception'],true)&&$attempt['checkout_url']?$attempt['checkout_url']:self::url('checkout',['id'=>$id]);
             case 'stripe_cancel':CommerceStripeService::cancel($db,$u,$o,$id,(string)($_SESSION['commerce_orders'][$o.':'.$id]??''));return self::url('checkout',['id'=>$id]);
             case 'payment':case 'refresh_payment':case 'cancel_hold':case 'expire_simulation':
+                if($a==='payment'&&self::cartEnabled()&&self::rows('SELECT 1 FROM commerce_cart_orders WHERE organization_id=? AND order_id=? LIMIT 1',[$o,$id]))throw new RuntimeException('This order belongs to a cart. Separate payment is disabled.');
                 $token=(string)($_SESSION['commerce_orders'][$o.':'.$id]??'');
                 if($a==='payment'){if(self::$storefront){$order=CommerceInventoryService::own($db,$u,$o,$id,$token);CommerceStorefrontService::demandPerformance($db,$u,$o,(int)$order['performance_id']);}CommercePaymentService::start($db,$u,$o,$id,$token,(string)($_POST['scenario']??''));CommercePaymentService::refresh($db,$u,$o,$id,$token);}
                 elseif($a==='refresh_payment')CommercePaymentService::refresh($db,$u,$o,$id,$token);
