@@ -49,3 +49,17 @@
  .home-action.casting-response{grid-template-columns:minmax(0,1fr);gap:7px}
  .home-action.casting-response .home-action-links{grid-column:1;justify-content:flex-start;gap:12px}
 }
+
+/* Declined casting remains visually prominent without returning to the bulky alert layout. */
+.home-action.casting-response.casting-declined{
+ background:#fff1f2;
+ border:1px solid #efd2d7;
+ border-left:4px solid #a3233a;
+ border-radius:9px;
+ padding:12px 14px;
+ margin:6px 0;
+}
+.home-action.casting-response.casting-declined small{color:#9f1f38}
+.home-action.casting-response.casting-declined .home-action-links>a{color:#9f1f38}
+.home-action.casting-response.casting-declined .home-action-dismiss{border-color:#e7c4cb}
+@media(max-width:700px){.home-action.casting-response.casting-declined{padding:12px}}
