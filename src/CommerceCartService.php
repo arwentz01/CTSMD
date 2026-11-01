@@ -8,6 +8,15 @@ require_once __DIR__.'/CommerceInventoryService.php';
  */
 final class CommerceCartService
 {
+    public static function available(PDO $db):bool
+    {
+        try{
+            // Never attempt cart writes until the optional migration is applied.
+            $q=$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_carts','commerce_cart_orders')");
+            return (int)$q->fetchColumn()===2;
+        }catch(PDOException){return false;}
+    }
+
     public static function create(PDO $db,array $user,int $organization,string $token):int
     {
         CommerceAccess::demand($db,$user,$organization,'test');
