@@ -328,7 +328,7 @@ final class CommerceExperience
             $readiness=CommerceCartService::readiness(self::$db,self::$user,self::$org,(int)$cart['id'],(string)$cart['token']);
             echo '<p role="status">'.(int)$readiness['order_count'].' performance selections are held and ready for a future combined checkout. No payment is available yet.</p>';
         }catch(RuntimeException $e){echo '<p role="alert">'.self::e($e->getMessage()).'</p>';}
-        echo '<p>Each selection includes its applicable fees and taxes. Unpaid holds expire automatically. Multi-show checkout remains disabled in this pilot.</p>';<p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';
+        echo '<p>Each selection includes its applicable fees and taxes. Unpaid holds expire automatically. Multi-show checkout remains disabled in this pilot.</p><p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';
     }
     private static function retrievedOrder():void
     {
