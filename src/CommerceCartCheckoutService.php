@@ -14,6 +14,23 @@ final class CommerceCartCheckoutService
         if(getenv('COMMERCE_CART_CHECKOUT_PREPARE_ENABLED')!=='1'){
             throw new RuntimeException('Cart checkout preparation is disabled.');
         }
+        // A retry may arrive after the cart has already been frozen. Return the
+        // existing immutable snapshot only to its authenticated owner.
+        $existing=CommerceStore::tx($db,function()use($db,$user,$org,$cart,$token):?array{
+            $q=$db->prepare('SELECT state,tester_user_id,ownership_hash FROM commerce_carts WHERE organization_id=? AND id=? FOR UPDATE');
+            $q->execute([$org,$cart]);$owner=$q->fetch();
+            if(!$owner||!preg_match('/^[a-f0-9]{64}$/',$token)||
+               (int)$owner['tester_user_id']!==(int)$user['id']||
+               !hash_equals((string)$owner['ownership_hash'],hash('sha256',$token))){
+                throw new RuntimeException('Cart unavailable.');
+            }
+            if($owner['state']!=='checkout_pending')return null;
+            $q=$db->prepare('SELECT * FROM commerce_cart_payments WHERE organization_id=? AND cart_id=?');
+            $q->execute([$org,$cart]);$payment=$q->fetch();
+            if(!$payment)throw new RuntimeException('Cart checkout requires reconciliation.');
+            return $payment;
+        });
+        if($existing!==null)return $existing;
         // Readiness acquires a cart lock and verifies holds, performance eligibility,
         // ticket inventory, purchaser identity, and absence of legacy payment attempts.
         $quote=CommerceCartService::readiness($db,$user,$org,$cart,$token);
