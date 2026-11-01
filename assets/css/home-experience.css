@@ -40,7 +40,7 @@
 .home-action.casting-response small{font-size:10px;letter-spacing:.035em}
 .home-action.casting-response b{font-size:13px;line-height:1.4}
 .home-action.casting-response span{font-size:12px;line-height:1.45}
-.home-action.casting-response.casting-declined{background:transparent;border-color:var(--line)}
+.home-action.casting-response.casting-declined{background:#fff2f3;border:1px solid #e9c7cd;border-left:4px solid #a3233a;border-radius:9px;padding:12px 14px;margin:5px 0 8px}
 .home-action.casting-response.casting-declined small{color:#962f43}
 .home-action.casting-response .home-action-links{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;min-width:0}
 .home-action.casting-response .home-action-links>a{min-height:40px;display:inline-flex;align-items:center;font-size:12px}
