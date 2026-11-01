@@ -55,6 +55,26 @@ final class CommerceCartService
         });
     }
 
+    public static function removeHeldOrder(PDO $db,array $user,int $organization,int $cart,string $cartToken,int $order,string $orderToken):void
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$cartToken,$order,$orderToken):void{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$cartToken);
+            if($c['state']!=='open')throw new RuntimeException('This cart can no longer be changed.');
+            $o=CommerceInventoryService::own($db,$user,$organization,$order,$orderToken);
+            $q=$db->prepare('SELECT state FROM commerce_orders WHERE id=? AND organization_id=? FOR UPDATE');
+            $q->execute([$order,$organization]);$state=$q->fetchColumn();
+            if($state!=='held'&&$state!=='canceled'&&$state!=='failed')throw new RuntimeException('This selection has a payment in progress or is already settled.');
+            $q=$db->prepare('DELETE FROM commerce_cart_orders WHERE organization_id=? AND cart_id=? AND order_id=?');
+            $q->execute([$organization,$cart,$order]);
+            if($q->rowCount()!==1)throw new RuntimeException('Selection was not found in this cart.');
+            if($state==='held'){
+                $db->prepare("UPDATE commerce_orders SET state='canceled' WHERE id=? AND organization_id=? AND state='held'")->execute([$order,$organization]);
+                $db->prepare("UPDATE commerce_inventory SET state='released',order_id=NULL WHERE organization_id=? AND order_id=? AND state='held'")->execute([$organization,$order]);
+            }
+        });
+    }
+
     public static function summary(PDO $db,array $user,int $organization,int $cart,string $token):array
     {
         CommerceAccess::demand($db,$user,$organization,'test');
