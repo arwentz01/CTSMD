@@ -63,3 +63,18 @@
 .home-action.casting-response.casting-declined .home-action-links>a{color:#9f1f38}
 .home-action.casting-response.casting-declined .home-action-dismiss{border-color:#e7c4cb}
 @media(max-width:700px){.home-action.casting-response.casting-declined{padding:12px}}
+
+/* Next Up: distinct theatre-burgundy spotlight, consistent across desktop and mobile. */
+.home-page .home-today-card.surface.surface-dark{
+ background:linear-gradient(145deg,#682b40 0%,#4b2031 62%,#321d29 100%);
+ border:1px solid #81495d;
+ color:#fff9f3;
+ box-shadow:0 8px 22px rgba(67,26,42,.12);
+}
+.home-page .home-today-card.surface.surface-dark>span{color:#f0ce8a}
+.home-page .home-today-card.surface.surface-dark>strong,
+.home-page .home-today-card.surface.surface-dark>h3{color:#fff9f3}
+.home-page .home-today-card.surface.surface-dark>p{color:#ecdae1}
+.home-page .home-today-card.surface.surface-dark>a{color:#f5d58f;text-decoration-color:rgba(245,213,143,.55)}
+.home-page .home-today-card.surface.surface-dark>a:hover{color:#fff1c5}
+.home-page .home-today-card.surface.surface-dark>a:focus-visible{outline:3px solid #f5d58f;outline-offset:4px}
