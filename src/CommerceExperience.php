@@ -433,6 +433,14 @@ final class CommerceExperience
                 $allowed=['none','creation_unresolved','creation_retry_window_expired','provider_inquiry_unresolved','fulfillment_requires_review','external_refund_unconfirmed','stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_http_failure','stripe_account_mismatch','stripe_session_validation_failed','stripe_response_invalid','stripe_creation_unresolved'];
                 if(!in_array($reason,$allowed,true))$reason='other';
                 echo '<section class="commerce-panel" aria-label="Administrator payment diagnostics"><h2>Administrator payment diagnostics</h2><p>Diagnostic version: 2026-11-01-b</p><p>Stage: '.self::e($stage).'</p><p>Purchase state: '.self::e((string)$p['state']).'</p><p>Last failure: '.self::e($reason).'</p><p>Payment recorded: '.((int)$p['captured_minor']>0?'Yes, requires reconciliation':'Not recorded by CTSMD').'</p><p>No Stripe API keys or payment identifiers are displayed. Do not create another purchase while this one is unresolved.</p></section>';
+                if($reason==='stripe_account_mismatch'){
+                    try{
+                        $account=(new CommerceStripeProvider())->accountDiagnostic();
+                        echo '<section class="commerce-panel" aria-label="Stripe account comparison"><h2>Stripe account comparison</h2><p>Matches configured account: '.($account['matches']?'Yes':'No').'</p><p>Configured account ends in: '.self::e($account['configured_suffix']).'</p><p>Stripe API account ends in: '.self::e($account['returned_suffix']).'</p><p>Update only the account ID associated with your intended Stripe test key. Never paste API keys here.</p></section>';
+                    }catch(Throwable){
+                        echo '<p role="status">Stripe account comparison could not be completed. Check the server connection and PHP logs.</p>';
+                    }
+                }
             }if($p['checkout_url']&&!(int)$p['captured_minor'])echo '<p><a class="button" href="'.self::e($p['checkout_url']).'">Continue payment</a></p>';if(!(int)$p['captured_minor']){self::form('shopping_cancel',['purchase'=>$reference]);echo '<button>Cancel payment</button></form>';}}
         echo '<p><a href="'.self::e(self::url()).'">Continue shopping</a></p>';
     }
