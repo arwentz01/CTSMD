@@ -166,3 +166,13 @@
 .commerce-storefront .commerce-cart-summary dl>div{display:flex;justify-content:space-between;gap:16px;padding:8px 0;font-size:14px}
 .commerce-storefront .commerce-cart-summary dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
 .commerce-storefront .commerce-cart-summary .commerce-cart-grand-total{border-top:1px solid #e5d9db;margin-top:6px;padding-top:14px;font-size:18px;font-weight:750}
+
+/* Storefront navigation and genuinely empty status notices. */
+.commerce-storefront .commerce-customer-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:18px 20px}
+.commerce-storefront .commerce-customer-header .commerce-customer-brand{display:inline-flex;gap:5px;align-items:baseline;font-size:18px;font-weight:750;line-height:1.4;white-space:normal}
+.commerce-storefront .commerce-customer-header .commerce-customer-cart{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding:9px 13px;border:1px solid #d9bfc7;border-radius:8px;font-size:13px;font-weight:650;line-height:1.3;white-space:nowrap;background:#fff;color:#702a3f;text-decoration:none}
+.commerce-storefront .commerce-customer-cart:hover,.commerce-storefront .commerce-customer-cart:focus-visible{background:#f7edf0;border-color:#702a3f}
+.commerce-storefront .commerce-customer-cart[aria-current=page]{background:#f7edf0;border-color:#702a3f}
+.commerce-storefront .commerce-customer-cart .commerce-cart-count{font-weight:700;color:inherit}
+.commerce-storefront .commerce-content>p[role=status]:empty{display:none}
+@media(max-width:520px){.commerce-storefront .commerce-customer-header{padding:12px;gap:10px}.commerce-storefront .commerce-customer-header .commerce-customer-brand{font-size:16px}.commerce-storefront .commerce-customer-header .commerce-customer-cart{padding:8px 10px}}
