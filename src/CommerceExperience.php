@@ -7,6 +7,7 @@ require_once __DIR__.'/CommerceTicketService.php';
 require_once __DIR__.'/CommerceCartService.php';
 require_once __DIR__.'/CommerceShoppingCartService.php';
 require_once __DIR__.'/CommerceShoppingCheckoutService.php';
+require_once __DIR__.'/CommerceShoppingPilotPolicy.php';
 require_once __DIR__.'/CommerceComplimentaryService.php';
 require_once __DIR__.'/CommerceRecommendationService.php';
 require_once __DIR__.'/CommerceBoxOfficeService.php';
@@ -43,7 +44,7 @@ final class CommerceExperience
     {$cart=self::shoppingCart();return CommerceShoppingCartService::contents(self::$db,self::$user,self::$org,(int)$cart['id']);}
     private static function rebuiltPayment():bool
     {
-        if(!(CommerceAccess::local()||(getenv('COMMERCE_HOSTED_CART_PAYMENT_PILOT_ENABLED')==='1'&&Auth::hasRole(self::$user,'administrator')))||!self::rebuiltCart()||getenv('COMMERCE_REBUILT_CART_PAYMENT_ENABLED')!=='1'||getenv('COMMERCE_STRIPE_CHECKOUT_ENABLED')!=='1'||!CommerceStripeProvider::configured())return false;
+        if(!self::rebuiltCart()||!CommerceShoppingPilotPolicy::canStartPayment(CommerceAccess::local(),Auth::hasRole(self::$user,'administrator'))||!CommerceStripeProvider::configured())return false;
         try{$q=self::$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_shopping_purchases','commerce_shopping_purchase_orders','commerce_shopping_webhooks','commerce_shopping_refunds','commerce_shopping_deliveries')");return(int)$q->fetchColumn()===5;}catch(PDOException){return false;}
     }
     private static function cartCredentials():array
