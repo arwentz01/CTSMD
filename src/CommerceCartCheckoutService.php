@@ -8,6 +8,40 @@ require_once __DIR__.'/CommerceCartService.php';
  */
 final class CommerceCartCheckoutService
 {
+    /**
+     * Read the immutable cart-payment snapshot. This never trusts a browser
+     * amount, consults Stripe, or changes the ledger.
+     */
+    public static function snapshot(PDO $db,array $user,int $org,int $cart,string $token):array
+    {
+        CommerceAccess::demand($db,$user,$org,'test');
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('Cart unavailable.');
+        $q=$db->prepare('SELECT p.*,c.tester_user_id,c.ownership_hash,c.state AS cart_state
+            FROM commerce_cart_payments p JOIN commerce_carts c
+            ON c.id=p.cart_id AND c.organization_id=p.organization_id
+            WHERE p.organization_id=? AND p.cart_id=?');
+        $q->execute([$org,$cart]);$payment=$q->fetch();
+        if(!$payment||(int)$payment['tester_user_id']!==(int)$user['id']||
+            !hash_equals((string)$payment['ownership_hash'],hash('sha256',$token))){
+            throw new RuntimeException('Cart unavailable.');
+        }
+        $q=$db->prepare('SELECT po.order_id,po.expected_minor,o.performance_id,o.state AS order_state
+            FROM commerce_cart_payment_orders po JOIN commerce_orders o
+            ON o.id=po.order_id AND o.organization_id=po.organization_id
+            WHERE po.organization_id=? AND po.payment_id=? ORDER BY po.order_id');
+        $q->execute([$org,$payment['id']]);$orders=$q->fetchAll();
+        if(!$orders)throw new RuntimeException('Cart payment is missing its order snapshot.');
+        $total=0;
+        foreach($orders as $order){
+            if((int)$order['expected_minor']<0||$total>PHP_INT_MAX-(int)$order['expected_minor'])
+                throw new RuntimeException('Cart payment total is invalid.');
+            $total+=(int)$order['expected_minor'];
+        }
+        if($total!==(int)$payment['expected_minor'])throw new RuntimeException('Cart payment total requires reconciliation.');
+        unset($payment['tester_user_id'],$payment['ownership_hash']);
+        return ['payment'=>$payment,'orders'=>$orders];
+    }
+
     public static function prepare(PDO $db,array $user,int $org,int $cart,string $token):array
     {
         CommerceAccess::demand($db,$user,$org,'test');
