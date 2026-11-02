@@ -1,0 +1,90 @@
+{
+  "synthetic": true,
+  "method": "CUA browser automation; real login; local isolated schema",
+  "measurements": [
+    {
+      "surface": "discovery",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    {
+      "surface": "reserved",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    {
+      "surface": "admission",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    {
+      "surface": "discovery",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 768,
+      "width": 768
+    },
+    {
+      "surface": "reserved",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 768,
+      "width": 768
+    },
+    {
+      "surface": "admission",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 768,
+      "width": 768
+    },
+    {
+      "surface": "discovery",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "surface": "reserved",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "surface": "admission",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "surface": "discovery",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    {
+      "surface": "reserved",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    {
+      "surface": "admission",
+      "h1": 1,
+      "missingLabels": 0,
+      "scrollWidth": 320,
+      "width": 320
+    }
+  ]
+}

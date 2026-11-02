@@ -1,0 +1,67 @@
+[
+  {
+    "test": "tests/commerce_foundation.php",
+    "exit": 0,
+    "summary": "PASS 10 Commerce foundation checks"
+  },
+  {
+    "test": "tests/commerce_venues.php",
+    "exit": 0,
+    "summary": "PASS 12 venue checks"
+  },
+  {
+    "test": "tests/commerce_landmarks.php",
+    "exit": 0,
+    "summary": "PASS 8 landmark checks"
+  },
+  {
+    "test": "tests/commerce_inventory.php",
+    "exit": 0,
+    "summary": "PASS 18 inventory checks"
+  },
+  {
+    "test": "tests/commerce_concurrency.php",
+    "exit": 0,
+    "summary": "PASS Real competing processes: exactly one hold, one rejection"
+  },
+  {
+    "test": "tests/commerce_quantities.php",
+    "exit": 0,
+    "summary": "PASS 16 ticket quantity checks"
+  },
+  {
+    "test": "tests/commerce_payments.php",
+    "exit": 0,
+    "summary": "PASS 34 payment and receipt checks"
+  },
+  {
+    "test": "tests/commerce_tickets.php",
+    "exit": 0,
+    "summary": "PASS 20 ticket and authorization checks"
+  },
+  {
+    "test": "tests/commerce_hosted.php",
+    "exit": 0,
+    "summary": "PASS 10 hosted Commerce access checks"
+  },
+  {
+    "test": "tests/commerce_hosted_http.php",
+    "exit": 0,
+    "summary": "PASS 12 hosted HTTP checks"
+  },
+  {
+    "test": "tests/commerce_http.php",
+    "exit": 0,
+    "summary": "PASS 26 Commerce HTTP/security checks"
+  },
+  {
+    "test": "tests/commerce_hosted_http.php --copied-local-env",
+    "exit": 0,
+    "summary": "PASS 12 hosted HTTP checks"
+  },
+  {
+    "test": "tests/commerce_geometry.cjs",
+    "exit": 0,
+    "summary": "PASS angled generation, rigid rotation, bounds rejection, unchanged originals and marker-aware fit"
+  }
+]

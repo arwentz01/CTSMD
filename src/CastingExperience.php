@@ -1,0 +1,241 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/AccessPolicy.php';
+require_once __DIR__.'/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
+require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/CastingService.php';
+require_once __DIR__.'/CastingRoleService.php';
+require_once __DIR__.'/CastingOfferService.php';
+require_once __DIR__.'/CastingCommunicationService.php';
+require_once __DIR__.'/ManualParticipantService.php';
+
+final class CastingExperience
+{
+    private const ROUTE='/production/casting';
+    public static function handles(string $route):bool{return $route===self::ROUTE;}
+
+    public static function render(string $basePath):never
+    {
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);
+        if(!$user||!AccessPolicy::canManageProduction($user))self::forbidden();
+        $_SESSION['casting_csrf']??=bin2hex(random_bytes(24));
+        $production=ProductionContext::selected($db,$user);
+        if(!$production)self::page($db,$basePath,$user,null,[],[],[],[],[],[],null,[]);
+        if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$user,(int)$production['id'],$basePath);
+        self::page($db,$basePath,$user,$production,CastingService::board($db,(int)$production['id']),CastingService::intakeCandidates($db,(int)$production['id']),CastingService::peopleCandidates($db,(int)$production['id']),CastingService::groups($db,(int)$production['id']),['callback'=>CastingCommunicationService::publication($db,(int)$production['id'],'callback'),'cast'=>CastingCommunicationService::publication($db,(int)$production['id'],'cast')],CastingCommunicationService::publicSettings($db,(int)$production['id']),$_SESSION['casting_flash']??null,ManualParticipantService::availableProfiles($db,(int)$production['id']));
+    }
+
+    private static function post(PDO $db,array $user,int $productionId,string $basePath):never
+    {
+        if(!hash_equals((string)($_SESSION['casting_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session expired.');self::redirect($basePath.self::ROUTE);}
+        $selected=ProductionContext::selected($db,$user);if(!$selected||(int)$selected['id']!==$productionId){self::flash('error','The Working Production changed before this casting action was saved.');self::redirect($basePath.self::ROUTE);}
+        try{
+            $action=(string)($_POST['action']??'');
+            if($action==='create_role'){CastingRoleService::create($db,$productionId,(string)($_POST['title']??''),(string)($_POST['category']??'other'),(int)($_POST['sort_order']??0));self::flash('success','Production role saved.');}
+            elseif($action==='assign_roles'){CastingRoleService::set($db,$productionId,(int)($_POST['record_id']??0),(array)($_POST['role_ids']??[]),(string)($_POST['identity_type']??'')==='manual');self::flash('success','Cast roles saved privately. Republish when ready to release changes.');}
+            elseif($action==='add_intake'){CastingService::add($db,$productionId,(int)$user['id'],(int)($_POST['user_id']??0),(int)($_POST['submission_id']??0));self::flash('success','Audition intake added to the casting board.');}
+            elseif($action==='add_person'){CastingService::add($db,$productionId,(int)$user['id'],(int)($_POST['user_id']??0),null);self::flash('success','Participant added to the casting board.');}
+            elseif($action==='add_manual'){if((int)($_POST['existing_manual_participant_id']??0)>0)ManualParticipantService::addExistingCredit($db,$productionId,(int)$user['id'],(int)$_POST['existing_manual_participant_id'],$_POST);else ManualParticipantService::create($db,dirname(__DIR__),$productionId,(int)$user['id'],$_POST,$_FILES['headshot']??[]);self::flash('success','Manual participant added. No account or membership was created.');}
+            elseif($action==='update_manual'){ManualParticipantService::update($db,dirname(__DIR__),$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$_POST,$_FILES['headshot']??[]);self::flash('success','Manual participant saved.');}
+            elseif($action==='archive_manual'){ManualParticipantService::archive($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0));self::flash('success','Manual participant archived from active production listings.');}
+            elseif($action==='transfer_manual'){ManualParticipantService::transfer($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),(int)($_POST['student_user_id']??0),['name'=>!empty($_POST['copy_name']),'biography'=>!empty($_POST['copy_biography']),'headshot'=>!empty($_POST['copy_headshot']),'credit'=>!empty($_POST['copy_credit'])]);self::flash('success','Selected data transferred to the registered Student; the manual credit was retired.');}
+            elseif($action==='update'){CastingService::update($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$_POST);self::flash('success','Casting decision saved privately. No family communication was sent.');}
+            elseif($action==='remove_cast'){$q=$db->prepare('SELECT production_membership_id FROM production_casting_records WHERE id=? AND production_id=?');$q->execute([(int)($_POST['record_id']??0),$productionId]);$membership=(int)$q->fetchColumn();CastingRosterService::remove($db,$user,$productionId,$membership);self::flash('success','Removed cast assignment. Independent team, staff and family responsibilities are retained.');}
+            elseif($action==='finalize'){CastingService::finalizeRoster($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),(array)($_POST['group_ids']??[]));self::flash('success','Casting finalized to the production roster. No family communication was sent automatically.');}
+            elseif($action==='issue_offer'){CastingOfferService::issue($db,$productionId,(int)($_POST['record_id']??0),(int)$user['id']);self::flash('success','Casting offer created for the participant and any required guardians.');}
+            elseif($action==='send_result'){$queued=CastingCommunicationService::sendResult($db,$productionId,(int)$user['id'],(int)($_POST['record_id']??0),$basePath);self::flash('success','Casting result queued for '.max(1,$queued).' family recipient'.($queued===1?'':'s').'. If the decision is Offered, the family can respond in their Action Center.');}
+            elseif($action==='save_publication'){
+                $type=(string)($_POST['publication_type']??'cast');
+                CastingCommunicationService::savePublication($db,$productionId,(int)$user['id'],$type,(string)($_POST['headline']??''),(string)($_POST['member_note']??''),false);
+                self::flash('success',ucfirst($type).' publication draft saved.');
+            }
+            elseif($action==='publish_publication'){
+                $type=(string)($_POST['publication_type']??'cast');
+                CastingCommunicationService::savePublication($db,$productionId,(int)$user['id'],$type,(string)($_POST['headline']??''),(string)($_POST['member_note']??''),true);
+                self::flash('success',$type==='callback'?'Callbacks published to production members in Connect.':'Cast published to production members in Connect.');
+            }
+            elseif($action==='unpublish_publication'){
+                $type=(string)($_POST['publication_type']??'cast');
+                CastingCommunicationService::unpublishPublication($db,$productionId,(int)$user['id'],$type);
+                self::flash('success',$type==='callback'?'Callbacks unpublished.':'Cast unpublished.');
+            }
+            elseif($action==='toggle_public_page'){
+                $enabled=(string)($_POST['public_enabled']??'0')==='1';
+                CastingCommunicationService::setPublicPage($db,$productionId,(int)$user['id'],$enabled);
+                self::flash('success',$enabled?'Public website casting page enabled.':'Public website casting page disabled.');
+            }
+            else throw new RuntimeException('Choose a valid casting action.');
+        }catch(RuntimeException $e){self::flash('error',$e->getMessage());}
+        if(($_POST['ajax']??'')==='1'){$result=$_SESSION['casting_flash']??['type'=>'error','message'=>'Unknown result'];unset($_SESSION['casting_flash']);header('Content-Type: application/json; charset=utf-8');header('Cache-Control: no-store');echo json_encode(['ok'=>$result['type']==='success','message'=>$result['message']],JSON_THROW_ON_ERROR);exit;}
+        self::redirect($basePath.self::ROUTE);
+    }
+
+    private static function page(PDO $db,string $basePath,array $user,?array $production,array $board,array $intake,array $people,array $groups,array $publication,array $publicSettings,?array $flash,array $manualProfiles):never
+    {
+        unset($_SESSION['casting_flash']);$u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');
+        $counts=['under_review'=>0,'callback'=>0,'offered'=>0,'cast'=>0,'not_cast'=>0,'withdrawn'=>0];foreach($board as $r)if(isset($counts[$r['casting_status']]))$counts[$r['casting_status']]++;
+        $sub=AppNavigation::productionSubnav(self::ROUTE,$user);
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Casting · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/casting.css?v=20261021-4')?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar(self::ROUTE,$basePath,$user);?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Production','Casting',$basePath,$sub);?><div class="cast-page ops-page">
+        <?php if(!$production):?><section class="cast-empty"><h2>Select an active production first.</h2><p>Casting is a Working-Production operation.</p><a class="button" href="<?=$u('/production')?>">Choose production</a></section>
+        <?php else:?><section class="cast-hero"><div><small>CASTING BOARD</small><h2><?=$e((string)$production['title'])?></h2><p>Decisions stay private until staff explicitly sends a result or publishes the cast. Finalizing roster access still does not communicate a result automatically.</p></div><a href="<?=$u('/production/people')?>">Production roster →</a></section>
+        <?php WorkspaceUI::workflow(['Review'=>'Add candidates and record private decisions.', 'Assign'=>'Manage roles and confirm roster access.', 'Communicate'=>'Send family results deliberately.', 'Publish'=>'Release callbacks or cast when ready.']); ?>
+        <?php if($flash):?><div class="cast-flash <?=$e((string)$flash['type'])?>"><?=$e((string)$flash['message'])?></div><?php endif;?>
+        <div class="cast-main-toolbar"><div class="cast-primary-tabs" role="tablist" aria-label="Casting lists"><button type="button" role="tab" aria-selected="true" data-cast-tab="callback">Callbacks <span><?=(int)$counts['callback']?></span></button><button type="button" role="tab" aria-selected="false" data-cast-tab="cast">Cast <span><?=(int)$counts['cast']?></span></button></div><button type="button" class="button" data-open-cast-drawer="roles">Manage Roles</button></div>
+        <?php foreach(['callback'=>'Callbacks','cast'=>'Cast'] as $listStatus=>$listTitle):
+            $listRows=array_values(array_filter($board,static fn(array $r):bool=>(string)($r['casting_status']??'')===$listStatus));
+            usort($listRows,static fn(array $a,array $b):int=>strnatcasecmp((string)($a['person_name']??''),(string)($b['person_name']??'')));
+            $roleIndex=[];
+            foreach($listRows as $person){
+                $roleText=trim((string)($person['role_title']??''));
+                $roles=array_values(array_filter(array_map('trim',explode('/',$roleText)),static fn(string $r):bool=>$r!==''));
+                if(!$roles)$roles=['Unassigned'];
+                foreach($roles as $role)$roleIndex[$role][]=(string)($person['person_name']??'');
+            }
+            uksort($roleIndex,'strnatcasecmp');
+        ?>
+        <section class="cast-panel cast-assignment-list" data-cast-list="<?=$e($listStatus)?>"<?=$listStatus==='cast'?' hidden':''?>>
+          <header><div><small><?=$listStatus==='callback'?'CALLBACK DECISIONS':'CONFIRMED CAST'?></small><h3><?=$e($listTitle)?> · <?=count($listRows)?></h3><p>Private working list. Publishing remains a separate action.</p></div>
+            <div class="cast-view-switch" role="group" aria-label="<?=$e($listTitle)?> display"><button type="button" data-view="student" aria-pressed="true">By person</button><button type="button" data-view="role" aria-pressed="false">By Role</button></div>
+          </header>
+          <?php if(!$listRows):?><p>No <?=$e(strtolower($listTitle))?> decisions yet.</p><?php else:?>
+          <div data-content="student" class="cast-view-content"><?php foreach($listRows as $person):?>
+            <div class="cast-list-line"><strong><?=$e((string)$person['person_name'])?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e((string)(($person['role_title']??'')?:'Needs assignment'))?></span><button type="button" class="cast-small-action" data-open-assignment="<?=$e((string)$person['identity_type'])?>:<?=(int)$person['id']?>">Assign</button></div>
+          <?php endforeach;?></div>
+          <div data-content="role" class="cast-view-content" hidden><?php foreach($roleIndex as $role=>$names):?>
+            <div class="cast-list-line"><strong><?=$e($role)?></strong><span class="cast-list-dots" aria-hidden="true"></span><span><?=$e(implode(', ',array_unique($names)))?></span></div>
+          <?php endforeach;?></div>
+          <?php endif;?>
+        </section>
+        <?php endforeach;?>
+        <style>
+        .cast-assignment-list{margin-block:16px}.cast-assignment-list>header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+        .cast-view-switch{display:inline-flex;gap:4px;border:1px solid #d5d5da;border-radius:8px;padding:3px}.cast-view-switch button{background:transparent;border:0;border-radius:5px;padding:8px 12px;cursor:pointer;color:inherit}.cast-view-switch button[aria-pressed="true"]{background:#293b63;color:white}
+        .cast-list-line{display:flex;align-items:baseline;gap:9px;padding:9px 0;border-bottom:1px solid #ececf0}.cast-list-line strong{font-weight:650}.cast-list-dots{flex:1;min-width:16px;border-bottom:2px dotted #a9a9b3}.cast-list-line>span:last-child{text-align:right;max-width:60%}
+        @media(max-width:480px){.cast-list-line{flex-wrap:wrap}.cast-list-line>span:last-child{max-width:100%}}
+        </style>
+        <script>document.addEventListener('click',function(event){const button=event.target.closest('.cast-view-switch button[data-view]');if(!button)return;const panel=button.closest('[data-cast-list]');if(!panel)return;panel.querySelectorAll('.cast-view-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));panel.querySelectorAll('.cast-view-content').forEach(c=>c.hidden=c.dataset.content!==button.dataset.view);});</script>
+        <?php if($production):$roleDb=Database::connect(dirname(__DIR__));$castRoles=CastingRoleService::roles($roleDb,(int)$production['id']);?>
+        <div class="cast-drawer-backdrop" data-close-cast-drawer hidden></div>
+        <aside class="cast-drawer" id="cast-roles-drawer" aria-label="Manage production roles" aria-modal="true" role="dialog" hidden tabindex="-1">
+          <div class="cast-drawer-head"><div><small>PRODUCTION ROLES</small><h2>Manage Roles</h2></div><button type="button" data-close-cast-drawer aria-label="Close role drawer">×</button></div>
+          <p>Create roles once, then assign them to any eligible cast member. Roles can be shared.</p>
+          <form method="post" class="cast-drawer-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="create_role">
+            <label>Role name<input name="title" maxlength="190" required placeholder="Minor Character 3"></label>
+            <label>Category<select name="category"><?php foreach(['principal'=>'Principal','supporting'=>'Supporting','minor'=>'Minor Character','ensemble'=>'Ensemble','other'=>'Other'] as $key=>$value):?><option value="<?=$e($key)?>"><?=$e($value)?></option><?php endforeach;?></select></label>
+            <label>Display order<input type="number" name="sort_order" value="0"></label><button type="submit" class="button">Save role</button>
+          </form>
+          <h3>Available roles</h3><div class="cast-role-chip-list"><?php foreach($castRoles as $role):?><span class="cast-role-chip"><?=$e((string)$role['title'])?><small><?=$e((string)$role['category'])?></small></span><?php endforeach;?></div>
+        </aside>
+        <?php foreach($board as $person):if(!in_array((string)$person['casting_status'],['callback','offered','cast'],true))continue;
+          $isManual=($person['identity_type']??'')==='manual';
+          $assignedIds=array_map('intval',array_column(CastingRoleService::assigned($roleDb,(int)$production['id'],(int)$person['id'],$isManual),'id'));
+          $drawerKey=($isManual?'manual':'registered').':'.(int)$person['id'];
+        ?>
+        <aside class="cast-drawer" data-assignment-drawer="<?=$e($drawerKey)?>" role="dialog" aria-modal="true" aria-label="Assign cast roles" hidden tabindex="-1">
+          <div class="cast-drawer-head"><div><small>CAST ASSIGNMENTS</small><h2><?=$e((string)$person['person_name'])?></h2><p><?=ucfirst($e((string)$person['casting_status']))?></p></div><button type="button" data-close-cast-drawer aria-label="Close assignment drawer">×</button></div>
+          <form method="post" class="cast-drawer-form ops-form">
+            <input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="assign_roles"><input type="hidden" name="record_id" value="<?=(int)$person['id']?>"><input type="hidden" name="identity_type" value="<?=$isManual?'manual':'registered'?>">
+            <fieldset><legend>Select all applicable roles</legend><?php foreach($castRoles as $role):?><label class="cast-drawer-choice"><input type="checkbox" name="role_ids[]" value="<?=(int)$role['id']?>"<?=in_array((int)$role['id'],$assignedIds,true)?' checked':''?>><span><?=$e((string)$role['title'])?></span><small><?=$e((string)$role['category'])?></small></label><?php endforeach;?></fieldset>
+            <?php if(!$castRoles):?><p>No roles defined. Close this drawer and select Manage Roles to create one.</p><?php endif;?>
+            <button type="submit" class="button">Save assignments</button>
+          </form>
+        </aside>
+        <?php endforeach;endif;?>
+        <style>
+        .cast-main-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}.cast-primary-tabs{display:flex;gap:6px}.cast-primary-tabs button{border:1px solid #ded9de;background:white;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:700}.cast-primary-tabs button[aria-selected="true"]{background:#293b63;color:#fff}.cast-primary-tabs span{font-weight:400;opacity:.8}.cast-small-action{border:1px solid #d2ced4;background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}.cast-assignment-list{margin:10px 0;padding:18px!important}.cast-assignment-list>header{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.cast-assignment-list header p{margin:4px 0;font-size:.85rem}.cast-view-switch{display:inline-flex;border:1px solid #ddd;border-radius:8px;padding:3px}.cast-view-switch button{border:0;background:transparent;padding:7px 12px;border-radius:6px;cursor:pointer}.cast-view-switch button[aria-pressed="true"]{background:#293b63;color:white}.cast-list-line{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #eee}.cast-list-dots{flex:1;min-width:14px;border-bottom:2px dotted #b4aeb6}.cast-list-line>span:last-of-type{text-align:right}.cast-drawer-backdrop{position:fixed;inset:0;background:rgba(13,16,25,.42);z-index:1190}.cast-drawer{position:fixed;right:0;top:0;bottom:0;width:min(480px,100vw);padding:24px;background:#fff;box-shadow:-8px 0 35px #0002;z-index:1200;overflow-y:auto}.cast-drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.cast-drawer-head h2{margin:4px 0}.cast-drawer-head button{border:0;background:#f3f0f3;border-radius:8px;padding:7px 13px;font-size:24px;cursor:pointer}.cast-drawer-form{display:grid;gap:14px;margin:22px 0}.cast-drawer-form label{display:grid;gap:5px}.cast-drawer-form input,.cast-drawer-form select{max-width:100%;padding:10px;border:1px solid #c7c3ca;border-radius:7px}.cast-drawer-choice{display:flex!important;flex-direction:row;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #eee}.cast-drawer-choice input{width:auto}.cast-drawer-choice small{margin-left:auto;opacity:.6}.cast-role-chip-list{display:flex;flex-wrap:wrap;gap:8px}.cast-role-chip{border:1px solid #ddd;background:#f7f5f7;padding:8px;border-radius:7px}.cast-role-chip small{display:block;opacity:.6}@media(max-width:540px){.cast-drawer{padding:18px}.cast-list-line{flex-wrap:wrap}.cast-list-dots{display:none}}
+        </style>
+        <script>
+        (function(){let current=null,previousFocus=null;const backdrop=document.querySelector('.cast-drawer-backdrop');function close(){if(!current)return;current.hidden=true;current=null;if(backdrop)backdrop.hidden=true;document.body.style.overflow='';if(previousFocus&&previousFocus.focus)previousFocus.focus();}
+        function open(drawer){if(!drawer)return;close();previousFocus=document.activeElement;current=drawer;drawer.hidden=false;if(backdrop)backdrop.hidden=false;document.body.style.overflow='hidden';drawer.focus();}
+        document.addEventListener('click',function(e){const tab=e.target.closest('[data-cast-tab]');if(tab){document.querySelectorAll('[data-cast-tab]').forEach(t=>t.setAttribute('aria-selected',String(t===tab)));document.querySelectorAll('[data-cast-list]').forEach(p=>p.hidden=p.dataset.castList!==tab.dataset.castTab);return;}
+        const view=e.target.closest('.cast-view-switch [data-view]');if(view){const panel=view.closest('[data-cast-list]');panel.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===view)));panel.querySelectorAll('[data-content]').forEach(c=>c.hidden=c.dataset.content!==view.dataset.view);return;}
+        const roles=e.target.closest('[data-open-cast-drawer]');if(roles){open(document.getElementById('cast-roles-drawer'));return;}
+        const working=e.target.closest('[data-open-working]');if(working){open([...document.querySelectorAll('[data-working-drawer]')].find(x=>x.dataset.workingDrawer===working.dataset.openWorking));return;}
+        const assign=e.target.closest('[data-open-assignment]');if(assign){open([...document.querySelectorAll('[data-assignment-drawer]')].find(x=>x.dataset.assignmentDrawer===assign.dataset.openAssignment));return;}
+        if(e.target.closest('[data-close-cast-drawer]'))close();
+        });document.addEventListener('keydown',function(e){if(e.key==='Escape')close();if(e.key!=='Tab'||!current)return;const items=[...current.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(x=>x.offsetParent!==null);if(!items.length)return;const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});
+        })();
+        </script>
+        <section class="cast-summary"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast'] as $key=>$label):?><article><b><?=(int)$counts[$key]?></b><span><?=$e($label)?></span></article><?php endforeach;?></section>
+        <div class="cast-intake-grid"><section class="cast-panel"><header><small>AUDITION INTAKE</small><h3>Reviewed registrations</h3></header><?php if(!$intake):?><p>No linked audition registrations are waiting to be added.</p><?php endif;?><?php foreach($intake as $row):?><form class="cast-candidate" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_intake"><input type="hidden" name="user_id" value="<?=(int)$row['user_id']?>"><input type="hidden" name="submission_id" value="<?=(int)$row['submission_id']?>"><span><b><?=$e((string)$row['person_name'])?></b><small><?=$e((string)$row['opportunity_title'])?> · <?=ucwords(str_replace('_',' ',(string)$row['registration_status']))?></small></span><button type="submit">Add to casting</button></form><?php endforeach;?></section>
+        <section class="cast-panel"><header><small>PEOPLE</small><h3>Add existing participant</h3></header><?php if($people):?><form class="cast-add" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_person"><select name="user_id" required><option value="">Choose participant…</option><?php foreach($people as $p):$eligibility=ProductionParticipantEligibility::forUser($db,(int)$production['id'],(int)$p['id']);?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?> · <?=$e((string)$p['role'])?> · <?=$e(ucwords(str_replace('_',' ',$eligibility['status'])))?></option><?php endforeach;?></select><button type="submit">Add participant</button></form><?php else:?><p>Every active performer is already represented on the casting board.</p><?php endif;?><p class="cast-help">Adult and Student identities retain their own account and safeguarding rules.</p></section></div>
+        <details class="cast-panel cast-manual-add"><summary><b>Add Participant Manually</b><span>No login or membership will be created.</span></summary><form class="cast-decision" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="add_manual"><?php if($manualProfiles):?><label class="wide">Reuse existing profile<select name="existing_manual_participant_id"><option value="0">Create a new profile</option><?php foreach($manualProfiles as $profile):?><option value="<?=(int)$profile["id"]?>"><?=$e((string)$profile["name"])?></option><?php endforeach;?></select></label><?php endif;?><label>First name<input name="first_name" maxlength="100"></label><label>Last name<input name="last_name" maxlength="100"></label><label>Public display name<input name="display_name" maxlength="190"></label><label>Type<select name="participant_type"><option value="cast">Cast</option><option value="crew">Crew</option><option value="creative">Creative</option><option value="other">Other</option></select></label><label>Character / credit<input name="role_title" maxlength="500"></label><label>Status<select name="casting_status"><option value="under_review">Under review</option><option value="callback">Callback</option><option value="cast">Cast / participating</option><option value="not_cast">Not cast</option><option value="withdrawn">Withdrawn</option></select></label><label class="wide">Biography<textarea name="biography" rows="3" maxlength="5000"></textarea></label><label>Headshot<input type="file" name="headshot" accept="image/jpeg,image/png,image/webp"></label><label>Display order<input type="number" name="display_order" value="0"></label><label><input type="checkbox" name="approve_public_name" value="1"> Approve public name</label><label><input type="checkbox" name="approve_public_biography" value="1"> Approve public biography</label><label><input type="checkbox" name="approve_public_headshot" value="1"> Approve public headshot</label><button type="submit">Add manual participant</button></form></details>
+        <section class="cast-board cast-board-condensed"><header><div><small>WORKING BOARD</small><h2>Casting decisions</h2></div><span><?=count($board)?> participants</span></header><?php if(!$board):?><div class="cast-empty compact">Add a reviewed audition or existing participant to begin casting.</div><?php endif;?>
+        <?php foreach($board as $r):$groupIds=array_map(static fn(array $g):int=>(int)$g['id'],$r['groups']);?><?php if(($r['identity_type']??'registered')==='manual'):?><div class="cast-board-summary"><div><strong><?=$e((string)$r['person_name'])?></strong><small><?=ucwords(str_replace('_',' ',(string)$r['casting_status']))?> · <?=$e((string)(($r['role_title']??'')?:'No roles assigned'))?></small></div><button type="button" data-open-working="manual:<?=(int)$r['id']?>">Manage / Update</button></div><aside class="cast-drawer" data-working-drawer="manual:<?=(int)$r['id']?>" role="dialog" aria-modal="true" aria-label="Manage casting participant" hidden tabindex="-1"><div class="cast-drawer-head"><h2><?=$e((string)$r['person_name'])?></h2><button type="button" data-close-cast-drawer aria-label="Close drawer">×</button></div><p class="cast-working-feedback" role="status" aria-live="polite"></p><article class="cast-card cast-card-manual status-<?=$e((string)$r['casting_status'])?>"><div class="cast-person"><span class="cast-avatar"><?=strtoupper(substr((string)$r['person_name'],0,1))?></span><div><small>MANUAL <?=strtoupper($e((string)$r['participant_type']))?> · NO LOGIN</small><h3><?=$e((string)$r['person_name'])?></h3><p><?=$e((string)($r['role_title']??''))?></p></div></div><form class="cast-decision" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="update_manual"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><label>First name<input name="first_name" value="<?=$e((string)$r['first_name'])?>"></label><label>Last name<input name="last_name" value="<?=$e((string)$r['last_name'])?>"></label><label>Public display name<input name="display_name" value="<?=$e((string)($r['display_name']??''))?>"></label><label>Type<select name="participant_type"><?php foreach(['cast','crew','creative','other'] as $type):?><option value="<?=$type?>"<?=$r['participant_type']===$type?' selected':''?>><?=ucfirst($type)?></option><?php endforeach;?></select></label><label>Character / credit<input name="role_title" value="<?=$e((string)($r['role_title']??''))?>"></label><label>Status<select name="casting_status"><?php foreach(['under_review','callback','offered','cast','not_cast','withdrawn'] as $status):?><option value="<?=$status?>"<?=$r['casting_status']===$status?' selected':''?>><?=ucwords(str_replace('_',' ',$status))?></option><?php endforeach;?></select></label><label class="wide">Biography<textarea name="biography" rows="3"><?=$e((string)($r['biography']??''))?></textarea></label><label>Replace headshot<input type="file" name="headshot" accept="image/jpeg,image/png,image/webp"></label><label>Display order<input type="number" name="display_order" value="<?=(int)$r['display_order']?>"></label><label><input type="checkbox" name="approve_public_name" value="1"<?=$r['approve_public_name']?' checked':''?>> Public name</label><label><input type="checkbox" name="approve_public_biography" value="1"<?=$r['approve_public_biography']?' checked':''?>> Public bio</label><label><input type="checkbox" name="approve_public_headshot" value="1"<?=$r['approve_public_headshot']?' checked':''?>> Public headshot</label><button type="submit">Save manual participant</button></form><div class="cast-manual-actions"><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><button name="action" value="archive_manual" type="submit">Archive</button></form><?php if($people):?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><select name="student_user_id" required><option value="">Transfer to registered Student…</option><?php foreach($people as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?></option><?php endforeach;?></select><label><input type="checkbox" name="copy_name" value="1"> Name</label><label><input type="checkbox" name="copy_biography" value="1"> Bio</label><label><input type="checkbox" name="copy_headshot" value="1"> Headshot</label><label><input type="checkbox" name="copy_credit" value="1" checked> Credit</label><button name="action" value="transfer_manual" type="submit">Transfer selected data</button></form><?php endif;?></div></article></aside><?php continue;?><?php endif;?><div class="cast-board-summary"><div><strong><?=$e((string)$r['person_name'])?></strong><small><?=ucwords(str_replace('_',' ',(string)$r['casting_status']))?> · <?=$e((string)(($r['role_title']??'')?:'No roles assigned'))?></small></div><button type="button" data-open-working="registered:<?=(int)$r['id']?>">Manage / Update</button></div><aside class="cast-drawer" data-working-drawer="registered:<?=(int)$r['id']?>" role="dialog" aria-modal="true" aria-label="Manage casting participant" hidden tabindex="-1"><div class="cast-drawer-head"><h2><?=$e((string)$r['person_name'])?></h2><button type="button" data-close-cast-drawer aria-label="Close drawer">×</button></div><p class="cast-working-feedback" role="status" aria-live="polite"></p>
+        <?php if(!empty($r['offer_status'])):?><p class="cast-offer-state">Offer: <strong><?=$e(ucfirst((string)$r['offer_status']))?></strong></p><?php endif;?>
+        <?php if(!empty($r['offer_decline_note'])):?><div class="cast-decline-note"><strong>Decline reason · Staff review</strong><p><?=$e((string)$r['offer_decline_note'])?></p></div><?php endif;?>
+        <article class="cast-card status-<?=$e((string)$r['casting_status'])?>"><div class="cast-person"><span class="cast-avatar"><?=strtoupper(substr((string)$r['person_name'],0,1))?></span><div><small><?=$r['opportunity_title']?$e((string)$r['opportunity_title']):'Added from People'?></small><h3><?=$e((string)$r['person_name'])?></h3><p><?=$e((string)$r['account_role'])?><?php if($r['production_membership_id']):?> · <strong>Rostered</strong><?php endif;?><?php if($r['result_communicated_at']):?> · <strong>Result sent</strong><?php endif;?></p></div></div>
+        <form class="cast-decision" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="update"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><label>Decision<select name="casting_status"><?php foreach(['under_review'=>'Under review','callback'=>'Callback','offered'=>'Offered','cast'=>'Cast','not_cast'=>'Not cast','withdrawn'=>'Withdrawn'] as $value=>$label):?><option value="<?=$value?>"<?=$r['casting_status']===$value?' selected':''?>><?=$label?></option><?php endforeach;?></select></label><?php $workingRoleIds=array_map('intval',array_column(CastingRoleService::assigned($roleDb,(int)$production['id'],(int)$r['id'],false),'id'));?>
+        <fieldset class="cast-working-role-options"><legend>Characters / Roles (select multiple)</legend>
+          <input type="hidden" name="cast_roles_present" value="1">
+          <?php if(!$castRoles):?><p>No production roles defined. Use Manage Roles to add characters or Ensemble first.</p><?php endif;?>
+          <?php foreach($castRoles as $role):?><label class="cast-working-role-choice"><input type="checkbox" name="role_ids[]" value="<?=(int)$role['id']?>"<?=in_array((int)$role['id'],$workingRoleIds,true)?' checked':''?>><span><?=$e((string)$role['title'])?></span><small><?=$e(ucfirst((string)$role['category']))?></small></label><?php endforeach;?>
+        </fieldset><label>Track / company note<input name="participation_track" maxlength="100" value="<?=$e((string)($r['participation_track']??''))?>" placeholder="Principal, Ensemble, Dance…"></label><label class="wide">Staff notes<textarea name="staff_notes" rows="2" maxlength="2000" placeholder="Private casting notes…"><?=$e((string)($r['staff_notes']??''))?></textarea></label><button type="submit">Save decision</button></form>
+        <div class="cast-communication"><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="send_result"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><span><b>Family communication</b><small><?=in_array($r['casting_status'],['offered','cast','not_cast'],true)?'Explicitly send the current result. Changing the decision above never sends this automatically.':'Set the decision to Offered, Cast, or Not cast before sending.'?></small></span><button type="submit"<?=!in_array($r['casting_status'],['offered','cast','not_cast'],true)?' disabled':''?>><?=$r['result_communicated_at']?'Send updated result':'Send result'?></button></form></div>
+        <?php /* Offered results now create an actionable offer with Send Result; no second staff action. */ ?><form class="cast-finalize" method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="finalize"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><div><small>PRODUCTION GROUPS</small><div class="cast-groups"><?php if(!$groups):?><em>No active Production Groups yet.</em><?php endif;?><?php foreach($groups as $g):?><label><input type="checkbox" name="group_ids[]" value="<?=(int)$g['id']?>"<?=in_array((int)$g['id'],$groupIds,true)?' checked':''?>><?=$e((string)$g['name'])?></label><?php endforeach;?></div></div><div class="cast-finalize-action"><?php if($r['production_membership_id']):?><span>Roster membership linked</span><?php endif;?><button type="submit"<?=$r['casting_status']!=='cast'?' disabled':''?>><?=$r['production_membership_id']?'Update roster & groups':'Finalize to roster'?></button></div></form><?php if($r['production_membership_id']&&$r['casting_status']==='cast'):?><form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="remove_cast"><input type="hidden" name="record_id" value="<?=(int)$r['id']?>"><button type="submit">Remove from Cast</button><p>Team assignments, staff access and family relationships are retained.</p></form><?php endif;?></article></aside><?php endforeach;?></section>
+<style>.cast-board-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #ece8ed}.cast-board-summary small{display:block;color:#6e6470;margin-top:4px}.cast-board-summary button{border:1px solid #cfc8d2;border-radius:8px;padding:8px 12px;background:#fff;cursor:pointer}.cast-drawer .cast-card{border:0!important;box-shadow:none!important;margin:0;padding:0}.cast-drawer .cast-decision,.cast-drawer .cast-finalize{display:grid;grid-template-columns:1fr!important;gap:12px}.cast-drawer form{margin:14px 0}.cast-drawer form label{display:grid;gap:5px}.cast-drawer form input,.cast-drawer form select,.cast-drawer form textarea{max-width:100%}.cast-working-role-options{display:grid;gap:7px;border:1px solid #ded8e1;border-radius:10px;padding:12px}.cast-drawer form .cast-working-role-choice{display:flex;align-items:center;gap:10px;padding:7px;border-radius:6px}.cast-working-role-choice input{width:auto}.cast-working-role-choice small{margin-left:auto;opacity:.65}.cast-working-feedback{font-weight:600;color:#285c44}.cast-working-feedback[data-error="1"]{color:#a82b40}.cast-offer-issue small{display:block;color:#736773;margin-top:5px}.cast-decline-note{background:#fff7ed;border:1px solid #f0d7b6;border-radius:8px;padding:12px}.cast-decline-note p{white-space:pre-wrap}.cast-offer-state{padding:8px 0}</style><script>(function(){
+document.addEventListener('submit',async function(event){
+ const form=event.target;
+ const drawer=form.closest('[data-working-drawer]');
+ if(!drawer)return;
+  event.preventDefault();
+ const feedback=drawer.querySelector('.cast-working-feedback');
+ const data=new FormData(form);data.set('ajax','1');
+ if(event.submitter&&event.submitter.name)data.set(event.submitter.name,event.submitter.value);
+ const buttons=[...form.querySelectorAll('button[type="submit"],button:not([type])')];
+ buttons.forEach(button=>button.disabled=true);
+ feedback.textContent='Saving…';feedback.dataset.error='0';
+ try{
+  const endpoint=<?=json_encode($u('/front.php?ctsmd_casting_post=1'),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;
+  const response=await fetch(endpoint,{method:'POST',body:data,credentials:'same-origin',headers:{'Accept':'application/json'}});
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.includes('application/json')){
+   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'The save endpoint returned HTTP '+response.status+'. If it persists, check your host request/security logs.';
+   feedback.dataset.error='1';return;
+  }
+  const result=await response.json();
+  feedback.textContent=result.message||('The server returned HTTP '+response.status+'.');feedback.dataset.error=response.ok&&result.ok?'0':'1';
+  if(!response.ok||!result.ok)return;
+  if(result.ok&&data.get('action')==='update'){
+   const summary=drawer.previousElementSibling?.querySelector('small');
+   if(summary){const roles=[...form.querySelectorAll('input[name="role_ids[]"]:checked')].map(input=>input.closest('label')?.querySelector('span')?.textContent?.trim()).filter(Boolean);summary.textContent=String(data.get('casting_status')||'')+' · '+(roles.join(' / ')||'No roles assigned');}
+  }
+  if(result.ok&&data.get('action')==='update'){
+   const status=String(data.get('casting_status')||'');
+   const offerButton=drawer.querySelector('.cast-offer-issue button[type="submit"]');
+   if(offerButton)offerButton.disabled=status!=='offered';
+   const communicationButton=drawer.querySelector('.cast-communication button[type="submit"]');
+   if(communicationButton)communicationButton.disabled=!['offered','cast','not_cast'].includes(status);
+   const finalizeButton=drawer.querySelector('.cast-finalize button[type="submit"]');
+   if(finalizeButton)finalizeButton.disabled=status!=='cast';
+  }
+  
+ }catch(e){feedback.textContent='Could not complete the save: '+(e instanceof Error?e.message:'unexpected response')+'. Check your connection or the server error log.';feedback.dataset.error='1';}
+ finally{buttons.forEach(button=>{if(button.dataset.sent==='1')button.disabled=true;else if(data.get('action')!=='update')button.disabled=false;else if(!['issue_offer','send_result','finalize'].includes(String(button.value)))button.disabled=false;});}
+});
+})();</script><details class="cast-release-tools"><summary>Release callbacks and cast</summary>        <section class="cast-publications">
+            <header><div><small>CASTING RELEASES</small><h2>Callbacks & cast</h2><p>Publish only the lists families should see. If both are published, the Cast announcement takes priority on the member page.</p></div><?php if($publication['callback']['status']==='published'||$publication['cast']['status']==='published'):?><a href="<?=$u('/cast?production='.(int)$production['id'])?>">View member page →</a><?php endif;?></header>
+            <?php foreach(['callback'=>'Callbacks','cast'=>'Cast'] as $publicationType=>$publicationLabel):$release=$publication[$publicationType];$isPublished=$release['status']==='published';?>
+            <details class="cast-release-row">
+                <summary><span><b><?=$e($publicationLabel)?></b><small><?=$isPublished&&$release['published_at']?'Published '.date('M j · g:i A',strtotime((string)$release['published_at'])):($publicationType==='callback'?'Not published · only Callback decisions are included':'Not published · only finalized Cast decisions are included')?></small></span><em class="<?=$isPublished?'published':'draft'?>"><?=$isPublished?'Published':'Draft'?></em><strong>Edit</strong></summary>
+                <form method="post" class="cast-release-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="publication_type" value="<?=$e($publicationType)?>"><label>Headline<input name="headline" maxlength="190" value="<?=$e((string)($release['headline']??''))?>" placeholder="<?=$publicationType==='callback'?'Callbacks for ':'Meet the cast of '?><?=$e((string)$production['title'])?>"></label><label>Member note<textarea name="member_note" rows="2" maxlength="2000" placeholder="<?=$publicationType==='callback'?'Callback instructions, timing, or a short note…':'A short note from the production team…'?>"><?=$e((string)($release['member_note']??''))?></textarea></label><div><button name="action" value="save_publication" type="submit">Save draft</button><button class="button" name="action" value="publish_publication" type="submit"><?=$publicationType==='callback'?'Publish callbacks':'Publish cast'?></button><?php if($isPublished):?><button class="cast-unpublish" name="action" value="unpublish_publication" type="submit">Unpublish</button><?php endif;?></div></form>
+            </details>
+            <?php endforeach;?>
+        </section>
+        <section class="cast-public-link">
+            <div><small>PUBLIC WEBSITE</small><b>Embeddable casting announcement</b><span><?=$publicSettings['enabled']?'Live · first name + last initial':'Off · members only'?></span></div>
+            <?php if($publicSettings['enabled']&&!empty($publicSettings['slug'])):?><code><?=$e('https://ctsmd.me/public/casting?slug='.(string)$publicSettings['slug'])?></code><?php endif;?>
+            <form method="post"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['casting_csrf'])?>"><input type="hidden" name="action" value="toggle_public_page"><input type="hidden" name="public_enabled" value="<?=$publicSettings['enabled']?'0':'1'?>"><button type="submit"><?=$publicSettings['enabled']?'Disable public page':'Enable public page'?></button></form>
+        </section>
+</details>        <?php endif;?></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+
+    private static function flash(string $type,string $message):void{$_SESSION['casting_flash']=['type'=>$type,'message'=>$message];}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+    private static function forbidden():never{http_response_code(403);exit('Restricted');}
+}

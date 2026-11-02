@@ -1,0 +1,19 @@
+PASS Admin real login
+PASS Member real login
+PASS Unpublished artwork renders in administrative management
+PASS Authorized private poster streams stored bytes
+PASS Private artwork is never publicly cached
+PASS Anonymous private poster request requires authentication
+PASS Storefront tester cannot access administrative artwork
+PASS Unpublished artwork remains unavailable on public endpoint
+PASS Authorized Commerce inventory staff can view poster without production-admin role
+PASS Overview contains sales progress and upcoming performances
+PASS Overview has no production setup controls
+PASS Management does not duplicate reporting dashboard
+PASS Unscheduled production cards have useful compact empty state
+PASS Published public artwork remains accessible
+PASS Published private artwork also uses guarded route
+PASS Missing physical poster file fails safely
+PASS Poster fallback is present for failed image loads
+PASS Empty sales view explains scheduling prerequisite
+PASS 18 workspace separation and artwork HTTP checks

@@ -1,0 +1,192 @@
+<?php
+
+declare(strict_types=1);
+
+final class MailService
+{
+    public static function queue(PDO $db, ?int $userId, string $email, ?string $name, string $category, string $subject, string $textBody, ?string $htmlBody = null, ?string $dedupeKey = null, ?DateTimeImmutable $availableAt = null): int
+    {
+        $email = trim($email);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('A valid recipient email is required.');
+        if ($subject === '' || mb_strlen($subject) > 255) throw new RuntimeException('Email subject is invalid.');
+        if ($textBody === '') throw new RuntimeException('Email body is required.');
+        $allowed = ['account_security','schedule','forms','volunteer','community','digest','system','commerce'];
+        if (!in_array($category, $allowed, true)) $category = 'system';
+        if ($userId && !self::preferenceAllows($db, $userId, $category)) return 0;
+        $stmt = $db->prepare("INSERT INTO email_queue (user_id,recipient_email,recipient_name,category,subject,text_body,html_body,status,available_at,dedupe_key) VALUES (:user,:email,:name,:category,:subject,:text,:html,'queued',:available,:dedupe)");
+        try {
+            $stmt->execute([
+                'user'=>$userId,'email'=>$email,'name'=>$name ?: null,'category'=>$category,'subject'=>$subject,
+                'text'=>$textBody,'html'=>$htmlBody,'available'=>($availableAt ?: new DateTimeImmutable())->format('Y-m-d H:i:s'),'dedupe'=>$dedupeKey ?: null,
+            ]);
+            return (int)$db->lastInsertId();
+        } catch (PDOException $e) {
+            if ($dedupeKey && str_contains($e->getMessage(),'Duplicate')) return 0;
+            throw $e;
+        }
+    }
+
+    public static function preferenceAllows(PDO $db, int $userId, string $category): bool
+    {
+        if ($category === 'account_security') return true;
+        $stmt=$db->prepare('SELECT * FROM notification_preferences WHERE user_id=:user LIMIT 1');$stmt->execute(['user'=>$userId]);$p=$stmt->fetch();
+        if (!$p) return true;
+        if (!(bool)$p['email_enabled']) return false;
+        return match($category){
+            'schedule'=>(bool)$p['email_schedule'],
+            'forms'=>(bool)$p['email_forms'],
+            'volunteer'=>(bool)$p['email_volunteer'],
+            'community'=>(bool)$p['email_community'],
+            default=>true,
+        };
+    }
+
+    public static function process(PDO $db, string $projectRoot, int $limit = 25, ?int $queueId = null, ?int $minQueueId = null): array
+    {
+        $limit=max(1,min(100,$limit));$processed=0;$sent=0;$failed=0;$suppressed=0;
+        if($queueId!==null&&$queueId<1)throw new InvalidArgumentException('Queue ID must be a positive integer.');
+        if($minQueueId!==null&&$minQueueId<1)throw new InvalidArgumentException('Minimum queue ID must be a positive integer.');
+        if($minQueueId!==null&&$queueId!==null&&$queueId<$minQueueId)throw new InvalidArgumentException('Requested queue ID is below the protected cutoff.');
+        if($queueId===null){
+            $recoverSql="UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE category<>'commerce' AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)";
+            if($minQueueId!==null)$recoverSql.=' AND id>='.(int)$minQueueId;
+            $db->exec($recoverSql);
+        }else{
+            $recover=$db->prepare("UPDATE email_queue SET status='queued',available_at=NOW(),last_error='Recovered after interrupted delivery attempt.' WHERE id=:id AND category<>'commerce' AND status='sending' AND last_attempt_at<DATE_SUB(NOW(),INTERVAL 10 MINUTE)");
+            $recover->execute(['id'=>$queueId]);
+            $limit=1;
+        }
+        for($i=0;$i<$limit;$i++){
+            $db->beginTransaction();
+            try{
+                if($queueId===null){
+                    $selectSql="SELECT * FROM email_queue WHERE category<>'commerce' AND status='queued' AND available_at<=NOW()";
+                    if($minQueueId!==null)$selectSql.=' AND id>='.(int)$minQueueId;
+                    $row=$db->query($selectSql.' ORDER BY id ASC LIMIT 1 FOR UPDATE')->fetch();
+                }else{
+                    $select=$db->prepare("SELECT * FROM email_queue WHERE id=:id AND category<>'commerce' AND status='queued' AND available_at<=NOW() LIMIT 1 FOR UPDATE");
+                    $select->execute(['id'=>$queueId]);
+                    $row=$select->fetch();
+                }
+                if(!$row){$db->commit();break;}
+                $db->prepare("UPDATE email_queue SET status='sending',attempts=attempts+1,last_attempt_at=CURRENT_TIMESTAMP WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                $db->commit();
+            }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+            $processed++;
+
+            if(!empty($row['user_id'])){
+                $account=$db->prepare("SELECT active,account_status FROM users WHERE id=:user LIMIT 1");$account->execute(['user'=>(int)$row['user_id']]);$recipient=$account->fetch();
+                $allowedAccount=$recipient && (bool)$recipient['active'] && (
+                    $recipient['account_status']==='active'
+                    || ((string)$row['category']==='account_security' && in_array((string)$recipient['account_status'],['invited','pending_verification','managed'],true))
+                );
+                if(!$allowedAccount){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Recipient account is unavailable.');
+                    $suppressed++;
+                    continue;
+                }
+            }
+            if(preg_match('/^casting-result-(\d+)-(offered|cast|not_cast)-/',(string)($row['dedupe_key']??''),$castMatch)){
+                require_once __DIR__.'/CastingResultDeliveryPolicy.php';
+                if(!CastingResultDeliveryPolicy::allows($db,(int)$castMatch[1],(int)($row['user_id']??0),$castMatch[2])){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Casting or family authorization changed before delivery.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Casting or family authorization changed before delivery.');$suppressed++;continue;
+                }
+            }
+            // Reminder jobs carry an assignment identifier in their dedupe key.
+            // Recheck the production lifecycle and parent/guardian relationship
+            // at delivery time so previously queued reminders cannot escape closure.
+            if((string)$row['category']==='forms' && preg_match('/^form-due-(\\d+)-(\\d+)-\\d{4}-\\d{2}-\\d{2}$/',(string)($row['dedupe_key']??''),$formMatch)){
+                $eligible=$db->prepare("SELECT 1 FROM form_assignments fa LEFT JOIN productions p ON p.id=fa.production_id WHERE fa.id=:assignment AND (fa.production_id IS NULL OR (p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) AND (fa.user_id=:recipient OR (COALESCE(fa.subject_user_id,fa.user_id)<>fa.user_id AND EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))) OR EXISTS (SELECT 1 FROM family_relationships fr WHERE fr.student_user_id=COALESCE(fa.subject_user_id,fa.user_id) AND fr.guardian_user_id=:guardian2 AND fr.status='active' AND fr.relationship_type IN ('parent','guardian'))) LIMIT 1");
+                $eligible->execute(['assignment'=>(int)$formMatch[1],'recipient'=>(int)$row['user_id'],'guardian'=>(int)$row['user_id'],'guardian2'=>(int)$row['user_id']]);
+                if((int)$formMatch[2] !== (int)$row['user_id'] || !$eligible->fetchColumn()){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Form or family access revoked before delivery.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Form or family access revoked before delivery.');
+                    $suppressed++;continue;
+                }
+            }
+            // Recheck shift ownership and operational stage at send time.
+            // This applies to both the reminder and eligibility warning variants.
+            if((string)$row['category']==='volunteer' && preg_match('/^shift-(?:reminder|eligibility)-(\\d+)(?:-\\d{4}-\\d{2}-\\d{2})?$/',(string)($row['dedupe_key']??''),$shiftMatch)){
+                $eligible=$db->prepare("SELECT 1 FROM volunteer_shift_signups vss JOIN volunteer_shifts vs ON vs.id=vss.shift_id LEFT JOIN productions p ON p.id=vs.production_id WHERE vss.id=:signup AND vss.user_id=:recipient AND vss.status IN ('signed_up','checked_in') AND (vs.production_id IS NULL OR (p.is_active=1 AND p.lifecycle_stage IN ('upcoming','planning','in_production','performing'))) LIMIT 1");
+                $eligible->execute(['signup'=>(int)$shiftMatch[1],'recipient'=>(int)$row['user_id']]);
+                if(!$eligible->fetchColumn()){
+                    $db->prepare("UPDATE email_queue SET status='suppressed',last_error='Volunteer shift access revoked or production closed.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                    self::log($db,(int)$row['id'],self::driver(),'suppressed','Volunteer shift access revoked or production closed.');
+                    $suppressed++;continue;
+                }
+            }
+            try{$latePickup=$db->prepare("SELECT r.guardian_user_id,n.student_user_id FROM late_pickup_notice_recipients r JOIN late_pickup_notice_drafts n ON n.id=r.notice_id WHERE r.email_queue_id=:queue LIMIT 1");$latePickup->execute(['queue'=>(int)$row['id']]);$pickupRecipient=$latePickup->fetch();}catch(PDOException $e){$pickupRecipient=false;if(!str_contains($e->getMessage(),"doesn't exist"))throw$e;}
+            if($pickupRecipient){$relationship=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users g ON g.id=fr.guardian_user_id AND g.active=1 AND g.account_status='active' WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active' LIMIT 1");$relationship->execute(['guardian'=>(int)$pickupRecipient['guardian_user_id'],'student'=>(int)$pickupRecipient['student_user_id']]);if(!$relationship->fetchColumn()){$db->prepare("UPDATE email_queue SET status='suppressed',last_error='Guardian relationship is no longer active.' WHERE id=:id")->execute(['id'=>(int)$row['id']]);self::log($db,(int)$row['id'],self::driver(),'suppressed','Guardian relationship is no longer active.');$suppressed++;continue;}}
+
+            try{
+                self::deliver($projectRoot,$row);
+                $db->prepare("UPDATE email_queue SET status='sent',sent_at=CURRENT_TIMESTAMP,last_error=NULL WHERE id=:id")->execute(['id'=>(int)$row['id']]);
+                self::log($db,(int)$row['id'],self::driver(),'sent',null);$sent++;
+            }catch(Throwable $e){
+                $attempts=(int)$row['attempts']+1;$status=$attempts>=3?'failed':'queued';$delay=min(60,$attempts*5);$available=(new DateTimeImmutable('+'.$delay.' minutes'))->format('Y-m-d H:i:s');
+                $db->prepare("UPDATE email_queue SET status=:status,available_at=:available,last_error=:error WHERE id=:id")->execute(['status'=>$status,'available'=>$available,'error'=>mb_substr($e->getMessage(),0,1000),'id'=>(int)$row['id']]);
+                self::log($db,(int)$row['id'],self::driver(),'failed',$e->getMessage());$failed++;
+            }
+        }
+        return ['processed'=>$processed,'sent'=>$sent,'failed'=>$failed,'suppressed'=>$suppressed];
+    }
+
+    /** Existing approved SMTP transport, explicitly gated for Commerce test recipients. */
+    public static function deliverCommerce(array $row):void
+    {
+        if(getenv('COMMERCE_MAIL_ENABLED')!=='1'||getenv('COMMERCE_MAIL_APPROVED')!=='1'||getenv('COMMERCE_MAIL_DRIVER')!=='smtp')throw new RuntimeException('Commerce SMTP is disabled.');
+        $allowed=array_filter(array_map('strtolower',array_map('trim',explode(',',(string)getenv('COMMERCE_MAIL_TEST_RECIPIENTS')))));$email=strtolower(trim((string)$row['recipient_email']));if(!filter_var($email,FILTER_VALIDATE_EMAIL)||!in_array($email,$allowed,true))throw new RuntimeException('Recipient is not an approved Commerce test destination.');
+        if(!in_array(strtolower(self::env('MAIL_ENCRYPTION','tls')),['ssl','tls'],true))throw new RuntimeException('Encrypted SMTP is required.');foreach([$row['recipient_name']??'',$row['subject']??'',self::env('MAIL_FROM_NAME',''),self::env('MAIL_FROM_ADDRESS','')] as $header)if(preg_match('/[\r\n]/',(string)$header))throw new RuntimeException('Invalid email header.');if(!filter_var(self::env('MAIL_FROM_ADDRESS',''),FILTER_VALIDATE_EMAIL))throw new RuntimeException('Configure an approved From address.');self::deliverSmtp($row);
+    }
+
+    private static function deliver(string $projectRoot,array $row):void
+    {
+        $driver=self::driver();
+        if($driver==='log'){self::deliverLog($projectRoot,$row);return;}
+        if($driver==='mail'){self::deliverMail($row);return;}
+        if($driver==='smtp'){self::deliverSmtp($row);return;}
+        throw new RuntimeException('Unsupported MAIL_DRIVER.');
+    }
+
+    private static function deliverLog(string $projectRoot,array $row):void
+    {
+        $path=$projectRoot.'/storage/logs';if(!is_dir($path)&&!mkdir($path,0770,true)&&!is_dir($path))throw new RuntimeException('Could not prepare mail log directory.');
+        $record="\n--- CTSMD EMAIL ".date('c')." ---\nTo: {$row['recipient_name']} <{$row['recipient_email']}>\nSubject: {$row['subject']}\nCategory: {$row['category']}\n\n{$row['text_body']}\n";
+        if(file_put_contents($path.'/mail.log',$record,FILE_APPEND|LOCK_EX)===false)throw new RuntimeException('Could not write mail log.');
+    }
+
+    private static function deliverMail(array $row):void
+    {
+        $from=self::env('MAIL_FROM_ADDRESS','no-reply@localhost');$name=self::env('MAIL_FROM_NAME','CTSMD Connect');
+        $headers=['MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','From: '.$name.' <'.$from.'>'];
+        if(!mail((string)$row['recipient_email'],(string)$row['subject'],(string)$row['text_body'],implode("\r\n",$headers)))throw new RuntimeException('PHP mail() delivery failed.');
+    }
+
+    private static function deliverSmtp(array $row):void
+    {
+        $host=self::env('MAIL_HOST','');$port=(int)self::env('MAIL_PORT','587');$encryption=strtolower(self::env('MAIL_ENCRYPTION','tls'));
+        $user=self::env('MAIL_USERNAME','');$pass=self::env('MAIL_PASSWORD','');$from=self::env('MAIL_FROM_ADDRESS','');$fromName=self::env('MAIL_FROM_NAME','CTSMD Connect');
+        if($host===''||$from==='')throw new RuntimeException('SMTP configuration is incomplete.');
+        $target=($encryption==='ssl'?'ssl://':'').$host.':'.$port;$context=stream_context_create(['ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,'peer_name'=>$host]]);$socket=@stream_socket_client($target,$errno,$errstr,20,STREAM_CLIENT_CONNECT,$context);
+        if(!$socket)throw new RuntimeException('SMTP connection failed: '.$errstr);stream_set_timeout($socket,20);
+        $read=static function($s):string{$out='';while(($line=fgets($s,515))!==false){$out.=$line;if(strlen($out)>65536)throw new RuntimeException('SMTP response exceeded safe limit.');if(strlen($line)<4||$line[3]===' ')break;}return $out;};
+        $cmd=static function($s,$read,string $command,array $ok):void{fwrite($s,$command."\r\n");$response=$read($s);$code=(int)substr($response,0,3);if(!in_array($code,$ok,true))throw new RuntimeException('SMTP delivery rejected.', $code);};
+        $greeting=$read($socket);if((int)substr($greeting,0,3)!==220)throw new RuntimeException('SMTP greeting failed.');
+        $cmd($socket,$read,'EHLO '.($_SERVER['SERVER_NAME']??'localhost'),[250]);
+        if($encryption==='tls'){$cmd($socket,$read,'STARTTLS',[220]);if(!stream_socket_enable_crypto($socket,true,STREAM_CRYPTO_METHOD_TLS_CLIENT))throw new RuntimeException('SMTP TLS negotiation failed.');$cmd($socket,$read,'EHLO '.($_SERVER['SERVER_NAME']??'localhost'),[250]);}
+        if($user!==''){$cmd($socket,$read,'AUTH LOGIN',[334]);$cmd($socket,$read,base64_encode($user),[334]);$cmd($socket,$read,base64_encode($pass),[235]);}
+        $cmd($socket,$read,'MAIL FROM:<'.$from.'>',[250]);$cmd($socket,$read,'RCPT TO:<'.$row['recipient_email'].'>',[250,251]);$cmd($socket,$read,'DATA',[354]);
+        $boundary='=_ctsmd_'.bin2hex(random_bytes(8));$toName=trim((string)$row['recipient_name']);$to=($toName!==''?$toName.' ':'').'<'.$row['recipient_email'].'>';
+        $headers=['From: '.mb_encode_mimeheader($fromName,'UTF-8','B').' <'.$from.'>','To: '.($toName!==''?mb_encode_mimeheader($toName,'UTF-8','B').' ':'').'<'.$row['recipient_email'].'>','Subject: '.mb_encode_mimeheader($row['subject'],'UTF-8','B'),'MIME-Version: 1.0'];if(isset($row['commerce_reference'])&&preg_match('/^[a-f0-9]{32}$/',$row['commerce_reference'])){$headers[]='Message-ID: <commerce-'.$row['commerce_reference'].'@'.substr(strrchr($from,'@'),1).'>';$headers[]='X-Commerce-Delivery: '.$row['commerce_reference'];}
+        $encode=static fn(string $text):string=>quoted_printable_encode(str_replace("\n","\r\n",str_replace(["\r\n","\r"],"\n",$text)));
+        if(!empty($row['html_body'])){$headers[]='Content-Type: multipart/alternative; boundary="'.$boundary.'"';$body="--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n".$encode($row['text_body'])."\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n".$encode($row['html_body'])."\r\n--$boundary--";}else{$headers[]='Content-Type: text/plain; charset=UTF-8';$headers[]='Content-Transfer-Encoding: quoted-printable';$body=$encode((string)$row['text_body']);}
+        $data=implode("\r\n",$headers)."\r\n\r\n".$body;$data=str_replace("\n","\r\n",str_replace(["\r\n","\r"],"\n",$data));$data=preg_replace('/(?m)^\./','..',$data)."\r\n.";
+        $cmd($socket,$read,$data,[250]);@fwrite($socket,"QUIT\r\n");fclose($socket);
+    }
+
+    private static function driver():string{return strtolower(self::env('MAIL_DRIVER','log'));}
+    private static function env(string $key,string $default=''):string{$v=getenv($key);return ($v===false||$v==='')?$default:(string)$v;}
+    private static function log(PDO $db,int $id,string $transport,string $outcome,?string $detail):void{$s=$db->prepare('INSERT INTO email_delivery_log (email_queue_id,transport,outcome,detail) VALUES (:id,:transport,:outcome,:detail)');$s->execute(['id'=>$id,'transport'=>$transport,'outcome'=>$outcome,'detail'=>$detail?mb_substr($detail,0,1000):null]);}
+}

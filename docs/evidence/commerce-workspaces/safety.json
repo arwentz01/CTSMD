@@ -1,0 +1,52 @@
+[
+  {
+    "command": "php tests/ux_action_visibility.php",
+    "exit": 0,
+    "output": "PASS: Action Center delegates viewer authorization and excludes completed/closed/unknown-production work.\n"
+  },
+  {
+    "command": "php tests/ux_operational_presentation.php",
+    "exit": 0,
+    "output": "PASS: operational presentation lifecycle locks and readiness labels (not write authorization).\n"
+  },
+  {
+    "command": "php tests/ux_operations_contract.php",
+    "exit": 0,
+    "output": "PASS: 52 Operations renderers match baseline or documented feature contracts; registered-route inventory checked. Presentation and actual interactions require browser tests.\n"
+  },
+  {
+    "command": "php tests/navigation_controls.php",
+    "exit": 0,
+    "output": "PASS: shared navigation links, escaped identity, native disclosure, capped badge and POST/CSRF logout contract. No browser or database used.\n"
+  },
+  {
+    "command": "php tests/homepage_presentation.php",
+    "exit": 0,
+    "output": "PASS: public homepage identity, real CLI HTML, published/empty states, public routes and publication-policy contracts (no browser or database).\n"
+  },
+  {
+    "command": "php tests/community_search.php",
+    "exit": 0,
+    "output": "PASS: permission-scoped Community search SQL safety checks.\n"
+  },
+  {
+    "command": "php tests/safeguarding_conversation_review.php",
+    "exit": 0,
+    "output": "PASS: safeguarding review participant filters, pagination and audit ordering checks.\n"
+  },
+  {
+    "command": "php tests/pilot_lifecycle.php",
+    "exit": 0,
+    "output": "PASS: 21 lifecycle checks (stubbed database; not SQL integration).\n"
+  },
+  {
+    "command": "php tests/pilot_rate_limit.php",
+    "exit": 0,
+    "output": "PASS: durable authentication rate-limit threshold and reset behavior.\n"
+  },
+  {
+    "command": "php tests/pilot_volunteer_cancellation.php",
+    "exit": 0,
+    "output": "PASS: 8 isolated volunteer cancellation and rollback checks (stubbed PDO; staging required).\n"
+  }
+]

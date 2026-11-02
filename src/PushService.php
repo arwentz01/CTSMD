@@ -1,0 +1,134 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/SafeguardedConversationPolicy.php';
+require_once __DIR__.'/SafeguardedNotificationPreference.php';
+require_once __DIR__.'/CommunicationReadStateService.php';
+require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/ProductionContext.php';
+require_once __DIR__.'/ProductionNotificationAccess.php';
+
+final class PushService
+{
+    public static function publicKey(): string{return trim((string)(getenv('PUSH_VAPID_PUBLIC_KEY')?:($_ENV['PUSH_VAPID_PUBLIC_KEY']??'')));}
+    public static function configured(): bool{return self::publicKey()!==''&&self::privatePem()!=='';}
+
+    public static function subscribe(PDO $db,int $userId,array $subscription,string $userAgent=''):void
+    {
+        $available=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$available->execute(['user'=>$userId]);if(!$available->fetchColumn())throw new RuntimeException('This account cannot enable push notifications.');
+        $endpoint=trim((string)($subscription['endpoint']??''));$keys=$subscription['keys']??[];$p256dh=trim((string)($keys['p256dh']??''));$auth=trim((string)($keys['auth']??''));
+        if($endpoint===''||$p256dh===''||$auth==='')throw new RuntimeException('The browser did not provide a complete push subscription.');
+        if(!str_starts_with($endpoint,'https://'))throw new RuntimeException('Push subscriptions require HTTPS.');
+        $platform=self::platform($userAgent);$label=match($platform){'ios'=>'iPhone / iPad','android'=>'Android',default=>'Web browser'};
+        $s=$db->prepare("INSERT INTO push_subscriptions (user_id,endpoint,endpoint_hash,p256dh,auth_secret,user_agent,device_label,platform,status,last_seen_at) VALUES (:user,:endpoint,:hash,:p256dh,:auth,:ua,:label,:platform,'active',CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),endpoint=VALUES(endpoint),p256dh=VALUES(p256dh),auth_secret=VALUES(auth_secret),user_agent=VALUES(user_agent),device_label=VALUES(device_label),platform=VALUES(platform),status='active',last_seen_at=CURRENT_TIMESTAMP");
+        $s->execute(['user'=>$userId,'endpoint'=>$endpoint,'hash'=>hash('sha256',$endpoint),'p256dh'=>$p256dh,'auth'=>$auth,'ua'=>mb_substr($userAgent,0,500),'label'=>$label,'platform'=>$platform]);
+    }
+
+    public static function unsubscribe(PDO $db,int $userId,string $endpoint):void{$s=$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND endpoint_hash=:hash");$s->execute(['user'=>$userId,'hash'=>hash('sha256',$endpoint)]);}
+
+    public static function queue(PDO $db,int $userId,string $category,string $title,string $body,?string $actionPath=null,string $urgency='normal',?string $tag=null,?string $dedupeKey=null,?int $productionId=null):int
+    {
+        $category=in_array($category,['schedule','forms','volunteer','community','messages','general'],true)?$category:'general';$urgency=in_array($urgency,['very-low','low','normal','high'],true)?$urgency:'normal';
+        if(!self::pushAllowed($db,$userId,$category))return 0;
+        $s=$db->prepare("INSERT INTO push_queue (user_id,category,title,body,action_path,tag,dedupe_key,urgency,production_id) VALUES (:user,:category,:title,:body,:path,:tag,:dedupe,:urgency,:production)");
+        try{$s->execute(['user'=>$userId,'category'=>$category,'title'=>mb_substr($title,0,190),'body'=>mb_substr($body,0,1000),'path'=>$actionPath,'tag'=>$tag?mb_substr($tag,0,64):null,'dedupe'=>$dedupeKey?mb_substr($dedupeKey,0,190):null,'urgency'=>$urgency,'production'=>$productionId]);return(int)$db->lastInsertId();}catch(PDOException $e){if($dedupeKey&&str_contains($e->getMessage(),'Duplicate'))return 0;throw$e;}
+    }
+
+    public static function processQueue(PDO $db,int $limit=25):array
+    {
+        if(!self::configured())throw new RuntimeException('Web Push is not configured. Set PUSH_VAPID_PUBLIC_KEY and PUSH_VAPID_PRIVATE_KEY_B64.');$sent=0;$failed=0;
+        $db->exec("UPDATE push_queue SET status='queued',available_at=CURRENT_TIMESTAMP,claimed_at=NULL,last_error='Recovered after interrupted delivery attempt.' WHERE status='processing' AND claimed_at<DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 10 MINUTE)");
+        $q=$db->prepare("SELECT * FROM push_queue WHERE status='queued' AND available_at<=CURRENT_TIMESTAMP ORDER BY id LIMIT ".max(1,min($limit,100)));$q->execute();
+        foreach($q->fetchAll() as $row){$claim=$db->prepare("UPDATE push_queue SET status='processing',claimed_at=CURRENT_TIMESTAMP,attempt_count=attempt_count+1 WHERE id=:id AND status='queued'");$claim->execute(['id'=>$row['id']]);if($claim->rowCount()!==1)continue;
+            $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$row['user_id']]);if(!$account->fetchColumn()){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Recipient account is unavailable.' WHERE id=:id")->execute(['id'=>$row['id']]);$db->prepare("UPDATE push_subscriptions SET status='revoked' WHERE user_id=:user AND status='active'")->execute(['user'=>$row['user_id']]);continue;}
+            if(!self::pushAllowed($db,(int)$row['user_id'],(string)$row['category'])){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Push preference disabled before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            // Production-scoped push must be reauthorized after dequeue, immediately
+            // before resolving devices. This covers former guardians and stage changes.
+            if($row['production_id']!==null){
+                $productionId=(int)$row['production_id'];
+                $allowed=false;
+                try{$allowed=ProductionContext::isActiveMember($db,(int)$row['user_id'],$productionId);}
+                catch(Throwable $e){error_log('Production push authorization error: '.$e->getMessage());}
+                if(!$allowed){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Production access revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
+            // Notification bridge jobs retain the originating app notification ID.
+            // Recheck the source record and current recipient authorization at
+            // delivery, rather than trusting eligibility when the job was queued.
+            if(preg_match('/^notification-(\\d+)$/',(string)($row['dedupe_key']??''),$noticeMatch)){
+                $n=$db->prepare("SELECT id,recipient_user_id,source_type,source_id FROM app_notifications WHERE id=:id AND recipient_user_id=:user LIMIT 1");
+                $n->execute(['id'=>(int)$noticeMatch[1],'user'=>(int)$row['user_id']]);
+                $notification=$n->fetch(PDO::FETCH_ASSOC);
+                if(!$notification || !ProductionNotificationAccess::visible($db,(int)$row['user_id'],$notification)){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Notification access revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
+            if((string)$row['category']==='messages'&&(!preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$match)||!SafeguardedConversationPolicy::canReceiveLive($db,(int)$match[1],(int)$row['user_id']))){$db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Conversation access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);continue;}
+            // Honor guardian mute changes even for already queued conversation alerts.
+            if((string)$row['category']==='messages'&&preg_match('/^\\/messages\\/thread\\?id=(\\d+)$/',(string)($row['action_path']??''),$muteMatch)&&!SafeguardedNotificationPreference::alertsEnabled($db,(int)$row['user_id'],(int)$muteMatch[1])){
+                $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Safeguarded conversation alerts muted by guardian.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                continue;
+            }
+            // A queued Community post may outlive a user's channel membership. Recheck
+            // effective access just before delivery; failed lookups fail closed.
+            if((string)$row['category']==='community'){
+                $validPath=preg_match('~^/channels/view\\?id=(\\d+)$~',(string)($row['action_path']??''),$match)===1;
+                $allowed=false;
+                try{
+                    $sUser=$db->prepare("SELECT id,first_name,last_name,display_role AS role,organization_membership_status,active,account_status FROM users WHERE id=:id AND active=1 AND account_status='active' LIMIT 1");
+                    $sUser->execute(['id'=>(int)$row['user_id']]);
+                    $viewer=$sUser->fetch(PDO::FETCH_ASSOC);
+                    if($validPath&&$viewer){
+                        $viewer['roles']=Auth::roles($db,(int)$row['user_id']);
+                        $viewer['permissions']=Auth::permissions($db,(int)$row['user_id']);
+                        $allowed=CommunicationReadStateService::canAccessChannel($db,$viewer,(int)$match[1]);
+                    }
+                }catch(Throwable $e){error_log('Community push authorization check failed: '.$e->getMessage());}
+                if(!$allowed){
+                    $db->prepare("UPDATE push_queue SET status='suppressed',completed_at=CURRENT_TIMESTAMP,last_error='Community access was revoked before delivery.' WHERE id=:id")->execute(['id'=>$row['id']]);
+                    continue;
+                }
+            }
+            $subs=$db->prepare("SELECT ps.* FROM push_subscriptions ps WHERE ps.user_id=:user AND ps.status='active' AND NOT EXISTS (SELECT 1 FROM push_delivery_log pdl WHERE pdl.queue_id=:queue AND pdl.subscription_id=ps.id AND pdl.result='sent')");$subs->execute(['user'=>$row['user_id'],'queue'=>$row['id']]);$subscriptions=$subs->fetchAll();if(!$subscriptions){$delivered=$db->prepare("SELECT 1 FROM push_delivery_log WHERE queue_id=:queue AND result='sent' LIMIT 1");$delivered->execute(['queue'=>$row['id']]);$status=$delivered->fetchColumn()?'sent':'suppressed';$error=$status==='sent'?null:'No active push-enabled device.';$db->prepare("UPDATE push_queue SET status=:status,completed_at=CURRENT_TIMESTAMP,last_error=:error WHERE id=:id")->execute(['status'=>$status,'error'=>$error,'id'=>$row['id']]);continue;}
+            $ok=0;$bad=0;foreach($subscriptions as $sub){try{$result=self::send($sub,$row);$status=(int)$result['status'];$expired=in_array($status,[404,410],true);$success=$status>=200&&$status<300;$log=$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,http_status,result,error_message) VALUES (:queue,:sub,:status,:result,:error)");$log->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'status'=>$status?:null,'result'=>$success?'sent':($expired?'expired':'rejected'),'error'=>$success?null:mb_substr((string)$result['body'],0,1000)]);if($success){$ok++;$db->prepare("UPDATE push_subscriptions SET last_success_at=CURRENT_TIMESTAMP,failure_count=0 WHERE id=:id")->execute(['id'=>$sub['id']]);}else{$bad++;$db->prepare("UPDATE push_subscriptions SET status=:status,last_failure_at=CURRENT_TIMESTAMP,failure_count=failure_count+1 WHERE id=:id")->execute(['status'=>$expired?'expired':'active','id'=>$sub['id']]);}}catch(Throwable $e){$bad++;$db->prepare("INSERT INTO push_delivery_log (queue_id,subscription_id,result,error_message) VALUES (:queue,:sub,'error',:error)")->execute(['queue'=>$row['id'],'sub'=>$sub['id'],'error'=>mb_substr($e->getMessage(),0,1000)]);}}
+            $attempts=(int)$row['attempt_count']+1;$retry=$bad>0&&$attempts<3;$status=$retry?'queued':($ok>0?($bad>0?'partial':'sent'):'failed');$available=(new DateTimeImmutable('+'.min(60,$attempts*5).' minutes'))->format('Y-m-d H:i:s');$db->prepare("UPDATE push_queue SET status=:status,available_at=:available,claimed_at=NULL,completed_at=:completed,last_error=:error WHERE id=:id")->execute(['status'=>$status,'available'=>$available,'completed'=>$retry?null:(new DateTimeImmutable())->format('Y-m-d H:i:s'),'error'=>$bad?($retry?'Delivery failed; retry scheduled.':'Delivery failed after final attempt.'):null,'id'=>$row['id']]);$sent+=$ok;$failed+=$bad;
+        }return['sent'=>$sent,'failed'=>$failed];
+    }
+
+    private static function pushAllowed(PDO $db,int $userId,string $category):bool
+    {
+        $account=$db->prepare("SELECT 1 FROM users WHERE id=:user AND active=1 AND account_status='active' LIMIT 1");$account->execute(['user'=>$userId]);if(!$account->fetchColumn())return false;
+        $s=$db->prepare('SELECT * FROM notification_preferences WHERE user_id=:user LIMIT 1');$s->execute(['user'=>$userId]);$p=$s->fetch();if(!$p)return true;if(!(bool)($p['push_enabled']??1))return false;$key=match($category){'schedule'=>'push_schedule','forms'=>'push_forms','volunteer'=>'push_volunteer','community'=>'push_community','messages'=>'push_messages',default=>null};return$key===null||(bool)($p[$key]??1);
+    }
+
+    private static function send(array $sub,array $notification):array
+    {
+        $base=rtrim((string)(getenv('APP_BASE_PATH')?:($_ENV['APP_BASE_PATH']??'')),'/');$action=(string)($notification['action_path']?:'/app');if($action!==''&&str_starts_with($action,'/'))$action=$base.$action;
+        $payload=json_encode(['title'=>$notification['title'],'body'=>$notification['body'],'url'=>$action,'tag'=>$notification['tag']?:('ctsmd-'.$notification['id']),'badgeCount'=>1],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+        $ua=self::b64d((string)$sub['p256dh']);$auth=self::b64d((string)$sub['auth_secret']);if(strlen($ua)!==65||strlen($auth)<16)throw new RuntimeException('Stored push keys are invalid.');
+        $ephemeral=openssl_pkey_new(['private_key_type'=>OPENSSL_KEYTYPE_EC,'curve_name'=>'prime256v1']);if(!$ephemeral)throw new RuntimeException('Could not generate push encryption key.');$details=openssl_pkey_get_details($ephemeral);$ec=$details['ec']??null;if(!$ec||!isset($ec['x'],$ec['y']))throw new RuntimeException('OpenSSL did not expose the ephemeral EC key.');$asPublic="\x04".$ec['x'].$ec['y'];
+        $uaKey=openssl_pkey_get_public(self::ecPublicPem($ua));if(!$uaKey)throw new RuntimeException('Could not parse browser push key.');$shared=openssl_pkey_derive($uaKey,$ephemeral,32);if($shared===false)throw new RuntimeException('Could not derive push encryption secret.');
+        $prkKey=hash_hmac('sha256',$shared,$auth,true);$ikm=hash_hmac('sha256',"WebPush: info\0".$ua.$asPublic."\x01",$prkKey,true);$salt=random_bytes(16);$prk=hash_hmac('sha256',$ikm,$salt,true);$cek=substr(hash_hmac('sha256',"Content-Encoding: aes128gcm\0\x01",$prk,true),0,16);$nonce=substr(hash_hmac('sha256',"Content-Encoding: nonce\0\x01",$prk,true),0,12);
+        $plain=$payload."\x02";$tag='';$cipher=openssl_encrypt($plain,'aes-128-gcm',$cek,OPENSSL_RAW_DATA,$nonce,$tag,'',16);if($cipher===false)throw new RuntimeException('Could not encrypt push payload.');$rs=max(4096,strlen($plain)+17);$body=$salt.pack('N',$rs).chr(strlen($asPublic)).$asPublic.$cipher.$tag;
+        $endpoint=(string)$sub['endpoint'];$scheme=(string)parse_url($endpoint,PHP_URL_SCHEME);$host=(string)parse_url($endpoint,PHP_URL_HOST);$port=parse_url($endpoint,PHP_URL_PORT);$origin=$scheme.'://'.$host.($port?':'.$port:'');$jwt=self::vapidJwt($origin);$headers=['Content-Type: application/octet-stream','Content-Encoding: aes128gcm','TTL: 86400','Urgency: '.($notification['urgency']?:'normal'),'Authorization: vapid t='.$jwt.', k='.self::publicKey(),'Content-Length: '.strlen($body)];
+        $ch=curl_init($endpoint);curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$body,CURLOPT_HTTPHEADER=>$headers,CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_HEADER=>false]);$response=curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);$error=curl_error($ch);curl_close($ch);if($response===false)throw new RuntimeException('Push service request failed: '.$error);return['status'=>$status,'body'=>(string)$response];
+    }
+
+    private static function vapidJwt(string $audience):string
+    {
+        $header=self::b64e(json_encode(['typ'=>'JWT','alg'=>'ES256'],JSON_THROW_ON_ERROR));$claims=self::b64e(json_encode(['aud'=>$audience,'exp'=>time()+43200,'sub'=>(getenv('PUSH_VAPID_SUBJECT')?:'mailto:notifications@ctsmd.org')],JSON_THROW_ON_ERROR));$input=$header.'.'.$claims;$key=openssl_pkey_get_private(self::privatePem());if(!$key)throw new RuntimeException('VAPID private key is invalid.');$der='';if(!openssl_sign($input,$der,$key,OPENSSL_ALGO_SHA256))throw new RuntimeException('Could not sign VAPID token.');return$input.'.'.self::b64e(self::ecdsaDerToJose($der,64));
+    }
+
+    private static function privatePem():string{$raw=trim((string)(getenv('PUSH_VAPID_PRIVATE_KEY_B64')?:($_ENV['PUSH_VAPID_PRIVATE_KEY_B64']??'')));return$raw!==''?(base64_decode($raw,true)?:''):'';}
+    private static function platform(string $ua):string{$u=strtolower($ua);if(str_contains($u,'iphone')||str_contains($u,'ipad'))return'ios';if(str_contains($u,'android'))return'android';return'web';}
+    private static function b64e(string $v):string{return rtrim(strtr(base64_encode($v),'+/','-_'),'=');}
+    private static function b64d(string $v):string{$v=strtr($v,'-_','+/');$v.=str_repeat('=',(4-strlen($v)%4)%4);return base64_decode($v,true)?:'';}
+    private static function ecPublicPem(string $point):string{$alg=self::asn1Seq(self::asn1Oid("\x2A\x86\x48\xCE\x3D\x02\x01").self::asn1Oid("\x2A\x86\x48\xCE\x3D\x03\x01\x07"));$der=self::asn1Seq($alg."\x03".self::asn1Len(strlen($point)+1)."\x00".$point);return"-----BEGIN PUBLIC KEY-----\n".chunk_split(base64_encode($der),64,"\n")."-----END PUBLIC KEY-----\n";}
+    private static function asn1Seq(string $v):string{return"\x30".self::asn1Len(strlen($v)).$v;}private static function asn1Oid(string $v):string{return"\x06".self::asn1Len(strlen($v)).$v;}private static function asn1Len(int $n):string{if($n<128)return chr($n);$b=ltrim(pack('N',$n),"\x00");return chr(0x80|strlen($b)).$b;}
+    private static function ecdsaDerToJose(string $der,int $len):string{$offset=0;if(ord($der[$offset++])!==0x30)throw new RuntimeException('Invalid ECDSA signature.');self::derLen($der,$offset);if(ord($der[$offset++])!==0x02)throw new RuntimeException('Invalid ECDSA signature.');$rLen=self::derLen($der,$offset);$r=substr($der,$offset,$rLen);$offset+=$rLen;if(ord($der[$offset++])!==0x02)throw new RuntimeException('Invalid ECDSA signature.');$sLen=self::derLen($der,$offset);$s=substr($der,$offset,$sLen);$half=intdiv($len,2);$r=str_pad(ltrim($r,"\x00"),$half,"\x00",STR_PAD_LEFT);$s=str_pad(ltrim($s,"\x00"),$half,"\x00",STR_PAD_LEFT);return substr($r,-$half).substr($s,-$half);}
+    private static function derLen(string $der,int &$offset):int{$n=ord($der[$offset++]);if(($n&0x80)===0)return$n;$count=$n&0x7f;$v=0;for($i=0;$i<$count;$i++)$v=($v<<8)|ord($der[$offset++]);return$v;}
+}

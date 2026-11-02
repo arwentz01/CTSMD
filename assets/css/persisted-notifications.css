@@ -1,0 +1,47 @@
+.notification-page .notification-flash{margin-bottom:16px;padding:13px 15px;border-radius:12px;font-size:13px;font-weight:800}.notification-page .notification-flash.success{background:#eaf6ef;color:#23623b}.notification-page .notification-flash.error{background:#fbe9ec;color:var(--red)}.notification-summary{display:grid;grid-template-columns:repeat(2,minmax(0,180px));gap:12px;margin:0 0 18px}.notification-summary article{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:2px}.notification-summary strong{font-family:Georgia,serif;font-size:30px}.notification-summary span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.persisted-notification{display:grid;grid-template-columns:5px 1fr;gap:12px;padding:16px 0;border-top:1px solid var(--line)}.persisted-notification:first-of-type{border-top:0}.persisted-marker{border-radius:999px;background:#d9d0d3}.persisted-notification.unread .persisted-marker{background:var(--red)}.persisted-notification small{font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--muted)}.persisted-notification h3{margin:4px 0 7px;font-size:16px}.persisted-notification p{margin:0;color:#4f484a;line-height:1.5}.persisted-notification footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.persisted-notification footer a,.persisted-notification footer button{font-size:10px;font-weight:800}.persisted-notification footer button{border:0;background:transparent;color:var(--red);cursor:pointer}@media(max-width:700px){.notification-summary{grid-template-columns:1fr 1fr}.persisted-notification footer{align-items:flex-start;flex-direction:column}}
+/* Action-required form rows: title, status and destination remain visually separate. */
+.notification-page .notification-columns{min-width:0}
+.notification-page .notification-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px;min-width:0;padding:14px 0;border-bottom:1px solid var(--line)}
+.notification-page .notification-row>i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff1dc;color:#a6192e;font-style:normal;font-weight:800}
+.notification-page .notification-form-copy{min-width:0;display:grid;gap:5px}
+.notification-page .notification-form-copy>b{display:block;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.notification-page .notification-form-copy>span{display:block;color:var(--muted);font-size:12px}
+.notification-page .notification-form-action{white-space:nowrap;justify-self:end;text-decoration:none;font-size:12px;font-weight:800;color:#a6192e;padding:9px 11px;border:1px solid #e4ced3;border-radius:9px}
+.notification-page .notification-form-action:hover{background:#fff4f5}
+.notification-page .notification-row a:focus-visible,.notification-page .persisted-notification a:focus-visible{outline:3px solid #caa13e;outline-offset:3px}
+@media(max-width:650px){.notification-page .notification-row{grid-template-columns:28px minmax(0,1fr)}.notification-page .notification-form-action{grid-column:2;justify-self:start}}
+
+/* Featured, accessible casting response card */
+.notification-page .notification-row.notification-casting-offer{display:block;padding:0;margin:8px 0 20px;border:1px solid #e5cdd1;border-radius:16px;background:linear-gradient(125deg,#fff 0%,#fff9f8 100%);overflow:hidden}
+.notification-page .casting-offer-content{padding:clamp(18px,3vw,30px);min-width:0}
+.notification-page .casting-offer-eyebrow{color:#a6192e;font-size:11px;font-weight:850;letter-spacing:.13em;display:flex;align-items:center;gap:7px}
+.notification-page .casting-offer-production{font-family:Georgia,serif;font-size:clamp(22px,2.5vw,34px);line-height:1.2;color:#23161a;margin:13px 0 20px;overflow-wrap:anywhere}
+.notification-page .casting-offer-role-label{font-size:10px;letter-spacing:.12em;font-weight:800;color:#716064}
+.notification-page .casting-offer-role{font-family:Georgia,serif;font-size:clamp(26px,3vw,40px);font-weight:700;line-height:1.2;color:#98142a;margin:5px 0 8px;overflow-wrap:anywhere}
+.notification-page .casting-offer-student{font-size:13px;font-weight:700;color:#4d3d41;margin:0}
+.notification-page .casting-offer-instruction{font-size:13px;line-height:1.55;color:#5f5255;margin:18px 0 16px}
+.notification-page .casting-offer-actions,.notification-page .casting-offer-decline-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.notification-page .cast-offer-response button{font:inherit;font-size:13px;font-weight:800;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;transition:background .15s,border-color .15s}
+.notification-page .casting-offer-accept{background:#aa1831;color:#fff;border:1px solid #aa1831}
+.notification-page .casting-offer-accept:hover{background:#861026;border-color:#861026}
+.notification-page .casting-offer-decline-toggle,.notification-page .casting-offer-cancel{background:#fff;color:#8b1830;border:1px solid #dcbec4}
+.notification-page .casting-offer-decline-toggle:hover,.notification-page .casting-offer-cancel:hover{background:#fff1f3}
+.notification-page .casting-offer-decline-panel{margin-top:18px;padding:18px;border-radius:12px;border:1px solid #e8d8d9;background:#fff}
+.notification-page .casting-offer-decline-panel[hidden]{display:none}
+.notification-page .casting-offer-decline-panel label{display:block;font-size:13px;font-weight:800;margin-bottom:8px;color:#33282a}
+.notification-page .casting-offer-decline-panel label span{font-size:11px;color:#86767a;font-weight:600}
+.notification-page .casting-offer-decline-panel textarea{display:block;box-sizing:border-box;width:100%;max-width:100%;resize:vertical;min-height:96px;padding:12px 14px;margin:0 0 12px;border:1px solid #cdbfc2;border-radius:10px;background:#fff;color:#251a1d;font:inherit;font-size:14px;line-height:1.5}
+.notification-page .casting-offer-decline-panel textarea:focus{border-color:#a6192e;outline:2px solid #eecbd1;outline-offset:1px}
+.notification-page .casting-offer-confirm-decline{border:1px solid #9d1a32;background:#9d1a32;color:#fff}
+.notification-page .casting-offer-confirm-decline:disabled{opacity:.45;cursor:not-allowed}
+.notification-page .cast-offer-response button:focus-visible{outline:3px solid #cca045;outline-offset:3px}
+@media(max-width:540px){.notification-page .casting-offer-content{padding:18px}.notification-page .casting-offer-actions{align-items:stretch;flex-direction:column}.notification-page .casting-offer-actions button{width:100%}}
+
+.notification-history{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}.notification-history>summary{cursor:pointer;display:flex;gap:10px;align-items:center;padding:12px;color:#65555a;font-size:13px;font-weight:800;border-radius:10px}.notification-history>summary:hover{background:#f9f5f5}.notification-history>summary span{margin-left:auto;background:#f4edef;border-radius:20px;padding:3px 9px}.notification-history>summary:focus-visible{outline:3px solid #cca045;outline-offset:2px}.notification-history-items{padding:0 8px}.notification-history-items .persisted-notification{opacity:.82}.home-notification-history .home-notice{opacity:.82}.notification-history-more{display:block;padding:10px;color:#a6192e;font-weight:800}
+
+/* Checklist completion action: consistent with CTSMD notification controls. */
+.notification-page .notification-task-complete{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 13px;border:1px solid #d9cbd0;border-radius:9px;background:#fff;color:#8b1830;font-family:inherit;font-size:12px;font-weight:800;line-height:1.2;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.notification-page .notification-task-complete:hover{background:#fff1f3;border-color:#c899a4;color:#731225}
+.notification-page .notification-task-complete:active{background:#f4dfe4}
+.notification-page .notification-task-complete:focus-visible{outline:3px solid #cca045;outline-offset:2px}
+@media(max-width:650px){.notification-page .notification-task-complete{min-height:44px;padding:10px 15px}}

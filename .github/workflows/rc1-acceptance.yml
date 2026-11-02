@@ -1,0 +1,152 @@
+name: CTSMD RC1 isolated acceptance
+on:
+  push:
+    branches: [audit/board-pilot-readiness]
+    paths: ["src/**", "bin/**", "database/**", "tests/**", "mobile/**", ".github/workflows/rc1-acceptance.yml"]
+  pull_request:
+    paths: ["src/**", "bin/**", "database/**", "tests/**", "mobile/**", ".github/workflows/rc1-acceptance.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-mysql-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rc1-disposable-ci-only
+          MYSQL_DATABASE: ctsmd_rc1_ci
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -prc1-disposable-ci-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      APP_ENV: rc1-test
+      APP_DEBUG: "false"
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: ctsmd_rc1_ci
+      DB_USERNAME: root
+      DB_PASSWORD: rc1-disposable-ci-only
+      MAIL_TRANSPORT: log
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, mbstring, dom, fileinfo, openssl, curl
+          coverage: none
+          tools: none
+      - name: Install local MySQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y mysql-client
+      - name: RC1 tooling contracts and syntax
+        run: |
+          php tests/rc1_tooling.php
+          find bin src tests -name '*.php' -type f -print0 | xargs -0 -n1 php -l
+      - name: Build revision-bound manifest (not deployment)
+        run: php bin/rc1-manifest.php > "$RUNNER_TEMP/rc1-manifest.json"
+      - name: Bootstrap new isolated schema only, no demo reset
+        run: php tests/rc1_bootstrap.php
+      - name: Read-only candidate schema and file preflight
+        run: php bin/rc1-preflight.php --target=local --manifest="$RUNNER_TEMP/rc1-manifest.json" > "$RUNNER_TEMP/rc1-schema.json"
+      - name: Seven-persona two-production real HTTP acceptance
+        run: php tests/rc1_acceptance.php > "$RUNNER_TEMP/rc1-acceptance.json"
+      - name: Existing transactional safeguarding suite
+        run: php tests/safeguarded_conversation.php
+      - name: Adult enhancement isolated assertions (separate deployment scope)
+        run: |
+          php tests/adult_performer_migration.php
+          php tests/adult_participation_mysql.php
+          php tests/adult_participation_concurrency.php
+          php tests/production_people_mysql.php
+          php tests/my_theatre_mysql.php
+          php tests/my_theatre_http.php
+          php tests/playbill_studio_mysql.php
+          php tests/playbill_studio_http.php
+      - name: Disabled Commerce synthetic integration and real concurrency
+        run: |
+          php tests/commerce_foundation.php
+          php tests/commerce_hosted.php
+          php tests/commerce_hosted_http.php
+          php tests/commerce_hosted_http.php --copied-local-env
+          php tests/commerce_venues.php
+          php tests/commerce_landmarks.php
+          php tests/commerce_inventory.php
+          php tests/commerce_quantities.php
+          php tests/commerce_recommendations.php
+          php tests/commerce_concurrency.php
+          php tests/commerce_payments.php
+          php tests/commerce_stripe.php
+          php tests/commerce_stripe_http.php
+          php tests/commerce_stripe_concurrency.php
+          php tests/commerce_delivery.php
+          php tests/commerce_delivery_http.php
+          php tests/commerce_delivery_concurrency.php
+          php tests/commerce_complimentary.php
+          php tests/commerce_box_office.php
+          php tests/commerce_admissions.php
+          php tests/commerce_ticket_changes.php
+          php tests/commerce_channel_concurrency.php
+          php tests/commerce_smtp.php
+          php tests/commerce_phase3_acceptance.php
+          php tests/commerce_customer_policy.php
+          php tests/commerce_phase2_http.php
+          php tests/commerce_workspace_http.php
+          php tests/commerce_production_pricing.php
+          php tests/commerce_production_concurrency.php
+          php tests/commerce_scheduling.php
+          php tests/commerce_bulk_allocation.php
+          php tests/commerce_schedule_concurrency.php
+          php tests/commerce_planning_http.php
+          php tests/commerce_tickets.php
+          php tests/commerce_http.php
+          php tests/commerce_shopping_cart.php
+          php tests/commerce_shopping_checkout.php
+          php tests/commerce_shopping_refund.php
+          php tests/commerce_shopping_cart_http.php
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Synthetic responsive Commerce browser acceptance
+        env:
+          STORAGE_PATH: ${{ runner.temp }}/commerce-private-art
+          CTSMD_COMMERCE_FIXTURE: ${{ runner.temp }}/ctsmd-commerce-browser-ci.json
+          CTSMD_COMMERCE_URL: http://127.0.0.1:8794
+          CTSMD_COMMERCE_OUTPUT: ${{ runner.temp }}/commerce-browser-evidence
+          COMMERCE_SANDBOX_ENABLED: "1"
+          COMMERCE_MAIL_DRIVER: capture
+          COMMERCE_MAIL_ENABLED: "0"
+          COMMERCE_MAIL_WORKER_ENABLED: "0"
+          COMMERCE_STRIPE_TEST_ENABLED: "0"
+          COMMERCE_PAYMENT_WORKER_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/commerce-browser" --no-package-lock --no-save playwright@1.56.1
+          node "$RUNNER_TEMP/commerce-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          export CTSMD_PLAYWRIGHT_MODULE="$RUNNER_TEMP/commerce-browser/node_modules/playwright/index.mjs"
+          php tests/fixtures/commerce-browser.php create
+          export COMMERCE_ORGANIZATION_KEY="$(python3 -c 'import json,os;print(json.load(open(os.environ["CTSMD_COMMERCE_FIXTURE"]))["organization_key"])')"
+          php -d display_errors=0 -S 127.0.0.1:8794 -t . tests/fixtures/commerce-router.php > "$RUNNER_TEMP/commerce-server.log" 2>&1 &
+          commerce_server_pid=$!
+          trap 'kill "$commerce_server_pid" 2>/dev/null || true; php tests/fixtures/commerce-workspace-browser.php retire; php tests/fixtures/commerce-browser.php retire' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8794/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/commerce_phase3_browser.mjs
+          node tests/commerce_productions_browser.mjs
+          php tests/fixtures/commerce-workspace-browser.php
+          node tests/commerce_workspaces_browser.mjs
+          CTSMD_SHOPPING_BROWSER=1 php tests/commerce_shopping_cart_http.php
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rc1-evidence-${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/rc1-manifest.json
+            ${{ runner.temp }}/rc1-schema.json
+            ${{ runner.temp }}/rc1-acceptance.json
+            ${{ runner.temp }}/commerce-browser-evidence/

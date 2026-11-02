@@ -1,0 +1,31 @@
+/* Public production presentation reuses the branded theatre lobby shell. */
+.production-crumb{display:flex;gap:12px;align-items:center;padding:28px 0 18px;font-size:.85rem;color:var(--ux-muted)}
+.production-public-feature{display:grid;grid-template-columns:minmax(230px,.75fr) minmax(0,1.25fr);gap:clamp(28px,5vw,74px);align-items:center;padding:28px 0 76px}
+.production-public-art{max-width:430px}
+.production-public-art>img,.production-poster-fallback{width:100%;aspect-ratio:2/3;border-radius:9px;object-fit:cover;box-shadow:0 22px 44px #27151d24}
+.production-poster-fallback{display:flex;flex-direction:column;justify-content:space-between;gap:25px;padding:clamp(20px,4vw,42px);color:var(--organization-on-primary,#fff);background:var(--stage-primary);font:italic 400 clamp(1.8rem,4vw,3.4rem)/1.1 Georgia,serif}
+.production-poster-fallback small{font:800 .7rem system-ui;letter-spacing:.15em}
+.production-public-copy{max-width:650px}
+.production-status{display:inline-flex;padding:7px 12px;border-radius:999px;background:#e7d6c8;color:#5b2734;font-size:.74rem;font-weight:800;letter-spacing:.05em}
+.production-season{margin:24px 0 9px;color:var(--stage-primary);font-size:.82rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.production-public-copy h1,.production-directory-intro h1{font:400 clamp(2.7rem,5.4vw,5.3rem)/1.02 Georgia,serif;letter-spacing:-.05em;margin:0 0 28px}
+.production-public-dates{margin:0 0 30px}
+.production-public-dates>div{padding:15px 0;border-top:1px solid #dbcfc4;display:grid;grid-template-columns:130px minmax(0,1fr);gap:18px}
+.production-public-dates dt{font-weight:800;color:var(--ux-ink)}
+.production-public-dates dd{margin:0;color:var(--ux-muted)}
+.production-public-actions{display:flex;align-items:center;flex-wrap:wrap;gap:18px 24px}
+.production-public-actions .stage-primary{padding:13px 20px;background:var(--stage-primary);color:var(--organization-on-primary,#fff);border-radius:999px;text-decoration:none;font-weight:800}
+.production-public-actions>p{width:100%;margin:0;color:var(--ux-muted)}
+.production-private-note{font-size:.84rem;color:var(--ux-muted);margin-top:34px;max-width:52ch;line-height:1.6}
+.production-directory-intro{padding:65px 0 38px}
+.production-directory-intro>p:last-child{font-size:1.12rem;color:var(--ux-muted);max-width:55ch}
+.production-directory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:18px;padding-bottom:70px}
+.production-directory-item{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:18px;padding:16px;border:1px solid #ded0c5;border-radius:12px;background:#fffbf7;text-decoration:none;min-width:0}
+.production-directory-item>img,.production-directory-item>.production-poster-fallback{width:120px;height:175px;aspect-ratio:auto;object-fit:cover;border-radius:5px;box-shadow:none}
+.production-directory-item>.production-poster-fallback{font-size:1.15rem;padding:12px}
+.production-directory-copy{display:grid;gap:12px;min-width:0}
+.production-directory-copy small{font-weight:800;color:var(--stage-primary)}
+.production-directory-copy strong{font:400 1.6rem/1.1 Georgia,serif}
+.production-directory-copy>span{color:var(--ux-muted)}
+.production-public-empty{min-height:55vh;padding:75px 0}
+@media(max-width:760px){.production-public-feature{grid-template-columns:minmax(0,1fr);padding-top:12px}.production-public-art{width:min(280px,75vw);justify-self:center}.production-public-dates>div{grid-template-columns:1fr;gap:4px}.production-directory-item{grid-template-columns:95px minmax(0,1fr)}.production-directory-item>img,.production-directory-item>.production-poster-fallback{width:95px;height:140px}}

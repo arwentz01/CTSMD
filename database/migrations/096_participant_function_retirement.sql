@@ -1,0 +1,4 @@
+SET NAMES utf8mb4;
+ALTER TABLE production_participant_functions
+  ADD COLUMN status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+  ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

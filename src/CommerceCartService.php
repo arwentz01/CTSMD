@@ -1,0 +1,142 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/CommerceInventoryService.php';
+
+/**
+ * Sandbox-only cart membership foundation. Payment and fulfillment remain
+ * single-order until an explicitly reviewed atomic multi-order checkout exists.
+ */
+final class CommerceCartService
+{
+    public static function available(PDO $db):bool
+    {
+        try{
+            // Never attempt cart writes until the optional migration is applied.
+            $q=$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_carts','commerce_cart_orders')");
+            return (int)$q->fetchColumn()===2;
+        }catch(PDOException){return false;}
+    }
+
+    public static function create(PDO $db,array $user,int $organization,string $token):int
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('Invalid cart ownership token.');
+        return CommerceStore::tx($db,function()use($db,$user,$organization,$token):int{
+            $q=$db->prepare('INSERT INTO commerce_carts(organization_id,tester_user_id,ownership_hash) VALUES(?,?,?)');
+            $q->execute([$organization,(int)$user['id'],hash('sha256',$token)]);
+            return (int)$db->lastInsertId();
+        });
+    }
+
+    private static function ownedLocked(PDO $db,array $user,int $organization,int $cart,string $token):array
+    {
+        if(!preg_match('/^[a-f0-9]{64}$/',$token))throw new RuntimeException('Cart is unavailable.');
+        $q=$db->prepare('SELECT * FROM commerce_carts WHERE id=? AND organization_id=? FOR UPDATE');
+        $q->execute([$cart,$organization]);$row=$q->fetch();
+        if(!$row||(int)$row['tester_user_id']!==(int)$user['id']||!hash_equals($row['ownership_hash'],hash('sha256',$token)))throw new RuntimeException('Cart is unavailable.');
+        return $row;
+    }
+
+    public static function addHeldOrder(PDO $db,array $user,int $organization,int $cart,string $cartToken,int $order,string $orderToken):void
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$cartToken,$order,$orderToken):void{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$cartToken);
+            if($c['state']!=='open')throw new RuntimeException('This cart can no longer be changed.');
+            $o=CommerceInventoryService::own($db,$user,$organization,$order,$orderToken);
+            $q=$db->prepare('SELECT state,(expires_at>NOW()) AS hold_valid,currency,customer_name,customer_email FROM commerce_orders WHERE id=? AND organization_id=? FOR UPDATE');
+            $q->execute([$order,$organization]);$locked=$q->fetch();
+            if(!$locked||$locked['state']!=='held'||!(bool)$locked['hold_valid'])throw new RuntimeException('This seat hold has expired or is no longer available.');
+            $q=$db->prepare('SELECT o.currency,o.customer_name,o.customer_email FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? LIMIT 1');
+            $q->execute([$organization,$cart]);$existing=$q->fetch();
+            if($existing&&($existing['currency']!==$locked['currency']||$existing['customer_name']!==$locked['customer_name']||$existing['customer_email']!==$locked['customer_email']))throw new RuntimeException('All cart selections must use the same purchaser and currency.');
+            $q=$db->prepare('SELECT 1 FROM commerce_payment_attempts WHERE organization_id=? AND order_id=? LIMIT 1');
+            $q->execute([$organization,$order]);
+            if($q->fetchColumn())throw new RuntimeException('This selection already has a payment attempt and cannot enter a cart.');
+            $q=$db->prepare('SELECT cart_id FROM commerce_cart_orders WHERE organization_id=? AND order_id=?');
+            $q->execute([$organization,$order]);$prior=$q->fetchColumn();
+            if($prior!==false){
+                if((int)$prior===$cart)return;
+                throw new RuntimeException('This ticket selection is already in another cart.');
+            }
+            $q=$db->prepare('INSERT INTO commerce_cart_orders(organization_id,cart_id,order_id) VALUES(?,?,?)');
+            $q->execute([$organization,$cart,$order]);
+        });
+    }
+
+    public static function removeHeldOrder(PDO $db,array $user,int $organization,int $cart,string $cartToken,int $order,string $orderToken):void
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$cartToken,$order,$orderToken):void{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$cartToken);
+            if($c['state']!=='open')throw new RuntimeException('This cart can no longer be changed.');
+            $o=CommerceInventoryService::own($db,$user,$organization,$order,$orderToken);
+            $q=$db->prepare('SELECT state FROM commerce_orders WHERE id=? AND organization_id=? FOR UPDATE');
+            $q->execute([$order,$organization]);$state=$q->fetchColumn();
+            if($state!=='held'&&$state!=='canceled'&&$state!=='failed')throw new RuntimeException('This selection has a payment in progress or is already settled.');
+            $q=$db->prepare('DELETE FROM commerce_cart_orders WHERE organization_id=? AND cart_id=? AND order_id=?');
+            $q->execute([$organization,$cart,$order]);
+            if($q->rowCount()!==1)throw new RuntimeException('Selection was not found in this cart.');
+            if($state==='held'){
+                $db->prepare("UPDATE commerce_orders SET state='canceled' WHERE id=? AND organization_id=? AND state='held'")->execute([$order,$organization]);
+                $db->prepare("UPDATE commerce_inventory SET state='released',order_id=NULL WHERE organization_id=? AND order_id=? AND state='held'")->execute([$organization,$order]);
+            }
+        });
+    }
+
+    /** Validate the entire cart against current holds before any payment integration. */
+    public static function readiness(PDO $db,array $user,int $organization,int $cart,string $token):array
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        return CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$token):array{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$token);
+            if($c['state']!=='open')throw new RuntimeException('This cart is no longer open.');
+            $q=$db->prepare("SELECT o.id,o.performance_id,o.state,o.expires_at,o.currency,o.customer_name,o.customer_email,
+                  (o.expires_at>NOW()) AS active_hold,o.total_minor
+                  FROM commerce_cart_orders co
+                  JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id
+                  WHERE co.organization_id=? AND co.cart_id=? ORDER BY o.id FOR UPDATE");
+            $q->execute([$organization,$cart]);$orders=$q->fetchAll();
+            if(!$orders)throw new RuntimeException('Add tickets to your cart before checkout.');
+            $first=$orders[0];$total=0;
+            foreach($orders as $order){
+                if($order['state']!=='held'||!(bool)$order['active_hold'])throw new RuntimeException('One or more ticket holds expired. Remove expired selections and choose tickets again.');
+                if($order['currency']!==$first['currency']||$order['customer_name']!==$first['customer_name']||$order['customer_email']!==$first['customer_email'])throw new RuntimeException('Cart selections must have the same purchaser and currency.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_order_lines WHERE organization_id=? AND order_id=?");
+                $q->execute([$organization,$order['id']]);$expected=(int)$q->fetchColumn();
+                if($expected<1)throw new RuntimeException('This ticket selection is empty. Remove it and select tickets again.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_order_lines l
+                    LEFT JOIN commerce_inventory i ON i.organization_id=l.organization_id
+                     AND i.order_id=l.order_id AND i.seat_key=l.seat_key
+                     AND i.performance_id=? AND i.state='held'
+                    WHERE l.organization_id=? AND l.order_id=? AND i.seat_key IS NULL");
+                $q->execute([$order['performance_id'],$organization,$order['id']]);
+                if((int)$q->fetchColumn()!==0)throw new RuntimeException('One or more reserved seats changed. Review the cart before checkout.');
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_inventory WHERE organization_id=? AND order_id=? AND performance_id=? AND state='held'");
+                $q->execute([$organization,$order['id'],$order['performance_id']]);
+                if((int)$q->fetchColumn()!==$expected)throw new RuntimeException('Reserved seat inventory does not match the selection.');
+                $q=$db->prepare("SELECT 1 FROM commerce_payment_attempts WHERE organization_id=? AND order_id=? LIMIT 1");
+                $q->execute([$organization,$order['id']]);
+                if($q->fetchColumn())throw new RuntimeException('A selection already has a payment attempt. Contact the Box Office to reconcile it.');
+                $p=CommerceStore::row($db,'performances',$organization,(int)$order['performance_id']);
+                CommercePerformancePolicy::demand($db,$organization,$p);
+                if((int)$order['total_minor']<0||$total>PHP_INT_MAX-(int)$order['total_minor'])throw new RuntimeException('Cart total is invalid.');
+                $total+=(int)$order['total_minor'];
+            }
+            return ['ready'=>true,'order_count'=>count($orders),'total_minor'=>$total,'currency'=>$first['currency']];
+        });
+    }
+
+    public static function summary(PDO $db,array $user,int $organization,int $cart,string $token):array
+    {
+        CommerceAccess::demand($db,$user,$organization,'test');
+        return CommerceStore::tx($db,function()use($db,$user,$organization,$cart,$token):array{
+            $c=self::ownedLocked($db,$user,$organization,$cart,$token);
+            $q=$db->prepare('SELECT o.id,o.performance_id,o.state,o.expires_at,(o.state=\'held\' AND o.expires_at>NOW()) AS active_hold,o.currency,o.subtotal_minor,o.discount_minor,o.tax_minor,o.fee_minor,o.total_minor FROM commerce_cart_orders co JOIN commerce_orders o ON o.id=co.order_id AND o.organization_id=co.organization_id WHERE co.organization_id=? AND co.cart_id=? ORDER BY co.added_at,o.id');
+            $q->execute([$organization,$cart]);$orders=$q->fetchAll();
+            $totals=['subtotal_minor'=>0,'discount_minor'=>0,'tax_minor'=>0,'fee_minor'=>0,'total_minor'=>0];
+            foreach($orders as $o){if(!(bool)$o['active_hold'])continue;foreach($totals as $key=>$_)$totals[$key]+=(int)$o[$key];}
+            return ['state'=>$c['state'],'orders'=>$orders,'totals'=>$totals];
+        });
+    }
+}

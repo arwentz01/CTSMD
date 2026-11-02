@@ -1,0 +1,31 @@
+SET NAMES utf8mb4;
+
+CREATE TABLE IF NOT EXISTS production_casting_records (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    production_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    registration_submission_id BIGINT UNSIGNED NULL,
+    casting_status ENUM('under_review','callback','offered','cast','not_cast','withdrawn') NOT NULL DEFAULT 'under_review',
+    role_title VARCHAR(190) NULL,
+    participation_track VARCHAR(100) NULL,
+    staff_notes VARCHAR(2000) NULL,
+    production_membership_id BIGINT UNSIGNED NULL,
+    decided_by_user_id BIGINT UNSIGNED NULL,
+    decided_at DATETIME NULL,
+    rostered_by_user_id BIGINT UNSIGNED NULL,
+    rostered_at DATETIME NULL,
+    created_by_user_id BIGINT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_production_casting_person (production_id,user_id),
+    KEY idx_production_casting_status (production_id,casting_status,updated_at),
+    KEY idx_production_casting_registration (registration_submission_id),
+    KEY idx_production_casting_membership (production_membership_id),
+    CONSTRAINT fk_casting_production FOREIGN KEY (production_id) REFERENCES productions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_casting_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_casting_registration FOREIGN KEY (registration_submission_id) REFERENCES registration_submissions(id) ON DELETE SET NULL,
+    CONSTRAINT fk_casting_membership FOREIGN KEY (production_membership_id) REFERENCES production_memberships(id) ON DELETE SET NULL,
+    CONSTRAINT fk_casting_decider FOREIGN KEY (decided_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_casting_roster_actor FOREIGN KEY (rostered_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_casting_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

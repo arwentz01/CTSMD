@@ -1,0 +1,174 @@
+<?php
+
+declare(strict_types=1);
+require_once __DIR__.'/MemberUI.php';
+
+require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__.'/WorkspaceUI.php';
+require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ProductionContext.php';
+require_once __DIR__ . '/ScheduleAudience.php';
+require_once __DIR__ . '/AttendanceService.php';
+require_once __DIR__.'/LatePickupService.php';
+
+final class AttendanceExperience
+{
+    private const ROUTES=['/attendance','/attendance/take','/attendance/report'];
+
+    public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
+
+    public static function render(string $route,string $basePath):never
+    {
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__));
+        $user=Auth::currentUser($db);
+        if(!$user)self::redirect(($basePath?:'').'/login');
+        $_SESSION['attendance_csrf']??=bin2hex(random_bytes(24));
+        $production=ProductionContext::selected($db,$user);
+        if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$production,$route,$basePath);
+        self::page($db,$route,$basePath,$user,$production);
+    }
+
+    private static function handlePost(PDO $db,array $user,?array $production,string $route,string $basePath):never
+    {
+        if(!hash_equals((string)($_SESSION['attendance_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired. Please try again.');self::redirect($basePath.'/attendance');}
+        if(!$production){self::flash('error','Select an active production first.');self::redirect($basePath.'/production');}
+        $action=(string)($_POST['action']??'');
+        try{
+            if($action==='save_roster'){
+                if(!AccessPolicy::canManageProduction($user))throw new RuntimeException('Only production staff can take attendance.');
+                $itemId=filter_input(INPUT_POST,'schedule_item_id',FILTER_VALIDATE_INT)?:0;
+                $item=AttendanceService::scheduleItem($db,(int)$itemId,(int)$production['id']);if(!$item)throw new RuntimeException('That active schedule item is not in the working production.');
+                $db->beginTransaction();
+                AttendanceService::saveRoster($db,(int)$itemId,(int)$user['id'],(array)($_POST['status']??[]),(array)($_POST['note']??[]),(array)($_POST['arrived_at']??[]));
+                foreach((array)($_POST['pickup_at']??[]) as $studentId=>$pickupAt)if(trim((string)$pickupAt)!=='' || trim((string)(($_POST['pickup_reason']??[])[$studentId]??''))!=='')LatePickupService::record($db,(int)$itemId,(int)$studentId,(int)$user['id'],trim((string)$pickupAt)!==''?(string)$pickupAt:null,(string)(($_POST['pickup_reason']??[])[$studentId]??''));
+                self::audit($db,(int)$user['id'],'attendance.roster_saved','schedule_item',(int)$itemId,'Saved attendance roster.',['production_id'=>(int)$production['id']]);
+                $db->commit();self::flash('success','Attendance saved.');self::redirect($basePath.'/attendance/take?id='.(int)$itemId);
+            }
+            if($action==='acknowledge_report'){
+                if(!AccessPolicy::canManageProduction($user))throw new RuntimeException('Only production staff can review absence reports.');
+                $reportId=filter_input(INPUT_POST,'report_id',FILTER_VALIDATE_INT)?:0;
+                $check=$db->prepare("SELECT aar.id,aar.schedule_item_id FROM attendance_absence_reports aar JOIN schedule_items si ON si.id=aar.schedule_item_id AND si.status='active' WHERE aar.id=:id AND si.production_id=:production LIMIT 1");$check->execute(['id'=>$reportId,'production'=>(int)$production['id']]);$report=$check->fetch();if(!$report)throw new RuntimeException('That absence report is not attached to an active call in the working production.');
+                $db->beginTransaction();AttendanceService::acknowledgeReport($db,(int)$reportId,(int)$user['id']);self::audit($db,(int)$user['id'],'attendance.absence_acknowledged','attendance_absence_report',(int)$reportId,'Acknowledged absence report and marked student excused.',['schedule_item_id'=>(int)$report['schedule_item_id'],'production_id'=>(int)$production['id']]);$db->commit();self::flash('success','Absence acknowledged and marked excused.');self::redirect($basePath.'/attendance/take?id='.(int)$report['schedule_item_id']);
+            }
+            if($action==='report_absence'){
+                $itemId=filter_input(INPUT_POST,'schedule_item_id',FILTER_VALIDATE_INT)?:0;$studentId=filter_input(INPUT_POST,'student_user_id',FILTER_VALIDATE_INT)?:0;
+                $item=AttendanceService::scheduleItem($db,(int)$itemId,(int)$production['id']);if(!$item)throw new RuntimeException('That active schedule item is not available in this production.');
+                $eligible=AttendanceService::reportableStudents($db,$user,(int)$itemId);$eligibleIds=array_map(static fn(array $m):int=>(int)$m['id'],$eligible);if(!in_array((int)$studentId,$eligibleIds,true))throw new RuntimeException('You cannot submit an absence report for that student or schedule item.');
+                $db->beginTransaction();$reportId=AttendanceService::submitAbsenceReport($db,(int)$itemId,(int)$studentId,(int)$user['id'],(string)($_POST['reason']??''));self::audit($db,(int)$user['id'],'attendance.absence_reported','attendance_absence_report',$reportId,'Submitted an attendance absence report.',['schedule_item_id'=>(int)$itemId,'student_user_id'=>(int)$studentId,'production_id'=>(int)$production['id']]);$db->commit();self::flash('success','Absence report sent to production staff.');self::redirect($basePath.'/attendance/report?id='.(int)$itemId);
+            }
+            throw new RuntimeException('That attendance action is not available.');
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();self::flash('error',$e instanceof RuntimeException?$e->getMessage():'The attendance update could not be saved.');$fallback=$route==='/attendance/take'?'/attendance/take?id='.(int)($_POST['schedule_item_id']??0):($route==='/attendance/report'?'/attendance/report?id='.(int)($_POST['schedule_item_id']??0):'/attendance');self::redirect($basePath.$fallback);}
+    }
+
+    private static function page(PDO $db,string $route,string $basePath,array $user,?array $production):never
+    {
+        $url=static fn(string $p):string=>($basePath?:'').$p;$esc=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$staff=AccessPolicy::canManageProduction($user);$flash=$_SESSION['attendance_flash']??$_SESSION['production_context_flash']??null;unset($_SESSION['attendance_flash'],$_SESSION['production_context_flash']);
+        $items=[];$selected=null;$roster=[];$reportable=[];$myReports=[];$pickupPeopleByStudent=[];
+        if($production){
+            $stmt=$db->prepare("SELECT si.id,si.production_id,si.title,si.starts_at,si.ends_at,si.location,si.visibility,si.item_type,si.audience_mode FROM schedule_items si WHERE si.production_id=:production AND si.status='active' ORDER BY si.starts_at DESC,si.id DESC");$stmt->execute(['production'=>(int)$production['id']]);
+            foreach($stmt->fetchAll() as $item){if($staff||ScheduleAudience::userCanViewItem($db,$user,$item)){$item['group_names']=$item['audience_mode']==='groups'?ScheduleAudience::groupNamesForItem($db,(int)$item['id']):[];$item['roster']=AttendanceService::roster($db,(int)$item['id']);$item['counts']=AttendanceService::statusCounts($item['roster']);$items[]=$item;}}
+            if(in_array($route,['/attendance/take','/attendance/report'],true)){$id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$selected=AttendanceService::scheduleItem($db,(int)$id,(int)$production['id']);if($selected&&($staff||ScheduleAudience::userCanViewItem($db,$user,$selected))){$selected['group_names']=$selected['audience_mode']==='groups'?ScheduleAudience::groupNamesForItem($db,(int)$selected['id']):[];$roster=AttendanceService::roster($db,(int)$selected['id']);
+                    if($staff){
+                        // Only rostered students, not the whole production. Linked adults
+                        // must still have an active family relationship at query time.
+                        $studentIds=array_values(array_unique(array_map('intval',array_column(array_filter($roster,static fn(array $m):bool=>($m['audience_type']??'')==='student'),'id'))));
+                        if($studentIds){
+                            $placeholders=implode(',',array_fill(0,count($studentIds),'?'));
+                            $pickupQuery=$db->prepare("SELECT pp.student_user_id,pp.name,pp.relationship_label,pp.phone,pp.notes FROM student_pickup_people pp LEFT JOIN family_relationships fr ON fr.student_user_id=pp.student_user_id AND fr.guardian_user_id=pp.linked_guardian_user_id WHERE pp.active=1 AND (pp.linked_guardian_user_id IS NULL OR fr.status='active') AND pp.student_user_id IN (".$placeholders.") ORDER BY pp.name");
+                            $pickupQuery->execute($studentIds);
+                            foreach($pickupQuery->fetchAll() as $person)$pickupPeopleByStudent[(int)$person['student_user_id']][]=$person;
+                        }
+                    }
+                    $reportable=AttendanceService::reportableStudents($db,$user,(int)$selected['id']);$reports=$db->prepare("SELECT aar.id,aar.student_user_id,aar.reason,aar.status,aar.submitted_at,CONCAT(student.first_name,' ',student.last_name) student_name FROM attendance_absence_reports aar JOIN users student ON student.id=aar.student_user_id WHERE aar.schedule_item_id=:item AND aar.reported_by_user_id=:reporter ORDER BY aar.submitted_at DESC,aar.id DESC");$reports->execute(['item'=>(int)$selected['id'],'reporter'=>(int)$user['id']]);$myReports=$reports->fetchAll();}else{$selected=null;}}
+        }
+        $title=$route==='/attendance'?'Attendance':($route==='/attendance/take'?'Take attendance':'Report an absence');$subnav=AppNavigation::productionSubnav($route,$user);
+        header('Content-Type: text/html; charset=utf-8');?>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/attendance.css?v=20261026-pickup-roster') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?><?php MemberUI::styles($basePath); ?></head><body class="app-body ux-operations ux-workspace ux-operational ux-schedule<?=MemberUI::bodyClass()?>"><a class="ux-skip" href="#ux-main">Skip to main content</a><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main" id="ux-main" tabindex="-1"><?php AppNavigation::renderHeader('Production',$title,$basePath,$subnav); MemberUI::wayfinding($basePath);?><div class="att-page ops-page">
+<?php if($flash):?><div class="att-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?>
+<?php if(!$production):?><section class="att-empty"><h2>No active production selected</h2><p>Choose a working production before opening attendance.</p><a class="button" href="<?= $url('/production') ?>">Choose production</a></section>
+<?php elseif($route==='/attendance'):?>
+<section class="att-hero"><div><small><?= $esc(strtoupper($production['title'])) ?> · ATTENDANCE</small><h2><?= $staff?'Know who is in the room.':'Your production attendance.' ?></h2><p><?= $staff?'Expected attendees come directly from the active schedule and Production Groups—no second roster to maintain.':'See relevant active calls and report an absence when needed.' ?></p></div><span><?= count($items) ?> active schedule items</span><?php if($staff):?><a href="<?= $url('/production/late-pickups') ?>">Review late arrivals & pickups</a><?php endif;?></section>
+<div class="att-list"><?php if(!$items):?><div class="att-empty"><b>No active schedule items available</b></div><?php endif;?><?php foreach($items as $item):$target=$item['audience_mode']==='groups'&&$item['group_names']?implode(' + ',$item['group_names']):'Whole production';$c=$item['counts'];?><article class="att-item"><div class="att-date"><b><?= $esc(date('M',strtotime($item['starts_at']))) ?></b><span><?= $esc(date('j',strtotime($item['starts_at']))) ?></span></div><div class="att-copy"><small><?= $esc(strtoupper($item['item_type'])) ?> · <?= $esc(strtoupper($target)) ?></small><h3><?= $esc($item['title']) ?></h3><p><?= $esc(date('g:i A',strtotime($item['starts_at']))) ?> · <?= $esc($item['location']) ?></p><div class="att-chips"><span><?= count($item['roster']) ?> expected</span><?php if($staff):?><span><?= (int)$c['present'] ?> present</span><span><?= (int)($c['absent']+$c['excused']) ?> absent/excused</span><span><?= (int)$c['unmarked'] ?> unmarked</span><?php endif;?></div></div><div class="att-actions"><?php if($staff):?><a class="button" href="<?= $url('/attendance/take?id='.(int)$item['id']) ?>">Take attendance</a><?php else:?><?php $eligible=AttendanceService::reportableStudents($db,$user,(int)$item['id']);if($eligible):?><a href="<?= $url('/attendance/report?id='.(int)$item['id']) ?>">Report absence</a><?php endif;?><?php endif;?></div></article><?php endforeach;?></div>
+<?php elseif($route==='/attendance/take'):?>
+<?php if(!$staff):?><section class="att-empty"><h2>Staff only</h2><p>Your account cannot take production attendance.</p><a class="button" href="<?= $url('/attendance') ?>">Back to attendance</a></section><?php elseif(!$selected):?><section class="att-empty"><h2>Schedule item unavailable</h2><a class="button" href="<?= $url('/attendance') ?>">Back to attendance</a></section><?php else:$target=$selected['audience_mode']==='groups'&&$selected['group_names']?implode(' + ',$selected['group_names']):'Whole production';$counts=AttendanceService::statusCounts($roster);?>
+<section class="att-detail-head"><div><small><?= $esc(strtoupper($target)) ?> · <?= count($roster) ?> EXPECTED</small><h2><?= $esc($selected['title']) ?></h2><p><?= $esc(date('l, M j · g:i A',strtotime($selected['starts_at']))) ?> · <?= $esc($selected['location']) ?></p></div><a href="<?= $url('/attendance') ?>">← Attendance</a></section>
+<div class="att-summary"><span><b data-att-count="present"><?= (int)$counts['present'] ?></b><small>Present</small></span><span><b data-att-count="late"><?= (int)$counts['late'] ?></b><small>Late</small></span><span><b data-att-count="excused"><?= (int)$counts['excused'] ?></b><small>Excused</small></span><span><b data-att-count="unmarked"><?= (int)$counts['unmarked'] ?></b><small>Unmarked</small></span></div>
+<form method="post" class="att-roster" id="attendance-roster"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['attendance_csrf']) ?>"><input type="hidden" name="action" value="save_roster"><input type="hidden" name="schedule_item_id" value="<?= (int)$selected['id'] ?>"><div class="att-quick-toolbar"><span><b>Quick attendance</b><small>Tap Present, Late, or Absent. More options are available for each person.</small></span><button type="button" data-mark-all="present">Mark all present</button></div>
+<?php if(!$roster):?><div class="att-empty"><b>No expected attendees resolve from this schedule audience.</b><p>Check the schedule audience and Production Groups.</p></div><?php endif;?>
+<?php
+$attendanceSections=['student'=>[],'staff'=>[],'volunteer'=>[],'other'=>[]];
+foreach($roster as $member){
+    $type=strtolower(trim((string)($member['audience_type']??'')));
+    $attendanceSections[array_key_exists($type,$attendanceSections)?$type:'other'][]=$member;
+}
+foreach(['student'=>'Students','staff'=>'Staff','volunteer'=>'Volunteers','other'=>'Other attendees'] as $sectionType=>$sectionLabel):
+    $sectionMembers=$attendanceSections[$sectionType];
+    if(!$sectionMembers)continue;
+?><section class="att-roster-section" aria-label="<?= $esc($sectionLabel) ?>"><header class="att-roster-section-head"><h3><?= $esc($sectionLabel) ?></h3><span><?= count($sectionMembers) ?> expected</span></header><div class="att-roster-section-list"><?php foreach($sectionMembers as $member):$memberId=(int)$member['id'];?><article class="att-person"><div class="att-person-id"><i><?= $esc(strtoupper(substr($member['name'],0,1))) ?></i><span><b><?= $esc($member['name']) ?></b><small><?= $esc(ucfirst((string)$member['audience_type'])) ?></small></span></div><span class="att-arrival-inline" data-arrival-inline data-member="<?= $memberId ?>" data-initial-status="<?= $esc((string)$member['attendance_status']) ?>"><span data-arrival-label><?= in_array((string)$member['attendance_status'],['present','late'],true)?($member['attendance_status']==='late'?'Late':'Arrived').' '.($member['arrived_at']? $esc(date('g:i A',strtotime((string)$member['arrived_at']))):''):'' ?></span><input type="time" aria-label="Arrival time for <?= $esc($member['name']) ?>" value="<?= !empty($member['arrived_at'])?$esc(date('H:i',strtotime((string)$member['arrived_at']))):'' ?>" data-arrival-time><input type="hidden" name="arrived_at[<?= $memberId ?>]" value="<?= !empty($member['arrived_at'])?$esc(date('Y-m-d\\TH:i',strtotime((string)$member['arrived_at']))):'' ?>" data-arrival-field data-default-date="<?= $esc(date('Y-m-d',strtotime((string)$selected['starts_at']))) ?>"></span><?php if($member['absence_report']&&$member['absence_report']['status']==='submitted'):?><div class="att-report"><b>Absence reported</b><span><?= $esc($member['absence_report']['reason']) ?></span><small>By <?= $esc($member['absence_report']['reporter']) ?> · <?= $esc(date('M j · g:i A',strtotime($member['absence_report']['submitted_at']))) ?></small><button name="action" value="acknowledge_report" form="ack-<?= (int)$member['absence_report']['id'] ?>" type="submit">Acknowledge + excuse</button></div><?php endif;?><fieldset class="att-status-picker"><legend>Status for <?= $esc($member['name']) ?></legend><div class="att-status-primary"><?php foreach(['present'=>'Present','late'=>'Late','absent'=>'Absent'] as $value=>$label):$inputId='att-'.$memberId.'-'.$value;?><input id="<?= $inputId ?>" type="radio" name="status[<?= $memberId ?>]" value="<?= $value ?>"<?= $member['attendance_status']===$value?' checked':'' ?>><label for="<?= $inputId ?>" data-status="<?= $value ?>"><?= $label ?></label><?php endforeach;?></div><div class="att-status-more"><button class="att-more-toggle" type="button" aria-expanded="false" aria-controls="att-more-panel-<?= $memberId ?>" aria-label="More attendance options for <?= $esc($member['name']) ?>">More<?php if(in_array($member['attendance_status'],['excused','left_early'],true)):?> · <?= $esc(ucwords(str_replace('_',' ',(string)$member['attendance_status']))) ?><?php endif;?><?php if(trim((string)($member['staff_note']??''))!==''):?> · Note<?php endif;?></button><div class="att-more-panel" id="att-more-panel-<?= $memberId ?>" role="dialog" aria-modal="true" aria-label="Attendance details for <?= $esc($member['name']) ?>" tabindex="-1" hidden><div class="att-drawer-header"><div><small>ATTENDANCE DETAILS</small><h3><?= $esc($member['name']) ?></h3></div><button type="button" class="att-drawer-close" aria-label="Close attendance details">×</button></div><div class="att-status-secondary"><?php foreach(['excused'=>'Excused','left_early'=>'Left early','unmarked'=>'Clear'] as $value=>$label):$inputId='att-'.$memberId.'-'.$value;?><input id="<?= $inputId ?>" type="radio" name="status[<?= $memberId ?>]" value="<?= $value ?>"<?= $member['attendance_status']===$value?' checked':'' ?>><label for="<?= $inputId ?>" data-status="<?= $value ?>"><?= $label ?></label><?php endforeach;?></div><label class="att-more-note"><span>Optional note for <?= $esc($member['name']) ?></span><input name="note[<?= $memberId ?>]" maxlength="1000" value="<?= $esc((string)($member['staff_note']??'')) ?>" placeholder="Add a note"></label><?php if($sectionType==="student"): $pickup=$member["late_pickup"]??null;?><div class="att-pickup att-pickup-in-more <?=!empty($pickup["qualifies"])?"is-late":""?>"><strong>Late Check-out<?=!empty($pickup["qualifies"])?" · ".$esc(date("g:i A",strtotime((string)$pickup["actual_checkout_at"]))):""?></strong><div class="att-pickup-fields"><label>Pickup time<input type="time" data-pickup-time data-original-time="<?=$pickup&&empty($pickup["voided_at"])?$esc(date("H:i",strtotime((string)$pickup["actual_checkout_at"]))):""?>" data-expected-time="<?=$selected["ends_at"]?$esc(date("H:i",strtotime((string)$selected["ends_at"]))):""?>" value="<?=$pickup&&empty($pickup["voided_at"])?$esc(date("H:i",strtotime((string)$pickup["actual_checkout_at"]))):""?>" <?=$selected["ends_at"]?"":"disabled"?>><input type="hidden" name="pickup_at[<?=$memberId?>]" data-pickup-datetime data-default-date="<?=$esc(date("Y-m-d",strtotime((string)$selected["ends_at"]?:$selected["starts_at"])))?>" value="<?=$pickup&&empty($pickup["voided_at"])?$esc(date("Y-m-d\TH:i",strtotime((string)$pickup["actual_checkout_at"]))):""?>"></label><label>Correction note<input name="pickup_reason[<?=$memberId?>]" maxlength="1000" placeholder="Required when correcting or clearing a saved pickup"></label></div></div><div class="att-authorized-pickup"><strong>Authorized pickup people</strong><p>Check the person's identity before releasing a student. This list records authorization, not who collected the student.</p><?php $authorizedPickup=$pickupPeopleByStudent[$memberId]??[];if($authorizedPickup):?><ul><?php foreach($authorizedPickup as $pickupPerson):?><li><b><?= $esc((string)$pickupPerson['name']) ?></b> · <?= $esc((string)$pickupPerson['relationship_label']) ?><?php if(!empty($pickupPerson['phone'])):?><small><?= $esc((string)$pickupPerson['phone']) ?></small><?php endif;?></li><?php endforeach;?></ul><?php else:?><p class="att-pickup-warning">No authorized pickup people are listed for this child. Verify with an authorized guardian or CTSMD staff before release.</p><?php endif;?></div><?php endif;?><div class="att-drawer-footer"><span>Save attendance changes before leaving.</span><button type="submit" class="button att-drawer-save">Save changes</button></div></div></div></fieldset></article><?php endforeach;?></div></section><?php endforeach;?><footer class="att-savebar"><span><b data-att-save-title>Attendance saved on this page</b><small data-att-save-state aria-live="polite">Changes will be saved together when you submit.</small></span><button class="button" type="submit">Save attendance</button></footer></form>
+<?php foreach($roster as $member):if($member['absence_report']&&$member['absence_report']['status']==='submitted'):?><form id="ack-<?= (int)$member['absence_report']['id'] ?>" method="post" class="att-hidden-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['attendance_csrf']) ?>"><input type="hidden" name="action" value="acknowledge_report"><input type="hidden" name="report_id" value="<?= (int)$member['absence_report']['id'] ?>"><input type="hidden" name="schedule_item_id" value="<?= (int)$selected['id'] ?>"></form><?php endif;endforeach;?>
+<?php endif;?>
+<?php else:?>
+<?php if(!$selected):?><section class="att-empty"><h2>Schedule item unavailable</h2><a class="button" href="<?= $url('/attendance') ?>">Back to attendance</a></section><?php elseif(!$reportable):?><section class="att-empty"><h2>No student to report for this call</h2><p>This account is not eligible to submit an absence for an expected student on this schedule item.</p><a class="button" href="<?= $url('/attendance') ?>">Back to attendance</a></section><?php else:?>
+<section class="att-detail-head"><div><small>ABSENCE REPORT</small><h2><?= $esc($selected['title']) ?></h2><p><?= $esc(date('l, M j · g:i A',strtotime($selected['starts_at']))) ?> · <?= $esc($selected['location']) ?></p></div><a href="<?= $url('/attendance') ?>">← Attendance</a></section><div class="att-report-layout"><form method="post" class="att-report-form ops-form"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['attendance_csrf']) ?>"><input type="hidden" name="action" value="report_absence"><input type="hidden" name="schedule_item_id" value="<?= (int)$selected['id'] ?>"><label>Student<select name="student_user_id" required><?php foreach($reportable as $student):?><option value="<?= (int)$student['id'] ?>"><?= $esc($student['name']) ?></option><?php endforeach;?></select></label><label>Reason<textarea name="reason" rows="6" maxlength="1500" required placeholder="Briefly let production staff know why attendance will be affected."></textarea></label><p>This does not automatically change attendance. Production staff will review the report and acknowledge it.</p><button class="button" type="submit">Send absence report</button></form><aside class="att-report-history"><small>YOUR REPORTS</small><?php if(!$myReports):?><p>No reports submitted for this call.</p><?php endif;?><?php foreach($myReports as $report):?><article><b><?= $esc($report['student_name']) ?></b><span><?= $esc(ucfirst($report['status'])) ?></span><p><?= $esc($report['reason']) ?></p><small><?= $esc(date('M j · g:i A',strtotime($report['submitted_at']))) ?></small></article><?php endforeach;?></aside></div>
+<?php endif;?><?php endif;?>
+</div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script><?php if($route==='/attendance/take'&&$selected&&$staff):?><script>(()=>{const form=document.getElementById('attendance-roster');if(!form)return;const snapshot=()=>Array.from(new FormData(form).entries()).filter(([key])=>key.startsWith('status[')||key.startsWith('note[')||key.startsWith('pickup_at[')||key.startsWith('pickup_reason[')||key.startsWith('arrived_at[')).map(([key,value])=>key+'='+value).join('&');let initial='';let submitting=false;const title=form.querySelector('[data-att-save-title]'),state=form.querySelector('[data-att-save-state]');const refresh=()=>{for(const value of ['present','late','excused','unmarked']){const el=document.querySelector('[data-att-count="'+value+'"]');if(el)el.textContent=String(form.querySelectorAll('input[type="radio"][value="'+value+'"]:checked').length);}const dirty=snapshot()!==initial;form.classList.toggle('att-dirty',dirty);if(title)title.textContent=dirty?'Unsaved attendance changes':'No unsaved changes';if(state)state.textContent=dirty?'Save attendance before leaving this page.':'Selections are saved only when you submit.';};const clock=()=>{const d=new Date();const two=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+two(d.getMonth()+1)+'-'+two(d.getDate())+'T'+two(d.getHours())+':'+two(d.getMinutes());};const updateArrival=(row)=>{const input=row.querySelector('[data-arrival-field]'),time=row.querySelector('[data-arrival-time]'),label=row.querySelector('[data-arrival-label]');const id=row.dataset.member;const status=form.querySelector('input[name="status['+id+']"]:checked')?.value||'unmarked';const visible=status==='present'||status==='late';if(visible&&!time.value)time.value=clock().slice(11);const day=input.value.slice(0,10)||input.dataset.defaultDate||clock().slice(0,10);input.value=visible&&time.value?day+'T'+time.value:'';row.hidden=!visible;row.dataset.currentStatus=status;input.disabled=!visible;time.disabled=!visible;if(visible){const value=new Date(input.value);const formatted=Number.isFinite(value.getTime())?value.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';label.textContent=(status==='late'?'Late':'Arrived')+' '+formatted;}else label.textContent='';};const updatePickups=()=>form.querySelectorAll('[data-pickup-time]').forEach(time=>{const hidden=time.parentElement.querySelector('[data-pickup-datetime]');if(!hidden)return;hidden.value=time.value?(hidden.value.slice(0,10)||hidden.dataset.defaultDate||clock().slice(0,10))+'T'+time.value:'';});const allArrivals=()=>form.querySelectorAll('[data-arrival-inline]').forEach(updateArrival);form.addEventListener('change',()=>{allArrivals();updatePickups();refresh();});form.addEventListener('input',()=>{allArrivals();updatePickups();refresh();});// A second tap on the selected option clears that attendee to Unmarked.
+form.querySelectorAll('.att-status-primary input[type="radio"]').forEach(input=>{
+ const label=form.querySelector('label[for="'+input.id+'"]');
+ if(!label)return;
+ label.addEventListener('click',event=>{
+  if(!input.checked)return;
+  event.preventDefault();
+  const clear=form.querySelector('input[name="'+input.name+'"][value="unmarked"]');
+  if(clear){clear.checked=true;clear.dispatchEvent(new Event('change',{bubbles:true}));}
+ });
+});
+const closeAttendanceDrawer=(returnFocus=true)=>{
+ const opened=form.querySelector('.att-more-panel:not([hidden])');
+ if(!opened)return;
+ opened.hidden=true;
+ const trigger=form.querySelector('.att-more-toggle[aria-controls="'+opened.id+'"]');
+ if(trigger){trigger.setAttribute('aria-expanded','false');if(returnFocus)trigger.focus();}
+ document.body.classList.remove('att-drawer-active');
+};
+form.querySelectorAll('.att-more-toggle').forEach(button=>{
+ const panel=document.getElementById(button.getAttribute('aria-controls'));
+ if(!panel)return;
+ button.addEventListener('click',()=>{
+  if(!panel.hidden){closeAttendanceDrawer();return;}
+  closeAttendanceDrawer(false);
+  panel.hidden=false;
+  button.setAttribute('aria-expanded','true');
+  document.body.classList.add('att-drawer-active');
+  panel.querySelector('.att-drawer-close')?.focus();
+ });
+});
+form.querySelectorAll('.att-drawer-close').forEach(close=>close.addEventListener('click',()=>closeAttendanceDrawer()));
+document.addEventListener('keydown',e=>{
+ const opened=form.querySelector('.att-more-panel:not([hidden])');
+ if(!opened)return;
+ if(e.key==='Escape'){e.preventDefault();closeAttendanceDrawer();return;}
+ if(e.key==='Tab'){
+  const focusable=[...opened.querySelectorAll('button:not(:disabled),input:not([type=hidden]):not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href]')].filter(el=>el.getClientRects().length);
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+ }
+});
+const all=form.querySelector('[data-mark-all="present"]');if(all)all.addEventListener('click',()=>{form.querySelectorAll('input[type="radio"][value="present"]').forEach(input=>{input.checked=true;});allArrivals();refresh();});form.addEventListener('submit',e=>{
+ allArrivals();updatePickups();
+ const earlier=[...form.querySelectorAll('[data-pickup-time]')].filter(input=>input.value && input.value!==input.dataset.originalTime && input.dataset.expectedTime && input.value<=input.dataset.expectedTime);
+ if(earlier.length && !window.confirm('One or more pickup times are at or before the scheduled end. Save these times as ordinary checkout records (not late pickup occurrences)?')){
+  e.preventDefault();submitting=false;return;
+ }
+ submitting=true;
+});window.addEventListener('beforeunload',e=>{if(!submitting&&snapshot()!==initial){e.preventDefault();e.returnValue='';}});allArrivals();updatePickups();initial=snapshot();refresh();})();</script><?php endif;?></body></html><?php exit;
+    }
+
+    private static function audit(PDO $db,int $actor,string $event,string $type,int $id,string $summary,array $meta):void{$stmt=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:type,:id,:summary,:meta)');$stmt->execute(['actor'=>$actor,'event'=>$event,'type'=>$type,'id'=>$id,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
+    private static function flash(string $type,string $message):void{$_SESSION['attendance_flash']=['type'=>$type,'message'=>$message];}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+}

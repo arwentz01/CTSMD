@@ -1,0 +1,1586 @@
+{
+ "url": "design-explorations/ctsmd-design-evolution/concept-b-production.html",
+ "at": "2026-10-27T01:25:41.965Z",
+ "allow": [],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 2,
+   "filled": [
+    1,
+    1
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 956,
+     "screens": 1.1,
+     "words": 160,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 5,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 1,
+     "size": 42,
+     "vw": 2.9,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 171,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "lines": 1,
+     "size": 42,
+     "font": "DM Sans"
+    },
+    "headings": [
+     {
+      "text": "The Lantern Keeper",
+      "words": 3,
+      "chars": 18,
+      "lines": 1,
+      "size": 42,
+      "vw": 2.9,
+      "font": "DM Sans",
+      "weight": 600,
+      "tracking": -0.04,
+      "leading": 1.08,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.31,
+      "top": 171,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "82%",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 28,
+      "vw": 1.9,
+      "font": "DM Sans",
+      "weight": 700,
+      "tracking": -0.04,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.04,
+      "top": 713,
+      "tag": "strong",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 2,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "DM Sans",
+       "share": 0.97,
+       "mono": false
+      },
+      {
+       "family": "Fraunces",
+       "share": 0.03,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ],
+     "sizeCount": 9,
+     "notLoaded": [],
+     "body": {
+      "font": "DM Sans",
+      "size": 15,
+      "leading": 1.5,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 12
+     },
+     "measureChars": 64,
+     "max": {
+      "size": 42,
+      "vw": 2.9,
+      "font": "DM Sans",
+      "text": "The Lantern Keeper"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.04,
+     "smallText": 14
+    },
+    "eyebrows": [
+     {
+      "text": "Production workspace · 18 days to opening",
+      "above": "The Lantern Keeper",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 15,
+      "top": 133
+     }
+    ],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f1ef",
+     "bodyBgHsl": {
+      "h": 20,
+      "s": 0.23,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#f3f3f1",
+       "top": 0,
+       "hsl": {
+        "h": 60,
+        "s": 0.08,
+        "l": 0.95
+       }
+      },
+      {
+       "color": "#ffffff",
+       "top": 0,
+       "hsl": {
+        "h": 0,
+        "s": 0,
+        "l": 1
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#65615f",
+       "share": 0.41
+      },
+      {
+       "color": "#201d1e",
+       "share": 0.21
+      },
+      {
+       "color": "#eadcdf",
+       "share": 0.16
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.1
+      },
+      {
+       "color": "#4e4a4a",
+       "share": 0.06
+      }
+     ],
+     "button": {
+      "bg": "#dfdedb",
+      "hsl": {
+       "h": 45,
+       "s": 0.06,
+       "l": 0.87
+      },
+      "fg": "#242222"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 2,
+     "radius": 7,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Productions",
+      "Open call sheet"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 1,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 10,
+     "hairlineSamples": [
+      "aside.sidebar 238px",
+      "div.tabs 1126px",
+      "div.agenda-row 730px",
+      "div.agenda-row 730px",
+      "div.agenda-row 730px"
+     ],
+     "outlinedBoxes": 4,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 5,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": {
+     "links": 0,
+     "fixed": false,
+     "height": 396,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "dm sans",
+     "fraunces"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "pageH": 956,
+    "margins": {
+     "left": 24,
+     "right": 77
+    },
+    "sections": [
+     {
+      "sel": "section.detail-hero",
+      "tag": "section",
+      "top": 83,
+      "height": 279,
+      "words": 38,
+      "media": 0,
+      "middle": 371,
+      "heading": {
+       "text": "The Lantern Keeper",
+       "size": 42,
+       "tag": "h1"
+      },
+      "left": 311,
+      "right": 124,
+      "textLeft": 311,
+      "textRight": 124,
+      "fullBleed": false,
+      "footer": false,
+      "hero": true,
+      "continues": false,
+      "pinned": false
+     },
+     {
+      "sel": "div.workspace-grid",
+      "tag": "div",
+      "top": 380,
+      "height": 528,
+      "words": 88,
+      "media": 0,
+      "middle": 309,
+      "heading": {
+       "text": "82%",
+       "size": 28,
+       "tag": "strong"
+      },
+      "left": 295,
+      "right": 77,
+      "textLeft": 295,
+      "textRight": 77,
+      "fullBleed": false,
+      "footer": true,
+      "hero": true,
+      "continues": false,
+      "pinned": false
+     }
+    ],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "The Lantern Keeper",
+      "size": 42,
+      "top": 171,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 311,
+      "n": 4
+     },
+     {
+      "x": 1081,
+      "n": 2
+     }
+    ],
+    "leftBlocks": 6,
+    "bodySize": 15,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0.11,
+    "voidBox": {
+     "x": 660,
+     "y": 300,
+     "w": 240,
+     "h": 600
+    }
+   },
+   "app": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "dark": false,
+    "ground": "#f5f1ef",
+    "sidebar": {
+     "w": 238,
+     "tag": "aside",
+     "links": 9,
+     "share": 0.17
+    },
+    "topbar": null,
+    "canvas": {
+     "left": 57,
+     "right": 77
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 1,
+     "size": 42,
+     "vw": 2.9,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 171,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 2,
+     "firstScreen": 2,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 8,
+     "radii": [
+      [
+       8,
+       5
+      ],
+      [
+       0,
+       3
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 28
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.34,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ]
+    },
+    "title": {
+     "text": "The Lantern Keeper",
+     "size": 42,
+     "top": 171
+    },
+    "colourShare": 0.088
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 768,
+   "height": 1024,
+   "load": "load",
+   "screens": 2,
+   "filled": [
+    1,
+    1
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "page": {
+     "height": 1617,
+     "screens": 1.6,
+     "words": 134,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 5,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 1,
+     "size": 42,
+     "vw": 5.5,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 161,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "lines": 1,
+     "size": 42,
+     "font": "DM Sans"
+    },
+    "headings": [
+     {
+      "text": "The Lantern Keeper",
+      "words": 3,
+      "chars": 18,
+      "lines": 1,
+      "size": 42,
+      "vw": 5.5,
+      "font": "DM Sans",
+      "weight": 600,
+      "tracking": -0.04,
+      "leading": 1.08,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.57,
+      "top": 161,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "Keep the light in the story.",
+      "words": 6,
+      "chars": 28,
+      "lines": 2,
+      "size": 26,
+      "vw": 3.4,
+      "font": "Fraunces",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 0.95,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.96,
+      "top": 352,
+      "tag": "div",
+      "kind": "heading"
+     },
+     {
+      "text": "82%",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 28,
+      "vw": 3.6,
+      "font": "DM Sans",
+      "weight": 700,
+      "tracking": -0.04,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.07,
+      "top": 1509,
+      "tag": "strong",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 3,
+     "maxLines": 2,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 1,
+     "medianWords": 6,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "DM Sans",
+       "share": 0.97,
+       "mono": false
+      },
+      {
+       "family": "Fraunces",
+       "share": 0.03,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ],
+     "sizeCount": 9,
+     "notLoaded": [],
+     "body": {
+      "font": "DM Sans",
+      "size": 15,
+      "leading": 1.5,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 12
+     },
+     "measureChars": 64,
+     "max": {
+      "size": 42,
+      "vw": 5.5,
+      "font": "DM Sans",
+      "text": "The Lantern Keeper"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.05,
+     "smallText": 12
+    },
+    "eyebrows": [
+     {
+      "text": "Production workspace · 18 days to opening",
+      "above": "The Lantern Keeper",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 15,
+      "top": 123
+     }
+    ],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f1ef",
+     "bodyBgHsl": {
+      "h": 20,
+      "s": 0.23,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#f3f3f1",
+       "top": 0,
+       "hsl": {
+        "h": 60,
+        "s": 0.08,
+        "l": 0.95
+       }
+      },
+      {
+       "color": "#ffffff",
+       "top": 0,
+       "hsl": {
+        "h": 0,
+        "s": 0,
+        "l": 1
+       }
+      },
+      {
+       "color": "#232122",
+       "top": 73,
+       "hsl": {
+        "h": 330,
+        "s": 0.03,
+        "l": 0.13
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#65615f",
+       "share": 0.34
+      },
+      {
+       "color": "#201d1e",
+       "share": 0.26
+      },
+      {
+       "color": "#eadcdf",
+       "share": 0.2
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.12
+      },
+      {
+       "color": "#4e4a4a",
+       "share": 0.07
+      }
+     ],
+     "button": {
+      "bg": "#242222",
+      "hsl": {
+       "h": 0,
+       "s": 0.03,
+       "l": 0.14
+      },
+      "fg": "#ffffff"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": 6,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Open call sheet"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 1,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 9,
+     "hairlineSamples": [
+      "div.tabs 736px",
+      "div.agenda-row 698px",
+      "div.agenda-row 698px",
+      "div.agenda-row 698px",
+      "div.task 698px"
+     ],
+     "outlinedBoxes": 4,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 5,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": {
+     "links": 0,
+     "fixed": false,
+     "height": 0,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "dm sans",
+     "fraunces"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "pageH": 1617,
+    "margins": {
+     "left": 35,
+     "right": 35
+    },
+    "sections": [
+     {
+      "sel": "section.detail-hero",
+      "tag": "section",
+      "top": 73,
+      "height": 539,
+      "words": 38,
+      "media": 0,
+      "middle": 0,
+      "heading": {
+       "text": "The Lantern Keeper",
+       "size": 42,
+       "tag": "h1"
+      },
+      "left": 51,
+      "right": 102,
+      "textLeft": 51,
+      "textRight": 102,
+      "fullBleed": false,
+      "footer": false,
+      "hero": true,
+      "continues": false,
+      "pinned": false
+     },
+     {
+      "sel": "div.workspace-grid",
+      "tag": "div",
+      "top": 630,
+      "height": 965,
+      "words": 88,
+      "media": 0,
+      "middle": 210,
+      "heading": {
+       "text": "Next up",
+       "size": 15,
+       "tag": "h2"
+      },
+      "left": 35,
+      "right": 35,
+      "textLeft": 35,
+      "textRight": 35,
+      "fullBleed": false,
+      "footer": true,
+      "hero": false,
+      "continues": false,
+      "pinned": false
+     }
+    ],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "The Lantern Keeper",
+      "size": 42,
+      "top": 161,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 51,
+      "n": 4
+     },
+     {
+      "x": 35,
+      "n": 2
+     }
+    ],
+    "leftBlocks": 6,
+    "bodySize": 15,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "dark": false,
+    "ground": "#f5f1ef",
+    "sidebar": null,
+    "topbar": null,
+    "canvas": {
+     "left": 35,
+     "right": 35
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 1,
+     "size": 42,
+     "vw": 5.5,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 161,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 5,
+     "firstScreen": 3,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 6,
+     "radii": [
+      [
+       8,
+       5
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 28
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.34,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ]
+    },
+    "title": {
+     "text": "The Lantern Keeper",
+     "size": 42,
+     "top": 161
+    },
+    "colourShare": 0.234
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 390,
+   "height": 844,
+   "load": "load",
+   "screens": 3,
+   "filled": [
+    1,
+    1,
+    1
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "page": {
+     "height": 1780,
+     "screens": 2.1,
+     "words": 134,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 5,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 2,
+     "size": 42,
+     "vw": 10.8,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 183,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "lines": 2,
+     "size": 42,
+     "font": "DM Sans"
+    },
+    "headings": [
+     {
+      "text": "The Lantern Keeper",
+      "words": 3,
+      "chars": 18,
+      "lines": 2,
+      "size": 42,
+      "vw": 10.8,
+      "font": "DM Sans",
+      "weight": 600,
+      "tracking": -0.04,
+      "leading": 1.08,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.74,
+      "top": 183,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "Keep the light in the story.",
+      "words": 6,
+      "chars": 28,
+      "lines": 2,
+      "size": 26,
+      "vw": 6.7,
+      "font": "Fraunces",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 0.95,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.92,
+      "top": 465,
+      "tag": "div",
+      "kind": "heading"
+     },
+     {
+      "text": "82%",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 28,
+      "vw": 7.2,
+      "font": "DM Sans",
+      "weight": 700,
+      "tracking": -0.04,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.14,
+      "top": 1654,
+      "tag": "strong",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 3,
+     "maxLines": 2,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 1,
+     "medianWords": 6,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "DM Sans",
+       "share": 0.97,
+       "mono": false
+      },
+      {
+       "family": "Fraunces",
+       "share": 0.03,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ],
+     "sizeCount": 9,
+     "notLoaded": [],
+     "body": {
+      "font": "DM Sans",
+      "size": 15,
+      "leading": 1.5,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 12
+     },
+     "measureChars": 38,
+     "max": {
+      "size": 42,
+      "vw": 10.8,
+      "font": "DM Sans",
+      "text": "The Lantern Keeper"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.05,
+     "smallText": 12
+    },
+    "eyebrows": [
+     {
+      "text": "Production workspace · 18 days to opening",
+      "above": "The Lantern Keeper",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 15,
+      "top": 123
+     }
+    ],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f1ef",
+     "bodyBgHsl": {
+      "h": 20,
+      "s": 0.23,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#f3f3f1",
+       "top": 0,
+       "hsl": {
+        "h": 60,
+        "s": 0.08,
+        "l": 0.95
+       }
+      },
+      {
+       "color": "#ffffff",
+       "top": 0,
+       "hsl": {
+        "h": 0,
+        "s": 0,
+        "l": 1
+       }
+      },
+      {
+       "color": "#232122",
+       "top": 73,
+       "hsl": {
+        "h": 330,
+        "s": 0.03,
+        "l": 0.13
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#65615f",
+       "share": 0.34
+      },
+      {
+       "color": "#201d1e",
+       "share": 0.26
+      },
+      {
+       "color": "#eadcdf",
+       "share": 0.2
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.12
+      },
+      {
+       "color": "#4e4a4a",
+       "share": 0.07
+      }
+     ],
+     "button": {
+      "bg": "#242222",
+      "hsl": {
+       "h": 0,
+       "s": 0.03,
+       "l": 0.14
+      },
+      "fg": "#ffffff"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": 6,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Open call sheet"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 1,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 9,
+     "hairlineSamples": [
+      "div.tabs 358px",
+      "div.agenda-row 320px",
+      "div.agenda-row 320px",
+      "div.agenda-row 320px",
+      "div.task 320px"
+     ],
+     "outlinedBoxes": 4,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 5,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": {
+     "links": 0,
+     "fixed": false,
+     "height": 0,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "dm sans",
+     "fraunces"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "pageH": 1780,
+    "margins": {
+     "left": 35,
+     "right": 35
+    },
+    "sections": [
+     {
+      "sel": "section.detail-hero",
+      "tag": "section",
+      "top": 73,
+      "height": 652,
+      "words": 38,
+      "media": 0,
+      "middle": 0,
+      "heading": {
+       "text": "The Lantern Keeper",
+       "size": 42,
+       "tag": "h1"
+      },
+      "left": 51,
+      "right": 56,
+      "textLeft": 51,
+      "textRight": 56,
+      "fullBleed": false,
+      "footer": false,
+      "hero": true,
+      "continues": false,
+      "pinned": false
+     },
+     {
+      "sel": "div.workspace-grid",
+      "tag": "div",
+      "top": 743,
+      "height": 1015,
+      "words": 88,
+      "media": 0,
+      "middle": 0,
+      "heading": {
+       "text": "Next up",
+       "size": 15,
+       "tag": "h2"
+      },
+      "left": 35,
+      "right": 35,
+      "textLeft": 35,
+      "textRight": 35,
+      "fullBleed": false,
+      "footer": true,
+      "hero": false,
+      "continues": false,
+      "pinned": false
+     }
+    ],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "The Lantern Keeper",
+      "size": 42,
+      "top": 183,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 51,
+      "n": 4
+     },
+     {
+      "x": 35,
+      "n": 2
+     }
+    ],
+    "leftBlocks": 6,
+    "bodySize": 15,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "dark": false,
+    "ground": "#f5f1ef",
+    "sidebar": null,
+    "topbar": null,
+    "canvas": {
+     "left": 35,
+     "right": 28
+    },
+    "hero": {
+     "text": "The Lantern Keeper",
+     "words": 3,
+     "chars": 18,
+     "lines": 2,
+     "size": 42,
+     "vw": 10.8,
+     "font": "DM Sans",
+     "weight": 600,
+     "tracking": -0.04,
+     "leading": 1.08,
+     "top": 183,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 5,
+     "firstScreen": 2,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 8,
+     "radii": [
+      [
+       8,
+       5
+      ],
+      [
+       0,
+       3
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 28
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.34,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      26,
+      28,
+      42
+     ]
+    },
+    "title": {
+     "text": "The Lantern Keeper",
+     "size": 42,
+     "top": 183
+    },
+    "colourShare": 0.267
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "WARN",
+   "id": "app-title-size",
+   "width": 1440,
+   "message": "The h1 is 42px (\"The Lantern Keeper\").",
+   "fix": "An app screen is not a landing page: the title is 18-32px (20-24px on a phone).",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "colour-sprawl",
+   "width": 768,
+   "message": "23% of the first screen is strongly coloured.",
+   "fix": "Keep the screen neutral and spend colour on data and status: the studied screens sit near 3%, and only tinted styles reach 10–15%, as pale tints rather than saturated fills.",
+   "alsoAt": [
+    390
+   ]
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/desktop-fold.jpg",
+   "pages": [
+    "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/desktop-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "tablet",
+   "width": 768,
+   "fold": "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/tablet-fold.jpg",
+   "pages": [
+    "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/tablet-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "mobile",
+   "width": 390,
+   "fold": "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/mobile-fold.jpg",
+   "pages": [
+    "/Applications/MAMP/htdocs/CTSMD/design-explorations/ctsmd-design-evolution/inspection-b-production/mobile-page-01.jpg"
+   ],
+   "film": []
+  }
+ ]
+}

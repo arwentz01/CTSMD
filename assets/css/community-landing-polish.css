@@ -1,0 +1,36 @@
+/* CTSMD Connect — Community landing belongs to the main app shell. */
+body[data-native-route="channels"] .comm-page.community-page{background:#f7f4f2!important;color:var(--ink)!important}
+body[data-native-route="channels"] .community-shell{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;gap:14px!important;overflow:visible!important}
+body[data-native-route="channels"] .community-rail{background:#fff!important;border:1px solid var(--line)!important;border-radius:16px!important;overflow:hidden!important;box-shadow:0 6px 22px rgba(42,29,34,.04)!important}
+body[data-native-route="channels"] .community-rail-head{background:linear-gradient(180deg,#fff,#fcfaf9)!important;border-bottom:1px solid var(--line)!important;padding:18px 18px 14px!important}
+body[data-native-route="channels"] .community-rail-head small{color:var(--red)!important;font-size:9px!important;font-weight:850!important;letter-spacing:.13em!important}
+body[data-native-route="channels"] .community-rail-head h2{color:var(--ink)!important;font-family:Georgia,serif!important;font-size:28px!important;margin:4px 0 3px!important}
+body[data-native-route="channels"] .community-rail-head p{color:var(--muted)!important;font-size:11px!important;margin:0!important}
+body[data-native-route="channels"] .community-rail-head a{display:inline-flex!important;margin-top:9px!important;color:var(--red)!important;font-size:10px!important;font-weight:800!important}
+body[data-native-route="channels"] .community-rail-list{background:#fff!important;border:0!important}
+body[data-native-route="channels"] .community-rail-item{background:#fff!important;color:var(--ink)!important;border-top:1px solid #f0eaec!important;padding:12px 14px!important;min-height:54px!important;transition:background .15s ease,box-shadow .15s ease!important}
+body[data-native-route="channels"] .community-rail-item:first-child{border-top:0!important}
+body[data-native-route="channels"] .community-rail-item:hover{background:#faf6f7!important}
+body[data-native-route="channels"] .community-rail-item.active{background:#f8edef!important;box-shadow:inset 3px 0 0 var(--red)!important}
+body[data-native-route="channels"] .community-rail-item>span{color:var(--red)!important;font-size:17px!important}
+body[data-native-route="channels"] .community-rail-item b{color:var(--ink)!important;font-size:13px!important}
+body[data-native-route="channels"] .community-rail-item small{color:var(--muted)!important;font-size:9px!important}
+body[data-native-route="channels"] .community-rail-item em{background:var(--red)!important;color:#fff!important;border-radius:999px!important;min-width:20px!important;height:20px!important;padding:0 6px!important;display:grid!important;place-items:center!important;font-size:8px!important;font-style:normal!important;font-weight:850!important}
+body[data-native-route="channels"] .community-pane{background:#fff!important;border:1px solid var(--line)!important;border-radius:16px!important;overflow:hidden!important;box-shadow:0 6px 22px rgba(42,29,34,.04)!important}
+body[data-native-route="channels"] .community-pane-head{background:#fff!important;border-bottom:1px solid var(--line)!important}
+body[data-native-route="channels"] .community-pane-feed{background:#fff!important}
+
+@media(max-width:780px){
+  body[data-native-route="channels"]{background:#f7f4f2!important;color:var(--ink)!important}
+  body[data-native-route="channels"] .unified-main{background:#f7f4f2!important}
+  body[data-native-route="channels"] .comm-page.community-page{padding:10px 12px calc(82px + env(safe-area-inset-bottom))!important}
+  body[data-native-route="channels"] .community-shell{display:block!important;background:transparent!important;border:0!important;border-radius:0!important}
+  body[data-native-route="channels"] .community-rail{border-radius:16px!important;border:1px solid var(--line)!important;background:#fff!important}
+  body[data-native-route="channels"] .community-rail-head{padding:16px 15px 13px!important;background:#fff!important}
+  body[data-native-route="channels"] .community-rail-head h2{font-size:25px!important;color:var(--ink)!important}
+  body[data-native-route="channels"] .community-rail-head p{color:var(--muted)!important}
+  body[data-native-route="channels"] .community-rail-list{background:#fff!important}
+  body[data-native-route="channels"] .community-rail-item{padding:12px 13px!important;background:#fff!important;color:var(--ink)!important}
+  body[data-native-route="channels"] .community-rail-item.active{background:#f8edef!important;box-shadow:inset 3px 0 0 var(--red)!important}
+  body[data-native-route="channels"] .community-pane{display:none!important}
+}

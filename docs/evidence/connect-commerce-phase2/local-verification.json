@@ -1,0 +1,192 @@
+{
+  "checked_at_utc": "2026-10-31T14:38:34.860962+00:00",
+  "environment": "isolated loopback rc1-test schema; synthetic accounts only",
+  "working_tree_validation": true,
+  "deployed": false,
+  "remote_ci_verified": false,
+  "commerce_suites": [
+    {
+      "suite": "commerce_foundation",
+      "exit_code": 0,
+      "summary": "PASS 10 Commerce foundation checks"
+    },
+    {
+      "suite": "commerce_hosted",
+      "exit_code": 0,
+      "summary": "PASS 11 hosted Commerce access checks"
+    },
+    {
+      "suite": "commerce_hosted_http",
+      "exit_code": 0,
+      "summary": "PASS 22 hosted HTTP checks"
+    },
+    {
+      "suite": "commerce_venues",
+      "exit_code": 0,
+      "summary": "PASS 12 venue checks"
+    },
+    {
+      "suite": "commerce_landmarks",
+      "exit_code": 0,
+      "summary": "PASS 8 landmark checks"
+    },
+    {
+      "suite": "commerce_inventory",
+      "exit_code": 0,
+      "summary": "PASS 18 inventory checks"
+    },
+    {
+      "suite": "commerce_quantities",
+      "exit_code": 0,
+      "summary": "PASS 16 ticket quantity checks"
+    },
+    {
+      "suite": "commerce_recommendations",
+      "exit_code": 0,
+      "summary": "PASS 20 recommendation checks"
+    },
+    {
+      "suite": "commerce_concurrency",
+      "exit_code": 0,
+      "summary": "PASS Real competing processes: exactly one hold, one rejection"
+    },
+    {
+      "suite": "commerce_payments",
+      "exit_code": 0,
+      "summary": "PASS 34 payment and receipt checks"
+    },
+    {
+      "suite": "commerce_complimentary",
+      "exit_code": 0,
+      "summary": "PASS 28 complimentary assertions"
+    },
+    {
+      "suite": "commerce_tickets",
+      "exit_code": 0,
+      "summary": "PASS 20 ticket and authorization checks"
+    },
+    {
+      "suite": "commerce_http",
+      "exit_code": 0,
+      "summary": "PASS 42 Commerce HTTP/security checks"
+    },
+    {
+      "suite": "commerce_box_office",
+      "exit_code": 0,
+      "summary": "PASS 27 Box Office checks"
+    },
+    {
+      "suite": "commerce_admissions",
+      "exit_code": 0,
+      "summary": "PASS 11 admission checks"
+    },
+    {
+      "suite": "commerce_ticket_changes",
+      "exit_code": 0,
+      "summary": "PASS 15 ticket-change checks"
+    },
+    {
+      "suite": "commerce_channel_concurrency",
+      "exit_code": 0,
+      "summary": "PASS mixed_ga_sale: one sale, one rejection, valid admission, duplicate scan denied, audited reversal/refund and inventory release"
+    },
+    {
+      "suite": "commerce_phase2_http",
+      "exit_code": 0,
+      "summary": "PASS 28 Phase 2 HTTP checks"
+    }
+  ],
+  "php_safety": [
+    {
+      "suite": "tests/pilot_production_directory.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_lifecycle_write_boundaries.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/adult_participation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_closed_production_roster.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_closed_forms.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_member_roster_media.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_community_video_links.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_action_visibility.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_operational_presentation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/ux_operations_contract.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/navigation_controls.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/homepage_presentation.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/community_search.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/safeguarding_conversation_review.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_video_privacy.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_lifecycle.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_rate_limit.php",
+      "exit_code": 0
+    },
+    {
+      "suite": "tests/pilot_volunteer_cancellation.php",
+      "exit_code": 0
+    }
+  ],
+  "additional_checks": [
+    "copied-local hosted HTTP: 22 passed",
+    "PHP lint of changed/new PHP files",
+    "JS syntax and geometry regression",
+    "12 real Apache camera-policy cases",
+    "30 RC1 tooling safety contracts"
+  ],
+  "rendered_checks": {
+    "desktop_width": 1440,
+    "mobile_width": 390,
+    "tablet_width": 1024,
+    "keyboard": "Space toggles native seat checkbox, selection summary updates, solid focus outline",
+    "purchases": [
+      "customer simulation: 2 tickets, USD 42.87",
+      "staff cash: USD 21.67, USD 25.00 received, USD 3.33 change"
+    ],
+    "actual_device_tested": false
+  },
+  "implementation_revision": "98035b2cd2ab9504d1aaa5f1ce71aeb8045a7b9a"
+}

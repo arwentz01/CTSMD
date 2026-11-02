@@ -1,0 +1,91 @@
+{
+  "environment": "Isolated loopback MySQL; synthetic data only",
+  "remote_ci": "Configured, not asserted here",
+  "results": [
+    {
+      "test": "commerce_foundation",
+      "result": "PASS",
+      "summary": "PASS 10 Commerce foundation checks"
+    },
+    {
+      "test": "commerce_venues",
+      "result": "PASS",
+      "summary": "PASS 12 venue checks"
+    },
+    {
+      "test": "commerce_inventory",
+      "result": "PASS",
+      "summary": "PASS 18 inventory checks"
+    },
+    {
+      "test": "commerce_concurrency",
+      "result": "PASS",
+      "summary": "PASS Real competing processes: exactly one hold, one rejection"
+    },
+    {
+      "test": "commerce_payments",
+      "result": "PASS",
+      "summary": "PASS 34 payment and receipt checks"
+    },
+    {
+      "test": "commerce_tickets",
+      "result": "PASS",
+      "summary": "PASS 20 ticket and authorization checks"
+    },
+    {
+      "test": "commerce_http",
+      "result": "PASS",
+      "summary": "PASS 23 Commerce HTTP/security checks"
+    },
+    {
+      "test": "safeguarded_conversation",
+      "result": "PASS",
+      "summary": "PASS: 36 safeguarding checks (real database transaction rolled back)."
+    },
+    {
+      "test": "adult_participation_mysql",
+      "result": "PASS",
+      "summary": "PASS 83 migrated MySQL participation assertions; synthetic records only."
+    },
+    {
+      "test": "adult_participation_concurrency",
+      "result": "PASS",
+      "summary": "PASS 16 real multiprocess MySQL concurrency assertions; no delivery workers or live accounts."
+    },
+    {
+      "test": "production_people_mysql",
+      "result": "PASS",
+      "summary": "PASS 56 production people MySQL assertions; isolated synthetic fixtures only."
+    },
+    {
+      "test": "my_theatre_mysql",
+      "result": "PASS",
+      "summary": "PASS 30 My Theatre persona/authorization assertions."
+    },
+    {
+      "test": "my_theatre_http",
+      "result": "PASS",
+      "summary": "PASS 131 authenticated My Theatre HTTP assertions."
+    },
+    {
+      "test": "playbill_studio_mysql",
+      "result": "PASS",
+      "summary": "PASS 20 Playbill Studio MySQL assertions."
+    },
+    {
+      "test": "playbill_studio_http",
+      "result": "PASS",
+      "summary": "PASS 46 Playbill Studio authenticated HTTP assertions."
+    },
+    {
+      "test": "rc1_acceptance",
+      "result": "PASS",
+      "summary": "173 real HTTP/native assertions, seven personas, two productions, fresh schema"
+    },
+    {
+      "test": "adult_performer_migration",
+      "result": "PASS",
+      "summary": "9 forward migration assertions with explicit MAMP client"
+    }
+  ]
+}

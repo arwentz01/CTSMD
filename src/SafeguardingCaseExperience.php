@@ -1,0 +1,137 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/WorkspaceUI.php';
+
+require_once __DIR__.'/Database.php';
+require_once __DIR__.'/Auth.php';
+require_once __DIR__.'/AccessPolicy.php';
+require_once __DIR__.'/AppNavigation.php';
+require_once __DIR__.'/SafeguardingCaseService.php';
+require_once __DIR__.'/SafeguardingStatementService.php';
+
+final class SafeguardingCaseExperience
+{
+    private const ROUTES=['/safeguarding/cases','/safeguarding/case'];
+    public static function handles(string $route):bool{return in_array($route,self::ROUTES,true);}
+
+    public static function render(string $route,string $basePath):never
+    {
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user||!AccessPolicy::canManageSafeguarding($user))self::forbidden();
+        $_SESSION['safeguarding_case_csrf']??=bin2hex(random_bytes(24));
+        if($_SERVER['REQUEST_METHOD']==='POST')self::post($db,$user,$basePath);
+        if($route==='/safeguarding/case'){
+            $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$case=SafeguardingCaseService::caseById($db,(int)$id);if(!$case)self::notFound($basePath,$user);
+            self::casePage($basePath,$user,$case,SafeguardingCaseService::safeguardingUsers($db),SafeguardingStatementService::requests($db,$user,(int)$id),SafeguardingStatementService::recipientOptions($db,$user));
+        }
+        self::queuePage($basePath,$user,SafeguardingCaseService::queue($db),SafeguardingCaseService::safeguardingUsers($db),SafeguardingCaseService::people($db),SafeguardingCaseService::productions($db));
+    }
+
+    private static function post(PDO $db,array $user,string $basePath):never
+    {
+        if(!hash_equals((string)($_SESSION['safeguarding_case_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired. Please try again.');self::redirect($basePath.'/safeguarding/cases');}
+        try{
+            $action=(string)($_POST['action']??'');
+            if($action==='create_case'){$id=SafeguardingCaseService::create($db,$user,$_POST);self::flash('success','Restricted safeguarding case created.');self::redirect($basePath.'/safeguarding/case?id='.$id);}
+            if($action==='save_shared_description'){$id=filter_input(INPUT_POST,'case_id',FILTER_VALIDATE_INT)?:0;SafeguardingStatementService::saveSharedDescription($db,$user,(int)$id,(string)($_POST['shared_description']??''));self::flash('success','Recipient-facing description saved.');self::redirect($basePath.'/safeguarding/case?id='.$id);}
+            if($action==='request_statement'){$id=filter_input(INPUT_POST,'case_id',FILTER_VALIDATE_INT)?:0;SafeguardingStatementService::invite($db,$user,(int)$id,$_POST,$basePath);self::flash('success','Private statement request queued for email delivery.');self::redirect($basePath.'/safeguarding/case?id='.$id);}
+            if($action==='revoke_statement'){$id=filter_input(INPUT_POST,'case_id',FILTER_VALIDATE_INT)?:0;SafeguardingStatementService::revoke($db,$user,(int)$id,(int)($_POST['request_id']??0));self::flash('success','Pending statement invitation revoked.');self::redirect($basePath.'/safeguarding/case?id='.$id);}
+            if($action==='update_case'){$id=filter_input(INPUT_POST,'case_id',FILTER_VALIDATE_INT)?:0;SafeguardingCaseService::update($db,$user,(int)$id,$_POST);self::flash('success','Safeguarding case updated.');self::redirect($basePath.'/safeguarding/case?id='.(int)$id);}
+            throw new RuntimeException('Choose a valid safeguarding action.');
+        }catch(RuntimeException $e){self::flash('error',$e->getMessage());$id=filter_input(INPUT_POST,'case_id',FILTER_VALIDATE_INT)?:0;self::redirect($basePath.($id?'/safeguarding/case?id='.(int)$id:'/safeguarding/cases'));}
+    }
+
+    private static function queuePage(string $basePath,array $user,array $cases,array $leads,array $people,array $productions):never
+    {
+        $u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=self::takeFlash();$open=count(array_filter($cases,static fn(array $c):bool=>in_array($c['status'],['open','in_review','action_required','monitoring'],true)));$urgent=count(array_filter($cases,static fn(array $c):bool=>$c['priority']==='urgent'&&!in_array($c['status'],['resolved','closed'],true)));
+        $sub=[
+            ['label'=>'Cases','href'=>'/safeguarding/cases','active'=>true],
+            ['label'=>'Conversation review','href'=>'/safeguarding/conversations','active'=>false],
+            ['label'=>'Credential & integrity review','href'=>'/safeguarding','active'=>false],
+            ['label'=>'Audit history','href'=>'/safeguarding/audit','active'=>false],
+        ];
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Safeguarding cases · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/safeguarding-cases.css')?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar('/safeguarding/cases',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Restricted operations','Safeguarding cases',$basePath,$sub);?><div class="sgc-page ops-page"><?php if($flash):?><div class="sgc-flash <?=$e($flash['type'])?>"><?=$e($flash['message'])?></div><?php endif;?><section class="sgc-hero ops-heading"><div><small>RESTRICTED CASE WORKSPACE</small><h2>Document actions. Preserve a clear timeline.</h2><p>Safeguarding cases are visible only to authorized safeguarding personnel. Keep entries factual, relevant, and limited to what the review requires.</p></div><div class="sgc-metrics"><span><b><?=$open?></b> open</span><span><b><?=$urgent?></b> urgent</span></div></section><div class="sgc-layout"><section class="sgc-panel ops-panel"><header><div><small>CASE QUEUE</small><h3>Restricted reviews</h3></div><span><?=count($cases)?> total</span></header><?php if(!$cases):?><div class="sgc-empty"><b>No safeguarding cases.</b><p>The case queue is clear.</p></div><?php endif;?><?php foreach($cases as $case):?><a class="sgc-case <?=$e((string)$case['priority'])?>" href="<?=$u('/safeguarding/case?id='.(int)$case['id'])?>"><div><small><?=$e((string)($case['case_code']?:'CASE'))?> · <?=$e(strtoupper(str_replace('_',' ',(string)$case['status'])))?></small><h4><?=$e((string)$case['title'])?></h4><p><?=$e((string)$case['category'])?><?=$case['production_title']?' · '.$e((string)$case['production_title']):''?></p><span><?=$case['assignee_name']?'Assigned to '.$e((string)$case['assignee_name']):'Unassigned'?></span></div><em><?=$e(strtoupper((string)$case['priority']))?></em></a><?php endforeach;?></section><aside class="sgc-panel ops-panel"><header><div><small>NEW CASE</small><h3>Create restricted review</h3></div></header><form method="post" class="sgc-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['safeguarding_case_csrf'])?>"><input type="hidden" name="action" value="create_case"><label>Case title<input name="title" maxlength="190" required></label><label>Category<input name="category" maxlength="100" placeholder="Communication, conduct, supervision…" required></label><label>Priority<select name="priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label><label>Production <small>optional</small><select name="production_id"><option value="">Organization-wide / none</option><?php foreach($productions as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['title'])?><?=$p['season']?' · '.$e((string)$p['season']):''?></option><?php endforeach;?></select></label><label>Person involved <small>optional</small><select name="subject_user_id"><option value="">No single person</option><?php foreach($people as $p):?><option value="<?=(int)$p['id']?>"><?=$e((string)$p['name'])?> · <?=$e((string)$p['role'])?></option><?php endforeach;?></select></label><label>Assigned safeguarding lead<select name="assigned_to_user_id"><option value="">Unassigned</option><?php foreach($leads as $lead):?><option value="<?=(int)$lead['id']?>"><?=$e((string)$lead['name'])?></option><?php endforeach;?></select></label><label>Occurred at <small>optional</small><input type="datetime-local" name="occurred_at"></label><label>Factual summary<textarea name="summary" rows="7" maxlength="10000" required></textarea></label><button class="button" type="submit">Create restricted case</button></form></aside></div>
+        </div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+
+    private static function casePage(string $basePath,array $user,array $case,array $leads,array $requests,array $recipients):never
+    {
+        $u=static fn(string $p):string=>($basePath?:'').$p;$e=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8');$flash=self::takeFlash();$sub=[['label'=>'Cases','href'=>'/safeguarding/cases','active'=>false],['label'=>(string)($case['case_code']?:'Case'),'href'=>'/safeguarding/case?id='.(int)$case['id'],'active'=>true],['label'=>'Audit history','href'=>'/safeguarding/audit','active'=>false]];
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=$e((string)$case['case_code'])?> · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/safeguarding-cases.css')?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar('/safeguarding/case',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Restricted safeguarding',(string)$case['case_code'],$basePath,$sub);?><div class="sgc-page ops-page"><?php if($flash):?><div class="sgc-flash <?=$e($flash['type'])?>"><?=$e($flash['message'])?></div><?php endif;?><section class="sgc-case-hero ops-heading <?=$e((string)$case['priority'])?>"><div><small><?=$e(strtoupper((string)$case['category']))?></small><h2><?=$e((string)$case['title'])?></h2><p><?=$e((string)$case['summary'])?></p></div><div><span><?=$e(strtoupper(str_replace('_',' ',(string)$case['status'])))?></span><b><?=$e(strtoupper((string)$case['priority']))?></b></div></section><div class="sgc-layout"><section class="sgc-panel ops-panel"><header><div><small>CASE TIMELINE</small><h3>Restricted actions & notes</h3></div></header><?php foreach($case['events'] as $event):?><article class="sgc-event"><i><?=$e((string)$event['initials'])?></i><div><header><b><?=$e((string)$event['actor_name'])?></b><time><?=date('M j, Y · g:i A',strtotime((string)$event['created_at']))?></time></header><small><?=$e(strtoupper(str_replace('_',' ',(string)$event['event_type'])))?><?php if($event['status_from']||$event['status_to']):?> · <?=$e((string)$event['status_from'])?> → <?=$e((string)$event['status_to'])?><?php endif;?></small><p><?=nl2br($e((string)$event['note']))?></p></div></article><?php endforeach;?></section><aside class="sgc-panel ops-panel"><header><div><small>CASE CONTROL</small><h3>Update review</h3></div></header><dl class="sgc-facts"><div><dt>Reported by</dt><dd><?=$e((string)$case['reporter_name'])?></dd></div><?php if($case['subject_name']):?><div><dt>Person</dt><dd><?=$e((string)$case['subject_name'])?></dd></div><?php endif;?><?php if($case['production_title']):?><div><dt>Production</dt><dd><?=$e((string)$case['production_title'])?></dd></div><?php endif;?><div><dt>Reported</dt><dd><?=date('M j, Y · g:i A',strtotime((string)$case['reported_at']))?></dd></div></dl><form method="post" class="sgc-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['safeguarding_case_csrf'])?>"><input type="hidden" name="action" value="update_case"><input type="hidden" name="case_id" value="<?=(int)$case['id']?>"><label>Status<select name="status"><?php foreach(['open'=>'Open','in_review'=>'In review','action_required'=>'Action required','monitoring'=>'Monitoring','resolved'=>'Resolved','closed'=>'Closed'] as $value=>$label):?><option value="<?=$value?>"<?=$case['status']===$value?' selected':''?>><?=$label?></option><?php endforeach;?></select></label><label>Priority<select name="priority"><?php foreach(['low'=>'Low','medium'=>'Medium','high'=>'High','urgent'=>'Urgent'] as $value=>$label):?><option value="<?=$value?>"<?=$case['priority']===$value?' selected':''?>><?=$label?></option><?php endforeach;?></select></label><label>Assigned safeguarding lead<select name="assigned_to_user_id"><option value="">Unassigned</option><?php foreach($leads as $lead):?><option value="<?=(int)$lead['id']?>"<?=((int)($case['assigned_to_user_id']??0)===(int)$lead['id'])?' selected':''?>><?=$e((string)$lead['name'])?></option><?php endforeach;?></select></label><label>Restricted note<textarea name="note" rows="6" maxlength="10000" placeholder="Record the action, observation, or rationale for this update."></textarea></label><button class="button" type="submit">Save case update</button></form></aside></div>
+<section class="sgc-panel ops-panel sgc-statements" id="case-statements">
+  <header class="sgc-statements-top">
+    <div><small>STATEMENTS &amp; PERSPECTIVES</small><h3>Statements</h3><p>Request confidential accounts and review responses attached to this case.</p></div>
+    <span class="sgc-statements-count"><?=count($requests)?> request<?=count($requests)===1?'':'s'?> · <?=count(array_filter($requests,static fn(array $r):bool=>$r['submitted_at']!==null))?> received</span>
+  </header>
+  <details class="sgc-request-disclosure" id="sgc-request-disclosure">
+    <summary><span><strong>+ Request a statement</strong><small>Choose a person, review the limited incident context, then send a private invitation</small></span><span class="sgc-disclosure-caret" aria-hidden="true">⌄</span></summary>
+    <div class="sgc-request-content">
+      <p class="sgc-statement-note">Recipients cannot view restricted case notes, other witnesses' responses, or the internal case summary. Each invitation uses its own snapshot.</p>
+      <form method="post" class="sgc-form ops-form sgc-statement-request-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['safeguarding_case_csrf'])?>"><input type="hidden" name="case_id" value="<?=(int)$case['id']?>"><input type="hidden" name="action" value="request_statement"><label>Find a recipient<input id="sgc-recipient-filter" type="search" placeholder="Search by name or email…" autocomplete="off"></label><label>Recipient from CTSMD
+<select name="recipient_choice" id="sgc-recipient-choice" required>
+<option value="">Choose participant, guardian or staff…</option>
+<optgroup label="CTSMD adults and staff"><?php foreach($recipients['adults'] as $person):?><option value="adult:<?=(int)$person['id']?>" data-name="<?=$e((string)$person['name'])?>" data-email="<?=$e((string)$person['email'])?>"><?=$e((string)$person['name'])?> · <?=$e((string)$person['email'])?></option><?php endforeach;?></optgroup>
+<optgroup label="Students — email their guardian"><?php foreach($recipients['families'] as $family):?><option value="guardian:<?=(int)$family['guardian_id']?>:<?=(int)$family['student_id']?>" data-name="<?=$e((string)$family['guardian_name'])?>" data-email="<?=$e((string)$family['guardian_email'])?>"><?=$e((string)$family['student_name'])?> — via <?=$e((string)$family['guardian_name'])?></option><?php endforeach;?></optgroup>
+<option value="manual">External witness or other person (manual email)</option>
+</select></label>
+<p class="sgc-statement-note" id="sgc-recipient-preview" aria-live="polite">Select a recipient to preview delivery.</p>
+<div id="sgc-recipient-manual" hidden><label>External recipient name<input name="recipient_name" maxlength="190"></label><label>External recipient email<input name="recipient_email" type="email" maxlength="254"></label></div><label>Shared case name<input name="shared_title" maxlength="190" required value="<?=$e('CTSMD incident review · '.(string)($case['case_code']??''))?>"></label><label>Brief description shown to recipient<textarea name="shared_description" rows="4" maxlength="2000" required><?=$e((string)($case['shared_incident_description']??''))?></textarea></label><p class="sgc-statement-note">The recipient also sees the incident date/time and production, where recorded. Review these details before sending. Guardian delivery is required for children.</p><label>Invitation expiry<select name="expires_in_days"><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option></select></label><button class="button" type="submit"<?=$case['status']==='closed'?' disabled':''?>>Email private statement request</button></form>
+    </div>
+  </details>
+  <div class="sgc-request-history">
+    <div class="sgc-request-history-title"><h4>Request history</h4><small>Responses are preserved as submitted</small></div>
+    <?php if(!$requests):?><div class="sgc-request-empty">No statements requested for this case yet.</div><?php endif;?>
+    <?php foreach($requests as $request):?>
+      <article class="sgc-statement-record">
+        <div class="sgc-statement-heading">
+          <div><b><?=$e($request['recipient_name'])?></b><small><?=$e($request['recipient_email'])?></small></div>
+          <div class="sgc-statement-meta"><strong><?=$request['submitted_at']?'Received':($request['status']==='pending'&&strtotime($request['expires_at'])<=time()?'Expired':ucfirst($e($request['status'])))?></strong><small>Invited <?=$e(date('M j, Y · g:i A',strtotime($request['invited_at'])))?></small><small>Email: <?=$e((string)($request['delivery_status']??'queued'))?></small></div>
+        </div>
+        <?php if($request['submitted_at']):?>
+          <details class="sgc-response-disclosure"><summary>View submitted statement <span><?=$e(date('M j, Y · g:i A',strtotime($request['submitted_at'])))?></span></summary>
+          <div class="sgc-statement-readonly"><p><b>Submitted:</b> <?=$e(date('M j, Y · g:i:s A',strtotime($request['submitted_at'])))?> · <b>Attested by:</b> <?=$e($request['attested_name'])?></p><h4>First-person account</h4><p><?=nl2br($e($request['statement_body']))?></p><?php if($request['statement_witnesses']):?><h4>Others present</h4><p><?=nl2br($e($request['statement_witnesses']))?></p><?php endif;?><?php if($request['statement_followup']):?><h4>Additional information</h4><p><?=nl2br($e($request['statement_followup']))?></p><?php endif;?></div></details>
+        <?php elseif($request['status']==='pending'&&strtotime($request['expires_at'])>time()):?>
+          <div class="sgc-pending-actions"><small>Expires <?=$e(date('M j, Y · g:i A',strtotime($request['expires_at'])))?></small>
+          <form method="post" class="sgc-form ops-form"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['safeguarding_case_csrf'])?>"><input type="hidden" name="case_id" value="<?=(int)$case['id']?>"><input type="hidden" name="request_id" value="<?=(int)$request['id']?>"><button type="submit" name="action" value="revoke_statement" class="button secondary">Revoke</button></form></div>
+        <?php endif;?>
+      </article>
+    <?php endforeach;?>
+  </div>
+</section>
+        <script>(function(){
+const s=document.getElementById('sgc-recipient-choice'),m=document.getElementById('sgc-recipient-manual'),p=document.getElementById('sgc-recipient-preview'),filter=document.getElementById('sgc-recipient-filter');
+if(!s||!m||!p||!filter)return;
+const fields=[...m.querySelectorAll('input')];
+const original=[...s.children].map(node=>node.cloneNode(true));
+function sync(){
+ const manual=s.value==='manual',o=s.selectedOptions[0];
+ m.hidden=!manual;
+ for(const f of fields){f.disabled=!manual;f.required=manual;}
+ p.textContent=manual?'Enter and verify the external recipient email.':s.value?'Invitation email to '+o.dataset.name+' ('+o.dataset.email+').':'Select a recipient to preview delivery.';
+}
+function search(){
+ const q=filter.value.trim().toLocaleLowerCase(),selected=s.value;
+ s.replaceChildren();
+ for(const item of original){
+   if(item.tagName==='OPTGROUP'){
+     const copy=item.cloneNode(false);
+     for(const o of item.children){if(!q||o.textContent.toLocaleLowerCase().includes(q))copy.appendChild(o.cloneNode(true));}
+     if(copy.children.length)s.appendChild(copy);
+   }else{s.appendChild(item.cloneNode(true));}
+ }
+ if([...s.options].some(o=>o.value===selected))s.value=selected;else s.value='';
+ sync();
+}
+s.addEventListener('change',sync);
+filter.addEventListener('input',search);
+sync();
+})();</script></div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+    }
+
+    private static function flash(string $type,string $message):void{$_SESSION['safeguarding_case_flash']=['type'=>$type,'message'=>$message];}
+    private static function takeFlash():?array{$v=$_SESSION['safeguarding_case_flash']??null;unset($_SESSION['safeguarding_case_flash']);return is_array($v)?$v:null;}
+    private static function redirect(string $url):never{header('Location: '.$url,true,303);exit;}
+    private static function forbidden():never{http_response_code(403);exit('Safeguarding authority is required.');}
+    private static function notFound(string $basePath,array $user):never{http_response_code(404);$u=($basePath?:'').'/safeguarding/cases';echo '<!doctype html><meta charset="utf-8"><title>Case not found</title><p>This safeguarding case is not available.</p><p><a href="'.htmlspecialchars($u,ENT_QUOTES,'UTF-8').'">Return to safeguarding cases</a></p>';exit;}
+}

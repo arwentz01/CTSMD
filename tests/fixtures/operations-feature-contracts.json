@@ -1,0 +1,97 @@
+{
+    "AccountManagementExperience": {
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "65d623817ad824326bce41d0e5834fb4fca8bd82039f9134e793e77f8b80d880",
+        "forms": "52b3553b6c92b3b053e0e5cd2df85ed96becc04eb5317cf0cf1f09a12de83347"
+    },
+    "ProductionLifecycleExperience": {
+        "reason": "Preserve reviewed upstream fd94feb/786e392/4238a55: publication poster explanation, optional external Playbill editor and missing-storage fallback; source unchanged by Commerce. docs/CONNECT_COMMERCE.md",
+        "php": "44321d11eacab99ec099e7296f3897b5775e5a4a8f13149c618f1a2f7078eca3",
+        "forms": "d22b207bd629f2981660a597767a5da3a6b6201d8083108c5e0ef730b87d5ff5"
+    },
+    "CastingExperience": {
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "acf58d9f409a0630b51deb0d6808bdc5521df564c71b0e30295f873a460f7bb7",
+        "forms": "43874678adb765664c39ebf0911bb7000365c12cde4326c33d1ea783c0bdcac7"
+    },
+    "ProductionPeopleExperience": {
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "e15ba41d50d5bb53ae6f3d0dd759b7c23e409ce7c60656a247cbeb51269fa745",
+        "forms": "ed4dc9ce9e776a783988b2c1f0bcc1d42ed94a02e84fc1a68e1ba3ff1b3eb1fb"
+    },
+    "StudentProfileExperience": {
+        "reason": "My Theatre batches D/E: Information-first performer summary and intentional native profile editing disclosure; original submission protocol retained. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "2563c552e219dd0c4712bc1e2c44a6c65ae2beedc6c8b67b027b011fd90072d0",
+        "forms": "8de6fa701c6b8cd352307bef0b21050f520a6e2188343e858a1fa53dfbbdf4d1"
+    },
+    "ResourceExperience": {
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "494fbac4f00e8646162dbf49e3caa68948c171155e10976b95cebe58f2c48c02",
+        "forms": "47c38d6936210c02844db70e9bbbf2aa20ebf763273babc61cf6d57ca7ba3fea"
+    },
+    "ProductionFileExperience": {
+        "reason": "Adult participation final integration: reviewed transitions, independent family audiences, functions and candidate eligibility; see architecture",
+        "php": "30dafc2343601eb6f72bc80525d4f23d61c336855449c8fc59f522a3193aacbd",
+        "forms": "e30b9f7e8c961a61ba8a6175e6f1fee0d1541aaf0fefe4f32471c427f7db55bd"
+    },
+    "PlaybillExperience": {
+        "reason": "Unified Playbill Studio: scoped editing, private shared-renderer preview, consent and explicit publication gates. docs/PLAYBILL_STUDIO.md",
+        "php": "bad0f8b8f18469953ef08f212aad1573d2fbbee4bdb435ad26212192d166b4f2",
+        "forms": "959ae161a81ca7d71e717cb210751989b3870c6affc7dcd2ecaf0f9060f028b4"
+    },
+    "ProductionGroupExperience": {
+        "reason": "Adult Performer correction: existing role administration, shared performer queries and retained profiles; docs/ADULT_PARTICIPATION_ARCHITECTURE.md",
+        "php": "1e8a5ab2e250d0f7c36e5650e73926caaed2f3b56d53bff593e41db7a35d4165",
+        "forms": "77ee0fb4a0cd9d9b0151259ecd54079142ebb58bd4c77be9076b61e86e715d7e"
+    },
+    "OperationsHubExperience": {
+        "reason": "Hosted administrator-only Commerce preview stays visible before optional Commerce schema/owner setup. Non-admin hosted access denied. docs/CONNECT_COMMERCE.md",
+        "php": "555ad37d0da235ba59d1a411d2e34d731ecfa38b5d9812a4f2cad794994f4019",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "ProductionWorkspaceExperience": {
+        "reason": "Production People redesign: roster/team ownership, account-owned Staff access and reviewed team publication snapshots. docs/PRODUCTION_PEOPLE_REDESIGN.md",
+        "php": "db85eeb734a31d8eef26cb986aa0b0bd01158c6fc7ac96c726a8583f7e05f31a",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "Playbill2Experience": {
+        "reason": "Unified Playbill Studio: scoped editing, private shared-renderer preview, consent and explicit publication gates. docs/PLAYBILL_STUDIO.md",
+        "php": "3c780539cf94fb4ca30e72d608b94e5ddab20072d73ee3ee7c1b8613d8636cb6",
+        "forms": "77a128a70a8ac7a4a26a203cdc598fd95c2329282e6299c5243d9a9c1c471bdd"
+    },
+    "CalendarExperience": {
+        "reason": "My Theatre C: personal household calendar context and authorized event detail; pending actions exclude submitted forms and Student offers retain guardian response authority. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "69e8f4860c310a3c7b4585b4656ef5b65a58ebae073374e8d241d6cb145e0a82",
+        "forms": "9b53fcc45977f28184e8eb3e21cd046ba434cad337eea314378adcb3d61801b6"
+    },
+    "NotificationExperience": {
+        "reason": "My Theatre: actionable vs review-only forms and Student offer guidance preserving existing active-guardian response policy. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "c1f846833dc4072b4662b9a4619c2be77080be40f1cd2dee7a8c28ede18edd3b",
+        "forms": "5555001c8c8886794773c7e3338d008cc037d8f67212f3ca88c6c4c8ab793eed"
+    },
+    "FamilyFormsExperience": {
+        "reason": "My Theatre batches D/E: Closed response history is read-only; active assignment filters and intentional completion disclosure. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "bf60ab27404e8bc5f5145fa0edce2ab07dd1924db2ce3fde1b1ae934a13deb20",
+        "forms": "cd1aa70186ac85e2e5da2357170cd91781ebf6135c47ef9858faf1f434adfe5b"
+    },
+    "VolunteerExperience": {
+        "reason": "My Theatre batches D/E: Separate owned commitments and approval requests from opportunities; waitlist is not a confirmed signup. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "ee9f8062149df34e0c528368357c7e8232d4d9f72a4f3dd598db9c5738288521",
+        "forms": "9800e2dd6385dd00855ecbb41aef150d518c789e3d806208e46cdf833e45d04c"
+    },
+    "AccountLibraryExperience": {
+        "reason": "My Theatre batches D/E: Use current authoritative ProductionContext audience and guardian resolution, matching download authorization. docs/UX_MY_THEATRE_COVERAGE.md",
+        "php": "1efba5436cb628557209ff7de84902ead6c853930ad3c3745eb83aa46268ef71",
+        "forms": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "FamilyPickupExperience": {
+        "reason": "Global UI consistency pass: User-facing save error wording only; authorization and save handling unchanged.",
+        "php": "6c41216df515e4f964d2bcc5fdfc1c85e26e690f5a97449a51232500e9843558",
+        "forms": "c8a5833df0748a7d99a1d7e98a0251e02b53b209eaa99dc5e3f7ffc8d5e47fc7"
+    },
+    "RehearsalVideoExperience": {
+        "reason": "Global UI consistency pass: User-facing storage/upload and delete-confirmation wording only; private paths omitted from explanatory copy; file routes, controls and permissions unchanged.",
+        "php": "51a6e0347ac8cd08919bc0beeea0293e3cb4b89e78ca670aa470eaccf5361d53",
+        "forms": "ce285dca3d53e3481c5ae72dec6b6acf055d7201d50108c738dca4b70a3015ed"
+    }
+}

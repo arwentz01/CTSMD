@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+require_once __DIR__.'/IdentityRolePolicy.php';
+
+require_once __DIR__.'/AccessPolicy.php';
+require_once __DIR__.'/StorageService.php';
+require_once __DIR__.'/PersonEligibility.php';
+
+final class StudentProfileService
+{
+    private static function isPerformer(PDO $db,int $id):bool{return self::isStudent($db,$id)||IdentityRolePolicy::isAdult($db,$id)||IdentityRolePolicy::hasPerformerHistory($db,$id);}
+    public static function subjectsForViewer(PDO $db,array $viewer):array
+    {
+        $viewerId=(int)$viewer['id'];$subjects=[];
+        if(self::isPerformer($db,$viewerId))$subjects[$viewerId]=self::subject($db,$viewerId,'Self');
+        $s=$db->prepare("SELECT u.id,fr.relationship_type FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status<>'disabled' WHERE fr.guardian_user_id=:guardian AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') ORDER BY u.last_name,u.first_name");$s->execute(['guardian'=>$viewerId]);foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],ucfirst((string)$r['relationship_type']));
+        if(AccessPolicy::canManagePeople($viewer)){$s=$db->query("SELECT DISTINCT u.id,u.last_name,u.first_name FROM users u  WHERE ".PerformerQuery::eligible('u')." AND u.active=1 AND u.account_status<>'disabled' ORDER BY u.last_name,u.first_name");foreach($s->fetchAll() as $r)$subjects[(int)$r['id']]=self::subject($db,(int)$r['id'],'Staff managed');}
+        return array_values(array_filter($subjects));
+    }
+
+    public static function canEdit(PDO $db,array $viewer,int $studentId):bool
+    {
+        if($studentId<1||!self::isPerformer($db,$studentId))return false;if((int)$viewer['id']===$studentId)return true;if(AccessPolicy::canManagePeople($viewer))return true;if(IdentityRolePolicy::isAdult($db,$studentId))return false;$s=$db->prepare("SELECT 1 FROM family_relationships fr JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled' WHERE fr.guardian_user_id=:viewer AND fr.student_user_id=:student AND fr.status='active' AND fr.relationship_type IN ('parent','guardian') LIMIT 1");$s->execute(['viewer'=>(int)$viewer['id'],'student'=>$studentId]);return(bool)$s->fetchColumn();
+    }
+
+    public static function profile(PDO $db,int $studentId):?array
+    {
+        $s=$db->prepare("SELECT u.id,u.first_name,u.last_name,u.date_of_birth,CONCAT(u.first_name,' ',u.last_name) legal_name,sp.preferred_name,sp.short_bio,sp.special_skills,sp.headshot_stored_file_id,sp.photographer_credit FROM users u LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE ".PerformerQuery::profile('u')." AND u.id=:student AND u.active=1 AND u.account_status<>'disabled' LIMIT 1");$s->execute(['student'=>$studentId]);return$s->fetch()?:null;
+    }
+
+    public static function save(PDO $db,string $projectRoot,array $viewer,int $studentId,array $input,array $upload):void
+    {
+        if(!self::canEdit($db,$viewer,$studentId))throw new RuntimeException('That Student profile is not available to this account.');$preferred=trim((string)($input['preferred_name']??''));$bio=trim((string)($input['short_bio']??''));$skills=trim((string)($input['special_skills']??''));$credit=trim((string)($input['photographer_credit']??''));if(mb_strlen($preferred)>120||mb_strlen($credit)>190)throw new RuntimeException('Preferred name or photographer credit is too long.');if(mb_strlen($bio)>1500||mb_strlen($skills)>1500)throw new RuntimeException('Bio and special skills are limited to 1,500 characters each.');
+        $dob=null;
+        if(!AccessPolicy::isStudent($viewer))$dob=PersonEligibility::birthDate((string)($input['date_of_birth']??''));
+        $stored=null;$db->beginTransaction();try{$existing=self::profile($db,$studentId);$headshot=$existing['headshot_stored_file_id']??null;if((int)($upload['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE){$stored=StorageService::store($db,$projectRoot,(int)$viewer['id'],$upload);if(!str_starts_with((string)$stored['mime_type'],'image/'))throw new RuntimeException('Headshots must be JPG, PNG, or WebP images.');$headshot=(int)$stored['stored_file_id'];}$s=$db->prepare("INSERT INTO student_profiles (user_id,preferred_name,short_bio,special_skills,headshot_stored_file_id,photographer_credit,updated_by_user_id) VALUES (:user,:preferred,:bio,:skills,:headshot,:credit,:actor) ON DUPLICATE KEY UPDATE preferred_name=VALUES(preferred_name),short_bio=VALUES(short_bio),special_skills=VALUES(special_skills),headshot_stored_file_id=VALUES(headshot_stored_file_id),photographer_credit=VALUES(photographer_credit),updated_by_user_id=VALUES(updated_by_user_id),updated_at=CURRENT_TIMESTAMP");$s->execute(['user'=>$studentId,'preferred'=>$preferred!==''?$preferred:null,'bio'=>$bio!==''?$bio:null,'skills'=>$skills!==''?$skills:null,'headshot'=>$headshot,'credit'=>$credit!==''?$credit:null,'actor'=>(int)$viewer['id']]);if($dob!==null)$db->prepare('UPDATE users SET date_of_birth=:dob WHERE id=:id')->execute(['dob'=>$dob,'id'=>$studentId]);self::audit($db,(int)$viewer['id'],$studentId,'Updated Student theatre profile.',['preferred_name'=>$preferred!==''?$preferred:null,'headshot_changed'=>$stored!==null]);$db->commit();}catch(Throwable $e){if($db->inTransaction())$db->rollBack();if($stored&&isset($stored['absolute_path'])&&is_file((string)$stored['absolute_path']))@unlink((string)$stored['absolute_path']);throw $e instanceof RuntimeException?$e:new RuntimeException('The Student profile could not be saved.');}
+    }
+
+    public static function headshot(PDO $db,array $viewer,int $studentId):?array
+    {
+        if(!self::canView($db,$viewer,$studentId))return null;$p=self::profile($db,$studentId);if(!$p||empty($p['headshot_stored_file_id']))return null;return StorageService::currentVersion($db,(int)$p['headshot_stored_file_id']);
+    }
+
+    public static function canView(PDO $db,array $viewer,int $studentId):bool
+    {
+        if(self::canEdit($db,$viewer,$studentId))return true;
+        $s=$db->prepare("SELECT 1
+            FROM production_memberships mine
+            JOIN productions p ON p.id=mine.production_id AND p.is_active=1
+            JOIN production_memberships student ON student.production_id=mine.production_id
+                AND student.user_id=:student
+                AND student.audience_type IN ('student','adult')
+                AND student.status='active'
+            JOIN users subject ON subject.id=student.user_id AND subject.active=1 AND subject.account_status<>'disabled'
+            WHERE mine.user_id=:viewer AND mine.status='active'
+            LIMIT 1");
+        $s->execute(['student'=>$studentId,'viewer'=>(int)$viewer['id']]);return(bool)$s->fetchColumn();
+    }
+
+    private static function subject(PDO $db,int $id,string $relationship):?array{$p=self::profile($db,$id);if(!$p)return null;return['id'=>$id,'name'=>$p['preferred_name']?:$p['legal_name'],'relationship'=>$relationship];}
+    private static function isStudent(PDO $db,int $id):bool{$s=$db->prepare("SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id AND r.active=1 JOIN users u ON u.id=ur.user_id AND u.active=1 AND u.account_status<>'disabled' WHERE ur.user_id=:user AND r.code='student' LIMIT 1");$s->execute(['user'=>$id]);return(bool)$s->fetchColumn();}
+    private static function audit(PDO $db,int $actor,int $student,string $summary,array $meta):void{$s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'student.profile_updated','user',:student,:summary,:meta)");$s->execute(['actor'=>$actor,'student'=>$student,'summary'=>$summary,'meta'=>json_encode($meta,JSON_THROW_ON_ERROR)]);}
+}

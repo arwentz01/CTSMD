@@ -1,0 +1,230 @@
+{
+  "measurements": [
+    {
+      "name": "student-compose-mobile",
+      "h1": [
+        "New conversation"
+      ],
+      "route": "/messages/new",
+      "scrollWidth": 390,
+      "smallTargets": [
+        {
+          "height": 18,
+          "text": "Cancel →",
+          "width": 57
+        }
+      ],
+      "unnamed": [],
+      "width": 390
+    },
+    {
+      "name": "student-calendar-tablet",
+      "h1": [
+        "Calendar"
+      ],
+      "route": "/calendar",
+      "scrollWidth": 768,
+      "smallTargets": [
+        {
+          "height": 21,
+          "text": "My Theatre",
+          "width": 74
+        },
+        {
+          "height": 17,
+          "text": "Back to schedule",
+          "width": 111
+        },
+        {
+          "height": 22,
+          "text": "My Theatre AllA",
+          "width": 131
+        },
+        {
+          "height": 22,
+          "text": "My Theatre ChildCall",
+          "width": 172
+        },
+        {
+          "height": 22,
+          "text": "My Theatre MixedCall",
+          "width": 179
+        },
+        {
+          "height": 22,
+          "text": "My Theatre AllB",
+          "width": 131
+        },
+        {
+          "height": 22,
+          "text": "My Theatre Cancelled",
+          "width": 180
+        }
+      ],
+      "unnamed": [],
+      "width": 768
+    },
+    {
+      "name": "staff-studio-desktop",
+      "h1": [
+        "Playbill Studio"
+      ],
+      "route": "/admin/playbill",
+      "scrollWidth": 1440,
+      "smallTargets": [],
+      "unnamed": [],
+      "width": 1440
+    },
+    {
+      "name": "admin-account-mobile",
+      "h1": [
+        "Theatre StaffPerformer"
+      ],
+      "route": "/admin/accounts/view",
+      "scrollWidth": 390,
+      "smallTargets": [
+        {
+          "height": 21,
+          "text": "Production Staff access by production",
+          "width": 300
+        },
+        {
+          "height": 20,
+          "text": "Account actions",
+          "width": 304
+        },
+        {
+          "height": 21,
+          "text": "Open volunteer development →",
+          "width": 278
+        }
+      ],
+      "unnamed": [],
+      "width": 390
+    },
+    {
+      "name": "manager-production-mobile",
+      "h1": [
+        "UX audit planning production 7f017342f41a"
+      ],
+      "route": "/admin/productions/view",
+      "scrollWidth": 390,
+      "smallTargets": [],
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "type": "file"
+        },
+        {
+          "tag": "INPUT",
+          "type": "file"
+        },
+        {
+          "tag": "INPUT",
+          "type": "file"
+        }
+      ],
+      "width": 390
+    },
+    {
+      "name": "admin-forms-review-desktop",
+      "h1": [
+        "Review queue"
+      ],
+      "route": "/admin/forms",
+      "scrollWidth": 1440,
+      "smallTargets": [],
+      "unnamed": [],
+      "width": 1440
+    },
+    {
+      "name": "student-resources-desktop",
+      "h1": [
+        "Resources"
+      ],
+      "route": "/resources",
+      "scrollWidth": 1440,
+      "smallTargets": [
+        {
+          "height": 21,
+          "text": "My Theatre",
+          "width": 74
+        }
+      ],
+      "unnamed": [],
+      "width": 1440
+    }
+  ],
+  "contrastSample": {
+    "surface": "admin-form-review-queue",
+    "rows": [
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(41, 35, 35)",
+        "ratio": 15.45,
+        "text": "Review queue"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(143, 24, 48)",
+        "ratio": 8.97,
+        "text": "?"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(41, 35, 35)",
+        "ratio": 15.45,
+        "text": "2"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(139, 35, 59)",
+        "ratio": 8.75,
+        "text": "Review queue"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(104, 93, 89)",
+        "ratio": 6.37,
+        "text": "Manage forms"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(104, 93, 89)",
+        "ratio": 6.37,
+        "text": "Form builder"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(104, 93, 89)",
+        "ratio": 6.37,
+        "text": "Group assignment"
+      },
+      {
+        "background": "rgb(247, 244, 241)",
+        "color": "rgb(41, 35, 35)",
+        "ratio": 14.1,
+        "text": "Forms awaiting review"
+      },
+      {
+        "background": "rgb(247, 244, 241)",
+        "color": "rgb(104, 93, 89)",
+        "ratio": 5.81,
+        "text": "Pending assignment records are shown here, including ones wh"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(41, 35, 35)",
+        "ratio": 15.45,
+        "text": "FORTheatre StudentMultiThe Extraordinary Winter Rehearsal — "
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "color": "rgb(104, 93, 89)",
+        "ratio": 6.37,
+        "text": "Submitted by Theatre AdultParent · guardian/on behalf · Oct "
+      }
+    ]
+  },
+  "caveat": "Small-target candidates require spacing/inline-exception checks. Contrast uses opaque nearest ancestor only. No axe/pa11y, alpha, gradient, real-device or assistive-technology audit."
+}

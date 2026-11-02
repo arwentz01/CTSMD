@@ -1,0 +1,193 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/WorkspaceUI.php';
+
+require_once __DIR__.'/ProductionLifecycleGuard.php';
+require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/AppNavigation.php';
+require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/ScheduleAudience.php';
+
+final class CommunityManagementExperience
+{
+    private const ROUTES=['/admin/channels','/admin/channels/edit'];
+    private const AUDIENCES=[
+        'all_members'=>'All members / public community',
+        'adults'=>'Adults only',
+        'students'=>'Students',
+        'staff'=>'Staff only',
+        'volunteers'=>'Volunteers',
+        'production_members'=>'All active production members',
+        'production_adults'=>'Active production adults',
+        'production_students'=>'Active production students',
+        'production_guardians'=>'Active production guardians',
+        'production_staff'=>'Active production staff',
+    ];
+
+    public static function handles(string $route): bool { return in_array($route,self::ROUTES,true); }
+
+    public static function render(string $route,string $basePath): never
+    {
+        Auth::startSession();
+        $db=Database::connect(dirname(__DIR__)); $user=Auth::currentUser($db);
+        if(!$user) self::redirect(($basePath?:'').'/login');
+        if(!AccessPolicy::canManageCommunity($user)) self::forbidden();
+        $_SESSION['channel_admin_csrf']??=bin2hex(random_bytes(24));
+        if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
+        $edit=null;
+        if($route==='/admin/channels/edit'){ $id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0; $edit=self::channel($db,(int)$id); }
+        self::page($route,$basePath,$user,self::channels($db),self::productions($db),self::productionGroups($db),$edit);
+    }
+
+    private static function handlePost(PDO $db,array $user,string $route,string $basePath): never
+    {
+        if(!hash_equals((string)($_SESSION['channel_admin_csrf']??''),(string)($_POST['csrf_token']??''))){ self::flash('error','Your session token expired.'); self::redirect($basePath.'/admin/channels'); }
+        $action=(string)($_POST['action']??'');
+        try{
+            if($action==='save'){
+                $id=filter_input(INPUT_POST,'channel_id',FILTER_VALIDATE_INT)?:0;
+                $saved=self::save($db,$user,(int)$id,$_POST);
+                self::flash('success',$id?'Channel settings updated.':'Channel created.');
+                self::redirect($basePath.'/admin/channels/edit?id='.$saved);
+            }
+            $id=filter_input(INPUT_POST,'channel_id',FILTER_VALIDATE_INT)?:0;
+            if($action==='archive') self::archive($db,$user,(int)$id,true);
+            elseif($action==='restore') self::archive($db,$user,(int)$id,false);
+            else throw new RuntimeException('Choose a valid channel action.');
+            self::flash('success',$action==='archive'?'Channel archived.':'Channel restored.');
+        }catch(RuntimeException $e){ self::flash('error',$e->getMessage()); }
+        self::redirect($basePath.'/admin/channels');
+    }
+
+    private static function save(PDO $db,array $user,int $id,array $input): int
+    {
+        $name=trim((string)($input['name']??'')); $type=trim((string)($input['channel_type']??'discussion')); $description=trim((string)($input['description']??''));
+        $productionId=filter_var($input['production_id']??null,FILTER_VALIDATE_INT)?:null;
+        $productionGroupId=filter_var($input['production_group_id']??null,FILTER_VALIDATE_INT)?:null;
+        $read=self::normalizeAudiences($input['read_audiences']??[]); $post=self::normalizeAudiences($input['post_audiences']??[]);
+        $includeFeed=!empty($input['include_in_feed'])?1:0;
+        $sort=filter_var($input['sort_order']??100,FILTER_VALIDATE_INT); $sort=$sort===false?100:(int)$sort;
+        if($name===''||mb_strlen($name)>120) throw new RuntimeException('Enter a channel name no longer than 120 characters.');
+        if($type===''||mb_strlen($type)>80) throw new RuntimeException('Enter a channel type.');
+        if(!$read) throw new RuntimeException('Choose at least one reading audience.');
+        if(!$post) throw new RuntimeException('Choose at least one posting audience.');
+        if($productionGroupId){
+            $g=$db->prepare("SELECT pg.production_id FROM production_groups pg JOIN productions p ON p.id=pg.production_id AND p.is_active=1 WHERE pg.id=:id AND pg.active=1 LIMIT 1");
+            $g->execute(['id'=>$productionGroupId]);$groupProduction=(int)($g->fetchColumn()?:0);
+            if($groupProduction<1)throw new RuntimeException('That Production Group is no longer available.');
+            if($productionId&&$productionId!==$groupProduction)throw new RuntimeException('The selected Production Group belongs to a different production.');
+            $productionId=$groupProduction;
+        }
+        $needsProduction=self::needsProduction($read)||self::needsProduction($post);
+        if($needsProduction&&!$productionId) throw new RuntimeException('Production-specific audiences require a production.');
+        if($productionId){ $s=$db->prepare('SELECT id FROM productions WHERE id=:id LIMIT 1'); $s->execute(['id'=>$productionId]); if(!$s->fetchColumn()) throw new RuntimeException('That production no longer exists.'); }
+
+        // Validate both scopes before a channel can be moved out of a closed production.
+        if($id){
+            $existing=self::channel($db,$id);
+            if(!$existing)throw new RuntimeException('That channel no longer exists.');
+            if((int)($existing['production_id']??0)>0)ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
+        }
+        if($productionId)ProductionLifecycleGuard::assertWritable($db,(int)$productionId);
+
+        $legacyRead=self::legacyScope($read); $legacyPost=self::legacyScope($post);
+        $db->beginTransaction();
+        try{
+            // Revalidate under the write transaction; a channel may have closed
+            // since the editor first loaded its production context.
+            if($id && $existing['production_id']!==null)ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
+            if($productionId!==null)ProductionLifecycleGuard::assertWritable($db,(int)$productionId);
+            if($id){
+                $before=self::channel($db,$id); if(!$before) throw new RuntimeException('That channel no longer exists.');
+                $accessMode=$productionGroupId?'selected':((!empty($before['production_group_id'])&&$before['access_mode']==='selected')?'audience':(string)($before['access_mode']??'audience'));
+                $stmt=$db->prepare('UPDATE channels SET production_id=:production,production_group_id=:production_group,name=:name,channel_type=:type,description=:description,read_scope=:read_scope,post_scope=:post_scope,read_audiences_json=:read_json,post_audiences_json=:post_json,access_mode=:access_mode,include_in_feed=:include_feed,sort_order=:sort WHERE id=:id');
+                $stmt->execute(['production'=>$productionId,'production_group'=>$productionGroupId,'name'=>$name,'type'=>$type,'description'=>$description?:null,'read_scope'=>$legacyRead,'post_scope'=>$legacyPost,'read_json'=>json_encode($read,JSON_THROW_ON_ERROR),'post_json'=>json_encode($post,JSON_THROW_ON_ERROR),'access_mode'=>$accessMode,'include_feed'=>$includeFeed,'sort'=>$sort,'id'=>$id]);
+                self::audit($db,(int)$user['id'],'community.channel_updated',$id,'Updated community channel audiences.',['read_audiences'=>$read,'post_audiences'=>$post,'production_id'=>$productionId,'production_group_id'=>$productionGroupId]);
+            }else{
+                $accessMode=$productionGroupId?'selected':'audience';
+                $stmt=$db->prepare('INSERT INTO channels (production_id,production_group_id,name,channel_type,description,read_scope,post_scope,read_audiences_json,post_audiences_json,access_mode,include_in_feed,sort_order,created_by_user_id) VALUES (:production,:production_group,:name,:type,:description,:read_scope,:post_scope,:read_json,:post_json,:access_mode,:include_feed,:sort,:creator)');
+                $stmt->execute(['production'=>$productionId,'production_group'=>$productionGroupId,'name'=>$name,'type'=>$type,'description'=>$description?:null,'read_scope'=>$legacyRead,'post_scope'=>$legacyPost,'read_json'=>json_encode($read,JSON_THROW_ON_ERROR),'post_json'=>json_encode($post,JSON_THROW_ON_ERROR),'access_mode'=>$accessMode,'include_feed'=>$includeFeed,'sort'=>$sort,'creator'=>(int)$user['id']]);
+                $id=(int)$db->lastInsertId(); self::audit($db,(int)$user['id'],'community.channel_created',$id,'Created community channel.',['read_audiences'=>$read,'post_audiences'=>$post,'production_id'=>$productionId,'production_group_id'=>$productionGroupId]);
+            }
+            $db->commit(); return $id;
+        }catch(Throwable $e){ if($db->inTransaction())$db->rollBack(); if($e instanceof RuntimeException)throw $e; throw new RuntimeException('The channel could not be saved.'); }
+    }
+
+    private static function normalizeAudiences(mixed $value): array
+    {
+        $values=is_array($value)?$value:[$value]; $out=[];
+        foreach($values as $v){ $v=(string)$v; if(isset(self::AUDIENCES[$v]))$out[]=$v; }
+        return array_values(array_unique($out));
+    }
+    private static function needsProduction(array $audiences): bool { foreach($audiences as $a) if(str_starts_with($a,'production_')||$a==='production_members') return true; return false; }
+    private static function legacyScope(array $audiences): string
+    {
+        if(self::needsProduction($audiences)) return 'production_members';
+        if($audiences===['staff']) return 'staff';
+        return 'all_members';
+    }
+
+    private static function archive(PDO $db,array $user,int $id,bool $archive): void
+    {
+        if($id<1) throw new RuntimeException('That channel could not be found.');
+        $existing=self::channel($db,$id);
+        if(!$existing)throw new RuntimeException('That channel no longer exists.');
+        // Archiving remains possible as a safeguarding action; restoration is operational.
+        if(!$archive&&(int)($existing['production_id']??0)>0)
+            ProductionLifecycleGuard::assertWritable($db,(int)$existing['production_id']);
+        $stmt=$db->prepare('UPDATE channels SET archived_at=:at WHERE id=:id'); $stmt->execute(['at'=>$archive?date('Y-m-d H:i:s'):null,'id'=>$id]);
+        self::audit($db,(int)$user['id'],$archive?'community.channel_archived':'community.channel_restored',$id,$archive?'Archived community channel.':'Restored community channel.',[]);
+    }
+    private static function channel(PDO $db,int $id): ?array
+    {
+        if($id<1)return null; $s=$db->prepare('SELECT id,production_id,production_group_id,name,channel_type,description,read_scope,post_scope,read_audiences_json,post_audiences_json,access_mode,include_in_feed,sort_order,archived_at FROM channels WHERE id=:id LIMIT 1'); $s->execute(['id'=>$id]); return $s->fetch()?:null;
+    }
+    private static function channels(PDO $db): array { return $db->query("SELECT c.id,c.production_id,c.name,c.channel_type,c.description,c.read_audiences_json,c.post_audiences_json,c.archived_at,p.title production_title,p.is_active production_active,COUNT(cp.id) post_count FROM channels c LEFT JOIN productions p ON p.id=c.production_id LEFT JOIN channel_posts cp ON cp.channel_id=c.id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL GROUP BY c.id,c.production_id,c.name,c.channel_type,c.description,c.read_audiences_json,c.post_audiences_json,c.archived_at,p.title,p.is_active,c.sort_order ORDER BY c.archived_at IS NOT NULL,c.production_id IS NOT NULL,p.is_active DESC,p.title,c.sort_order,c.name")->fetchAll(); }
+    private static function productions(PDO $db): array { return $db->query("SELECT id,title,season,status,is_active FROM productions ORDER BY is_active DESC,title")->fetchAll(); }
+    private static function productionGroups(PDO $db): array { return $db->query("SELECT pg.id,pg.production_id,pg.name,pg.group_type,pg.description,p.title production_title FROM production_groups pg JOIN productions p ON p.id=pg.production_id AND p.is_active=1 WHERE pg.active=1 ORDER BY p.title,pg.sort_order,pg.name")->fetchAll(); }
+    private static function decode(?string $json,string $fallback): array { $d=$json?json_decode($json,true):null; return is_array($d)&&$d?$d:[$fallback]; }
+    private static function audit(PDO $db,int $actor,string $event,int $id,string $summary,array $meta): void { $s=$db->prepare('INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:a,:e,\'channel\',:i,:s,:m)'); $s->execute(['a'=>$actor,'e'=>$event,'i'=>$id,'s'=>$summary,'m'=>json_encode($meta,JSON_THROW_ON_ERROR)]); }
+    private static function flash(string $t,string $m): void { $_SESSION['channel_admin_flash']=['type'=>$t,'message'=>$m]; }
+    private static function redirect(string $u): never { header('Location: '.$u,true,303); exit; }
+    private static function forbidden(): never { http_response_code(403); echo 'Restricted'; exit; }
+
+    private static function channelRow(array $c,string $basePath,string $csrf,callable $esc): void
+    {
+        $url=static fn(string $p):string=>($basePath?:'').$p;
+        $read=self::decode($c['read_audiences_json']??null,'all_members');
+        $audience=implode(', ',array_map(fn($a)=>self::AUDIENCES[$a]??$a,$read));
+        ?>
+        <div class="ca-table-row op-table-row<?= $c['archived_at']?' is-archived':'' ?>">
+            <div class="ca-channel-name op-table-primary"><span>#</span><div><b><?= $esc($c['name']) ?></b><?php if($c['description']):?><small><?= $esc($c['description']) ?></small><?php endif;?></div></div>
+            <div><span class="ca-mobile-label op-mobile-label">Type</span><?= $esc(ucwords(str_replace('_',' ',(string)$c['channel_type']))) ?></div>
+            <div class="ca-audience"><span class="ca-mobile-label op-mobile-label">Audience</span><?= $esc($audience) ?></div>
+            <div class="ca-number"><span class="ca-mobile-label op-mobile-label">Posts</span><?= (int)$c['post_count'] ?></div>
+            <div><span class="ca-status op-table-status badge badge-compact <?= $c['archived_at']?'is-danger badge-danger':(!empty($c['production_id'])&&!$c['production_active']?'is-neutral badge-neutral':'is-success badge-success') ?>"><?= $c['archived_at']?'Archived':(!empty($c['production_id'])&&!$c['production_active']?'Inactive show':'Active') ?></span></div>
+            <div class="ca-actions op-table-actions"><a class="btn btn-tertiary btn-compact" href="<?= $url('/admin/channels/edit?id='.(int)$c['id']) ?>">Settings</a><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc($csrf) ?>"><input type="hidden" name="channel_id" value="<?= (int)$c['id'] ?>"><input type="hidden" name="action" value="<?= $c['archived_at']?'restore':'archive' ?>"><button class="btn btn-tertiary btn-compact"><?= $c['archived_at']?'Restore':'Archive' ?></button></form></div>
+        </div>
+        <?php
+    }
+
+    private static function page(string $route,string $basePath,array $user,array $channels,array $productions,array $productionGroups,?array $edit): never
+    {
+        $url=static fn(string $p):string=>($basePath?:'').$p; $esc=static fn(string $v):string=>htmlspecialchars($v,ENT_QUOTES,'UTF-8'); $flash=$_SESSION['channel_admin_flash']??null; unset($_SESSION['channel_admin_flash']); $editing=$route==='/admin/channels/edit';
+        header('Content-Type: text/html; charset=utf-8'); ?>
+        <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Community Operations · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/community-admin.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user); ?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$editing?'Channel settings':'Community channels',$basePath); ?><div class="ca-page ops-page">
+        <?php if($flash): ?><div class="ca-flash alert <?= $flash['type']==='success'?'alert-success':'alert-danger' ?> alert-compact <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
+        <?php if(!$editing):
+            $org=array_values(array_filter($channels,static fn(array $c):bool=>empty($c['production_id'])));
+            $productionGroups=[];foreach($channels as $c){if(empty($c['production_id']))continue;$key=(string)$c['production_id'];$productionGroups[$key]['title']=$c['production_title']?:'Unknown production';$productionGroups[$key]['active']=(bool)$c['production_active'];$productionGroups[$key]['channels'][]=$c;}
+        ?>
+        <section class="ca-list-head ops-heading page-header page-header-compact surface"><div class="page-header-main"><small class="page-header-eyebrow">COMMUNITY STRUCTURE</small><h2 class="page-header-title">Channels</h2><p class="page-header-description">Organization-wide rooms stay separate from production-specific communication.</p></div><div class="page-header-actions"><a class="button" href="<?= $url('/admin/channels/edit') ?>">Create channel</a></div></section>
+        <section class="ca-table op-table" aria-label="Channel management">
+            <div class="ca-table-columns op-table-columns"><span>Channel</span><span>Type</span><span>Audience</span><span>Posts</span><span>Status</span><span>Actions</span></div>
+            <div class="ca-table-group op-table-group"><header class="op-table-group-header is-dark"><div><b>Organization</b><small><?= count($org) ?> channel<?= count($org)===1?'':'s' ?></small></div></header><?php foreach($org as $c)self::channelRow($c,$basePath,(string)$_SESSION['channel_admin_csrf'],$esc);?><?php if(!$org):?><div class="ca-empty-row op-table-empty empty-state empty-state-compact">No organization-wide channels.</div><?php endif;?></div>
+            <?php foreach($productionGroups as $group):?><div class="ca-table-group op-table-group production"><header class="op-table-group-header is-dark"><div><b><?= $esc((string)$group['title']) ?></b><small><?= count($group['channels']) ?> channel<?= count($group['channels'])===1?'':'s' ?></small></div><span class="ca-status op-table-status badge badge-compact <?= $group['active']?'is-success badge-success':'is-neutral badge-neutral' ?>"><?= $group['active']?'Active production':'Inactive production' ?></span></header><?php foreach($group['channels'] as $c)self::channelRow($c,$basePath,(string)$_SESSION['channel_admin_csrf'],$esc);?></div><?php endforeach;?>
+        </section>
+        <?php else: $c=$edit??['id'=>0,'production_id'=>null,'production_group_id'=>null,'name'=>'','channel_type'=>'discussion','description'=>'','read_scope'=>'all_members','post_scope'=>'staff','read_audiences_json'=>null,'post_audiences_json'=>null,'include_in_feed'=>0,'sort_order'=>100]; $read=self::decode($c['read_audiences_json']??null,(string)$c['read_scope']); $post=self::decode($c['post_audiences_json']??null,(string)$c['post_scope']); ?><section class="ca-edit-head ops-heading page-header page-header-compact surface"><div class="page-header-main"><small class="page-header-eyebrow"><?= $edit?'CHANNEL SETTINGS':'NEW CHANNEL' ?></small><h2 class="page-header-title"><?= $edit?'# '.$esc($c['name']):'Create a community channel' ?></h2><p class="page-header-description">Audience selections are unioned: choosing Adults + Volunteers means either audience may enter. Production-prefixed audiences only qualify while that production is active.</p></div><div class="page-header-actions"><a href="<?= $url('/admin/channels') ?>">← All channels</a></div></section><form class="ca-form ops-form form-stack surface" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['channel_admin_csrf']) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="channel_id" value="<?= (int)$c['id'] ?>"><label class="form-field">Channel name<input class="form-input" name="name" maxlength="120" required value="<?= $esc($c['name']) ?>"></label><div class="ca-pair form-group"><label class="form-field">Type<input class="form-input" name="channel_type" maxlength="80" required value="<?= $esc($c['channel_type']) ?>"></label><label class="form-field">Production<select class="form-select" id="channel-production" name="production_id"><option value="">Organization-wide</option><?php foreach($productions as $p): ?><option value="<?= (int)$p['id'] ?>"<?= (int)$c['production_id']===(int)$p['id']?' selected':'' ?>><?= $esc($p['title']) ?><?= $p['is_active']?' · ACTIVE':'' ?></option><?php endforeach; ?></select></label></div><?php if(!$edit||!empty($c['production_group_id'])):?><label class="form-field">Production Group preset <span>optional</span><select class="form-select" id="channel-production-group" name="production_group_id"><option value="">No group preset · use audiences below</option><?php foreach($productionGroups as $g): ?><option value="<?= (int)$g['id'] ?>" data-production="<?= (int)$g['production_id'] ?>" data-name="<?= $esc((string)$g['name']) ?>"<?= (int)($c['production_group_id']??0)===(int)$g['id']?' selected':'' ?>><?= $esc($g['production_title'].' · '.$g['name']) ?></option><?php endforeach; ?></select><small>When selected, live channel access follows the current members of this Production Group. Changes to the group automatically change channel access.</small></label><?php endif;?><label class="form-field">Description<textarea class="form-textarea" name="description" maxlength="255"><?= $esc((string)$c['description']) ?></textarea></label><div class="ca-pair form-group"><fieldset><legend>Who can read</legend><?php foreach(self::AUDIENCES as $key=>$label): ?><label class="form-check"><input type="checkbox" name="read_audiences[]" value="<?= $esc($key) ?>"<?= in_array($key,$read,true)?' checked':'' ?>> <?= $esc($label) ?></label><?php endforeach; ?></fieldset><fieldset><legend>Who can post</legend><?php foreach(self::AUDIENCES as $key=>$label): ?><label class="form-check"><input type="checkbox" name="post_audiences[]" value="<?= $esc($key) ?>"<?= in_array($key,$post,true)?' checked':'' ?>> <?= $esc($label) ?></label><?php endforeach; ?></fieldset></div><label class="form-check"><input type="checkbox" name="include_in_feed" value="1"<?= !empty($c['include_in_feed'])?' checked':'' ?>> Include this channel in the Community Feed</label><label class="form-field">Sort order<input class="form-input" type="number" name="sort_order" value="<?= (int)$c['sort_order'] ?>"></label><button class="button" type="submit">Save channel</button></form><?php endif; ?>
+        </div></main></div><script src="<?= $url('/assets/js/unified-navigation.js') ?>"></script><?php if($editing):?><script>(()=>{const g=document.getElementById('channel-production-group'),p=document.getElementById('channel-production'),n=document.querySelector('input[name="name"]');if(!g)return;g.addEventListener('change',()=>{const o=g.options[g.selectedIndex];if(!o||!o.value)return;if(p)p.value=o.dataset.production||'';if(n&&!n.value.trim())n.value=(o.dataset.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');});})();</script><?php endif;?></body></html><?php exit;
+    }
+}

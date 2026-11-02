@@ -1,0 +1,98 @@
+[
+  {
+    "viewport": "desktop",
+    "page": "designer",
+    "documentWidth": 1366,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 1366
+  },
+  {
+    "viewport": "desktop",
+    "page": "selector",
+    "documentWidth": 1366,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 1366
+  },
+  {
+    "viewport": "desktop",
+    "page": "checkout",
+    "documentWidth": 1366,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 1366
+  },
+  {
+    "viewport": "desktop",
+    "page": "checkin",
+    "documentWidth": 1366,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 1366
+  },
+  {
+    "viewport": "tablet",
+    "page": "designer",
+    "documentWidth": 820,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 820
+  },
+  {
+    "viewport": "tablet",
+    "page": "selector",
+    "documentWidth": 820,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 820
+  },
+  {
+    "viewport": "tablet",
+    "page": "checkout",
+    "documentWidth": 820,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 820
+  },
+  {
+    "viewport": "tablet",
+    "page": "checkin",
+    "documentWidth": 820,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 820
+  },
+  {
+    "viewport": "mobile",
+    "page": "designer",
+    "documentWidth": 390,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 390
+  },
+  {
+    "viewport": "mobile",
+    "page": "selector",
+    "documentWidth": 390,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 390
+  },
+  {
+    "viewport": "mobile",
+    "page": "checkout",
+    "documentWidth": 390,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 390
+  },
+  {
+    "viewport": "mobile",
+    "page": "checkin",
+    "documentWidth": 390,
+    "missingNames": 0,
+    "smallButtons": 0,
+    "width": 390
+  }
+]

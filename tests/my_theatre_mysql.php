@@ -1,0 +1,43 @@
+<?php
+declare(strict_types=1);
+set_error_handler(static function(int $level,string $message,string $file,int $line):never{throw new ErrorException($message,0,$level,$file,$line);});
+require_once __DIR__.'/fixtures/my-theatre-personas.php';
+require_once dirname(__DIR__).'/src/MyTheatreService.php';
+$db=Database::connect(dirname(__DIR__));$fixture=null;$checks=0;
+$ok=static function(bool $value,string $name)use(&$checks):void{if(!$value)throw new RuntimeException($name);++$checks;echo "PASS $name\n";};
+try{
+ $fixture=myTheatreFixture($db);extract($fixture);
+ $build=static function(string $who,string $context='household')use($db,$users,$roles):array{return MyTheatreService::build($db,['id'=>$users[$who],'roles'=>$roles[$who],'permissions'=>Auth::permissions($db,$users[$who])],$context);};
+ $ids=static fn(array $rows):array=>array_map('intval',array_column($rows,'id'));
+ $single=$build('StudentSingle');$ok(count(array_filter($single['productions'],static fn(array $p):bool=>$p['bucket']!=='Past'))===1,'Student sees one current production');
+ $multi=$build('StudentMulti');$ok(count($multi['productions'])===2,'Student sees multiple productions');
+ $g1=$build('GuardianOne');$ok(count($g1['subjects'])===2&&count($g1['productions'])===1,'Guardian one Student context retained');
+ $g2=$build('GuardianTwo');$ok(count($g2['subjects'])===3&&count($g2['productions'])===2,'Guardian sees two Students across productions');
+ $adult=$build('Adult');$ok(count($adult['subjects'])===1&&count($adult['productions'])===2,'Adult self context includes upcoming inactive-planning participation');
+ $upcoming=array_values(array_filter($adult['productions'],static fn(array $p):bool=>$p['id']===$productions['Upcoming']))[0];$ok($upcoming['bucket']==='Upcoming'&&!$upcoming['can_schedule'],'Upcoming credit does not grant unpublished schedule access');
+ $overlap=$build('AdultParent');$ok(count($overlap['productions'])===2&&count($ids($overlap['productions']))===count(array_unique($ids($overlap['productions']))),'Adult guardian productions deduplicate across contexts');
+ $a=array_values(array_filter($overlap['productions'],static fn(array $p):bool=>$p['id']===$productions['A']))[0];$ok(count($a['contexts'])>=3,'Adult cast, guardian child and team responsibilities preserved together');
+ $overlapEvent=array_values(array_filter($overlap['events'],static fn(array $e):bool=>(int)$e['id']===$events['MixedCall']));$ok(count($overlapEvent)===1&&count($overlapEvent[0]['participants'])===2,'Same event deduplicates with both authorized participants');
+ $own=$build('AdultParent','self');$ok(!in_array($events['ChildCall'],$ids($own['events']),true),'My activities excludes calls visible only through a child');
+ $child=$build('AdultParent',(string)$users['StudentMulti']);$ok(in_array($events['ChildCall'],$ids($child['events']),true),'Child context includes their exact group call');
+ $ok(!in_array($events['OtherFamilyCall'],$ids($g2['events']),true),'Shared production grants no unrelated household group call');
+ $ok(!in_array($events['SecretOther'],$ids($g2['events']),true),'Unrelated production stays private');
+ $ok(count($g2['updates'])===1&&!$g1['updates'],'Production updates reauthorize group targeting before showing notice metadata');
+ $vol=$build('Volunteer');$ok(count($vol['productions'])===1&&!$vol['productions'][0]['can_schedule']&&!$vol['events'],'Volunteer credit creates no cast or private schedule access');
+ $staff=$build('StaffPerformer');$ok(count($staff['productions'])===1&&!in_array($events['SecretOther'],$ids($staff['events']),true),'Staff performer personal view excludes administratively visible unrelated shows');
+ $staffOnly=$build('StaffOnly');$ok(!$staffOnly['productions']&&!$staffOnly['events'],'Staff permissions alone create no personal participation');
+ $former=$build('FormerGuardian');$ok(!$former['productions']&&!$former['actions']&&!$former['events'],'Former guardian cannot use stale Guardian roster membership');
+ $disabled=$build('Disabled');$ok(!$disabled['subjects']&&!$disabled['actions']&&!$disabled['productions'],'Disabled account has no personal read model');
+ $plain=$build('Member');$ok(!$plain['productions']&&!$plain['actions']&&!$plain['events'],'Ordinary Member gains no production access');
+ $history=$build('HistoryAdult');$ok(count($history['productions'])===2&&in_array('Past',array_column($history['productions'],'bucket'),true),'Current and archived history coexist');
+ $ok(!in_array($events['ClosedCall'],$ids($multi['events']),true),'Closed production calls excluded from upcoming');
+ $ok(in_array($events['Cancelled'],$ids($g2['events']),true),'Cancellation state remains visible');
+ $allEvent=array_values(array_filter($g2['events'],static fn(array $e):bool=>(int)$e['id']===$events['AllA']))[0];$ok($allEvent['target_label']==='Production-wide event','Whole-show visibility is not described as a personal call');
+ $titles=array_column($g2['actions'],'title');$ok(!in_array('My Theatre ClosedProductionForm',$titles,true)&&!in_array('My Theatre UnderReview',$titles,true),'Closed and awaiting-review forms are not active tasks');
+ $ok(in_array('My Theatre StudentForm',$titles,true)&&in_array('A role for StudentMulti',$titles,true),'Authorized child form and casting offer appear in real action queue');
+ $ok(!in_array('My Theatre OtherFamilyForm',$titles,true),'Another family’s form never appears');
+ $blocked=false;try{$build('GuardianOne',(string)$users['StudentB']);}catch(RuntimeException){$blocked=true;}$ok($blocked,'Forged participant filter rejected server-side');
+ $db->prepare("UPDATE family_relationships SET status='inactive' WHERE guardian_user_id=? AND student_user_id=?")->execute([$users['AdultParent'],$users['StudentMulti']]);Auth::clearRequestCache();ProductionContext::clearRequestCache();$revoked=$build('AdultParent');$ok(count($revoked['subjects'])===1&&!in_array($events['ChildCall'],$ids($revoked['events']),true),'Live guardian revocation removes child context without removing own cast');
+ $ok(count($revoked['productions'])===1&&count($revoked['actions'])===0,'Guardian revocation removes child offers and tasks but preserves personal production');
+ echo "PASS $checks My Theatre persona/authorization assertions.\n";
+}finally{if($db->inTransaction())$db->rollBack();if($fixture)retireMyTheatreFixture($db,$fixture);}

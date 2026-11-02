@@ -1,0 +1,187 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__.'/AccessPolicy.php';
+require_once __DIR__.'/MailService.php';
+
+/**
+ * External statement invitations are one-use capabilities. The public page
+ * sees only the per-request shared snapshot, never the safeguarding case itself.
+ */
+final class SafeguardingStatementService
+{
+    public static function saveSharedDescription(PDO $db,array $actor,int $caseId,string $description):void
+    {
+        self::authorize($actor);
+        $description=trim($description);
+        if(mb_strlen($description)>2000)throw new RuntimeException('The recipient-facing description must be 2,000 characters or less.');
+        $db->prepare('UPDATE safeguarding_cases SET shared_incident_description=:description WHERE id=:id')->execute(['description'=>$description!==''?$description:null,'id'=>$caseId]);
+        self::audit($db,(int)$actor['id'],$caseId,'safeguarding.statement_summary_updated',['shared_description_changed'=>true]);
+    }
+
+    /**
+     * All selectable destinations are resolved again on POST. Children are offered
+     * only as a guardian-delivery choice; no child email is exposed or used.
+     */
+    public static function recipientOptions(PDO $db,array $actor):array
+    {
+        self::authorize($actor);
+        $adults=$db->query("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email
+            FROM users u
+            WHERE u.active=1 AND u.account_status='active' AND u.email_verified_at IS NOT NULL
+              AND u.email IS NOT NULL AND u.email<>''
+              AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student')
+            ORDER BY u.last_name,u.first_name,u.id")->fetchAll(PDO::FETCH_ASSOC);
+        $families=$db->query("SELECT student.id student_id,CONCAT(student.first_name,' ',student.last_name) student_name,
+                guardian.id guardian_id,CONCAT(guardian.first_name,' ',guardian.last_name) guardian_name,guardian.email guardian_email
+            FROM family_relationships fr
+            JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled'
+            JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status='active'
+                AND guardian.email_verified_at IS NOT NULL AND guardian.email IS NOT NULL AND guardian.email<>''
+            WHERE fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+            ORDER BY student.last_name,student.first_name,fr.is_primary DESC,guardian.last_name,guardian.first_name")->fetchAll(PDO::FETCH_ASSOC);
+        return ['adults'=>$adults,'families'=>$families];
+    }
+
+    private static function resolveRecipient(PDO $db,array $input):array
+    {
+        $choice=trim((string)($input['recipient_choice']??''));
+        if($choice==='manual'){
+            $name=trim((string)($input['recipient_name']??''));
+            $email=mb_strtolower(trim((string)($input['recipient_email']??'')));
+            if($name===''||mb_strlen($name)>190||!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)
+                throw new RuntimeException('Provide a valid name and email address for the external recipient.');
+            $check=$db->prepare("SELECT 1 FROM users u JOIN auth_user_roles ur ON ur.user_id=u.id JOIN auth_roles r ON r.id=ur.role_id WHERE LOWER(u.email)=:email AND r.code='student' AND u.active=1 LIMIT 1");
+            $check->execute(['email'=>$email]);
+            if($check->fetchColumn())throw new RuntimeException('Choose the Student from the directory so the request is sent to an authorized guardian.');
+            return ['id'=>null,'name'=>$name,'email'=>$email];
+        }
+        if(preg_match('/^adult:(\\d+)$/D',$choice,$match)){
+            $s=$db->prepare("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name,u.email FROM users u
+                WHERE u.id=:id AND u.active=1 AND u.account_status='active' AND u.email_verified_at IS NOT NULL AND u.email IS NOT NULL
+                AND NOT EXISTS (SELECT 1 FROM auth_user_roles ur JOIN auth_roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.code='student') LIMIT 1");
+            $s->execute(['id'=>(int)$match[1]]);
+            $r=$s->fetch(PDO::FETCH_ASSOC);
+            if($r)return ['id'=>(int)$r['id'],'name'=>(string)$r['name'],'email'=>mb_strtolower((string)$r['email'])];
+        }
+        if(preg_match('/^guardian:(\\d+):(\\d+)$/D',$choice,$match)){
+            $s=$db->prepare("SELECT guardian.id,CONCAT(guardian.first_name,' ',guardian.last_name) name,guardian.email
+                FROM family_relationships fr
+                JOIN users guardian ON guardian.id=fr.guardian_user_id AND guardian.active=1 AND guardian.account_status='active' AND guardian.email_verified_at IS NOT NULL
+                JOIN users student ON student.id=fr.student_user_id AND student.active=1 AND student.account_status<>'disabled'
+                WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:student AND fr.status='active'
+                AND fr.relationship_type IN ('parent','guardian') LIMIT 1");
+            $s->execute(['guardian'=>(int)$match[1],'student'=>(int)$match[2]]);
+            $r=$s->fetch(PDO::FETCH_ASSOC);
+            if($r)return ['id'=>(int)$r['id'],'name'=>(string)$r['name'],'email'=>mb_strtolower((string)$r['email'])];
+        }
+        throw new RuntimeException('Select an active CTSMD recipient or choose an external recipient.');
+    }
+
+    public static function invite(PDO $db,array $actor,int $caseId,array $input,string $basePath):int
+    {
+        self::authorize($actor);
+        $recipient=self::resolveRecipient($db,$input);
+        $name=$recipient['name'];
+        $email=$recipient['email'];
+        $recipientUserId=$recipient['id'];
+        $description=trim((string)($input['shared_description']??''));
+        $publicTitle=trim((string)($input['shared_title']??''));
+        if($publicTitle===''||mb_strlen($publicTitle)>190)throw new RuntimeException('Enter a recipient-facing case name up to 190 characters.');
+        if($name===''||mb_strlen($name)>190)throw new RuntimeException('Enter the recipient’s name.');
+        if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)throw new RuntimeException('Enter a valid recipient email address.');
+        if($description===''||mb_strlen($description)>2000)throw new RuntimeException('Write a brief, shareable incident description before sending.');
+        $days=(int)($input['expires_in_days']??7);
+        if(!in_array($days,[3,7,14],true))throw new RuntimeException('Choose a supported invitation expiry.');
+        $case=$db->prepare("SELECT sc.id,sc.title,sc.case_code,sc.occurred_at,p.title production_title FROM safeguarding_cases sc LEFT JOIN productions p ON p.id=sc.production_id WHERE sc.id=:id AND sc.status NOT IN ('closed') LIMIT 1");
+        $case->execute(['id'=>$caseId]);$row=$case->fetch(PDO::FETCH_ASSOC);
+        if(!$row)throw new RuntimeException('That case is not available for statement requests.');
+        $token=bin2hex(random_bytes(32));
+        $hash=hash('sha256',$token);
+        $expiry=(new DateTimeImmutable('+'.$days.' days'))->format('Y-m-d H:i:s');
+        $link=self::absoluteUrl($basePath.'/incident-statement?token='.$token);
+        $db->beginTransaction();
+        try{
+            $stmt=$db->prepare("INSERT INTO safeguarding_statement_requests (case_id,recipient_name,recipient_email,recipient_user_id,token_hash,shared_title,shared_description,shared_occurred_at,shared_production_title,expires_at,invited_by_user_id) VALUES (:case,:name,:email,:recipient_id,:hash,:title,:description,:occurred,:production,:expiry,:actor)");
+            $stmt->execute(['case'=>$caseId,'name'=>$name,'email'=>$email,'recipient_id'=>$recipientUserId,'hash'=>$hash,'title'=>$publicTitle,'description'=>$description,'occurred'=>$row['occurred_at'],'production'=>$row['production_title'],'expiry'=>$expiry,'actor'=>(int)$actor['id']]);
+            $id=(int)$db->lastInsertId();
+            $body="CTSMD has requested your individual account of an incident.\n\nOpen your private statement form:\n".$link."\n\nThis link expires in ".$days." days. Please do not forward it. Your response will become read-only once submitted.\n\nIf you believe you received this request in error, contact CTSMD directly.\n\nChildren’s Theatre of Southern Maryland";
+            // Avoid subject lines or email body revealing case names or confidential facts.
+            MailService::queue($db,null,$email,$name,'system','CTSMD confidential statement request',$body,null,'safeguarding-statement-'.$id);
+            self::audit($db,(int)$actor['id'],$caseId,'safeguarding.statement_invited',['statement_request_id'=>$id,'expires_in_days'=>$days]);
+            $db->commit();
+            return $id;
+        }catch(Throwable $e){
+            if($db->inTransaction())$db->rollBack();
+            throw $e instanceof RuntimeException?$e:new RuntimeException('The statement request could not be queued.');
+        }
+    }
+
+    public static function requests(PDO $db,array $actor,int $caseId):array
+    {
+        self::authorize($actor);
+        $s=$db->prepare("SELECT sr.id,sr.recipient_name,sr.recipient_email,sr.recipient_user_id,sr.shared_title,sr.shared_description,sr.shared_occurred_at,sr.shared_production_title,sr.status,sr.invited_at,sr.expires_at,sr.submitted_at,sr.statement_body,sr.statement_witnesses,sr.statement_followup,sr.attested_name,sr.accepted_attestation,sr.revoked_at,eq.status delivery_status,eq.sent_at delivery_sent_at FROM safeguarding_statement_requests sr LEFT JOIN email_queue eq ON eq.dedupe_key=CONCAT('safeguarding-statement-',sr.id) WHERE sr.case_id=:id ORDER BY COALESCE(sr.submitted_at,sr.invited_at),sr.id");
+        $s->execute(['id'=>$caseId]);return $s->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function revoke(PDO $db,array $actor,int $caseId,int $requestId):void
+    {
+        self::authorize($actor);
+        $s=$db->prepare("UPDATE safeguarding_statement_requests SET status='revoked',revoked_at=CURRENT_TIMESTAMP,revoked_by_user_id=:actor WHERE id=:request AND case_id=:case AND status='pending'");
+        $s->execute(['actor'=>(int)$actor['id'],'request'=>$requestId,'case'=>$caseId]);
+        if($s->rowCount()!==1)throw new RuntimeException('Only pending statement requests can be revoked.');
+        self::audit($db,(int)$actor['id'],$caseId,'safeguarding.statement_revoked',['statement_request_id'=>$requestId]);
+    }
+
+    public static function byToken(PDO $db,string $token):?array
+    {
+        if(!preg_match('/^[a-f0-9]{64}$/D',$token))return null;
+        $s=$db->prepare('SELECT id,recipient_name,shared_title,shared_description,shared_occurred_at,shared_production_title,status,expires_at,submitted_at FROM safeguarding_statement_requests WHERE token_hash=:hash LIMIT 1');
+        $s->execute(['hash'=>hash('sha256',$token)]);return $s->fetch(PDO::FETCH_ASSOC)?:null;
+    }
+
+    public static function submit(PDO $db,string $token,array $input):void
+    {
+        if(!preg_match('/^[a-f0-9]{64}$/D',$token))throw new RuntimeException('This statement link is unavailable.');
+        $account=trim((string)($input['statement_body']??''));
+        $witnesses=trim((string)($input['statement_witnesses']??''));
+        $followup=trim((string)($input['statement_followup']??''));
+        $attestedName=trim((string)($input['attested_name']??''));
+        if($account===''||mb_strlen($account)>12000)throw new RuntimeException('Provide your account of events (up to 12,000 characters).');
+        if(mb_strlen($witnesses)>2000||mb_strlen($followup)>2000)throw new RuntimeException('Additional answers may be up to 2,000 characters each.');
+        if($attestedName===''||mb_strlen($attestedName)>190||empty($input['attestation']))throw new RuntimeException('Enter your name and confirm this is your own account.');
+        $db->beginTransaction();
+        try{
+            $s=$db->prepare('SELECT id,case_id,recipient_name,status,expires_at FROM safeguarding_statement_requests WHERE token_hash=:hash FOR UPDATE');
+            $s->execute(['hash'=>hash('sha256',$token)]);$request=$s->fetch(PDO::FETCH_ASSOC);
+            if(!$request||$request['status']!=='pending'||strtotime((string)$request['expires_at'])<=time())throw new RuntimeException('This statement link has expired or has already been used.');
+            $u=$db->prepare("UPDATE safeguarding_statement_requests SET status='submitted',submitted_at=CURRENT_TIMESTAMP,statement_body=:body,statement_witnesses=:witnesses,statement_followup=:followup,attested_name=:name,accepted_attestation=1 WHERE id=:id AND status='pending'");
+            $u->execute(['body'=>$account,'witnesses'=>$witnesses!==''?$witnesses:null,'followup'=>$followup!==''?$followup:null,'name'=>$attestedName,'id'=>$request['id']]);
+            if($u->rowCount()!==1)throw new RuntimeException('This statement was already received.');
+            // External respondent is not impersonated as an internal CTSMD user.
+            $a=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'safeguarding.statement_received','safeguarding_case',:case,'A requested account of an incident was submitted.',:metadata)");
+            $a->execute(['case'=>$request['case_id'],'metadata'=>json_encode(['statement_request_id'=>(int)$request['id']],JSON_THROW_ON_ERROR)]);
+            $db->commit();
+        }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+    }
+
+    private static function authorize(array $actor):void
+    {
+        if(!AccessPolicy::canManageSafeguarding($actor))throw new RuntimeException('Safeguarding case authority is required.');
+    }
+
+    private static function audit(PDO $db,int $actorId,int $caseId,string $event,array $data):void
+    {
+        $s=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,'safeguarding_case',:case,'Safeguarding statement request event.',:metadata)");
+        $s->execute(['actor'=>$actorId,'event'=>$event,'case'=>$caseId,'metadata'=>json_encode($data,JSON_THROW_ON_ERROR)]);
+    }
+
+    private static function absoluteUrl(string $path):string
+    {
+        $configured=rtrim((string)(getenv('APP_URL')?:''),'/');
+        if($configured!=='')return $configured.$path;
+        $scheme=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')?'https':'http';
+        return $scheme.'://'.(string)($_SERVER['HTTP_HOST']??'localhost').$path;
+    }
+}

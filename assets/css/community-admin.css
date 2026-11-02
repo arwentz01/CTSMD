@@ -1,0 +1,34 @@
+.ca-page{width:100%;padding:24px var(--content-gutter-desktop);display:grid;gap:14px;margin:0}
+.ca-flash{padding:11px 13px;border-radius:10px;font-weight:800}
+.ca-flash.success{background:var(--state-success-soft);color:var(--state-success)}
+.ca-flash.error{background:var(--state-danger-soft);color:var(--state-danger)}
+.ca-list-head,.ca-edit-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;padding:18px 20px;border:1px solid var(--border-default);border-radius:14px;background:var(--surface-card)}
+.ca-list-head small,.ca-edit-head small{font-size:9px;letter-spacing:.13em;font-weight:900;color:var(--brand-primary)}
+.ca-list-head h2,.ca-edit-head h2{margin:3px 0 4px;font-size:28px}
+.ca-list-head p,.ca-edit-head p{margin:0;max-width:760px;color:var(--text-muted);font-size:12px}
+.ca-edit-head>a{color:var(--brand-primary);text-decoration:none;font-weight:800}
+.ca-table-columns,.ca-table-row{grid-template-columns:minmax(220px,1.45fr) 120px minmax(240px,1.25fr) 70px 105px 150px}
+.ca-channel-name{display:grid!important;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center}
+.ca-channel-name>span{font-size:17px;color:var(--brand-primary);font-weight:900;text-align:center}
+.ca-channel-name>div{display:grid;min-width:0}
+.ca-audience{font-size:10px;line-height:1.35;color:var(--text-muted)}
+.ca-number{text-align:center;font-weight:800}
+.ca-form{background:var(--surface-card);border:1px solid var(--border-default);border-radius:14px;padding:18px 20px;max-width:960px}
+.ca-form fieldset{border:1px solid var(--border-default);border-radius:10px;padding:12px;display:grid;gap:7px}
+.ca-form legend{font-size:10px;font-weight:900;color:var(--brand-primary);padding:0 5px}
+.ca-empty{padding:18px;border-radius:12px;border:1px dashed var(--border-strong);background:var(--surface-card)}
+
+@media(max-width:1100px){
+  .ca-table-columns,.ca-table-row{grid-template-columns:minmax(200px,1.4fr) 105px minmax(190px,1fr) 55px 95px 130px}
+  .ca-page{padding:var(--content-gutter-compact)}
+}
+
+@media(max-width:900px){
+  .ca-page{padding:12px;gap:10px}
+  .ca-list-head,.ca-edit-head{align-items:flex-start;flex-direction:column;padding:15px}
+  .ca-list-head h2,.ca-edit-head h2{font-size:24px}
+  .ca-list-head .button{width:100%;justify-content:center}
+  .ca-channel-name{grid-column:1/-1}
+  .ca-audience{grid-column:1/-1}
+  .ca-number{text-align:left}
+}
