@@ -11,10 +11,10 @@ $request=static function(string $who,string $path,string $method='GET',array $bo
 $ok($request('Guest','/tickets')['status']===404,'Anonymous visitor cannot use simulated storefront');
 foreach(['Admin','Member','Volunteer','StudentMulti'] as $who){$page=$request($who,'/login');$r=$request($who,'/login','POST',['csrf_token'=>$token($page['body']),'email'=>strtolower($who).'.'.$f['suffix'].'@rc1.invalid','password'=>$f['password']]);$ok($r['status']===303,$who.' real login');}
 $u=$f['admin'];$org=$f['org'];$perf=$f['performance'];$db->prepare('UPDATE productions SET announcement_published_at=NULL WHERE id IN (?,?)')->execute([$f['productions']['A'],$f['productions']['B']]);$path='/admin/commerce';
-$empty=$request('Member','/tickets');$ok($empty['status']===200&&!str_contains($empty['body'],'Choose performance &amp; seats'),'Unapproved performances not exposed');
+$empty=$request('Member','/tickets');$ok($empty['status']===200&&!str_contains($empty['body'],'Choose performance &amp; seats'),'Unpublished performances are not exposed');
 CommerceStorefrontService::approve($db,$u,$org,$perf,true);$ok(!CommerceStorefrontService::performances($db,$u,$org),'Unpublished production remains excluded despite preview approval');
 $db->prepare('UPDATE productions SET announcement_published_at=NOW() WHERE id=?')->execute([$f['productions']['A']]);
-$index=$request('Member','/tickets');$ok($index['status']===200&&str_contains($index['body'],'Restricted preview')&&str_contains($index['body'],'performance='.$perf),'Approved published performance discoverable');
+$index=$request('Member','/tickets');$ok($index['status']===200&&str_contains($index['body'],'Sandbox preview')&&str_contains($index['body'],'performance='.$perf),'Published performance discoverable in restricted preview');
 $ok(!str_contains($index['body'],'commerce-tabs')&&!str_contains($index['body'],'unified-sidebar'),'Storefront uses customer navigation rather than admin shell');
 $bad=$request('Member','/tickets/select?performance='.$f['performance2']);$ok(!str_contains($bad['body'],'data-seat-selector'),'Direct unpublished performance ID rejected');
 $selection='/tickets/select?performance='.$perf;$page=$request('Member',$selection);$post=['csrf_token'=>$token($page['body']),'action'=>'hold','id'=>$perf,'checkout_key'=>$token($page['body'],'checkout_key'),'seats'=>['a1'],'quantities'=>['standard'=>['Adult'=>1]],'customer_name'=>'Synthetic Storefront Buyer','customer_email'=>'storefront@commerce.invalid'];
