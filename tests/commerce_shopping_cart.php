@@ -1,0 +1,41 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/commerce_concurrency.php';
+require_once dirname(__DIR__).'/src/CommerceShoppingCartService.php';
+$db=Database::connect(dirname(__DIR__));$fixture=null;$n=0;
+$ok=static function(bool $value,string $message)use(&$n):void{if(!$value)throw new RuntimeException($message);++$n;echo "PASS $message\n";};
+$reject=static function(callable $operation):bool{try{$operation();return false;}catch(RuntimeException){return true;}};
+try{
+    if(getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Explicit disposable loopback schema required.');
+    foreach(explode(';',file_get_contents(dirname(__DIR__).'/database/migrations/114_commerce_shopping_cart.sql')) as $statement)if(trim($statement)!=='')$db->exec($statement);
+    $fixture=commerceFixture($db);$f=$fixture;$u=$f['admin'];$org=$f['org'];$member=$f['tester'];
+    $first=CommerceShoppingCartService::current($db,$u,$org);$cart=(int)$first['id'];$other=CommerceShoppingCartService::current($db,$member,$org);
+    $ok((int)CommerceShoppingCartService::current($db,$u,$org)['id']===$cart,'An authenticated account restores its server-side cart');
+    CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance'],['a1'=>'Adult','a2'=>'Student']);
+    $initial=CommerceShoppingCartService::contents($db,$u,$org,$cart);$deadline=$initial['cart']['expires_at_utc'];
+    $ok(count($initial['items'])===2&&$deadline!==null,'Seats are reserved directly in one cart without purchaser details or provisional orders');
+    CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance'],['a1'=>'Adult','a2'=>'Student']);
+    $ok(count(CommerceShoppingCartService::contents($db,$u,$org,$cart)['items'])===2,'Repeated add does not duplicate seats');
+    CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance2'],['a1'=>'Adult']);
+    CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance'],['a3'=>'Adult']);
+    $contents=CommerceShoppingCartService::contents($db,$u,$org,$cart);$ok(count($contents['items'])===4&&$contents['cart']['expires_at_utc']===$deadline,'Additional performances and seats preserve previous selections without extending the deadline');
+    $ok($reject(fn()=>CommerceShoppingCartService::add($db,$member,$org,(int)$other['id'],$f['performance'],['a1'=>'Adult'])),'Another customer cannot reserve an already held seat');
+    $ok($reject(fn()=>CommerceShoppingCartService::contents($db,$member,$org,$cart)),'Cart ownership prevents another user reading tickets');
+    $ok($reject(fn()=>CommerceShoppingCartService::contents($db,$u,$org+999999,$cart)),'Organization boundaries prevent cart access');
+    $ok($reject(fn()=>CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance'],['a4'=>'Adult','a5'=>'No such ticket type'])),'Invalid additions roll back the entire change');
+    $inventory=array_column(CommerceInventoryService::inventory($db,$org,$f['performance']),null,'seat_key');$ok($inventory['a4']['state']==='available'&&$inventory['a1']['state']==='held','Failed changes preserve original holds and release no unrelated seats');
+    CommerceShoppingCartService::remove($db,$u,$org,$cart,$f['performance'],'a2');CommerceShoppingCartService::remove($db,$u,$org,$cart,$f['performance'],'a2');
+    $inventory=array_column(CommerceInventoryService::inventory($db,$org,$f['performance']),null,'seat_key');$ok($inventory['a2']['state']==='released'&&$inventory['a1']['state']==='held'&&$inventory['a3']['state']==='held','Removing one ticket promptly releases only its seat and is idempotent');
+    $db->prepare('UPDATE commerce_shopping_carts SET expires_at_utc=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND) WHERE id=?')->execute([$cart]);
+    CommerceInventoryService::availability($db,$u,$org,$f['performance']);CommerceInventoryService::availability($db,$u,$org,$f['performance2']);
+    $contents=CommerceShoppingCartService::contents($db,$u,$org,$cart);$ok(count(array_filter($contents['items'],fn($i)=>$i['state']==='expired'))===3,'Expired selections remain visible for explicit removal');
+    $inventory=array_column(CommerceInventoryService::inventory($db,$org,$f['performance']),null,'seat_key');$ok($inventory['a1']['state']==='released'&&$inventory['a3']['state']==='released','Expiration releases inventory across performances');
+    $ok($reject(fn()=>CommerceShoppingCartService::add($db,$u,$org,$cart,$f['performance'],['a4'=>'Adult'])),'Expired carts cannot gain new reservations');
+    $ok((int)CommerceShoppingCartService::current($db,$u,$org)['id']===$cart,'Expired carts are restored until their expired items are explicitly removed');
+    foreach($contents['items'] as $item)if($item['state']==='expired')CommerceShoppingCartService::remove($db,$u,$org,$cart,(int)$item['performance_id'],$item['seat_key']);
+    $fresh=CommerceShoppingCartService::current($db,$u,$org);$ok((int)$fresh['id']!==$cart,'A fresh cart opens only after expired items are removed');$f['shopping_carts']=[(int)$fresh['id'],(int)$other['id']];
+    $race=commerceRace($f,'shopping_race');$ok($race===['REJECT','WIN'],'Concurrent cart reservations produce exactly one seat owner');
+    $q=$db->prepare("SELECT cart_id FROM commerce_shopping_cart_items WHERE organization_id=? AND performance_id=? AND seat_key='a20' AND state='held'");$q->execute([$org,$f['performance']]);$winner=(int)$q->fetchColumn();$winnerUser=$winner===(int)$fresh['id']?$u:$member;CommerceShoppingCartService::remove($db,$winnerUser,$org,$winner,$f['performance'],'a20');
+    $race=commerceRace($f,'shopping_legacy_race');$ok($race===['REJECT','WIN'],'Cart and existing checkout contend atomically for the same seat');
+    echo "PASS $n focused cart reservation checks\n";
+}finally{if($db->inTransaction())$db->rollBack();if($fixture)retireMyTheatreFixture($db,$fixture);}

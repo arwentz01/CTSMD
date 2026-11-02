@@ -99,6 +99,15 @@ final class CommerceInventoryService
     /** Caller holds the performance row lock. Pending/exception payments are deliberately excluded. */
     public static function expireLocked(PDO $db,int $org,int $performance,int $actor):void
     {
+        // Cart holds share the same inventory lock but are not provisional orders.
+        // Check the optional schema even if the storefront flag is switched off,
+        // so disabling the rebuild cannot strand existing reservations.
+        static $cartSchema=[];$dbKey=spl_object_id($db);
+        if(!array_key_exists($dbKey,$cartSchema)){$q=$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_shopping_carts','commerce_shopping_cart_items')");$cartSchema[$dbKey]=(int)$q->fetchColumn()===2;}
+        if($cartSchema[$dbKey]){
+            $q=$db->prepare("UPDATE commerce_inventory i JOIN commerce_shopping_cart_items ci ON ci.organization_id=i.organization_id AND ci.performance_id=i.performance_id AND ci.seat_key=i.seat_key JOIN commerce_shopping_carts c ON c.id=ci.cart_id AND c.organization_id=ci.organization_id SET i.state='released' WHERE i.organization_id=? AND i.performance_id=? AND i.state='held' AND i.order_id IS NULL AND ci.state='held' AND c.state='open' AND c.expires_at_utc<=UTC_TIMESTAMP()");$q->execute([$org,$performance]);
+            $q=$db->prepare("UPDATE commerce_shopping_cart_items ci JOIN commerce_shopping_carts c ON c.id=ci.cart_id AND c.organization_id=ci.organization_id SET ci.state='expired' WHERE ci.organization_id=? AND ci.performance_id=? AND ci.state='held' AND c.state='open' AND c.expires_at_utc<=UTC_TIMESTAMP()");$q->execute([$org,$performance]);
+        }
         $q=$db->prepare("SELECT id FROM commerce_orders WHERE organization_id=? AND performance_id=? AND state='held' AND expires_at<=NOW() FOR UPDATE");$q->execute([$org,$performance]);foreach($q->fetchAll(PDO::FETCH_COLUMN) as $id){$db->prepare("UPDATE commerce_inventory SET state='released',order_id=NULL WHERE organization_id=? AND performance_id=? AND order_id=? AND state='held'")->execute([$org,$performance,$id]);$db->prepare("UPDATE commerce_orders SET state='canceled' WHERE id=? AND organization_id=?")->execute([$id,$org]);CommerceStore::audit($db,$org,$actor,'commerce.hold_expired','order',(int)$id);}
     }
     public static function availability(PDO $db,array $u,int $org,int $performance):array
