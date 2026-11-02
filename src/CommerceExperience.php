@@ -391,7 +391,24 @@ final class CommerceExperience
             }else foreach($tickets as $item){$valid=$active&&$item['state']==='held';$seat=json_decode($item['seat_json'],true,flags:JSON_THROW_ON_ERROR);$name=self::seatLabel($seat);echo '<li><span>'.self::e($name.' · '.$item['category']).($valid?'':' · Expired').'</span><strong>'.self::money((int)$item['unit_minor'],$item['currency']).'</strong>';if($valid)echo '<a href="'.self::e(self::url('select',['performance'=>$performance,'replace'=>CommerceShoppingCartService::itemReference($cart,$item)])).'">Change seat</a>';self::form('shopping_remove',['id'=>$performance,'seat'=>$item['seat_key']]);echo '<button aria-label="'.self::e('Remove '.$name).'">Remove</button></form></li>';if($valid){$validCount++;$subtotal+=(int)$item['unit_minor'];$currency??=$item['currency'];}}
             echo '</ul><p><a href="'.self::e(self::url('select',['performance'=>$performance])).'">Change seats or add tickets</a></p></article>';if($validCount>0){$discount=min($subtotal,(int)$p['discount_minor']);$tax=intdiv(($subtotal-$discount)*(int)$p['tax_basis_points']+5000,10000);$fee=(int)$p['fee_minor'];$totals['subtotal_minor']+=$subtotal;$totals['discount_minor']+=$discount;$totals['tax_minor']+=$tax;$totals['fee_minor']+=$fee;$totals['total_minor']+=$subtotal-$discount+$tax+$fee;}}
         if($currency!==null){echo '<section class="commerce-cart-summary"><h2>Order summary</h2><dl>';foreach(['subtotal_minor'=>'Tickets','discount_minor'=>'Discounts','tax_minor'=>'Taxes','fee_minor'=>'Fees','total_minor'=>'Total'] as $key=>$label)echo '<div><dt>'.$label.'</dt><dd>'.($key==='discount_minor'?'−':'').self::money($totals[$key],$currency).'</dd></div>';echo '</dl></section>';}
-        echo '<p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';if(!$checkout){if(self::rebuiltPayment()&&$active&&$currency!==null)echo '<p><a class="button" href="'.self::e(self::url('shopping_checkout')).'">Checkout</a></p>';else echo '<p role="status">Checkout is not enabled for this account or environment yet. Your reserved tickets remain in the cart until the hold expires. Contact the Commerce administrator to verify the hosted Stripe test pilot configuration.</p>';self::recentPurchases();}
+        echo '<p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';if(!$checkout){if(self::rebuiltPayment()&&$active&&$currency!==null)echo '<p><a class="button" href="'.self::e(self::url('shopping_checkout')).'">Checkout</a></p>';else{
+                echo '<p role="status">Checkout is not available yet. Your reserved tickets remain in the cart until the hold expires.</p>';
+                if(Auth::hasRole(self::$user,'administrator')){
+                    $checks=[
+                        'Cart payment flag'=>getenv('COMMERCE_REBUILT_CART_PAYMENT_ENABLED')==='1',
+                        'Hosted administrator pilot'=>CommerceAccess::local()||getenv('COMMERCE_HOSTED_CART_PAYMENT_PILOT_ENABLED')==='1',
+                        'Stripe test flag'=>getenv('COMMERCE_STRIPE_TEST_ENABLED')==='1',
+                        'Stripe checkout flag'=>getenv('COMMERCE_STRIPE_CHECKOUT_ENABLED')==='1',
+                        'Stripe test credentials and account configured'=>CommerceStripeProvider::configured(),
+                    ];
+                    $required=['commerce_shopping_purchases','commerce_shopping_purchase_orders','commerce_shopping_webhooks','commerce_shopping_refunds','commerce_shopping_deliveries'];
+                    $q=self::$db->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('.implode(',',array_fill(0,count($required),'?')).')');
+                    $q->execute($required);$checks['Shopping payment tables']=((int)$q->fetchColumn()===count($required));
+                    $missing=array_keys(array_filter($checks,static fn(bool $ok):bool=>!$ok));
+                    if($missing)echo '<p role="alert">Administrator checkout diagnostics: '.self::e(implode('; ',$missing)).' not ready. No credentials are displayed.</p>';
+                    else echo '<p role="status">Administrator checkout diagnostics: configuration checks pass. Review the current cart reservation and Commerce organization settings.</p>';
+                }
+            }self::recentPurchases();}
     }
     private static function recentPurchases():void
     {
