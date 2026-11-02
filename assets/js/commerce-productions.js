@@ -49,7 +49,12 @@
       if(body!==target||version!==loadVersion)return;
       if(!response.ok)throw Error('The request could not be completed. Try again.');
       const error=doc.querySelector('[role=alert]');if(error&&options.method==='POST'){showError(error.textContent);return;}
-      const content=doc.querySelector('[data-production-drawer],[data-order-detail]')||doc.querySelector('.commerce-content');
+      const fragment=doc.querySelector('[data-production-drawer],[data-order-detail]');
+      // Successful commands that return to a primary workspace must refresh the
+      // underlying page; loading that workspace inside a modal traps navigation.
+      const destination=new URL(response.url);
+      if(!fragment&&options.method==='POST'&&destination.origin===location.origin&&destination.pathname.endsWith('/admin/commerce')&&['performances','overview'].includes(destination.searchParams.get('tab'))){dirty=false;window.location.assign(response.url);return;}
+      const content=fragment||doc.querySelector('.commerce-content');
       if(!content){throw Error('This view is unavailable. Close this drawer and reload the page.');}
       if(error){showError(error.textContent);return;}
       if(navigation!=='restore')saveView();currentUrl=response.url;content.querySelectorAll('form').forEach(form=>form.setAttribute('action',currentUrl));
