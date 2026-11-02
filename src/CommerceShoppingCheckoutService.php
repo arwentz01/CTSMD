@@ -15,6 +15,18 @@ final class CommerceShoppingCheckoutService
     {
         CommerceAccess::demand($db,$user,$org,'test');$p=self::purchase($db,$org,$id);if((int)$p['owner_user_id']!==(int)$user['id'])throw new RuntimeException('Purchase unavailable.');return$p;
     }
+    public static function forOwner(PDO $db,array $user,int $org,string $reference):array
+    {
+        CommerceAccess::demand($db,$user,$org,'test');if(!preg_match('/^[a-f0-9]{32}$/D',$reference))throw new RuntimeException('Purchase unavailable.');$q=$db->prepare('SELECT id FROM commerce_shopping_purchases WHERE organization_id=? AND owner_user_id=? AND public_reference=?');$q->execute([$org,$user['id'],$reference]);$id=$q->fetchColumn();if(!$id)throw new RuntimeException('Purchase unavailable.');return self::owner($db,$user,$org,(int)$id);
+    }
+    public static function forCartOwner(PDO $db,array $user,int $org,int $cart):?array
+    {
+        CommerceAccess::demand($db,$user,$org,'test');$q=$db->prepare('SELECT id FROM commerce_shopping_purchases WHERE organization_id=? AND owner_user_id=? AND cart_id=?');$q->execute([$org,$user['id'],$cart]);$id=$q->fetchColumn();return$id?self::owner($db,$user,$org,(int)$id):null;
+    }
+    public static function ticketsForOwner(PDO $db,array $user,int $org,string $reference):array
+    {
+        $p=self::forOwner($db,$user,$org,$reference);if($p['state']!=='succeeded')return[];$q=$db->prepare("SELECT t.*,l.description,l.category,o.public_reference AS order_reference,c.starts_at,pr.title,CONCAT(v.name,' / ',s.name) AS venue FROM commerce_shopping_purchase_orders x JOIN commerce_orders o ON o.id=x.order_id AND o.organization_id=x.organization_id JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.order_id=o.id AND l.organization_id=o.organization_id AND l.seat_key=t.seat_key JOIN commerce_performances c ON c.id=o.performance_id AND c.organization_id=o.organization_id JOIN productions pr ON pr.id=c.production_id JOIN commerce_layouts lay ON lay.id=c.layout_id AND lay.organization_id=c.organization_id JOIN commerce_spaces s ON s.id=lay.space_id AND s.organization_id=lay.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE x.organization_id=? AND x.purchase_id=? ORDER BY c.starts_at,t.id");$q->execute([$org,$p['id']]);return$q->fetchAll();
+    }
     private static function metadata(array $p):array{return['commerce_org'=>(string)$p['organization_id'],'commerce_purchase'=>$p['public_reference'],'attempt_ref'=>$p['public_reference']];}
     private static function key(array $p):string{return 'commerce-cart-'.$p['organization_id'].'-'.$p['public_reference'];}
     private static function lockedPerformances(PDO $db,int $org,int $cart):array
@@ -48,7 +60,7 @@ final class CommerceShoppingCheckoutService
     }
     private static function bind(PDO $db,int $org,array $p,array $session):void
     {
-        $id=(string)($session['id']??'');CommerceStripeProvider::id($id,'cs_test_');if(!self::baseValid($p,$session))throw new RuntimeException('Payment details do not match this purchase.');$url=$session['url']??null;if(!is_string($url)||strlen($url)>2048||parse_url($url,PHP_URL_SCHEME)!=='https'||parse_url($url,PHP_URL_HOST)!=='checkout.stripe.com'||parse_url($url,PHP_URL_USER)!==null)throw new RuntimeException('Invalid payment page.');
+        $id=(string)($session['id']??'');CommerceStripeProvider::id($id,'cs_test_');if(!self::baseValid($p,$session))throw new RuntimeException('Payment details do not match this purchase.');$url=$session['url']??null;if($url!==null&&(!is_string($url)||strlen($url)>2048||parse_url($url,PHP_URL_SCHEME)!=='https'||parse_url($url,PHP_URL_HOST)!=='checkout.stripe.com'||parse_url($url,PHP_URL_USER)!==null))throw new RuntimeException('Invalid payment page.');
         CommerceStore::tx($db,function()use($db,$org,$p,$id,$url){$current=self::purchase($db,$org,(int)$p['id'],true);if($current['remote_session_id']&&$current['remote_session_id']!==$id)throw new RuntimeException('Payment session cannot be replaced.');if(in_array($current['state'],['prepared','pending','exception'],true))$db->prepare("UPDATE commerce_shopping_purchases SET remote_session_id=?,checkout_url=?,state=IF(state='prepared' OR (state='exception' AND last_error='creation_unresolved'),'pending',state),last_error=NULL WHERE organization_id=? AND id=?")->execute([$id,$url,$org,$p['id']]);});
     }
     private static function createRemote(PDO $db,int $org,array $p,CommerceHostedPaymentProvider $provider):void
@@ -57,10 +69,10 @@ final class CommerceShoppingCheckoutService
         try{$session=$provider->createCheckout(json_decode($p['request_json'],true,flags:JSON_THROW_ON_ERROR),self::key($p));self::bind($db,$org,$p,$session);}catch(Throwable $e){$db->prepare("UPDATE commerce_shopping_purchases SET state='exception',last_error='creation_unresolved' WHERE organization_id=? AND id=? AND state IN ('prepared','pending','exception')")->execute([$org,$p['id']]);throw new RuntimeException('Payment could not be confirmed. Your tickets remain protected; retry this checkout.');}
     }
     /** Only provider-retrieved facts may initiate fulfillment. */
-    public static function reconcile(PDO $db,int $org,int $purchase,?CommerceHostedPaymentProvider $provider=null):array
+    public static function reconcile(PDO $db,int $org,int $purchase,?CommerceHostedPaymentProvider $provider=null,?string $hintSession=null):array
     {
         if(!CommerceStripeProvider::configured())throw new RuntimeException('Stripe test configuration unavailable.');$p=self::purchase($db,$org,$purchase);if(in_array($p['state'],['succeeded','canceled','refunded'],true))return$p;$provider??=new CommerceStripeProvider();
-        try{if(!$p['remote_session_id']){self::createRemote($db,$org,$p,$provider);$p=self::purchase($db,$org,$purchase);}$s=$provider->checkout($p['remote_session_id']);if(!self::baseValid($p,$s)||($s['id']??null)!==$p['remote_session_id'])throw new RuntimeException('Payment evidence mismatch.');$pi=$s['payment_intent']??null;
+        try{if(!$p['remote_session_id']){if($hintSession!==null)self::bind($db,$org,$p,$provider->checkout($hintSession));else self::createRemote($db,$org,$p,$provider);$p=self::purchase($db,$org,$purchase);}$s=$provider->checkout($p['remote_session_id']);$expiredIntent=$s['payment_intent']??null;if(($s['status']??'')==='expired'&&is_array($expiredIntent)&&in_array($expiredIntent['status']??'',['requires_payment_method','requires_action','requires_confirmation'],true)){CommerceStripeProvider::id((string)($expiredIntent['id']??''),'pi_');$provider->cancelIntent($expiredIntent['id'],self::key($p).'-expire');$s=$provider->checkout($p['remote_session_id']);}if(!self::baseValid($p,$s)||($s['id']??null)!==$p['remote_session_id'])throw new RuntimeException('Payment evidence mismatch.');$pi=$s['payment_intent']??null;
             if($pi===null&&($s['status']??'')==='open')return$p;
             if($pi===null&&($s['status']??'')==='expired'&&($s['payment_status']??'')==='unpaid')return self::cancelUnpaid($db,$org,$p);
             if(!is_array($pi)||($pi['livemode']??null)!==false||($pi['amount']??null)!==(int)$p['total_minor']||strtolower((string)($pi['currency']??''))!==strtolower($p['currency'])||($pi['metadata']??[])!=self::metadata($p))throw new RuntimeException('Payment evidence mismatch.');
@@ -90,5 +102,19 @@ final class CommerceShoppingCheckoutService
     private static function cancelUnpaid(PDO $db,int $org,array $p):array
     {
         return CommerceStore::tx($db,function()use($db,$org,$p){$groups=json_decode($p['snapshot_json'],true,flags:JSON_THROW_ON_ERROR);foreach($groups as $g)CommerceStore::row($db,'performances',$org,(int)$g['performance'],true);$current=self::purchase($db,$org,(int)$p['id'],true);if(!in_array($current['state'],['prepared','pending','exception'],true))return$current;if((int)$current['captured_minor']>0||$current['remote_payment_id'])throw new RuntimeException('Payment requires review before releasing tickets.');foreach($groups as $g)foreach($g['items'] as $item){$q=$db->prepare("UPDATE commerce_inventory SET state='released' WHERE organization_id=? AND performance_id=? AND seat_key=? AND state='held' AND order_id IS NULL");$q->execute([$org,$g['performance'],$item['seat_key']]);if($q->rowCount()!==1)throw new RuntimeException('Reservation requires review.');$db->prepare("UPDATE commerce_shopping_cart_items SET state='expired' WHERE organization_id=? AND id=? AND state='held'")->execute([$org,$item['id']]);}$db->prepare("UPDATE commerce_shopping_purchases SET state='canceled',last_error=NULL WHERE organization_id=? AND id=?")->execute([$org,$current['id']]);$db->prepare("UPDATE commerce_shopping_carts SET state='canceled' WHERE organization_id=? AND id=?")->execute([$org,$current['cart_id']]);return self::purchase($db,$org,(int)$current['id']);});
+    }    /** Store signed events before any provider inquiry or fulfillment. */
+    public static function receive(PDO $db,int $org,string $raw,string $signature,?CommerceHostedPaymentProvider $provider=null):string
+    {
+        $provider??=new CommerceStripeProvider();$event=$provider->verifyWebhook($raw,$signature,time());$type=(string)($event['type']??'');if(!in_array($type,['checkout.session.completed','checkout.session.expired','checkout.session.async_payment_succeeded','checkout.session.async_payment_failed','payment_intent.succeeded','payment_intent.canceled'],true))return'ignored';
+        $object=$event['data']['object'];$reference=(string)($object['metadata']['commerce_purchase']??'');if(!preg_match('/^[a-f0-9]{32}$/D',$reference))return'ignored';$id=(string)($object['id']??'');if(strlen($id)>255||strlen($type)>100)throw new RuntimeException('Invalid payment event.');
+        $q=$db->prepare('SELECT id,remote_session_id FROM commerce_shopping_purchases WHERE organization_id=? AND public_reference=?');$q->execute([$org,$reference]);$purchase=$q->fetch();if(!$purchase)return'ignored';if(str_starts_with($type,'checkout.')&&$purchase['remote_session_id']&&$purchase['remote_session_id']!==$id)throw new RuntimeException('Payment session mismatch.');$hash=hash('sha256',$raw);
+        $q=$db->prepare("INSERT IGNORE INTO commerce_shopping_webhooks(organization_id,event_id,purchase_id,event_type,object_id,payload_hash,available_at_utc,received_at_utc) VALUES(?,?,?,?,?,?,UTC_TIMESTAMP(),UTC_TIMESTAMP())");$q->execute([$org,$event['id'],$purchase['id'],$type,$id,$hash]);$q=$db->prepare('SELECT payload_hash FROM commerce_shopping_webhooks WHERE organization_id=? AND event_id=?');$q->execute([$org,$event['id']]);if(!hash_equals((string)$q->fetchColumn(),$hash))throw new RuntimeException('Payment event identifier reused.');return'queued';
     }
+    public static function processEvent(PDO $db,int $org,string $eventId,?CommerceHostedPaymentProvider $provider=null):void
+    {
+        $q=$db->prepare('SELECT * FROM commerce_shopping_webhooks WHERE organization_id=? AND event_id=?');$q->execute([$org,$eventId]);$event=$q->fetch();if(!$event||$event['status']==='processed')return;
+        $purchase=self::reconcile($db,$org,(int)$event['purchase_id'],$provider,str_starts_with($event['event_type'],'checkout.')?$event['object_id']:null);$retry=($purchase['last_error']??'')==='provider_inquiry_unresolved';$manual=in_array($purchase['last_error']??'',['creation_retry_window_expired','fulfillment_requires_review'],true);
+        $q=$db->prepare('UPDATE commerce_shopping_webhooks SET status=?,attempts=attempts+1,available_at_utc=DATE_ADD(UTC_TIMESTAMP(),INTERVAL ? SECOND) WHERE organization_id=? AND event_id=?');$q->execute([$manual?'failed':($retry?'queued':'processed'),min(3600,30*(2**min(6,(int)$event['attempts']))),$org,$eventId]);
+    }
+
 }
