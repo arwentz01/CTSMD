@@ -10,6 +10,15 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
     {
         return getenv('COMMERCE_STRIPE_TEST_ENABLED')==='1'&&preg_match('/^(?:sk|rk)_test_[A-Za-z0-9]+$/',(string)getenv('COMMERCE_STRIPE_TEST_SECRET_KEY'))===1&&preg_match('/^acct_[A-Za-z0-9]+$/',(string)getenv('COMMERCE_STRIPE_ACCOUNT_ID'))===1&&str_starts_with((string)getenv('COMMERCE_STRIPE_TEST_WEBHOOK_SECRET'),'whsec_');
     }
+    /** Read-only account comparison for restricted administrator diagnostics. Never returns a key or full ID. */
+    public function accountDiagnostic():array
+    {
+        $configured=(string)getenv('COMMERCE_STRIPE_ACCOUNT_ID');
+        $result=$this->request('GET','/v1/account');
+        $returned=(string)($result['id']??'');
+        if(!preg_match('/^acct_[A-Za-z0-9]+$/',$returned))throw new RuntimeException('Stripe returned an invalid account identifier.');
+        return ['matches'=>hash_equals($configured,$returned),'configured_suffix'=>substr($configured,-4),'returned_suffix'=>substr($returned,-4)];
+    }
     private function request(string $method,string $path,array $params=[],?string $key=null):array
     {
         if(!self::configured())throw new RuntimeException('Stripe test configuration is unavailable. Live keys are never accepted.');
