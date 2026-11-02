@@ -430,7 +430,7 @@ final class CommerceExperience
             if(Auth::hasRole(self::$user,'administrator')){
                 $stage=empty($p['remote_session_id'])?'Stripe Checkout session not linked':'Stripe Checkout session linked';
                 $reason=(string)($p['last_error']??'none');
-                $allowed=['none','creation_unresolved','creation_retry_window_expired','provider_inquiry_unresolved','fulfillment_requires_review','external_refund_unconfirmed'];
+                $allowed=['none','creation_unresolved','creation_retry_window_expired','provider_inquiry_unresolved','fulfillment_requires_review','external_refund_unconfirmed','stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_http_failure'];
                 if(!in_array($reason,$allowed,true))$reason='other';
                 echo '<section class="commerce-panel" aria-label="Administrator payment diagnostics"><h2>Administrator payment diagnostics</h2><p>Stage: '.self::e($stage).'</p><p>Purchase state: '.self::e((string)$p['state']).'</p><p>Last failure: '.self::e($reason).'</p><p>Payment recorded: '.((int)$p['captured_minor']>0?'Yes, requires reconciliation':'Not recorded by CTSMD').'</p><p>No Stripe API keys or payment identifiers are displayed. Do not create another purchase while this one is unresolved.</p></section>';
             }if($p['checkout_url']&&!(int)$p['captured_minor'])echo '<p><a class="button" href="'.self::e($p['checkout_url']).'">Continue payment</a></p>';if(!(int)$p['captured_minor']){self::form('shopping_cancel',['purchase'=>$reference]);echo '<button>Cancel payment</button></form>';}}
