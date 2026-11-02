@@ -27,6 +27,7 @@ try{
     CommerceShoppingCartService::remove($db,$u,$org,$cart,$f['performance'],'a2');CommerceShoppingCartService::remove($db,$u,$org,$cart,$f['performance'],'a2');
     $inventory=array_column(CommerceInventoryService::inventory($db,$org,$f['performance']),null,'seat_key');$ok($inventory['a2']['state']==='released'&&$inventory['a1']['state']==='held'&&$inventory['a3']['state']==='held','Removing one ticket promptly releases only its seat and is idempotent');
     $db->prepare('UPDATE commerce_shopping_carts SET expires_at_utc=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND) WHERE id=?')->execute([$cart]);
+    $ok(CommerceShoppingCartService::expireAbandoned($db,$org)>=2,'Worker cleanup releases expired holds without customer traffic');
     CommerceInventoryService::availability($db,$u,$org,$f['performance']);CommerceInventoryService::availability($db,$u,$org,$f['performance2']);
     $contents=CommerceShoppingCartService::contents($db,$u,$org,$cart);$ok(count(array_filter($contents['items'],fn($i)=>$i['state']==='expired'))===3,'Expired selections remain visible for explicit removal');
     $inventory=array_column(CommerceInventoryService::inventory($db,$org,$f['performance']),null,'seat_key');$ok($inventory['a1']['state']==='released'&&$inventory['a3']['state']==='released','Expiration releases inventory across performances');

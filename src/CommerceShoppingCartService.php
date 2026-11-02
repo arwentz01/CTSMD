@@ -19,6 +19,12 @@ final class CommerceShoppingCartService
         });
     }
 
+    /** Worker-side cleanup for abandoned carts, including when nobody opens a seat map. */
+    public static function expireAbandoned(PDO $db,int $org,int $limit=50):int
+    {
+        $limit=max(1,min(100,$limit));$q=$db->prepare("SELECT DISTINCT i.performance_id,c.owner_user_id FROM commerce_shopping_cart_items i JOIN commerce_shopping_carts c ON c.id=i.cart_id AND c.organization_id=i.organization_id WHERE i.organization_id=? AND i.state='held' AND c.state='open' AND c.expires_at_utc<=UTC_TIMESTAMP() ORDER BY i.performance_id LIMIT ".$limit);$q->execute([$org]);$rows=$q->fetchAll();$count=0;foreach($rows as $row){CommerceStore::tx($db,function()use($db,$org,$row){CommerceStore::row($db,'performances',$org,(int)$row['performance_id'],true);CommerceInventoryService::expireLocked($db,$org,(int)$row['performance_id'],(int)$row['owner_user_id']);});++$count;}return$count;
+    }
+
     private static function owned(PDO $db,array $user,int $org,int $cart,bool $lock=false):array
     {
         $q=$db->prepare('SELECT *, (expires_at_utc IS NULL OR expires_at_utc>UTC_TIMESTAMP()) AS active FROM commerce_shopping_carts WHERE id=? AND organization_id=? AND owner_user_id=?'.($lock?' FOR UPDATE':''));$q->execute([$cart,$org,$user['id']]);
