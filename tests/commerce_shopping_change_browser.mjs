@@ -2,13 +2,13 @@ import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CTSMD_PLAYWRIGHT_MODULE?pathToFileURL(process.env.CTSMD_PLAYWRIGHT_MODULE).href:'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CTSMD_CHROMIUM_EXECUTABLE?{executablePath:process.env.CTSMD_CHROMIUM_EXECUTABLE}:{})});
-const [base,suffix,password]=process.argv.slice(2);let count=0;
+const [base,suffix,password,generalAdmission]=process.argv.slice(2);let count=0;
 const ok=(v,label)=>{assert.ok(v,label);console.log('PASS '+label);count++;};
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base+'/login');await page.getByRole('textbox',{name:'Email',exact:true}).fill(`admin.${suffix}@rc1.invalid`);await page.getByRole('textbox',{name:'Password',exact:true}).fill(password);await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.waitForURL('**/app');
- for(const width of [390,768,1280]){
-  await page.setViewportSize({width,height:900});await page.goto(base+'/tickets/cart');await page.getByRole('link',{name:'Change seat',exact:true}).first().click();
+ for(const width of [320,390,768,1280]){
+  await page.setViewportSize({width,height:900});await page.goto(base+'/tickets/cart');ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Cart fits ${width}px`);await page.getByRole('link',{name:'Checkout',exact:true}).click();ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Checkout fits ${width}px`);ok(await page.getByRole('textbox',{name:'Full name',exact:true}).count()===1&&await page.getByRole('textbox',{name:'Email address',exact:true}).count()===1,`Purchaser fields are labelled at ${width}px`);await page.goto(base+`/tickets/select?performance=${generalAdmission}`);await page.locator('[data-admission-quantity][data-category="Adult"]').fill('1');ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)&&await page.getByRole('button',{name:'Add to Cart',exact:true}).isEnabled(),`General-admission selection works at ${width}px`);await page.goto(base+'/tickets/cart');await page.getByRole('link',{name:'Change seat',exact:true}).first().click();
   await page.getByRole('button',{name:'Change Seat',exact:true}).waitFor();ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Seat change fits ${width}px`);
   const choices=page.locator('[data-select-map] g[role="button"][aria-disabled="false"]');await choices.first().focus();await choices.first().press('Space');ok(await choices.first().getAttribute('aria-pressed')==='true',`Keyboard selects a seat at ${width}px`);
   await choices.nth(1).focus();await choices.nth(1).press('Space');ok(await page.locator('[data-seat-check]:checked').count()===1,`Only one replacement seat can be selected at ${width}px`);
