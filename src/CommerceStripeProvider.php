@@ -17,7 +17,20 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
         if($this->transport)return($this->transport)($method,$path,$params,$key);
         $url='https://api.stripe.com'.$path;if($method==='GET'&&$params)$url.='?'.http_build_query($params);$headers=['Authorization: Bearer '.getenv('COMMERCE_STRIPE_TEST_SECRET_KEY'),'Stripe-Version: 2026-10-28.endive'];if($key)$headers[]='Idempotency-Key: '.$key;
         $ch=curl_init($url);$body='';curl_setopt_array($ch,[CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>$headers,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>20,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_WRITEFUNCTION=>static function($ch,string $chunk)use(&$body){if(strlen($body)+strlen($chunk)>1048576)return 0;$body.=$chunk;return strlen($chunk);}]);if($method==='POST')curl_setopt($ch,CURLOPT_POSTFIELDS,http_build_query($params));$done=curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);curl_close($ch);
-        if($done===false||$status<200||$status>=300)throw new RuntimeException('Stripe inquiry is unresolved. Inventory remains protected; retry reconciliation.');
+        if($done===false)throw new RuntimeException('stripe_transport_failure');
+        if($status<200||$status>=300){
+            $error=json_decode($body,true);
+            $type=is_array($error)?(string)($error['error']['type']??''):'';
+            $category=match(true){
+                $status===401=>'stripe_authentication_failed',
+                $status===403=>'stripe_access_denied',
+                $status===429=>'stripe_rate_limited',
+                $status>=500=>'stripe_provider_unavailable',
+                $status===400&&$type==='invalid_request_error'=>'stripe_invalid_request',
+                default=>'stripe_http_failure'
+            };
+            throw new RuntimeException($category);
+        }
         try{$value=json_decode($body,true,64,JSON_THROW_ON_ERROR);}catch(JsonException){throw new RuntimeException('Stripe returned an unreadable result. Inventory remains protected.');}if(!is_array($value))throw new RuntimeException('Invalid Stripe response.');return$value;
     }
     public function createCheckout(array $parameters,string $key):array{return$this->request('POST','/v1/checkout/sessions',$parameters,$key);}
