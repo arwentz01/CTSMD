@@ -7,7 +7,7 @@ $ok=static function(bool $value,string $message)use(&$n):void{if(!$value)throw n
 $reject=static function(callable $operation):bool{try{$operation();return false;}catch(RuntimeException){return true;}};
 try{
     if(getenv('APP_ENV')!=='rc1-test'||getenv('DB_HOST')!=='127.0.0.1'||!preg_match('/^ctsmd_rc1_[a-z0-9_]{1,40}$/',(string)getenv('DB_DATABASE')))throw new RuntimeException('Explicit disposable loopback schema required.');
-    foreach(explode(';',file_get_contents(dirname(__DIR__).'/database/migrations/114_commerce_shopping_cart.sql')) as $statement)if(trim($statement)!=='')$db->exec($statement);
+    foreach(['114_commerce_shopping_cart.sql','115_commerce_shopping_requests.sql'] as $migration)foreach(explode(';',file_get_contents(dirname(__DIR__).'/database/migrations/'.$migration)) as $statement)if(trim($statement)!=='')$db->exec($statement);
     $fixture=commerceFixture($db);$f=$fixture;$u=$f['admin'];$org=$f['org'];$member=$f['tester'];
     $first=CommerceShoppingCartService::current($db,$u,$org);$cart=(int)$first['id'];$other=CommerceShoppingCartService::current($db,$member,$org);
     $ok((int)CommerceShoppingCartService::current($db,$u,$org)['id']===$cart,'An authenticated account restores its server-side cart');
@@ -37,5 +37,10 @@ try{
     $race=commerceRace($f,'shopping_race');$ok($race===['REJECT','WIN'],'Concurrent cart reservations produce exactly one seat owner');
     $q=$db->prepare("SELECT cart_id FROM commerce_shopping_cart_items WHERE organization_id=? AND performance_id=? AND seat_key='a20' AND state='held'");$q->execute([$org,$f['performance']]);$winner=(int)$q->fetchColumn();$winnerUser=$winner===(int)$fresh['id']?$u:$member;CommerceShoppingCartService::remove($db,$winnerUser,$org,$winner,$f['performance'],'a20');
     $race=commerceRace($f,'shopping_legacy_race');$ok($race===['REJECT','WIN'],'Cart and existing checkout contend atomically for the same seat');
+    $ga=CommerceInventoryService::create($db,$u,$org,$f['productions']['A'],$f['layout'],date('Y-m-d\TH:i',time()+5*86400),$f['prices']);CommerceInventoryService::admissionMode($db,$u,$org,$ga,true);CommerceInventoryService::configure($db,$u,$org,$ga,$f['prices'],'open',true,100,600,50);
+    $key=bin2hex(random_bytes(16));CommerceShoppingCartService::addAdmissions($db,$u,$org,(int)$fresh['id'],$ga,['standard'=>['Adult'=>2,'Student'=>1]],$key);CommerceShoppingCartService::addAdmissions($db,$u,$org,(int)$fresh['id'],$ga,['standard'=>['Adult'=>2,'Student'=>1]],$key);
+    $gaItems=array_filter(CommerceShoppingCartService::contents($db,$u,$org,(int)$fresh['id'])['items'],fn($i)=>(int)$i['performance_id']===$ga&&$i['state']==='held');$ok(count($gaItems)===3,'General admission retries do not duplicate ticket quantities');
+    $ok($reject(fn()=>CommerceShoppingCartService::addAdmissions($db,$u,$org,(int)$fresh['id'],$ga,['standard'=>['Adult'=>3]],$key)),'An idempotency key cannot be reused for a different request');
+    $ok($reject(fn()=>CommerceShoppingCartService::addAdmissions($db,$u,$org,(int)$fresh['id'],$ga,['standard'=>['Adult'=>12,'Student'=>1]],bin2hex(random_bytes(16)))),'General admission rejects invalid quantities without changing the cart');
     echo "PASS $n focused cart reservation checks\n";
 }finally{if($db->inTransaction())$db->rollBack();if($fixture)retireMyTheatreFixture($db,$fixture);}
