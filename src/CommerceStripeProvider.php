@@ -31,6 +31,7 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
             $error=json_decode($body,true);
             $type=is_array($error)?(string)($error['error']['type']??''):'';
             $category=match(true){
+                $status===400&&$type==='idempotency_error'=>'stripe_idempotency_conflict',
                 $status===401=>'stripe_authentication_failed',
                 $status===403=>'stripe_access_denied',
                 $status===429=>'stripe_rate_limited',
