@@ -102,6 +102,10 @@ jobs:
           php tests/commerce_planning_http.php
           php tests/commerce_tickets.php
           php tests/commerce_http.php
+          php tests/commerce_shopping_cart.php
+          php tests/commerce_shopping_checkout.php
+          php tests/commerce_shopping_refund.php
+          php tests/commerce_shopping_cart_http.php
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -135,6 +139,7 @@ jobs:
           node tests/commerce_productions_browser.mjs
           php tests/fixtures/commerce-workspace-browser.php
           node tests/commerce_workspaces_browser.mjs
+          CTSMD_SHOPPING_BROWSER=1 php tests/commerce_shopping_cart_http.php
       - uses: actions/upload-artifact@v4
         if: always()
         with:

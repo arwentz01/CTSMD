@@ -42,7 +42,7 @@
  const geometry=window.CommerceGeometry;
  const payload=JSON.parse(root.dataset.payload),svg=root.querySelector('[data-select-map]'),checks=[...root.querySelectorAll('[data-seat-check]')],ns='http://www.w3.org/2000/svg';let view=[0,0,800,420];
  const make=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text)e.textContent=text;return e;};
- const money=n=>`${payload.currency} ${(n/100).toFixed(2)}`;
+ const money=n=>`${payload.currency} ${(n/100).toFixed(2)}`;const maxSeats=payload.replacement?1:12;
  const quantityInputs=[...root.querySelectorAll('[data-ticket-quantity]')],continueButton=root.querySelector('[data-selection-continue]'),salesOpen=!continueButton.disabled;let quantitiesValid=false;
  const seats=payload.items.map(i=>({...i,seat:JSON.parse(i.seat_json)})),byKey=Object.fromEntries(seats.map(s=>[s.seat_key,s]));
  const tooltip=root.querySelector('[data-seat-tooltip]');let hideTimer=0;
@@ -67,13 +67,13 @@
   root.querySelector('[data-selected-seats]').textContent=selected.map(c=>{const s=byKey[c.value].seat;return `${s.section_name} / ${s.row_name} / ${s.label}`;}).join(' · ');
   root.querySelector('[data-selection-count]').textContent=`${selected.length} seat${selected.length===1?'':'s'} selected`;
   root.querySelector('[data-ticket-quantity-status]').textContent=!selected.length?'Select seats, then enter your ticket quantities.':quantitiesValid?`${totalTickets} tickets for ${selected.length} selected seats. Ready to continue.`:`${totalTickets} tickets for ${selected.length} selected seats. Match ticket quantities to seats in each pricing zone.`;
-  root.querySelector('[data-selection-total]').textContent=quantitiesValid?`Tickets ${money(subtotal)} − discount ${money(discount)} + tax ${money(tax)} + fee ${money(payload.fee)} = ${money(total)}`:selected.length?'Choose ticket-type quantities to see your total.':'Choose seats to see your total.';
+  root.querySelector('[data-selection-total]').textContent=quantitiesValid?(payload.cart_mode?`Tickets ${money(subtotal)}. Review your full cart for fees and taxes.`:`Tickets ${money(subtotal)} − discount ${money(discount)} + tax ${money(tax)} + fee ${money(payload.fee)} = ${money(total)}`):selected.length?'Choose ticket-type quantities to see your total.':'Choose seats to see your total.';
   continueButton.disabled=!salesOpen||!quantitiesValid;
 
  }
- function toggle(key){const c=checks.find(c=>c.value===key);if(!c||c.disabled)return;if(!c.checked&&checks.filter(a=>a.checked).length>=12){root.querySelector('[data-selection-message]').textContent='Choose up to 12 seats per order.';return;}c.checked=!c.checked;update();}
+ function toggle(key){const c=checks.find(c=>c.value===key);if(!c||c.disabled)return;if(!c.checked&&checks.filter(a=>a.checked).length>=maxSeats){root.querySelector('[data-selection-message]').textContent=payload.replacement?'Choose one replacement seat.':'Choose up to 12 seats per order.';return;}c.checked=!c.checked;update();}
  svg.addEventListener('click',e=>{const g=e.target.closest('[data-choice]');if(g)toggle(g.dataset.choice);});svg.addEventListener('keydown',e=>{const g=e.target.closest('[data-choice]');if(g&&['Enter',' '].includes(e.key)){e.preventDefault();const key=g.dataset.choice;toggle(key);svg.querySelector(`[data-choice="${key}"]`)?.focus();}});
- checks.forEach(c=>c.addEventListener('change',()=>{if(checks.filter(a=>a.checked).length>12){c.checked=false;root.querySelector('[data-selection-message]').textContent='Choose up to 12 seats per order.';}update();}));quantityInputs.forEach(input=>input.addEventListener('input',update));
+ checks.forEach(c=>c.addEventListener('change',()=>{if(checks.filter(a=>a.checked).length>maxSeats){c.checked=false;root.querySelector('[data-selection-message]').textContent=payload.replacement?'Choose one replacement seat.':'Choose up to 12 seats per order.';}update();}));quantityInputs.forEach(input=>input.addEventListener('input',update));
  root.querySelector('[data-access-filter]').addEventListener('change',e=>root.querySelectorAll('[data-seat-row]').forEach(row=>row.hidden=e.target.checked&&row.dataset.accessible!=='1'));
  root.querySelectorAll('[data-select-zoom]').forEach(b=>b.onclick=()=>{const f=b.dataset.selectZoom==='in'?.8:1.25;view[2]*=f;view[3]*=f;update();});root.querySelectorAll('[data-select-pan]').forEach(b=>b.onclick=()=>{const dir=b.dataset.selectPan;view[0]+=(dir==='left'?-1:dir==='right'?1:0)*view[2]/4;view[1]+=(dir==='up'?-1:dir==='down'?1:0)*view[3]/4;update();});
  function fit(){view=geometry.bounds(payload.document.items);update();}root.querySelector('[data-select-fit]').onclick=fit;
