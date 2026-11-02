@@ -35,7 +35,7 @@ final class CommerceExperience
     }
     private static function rebuiltCart():bool
     {
-        if(!self::$storefront||getenv('COMMERCE_REBUILT_CART_ENABLED')!=='1'||!CommerceAccess::local())return false;
+        if(!self::$storefront||getenv('COMMERCE_REBUILT_CART_ENABLED')!=='1')return false;
         try{$q=self::$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_shopping_carts','commerce_shopping_cart_items','commerce_shopping_requests')");return(int)$q->fetchColumn()===3;}catch(PDOException){return false;}
     }
     private static function shoppingCart():array{return CommerceShoppingCartService::current(self::$db,self::$user,self::$org);}
@@ -43,7 +43,7 @@ final class CommerceExperience
     {$cart=self::shoppingCart();return CommerceShoppingCartService::contents(self::$db,self::$user,self::$org,(int)$cart['id']);}
     private static function rebuiltPayment():bool
     {
-        if(!self::rebuiltCart()||getenv('COMMERCE_REBUILT_CART_PAYMENT_ENABLED')!=='1'||getenv('COMMERCE_STRIPE_CHECKOUT_ENABLED')!=='1'||!CommerceStripeProvider::configured())return false;
+        if(!CommerceAccess::local()||!self::rebuiltCart()||getenv('COMMERCE_REBUILT_CART_PAYMENT_ENABLED')!=='1'||getenv('COMMERCE_STRIPE_CHECKOUT_ENABLED')!=='1'||!CommerceStripeProvider::configured())return false;
         try{$q=self::$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('commerce_shopping_purchases','commerce_shopping_purchase_orders','commerce_shopping_webhooks','commerce_shopping_refunds','commerce_shopping_deliveries')");return(int)$q->fetchColumn()===5;}catch(PDOException){return false;}
     }
     private static function cartCredentials():array
