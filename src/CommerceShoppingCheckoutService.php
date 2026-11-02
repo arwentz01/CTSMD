@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/CommerceShoppingCartService.php';
+require_once __DIR__.'/CommerceShoppingPilotPolicy.php';
 require_once __DIR__.'/CommerceStripeService.php';
 require_once __DIR__.'/CommerceFulfillmentService.php';
 
