@@ -4,7 +4,7 @@ DirectoryIndex front.php index.php
 <IfModule mod_dir.c>
     # MAMP may run without usable mod_rewrite. Keep this path aligned with the
     # deployed folder name, or remove it when the app is served from vhost root.
-    FallbackResource /ctsmd/front.php
+    FallbackResource /CTSMD/front.php
 </IfModule>
 
 <IfModule mod_rewrite.c>
