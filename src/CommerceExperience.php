@@ -437,7 +437,7 @@ final class CommerceExperience
                 echo '</section>';
             }
         }
-        echo '<p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';if(!$checkout){if(self::rebuiltPayment()&&$active&&$currency!==null&&!$promoInvalid)echo '<p><a class="button" href="'.self::e(self::url('shopping_checkout')).'">Checkout</a></p>';else{
+        echo '<p><a class="button" href="'.self::e(self::url()).'">Continue shopping</a></p>';if(!$checkout){if(self::rebuiltPayment()&&$active&&$currency!==null&&!$promoInvalid&&$totals['total_minor']>0)echo '<p><a class="button" href="'.self::e(self::url('shopping_checkout')).'">Checkout</a></p>';elseif(!$promoInvalid&&$currency!==null&&$totals['total_minor']===0)echo '<p role="status">This discount covers the entire purchase. Free-ticket checkout is not available through Stripe in this pilot. Please contact the box office for complimentary tickets.</p>';else{
                 echo '<p role="status">Checkout is not available yet. Your reserved tickets remain in the cart until the hold expires.</p>';
                 if(Auth::hasRole(self::$user,'administrator')){
                     $checks=[
