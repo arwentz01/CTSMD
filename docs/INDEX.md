@@ -1,6 +1,6 @@
 # CTSMD Connect documentation map
 
-Updated 2026-10-26. Start here instead of reading every chronological build note.
+Updated 2026-11-02. Start here instead of reading every chronological build note.
 
 **Single active task tracker:** [TODO.md](TODO.md) holds P0–P2 work, release gates and the product backlog. The [historical snapshot](archive/TODO_PRE_CONSOLIDATION_2026-10-26.md) is archived. Do not maintain a second active list.
 
@@ -8,6 +8,7 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 
 | Area | Document | Purpose |
 |---|---|---|
+| **Current Commerce implementation and hosted-release boundary** | [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md) | Authoritative production/scheduling, rebuilt shopping cart, Stripe **test** Checkout, $0 promo orders, discount rules, migration 121–122 and Eastern Time policy; implementation ≠ deployment |
 | Release / pilot decision | [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md) | Historical evidence and pilot gates; dates matter, not automatic signoff |
 | RC1 preparation / recovery | [RC1 evidence](RC1_ACCEPTANCE.md), [release runbook](RC1_RELEASE_RUNBOOK.md) | Revision-bound manifest, read-only migration/schema preflight, isolated acceptance and rollback/restore; no deployment authorization |
 | Platform launch reference | [PLATFORM_LAUNCH_READINESS.md](PLATFORM_LAUNCH_READINESS.md) | Supporting audit rationale; actionable priorities live only in TODO.md |
@@ -30,6 +31,8 @@ Updated 2026-10-26. Start here instead of reading every chronological build note
 | UX / IA | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [NAVIGATION_IA.md](NAVIGATION_IA.md), [UI_OPTIMIZATION_AUDIT.md](UI_OPTIMIZATION_AUDIT.md) | Existing implemented tokens/primitives, navigation guidance and historical UI findings; read alongside approved B2 direction |
 
 ## Current delta relative to older notes
+
+- Commerce's latest current-state specification is [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md). Older Phase 1–4 and Phase 3 pilot notes document dated milestones only; they do **not** supersede the rebuilt multi-performance cart, scoped promotions, provider-free $0 promo completion, or Eastern Time contract. Hosted migration/application and live customer release remain unverified.
 
 - Production **Readiness** now covers automated signals and links to **Tasks**; task creation and per-person completion are at `/production/tasks`. Any doc implying the full checklist editor is still on Readiness is historical.
 - Casting includes production-role multi-select, distinct callback/cast lists, private working drawers, manual participant support, and authorized student/guardian offer responses. Pre-role-library `Next — Casting` language in the original TODO predates these builds.
