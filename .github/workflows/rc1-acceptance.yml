@@ -104,6 +104,7 @@ jobs:
           php tests/commerce_http.php
           php tests/commerce_shopping_cart.php
           php tests/commerce_shopping_checkout.php
+          php tests/commerce_promos.php
           php tests/commerce_shopping_refund.php
           php tests/commerce_shopping_cart_http.php
       - uses: actions/setup-node@v4
