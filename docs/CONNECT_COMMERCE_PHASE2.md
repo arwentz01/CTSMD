@@ -1,5 +1,7 @@
 # Connect Commerce Phase 2 — Box Office and storefront preview
 
+> **Historical Phase 2 evidence (November 2, 2026 pointer):** This snapshot predates the current production-based customer ticket links, rebuilt multi-performance cart, test-mode Stripe Checkout, scoped promo-code discounts and $0 promo fulfillment. Refer to [current Commerce implementation](CONNECT_COMMERCE_CURRENT.md) and its deployment boundaries; the Phase 2 simulator-only wording is not current behavior.
+
 Later scheduling and saleability requirements supersede parts of this historical Phase 2 snapshot: see [performance scheduling and migration 107](CONNECT_COMMERCE_SCHEDULING.md).
 
 Implementation on `audit/board-pilot-readiness`, October 31, 2026. Application milestones: `10d0b10` (staff tender), `5e41364` (general admission), `98035b2` (integrated staff/storefront, ticket changes and verification). No deployment, production migration, real payment, audience email or production-account test was performed.
