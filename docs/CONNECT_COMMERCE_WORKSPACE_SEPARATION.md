@@ -1,5 +1,7 @@
 # Commerce workspace separation and Seussical poster fix
 
+> **Current Commerce documentation:** [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md) records the subsequent storefront-header reuse, public-production ticket links, production drawer refresh, scheduling redesign, promo-code manager and restricted checkout. This report records the earlier administrative/public poster separation finding; its hosted observation is not evidence of a later code rollout.
+
 ## Confirmed cause
 
 Read-only inspection of the authenticated hosted site confirmed that **Seussical Jr. (production 2) has an uploaded poster that visibly loads in production administration**, while Production discovery says **Not published**. No hosted settings, artwork or publication state were changed.
