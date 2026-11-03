@@ -63,5 +63,37 @@ try{
     $ok($reject(fn()=>CommercePromoService::quote($db,$org,$other,[$f['performance']=>['subtotal'=>2000,'discount'=>0]])),'Disabled promo code no longer discounts carts');
     CommercePromoService::apply($db,$tester,$org,$other,'');
 
+    // Fully discounted ticket order must be recorded, fulfilled and delivered without Stripe.
+    CommerceInventoryService::configure($db,$admin,$org,$f['performance'],$f['prices'],'open',true,0,600,0);
+    $freeCode=$all;$freeCode['code']='FULLFREE';$freeCode['kind']='percent';$freeCode['value']='100.00';$freeCode['limit']='1';$freeCode['production']=(string)$f['productions']['A'];
+    CommercePromoService::create($db,$admin,$org,$freeCode);
+    CommercePromoService::apply($db,$tester,$org,$other,'FULLFREE');
+    $before=count($mock->sessions);
+    $free=CommerceShoppingCheckoutService::startFree($db,$tester,$org,$other,'Promo Tester','patron@commerce.invalid','');
+    $ok($free['state']==='succeeded'&&(int)$free['total_minor']===0&&(int)$free['captured_minor']===0&&$free['remote_session_id']===null&&$free['remote_payment_id']===null&&count($mock->sessions)===$before,'Fully discounted checkout issues no Stripe session or payment');
+    $q=$db->prepare("SELECT COUNT(*) FROM commerce_shopping_purchase_orders x JOIN commerce_orders o ON o.id=x.order_id AND o.organization_id=x.organization_id WHERE x.organization_id=? AND x.purchase_id=? AND o.state='paid' AND o.total_minor=0");$q->execute([$org,$free['id']]);
+    $ok((int)$q->fetchColumn()===1&&count(CommerceShoppingCheckoutService::ticketsForOwner($db,$tester,$org,$free['public_reference']))===1,'Free checkout creates normal scannable tickets and a linked zero-total order');
+    $repeat=CommerceShoppingCheckoutService::startFree($db,$tester,$org,$other,'Promo Tester','patron@commerce.invalid','');
+    $ok((int)$repeat['id']===(int)$free['id'],'Free checkout replay never creates duplicate orders');
+    $q=$db->prepare("SELECT state FROM commerce_promo_claims WHERE organization_id=? AND purchase_id=?");$q->execute([$org,$free['id']]);
+    $ok($q->fetchColumn()==='redeemed','Free checkout redeems single-use promo only after ticket fulfillment');
+    $mail=$db->prepare("SELECT q.text_body FROM commerce_shopping_deliveries d JOIN email_queue q ON q.id=d.email_queue_id WHERE d.organization_id=? AND d.purchase_id=?");$mail->execute([$org,$free['id']]);
+    $ok(str_contains((string)$mail->fetchColumn(),'Promo code: FULLFREE'),'Free checkout queues a consolidated ticket receipt');
+    // Optional restrictions are scoped to eligible merchandise-free ticket subtotal.
+    $minimum=$all;$minimum['code']='MINIMUM30';$minimum['minimum_amount']='30.00';CommercePromoService::create($db,$admin,$org,$minimum);
+    $next=(int)CommerceShoppingCartService::current($db,$tester,$org)['id'];CommerceShoppingCartService::add($db,$tester,$org,$next,$f['performance'],['a4'=>'Adult']);CommercePromoService::apply($db,$tester,$org,$next,'MINIMUM30');
+    $ok($reject(fn()=>CommercePromoService::quote($db,$org,$next,[$f['performance']=>['subtotal'=>2000,'discount'=>0]])),'Minimum spend applies to eligible tickets only');
+    CommercePromoService::apply($db,$tester,$org,$next,'');
+    $cap=$all;$cap['code']='CAPPEDHALF';$cap['kind']='percent';$cap['value']='50.00';$cap['max_discount_amount']='5.00';CommercePromoService::create($db,$admin,$org,$cap);CommercePromoService::apply($db,$tester,$org,$next,'CAPPEDHALF');
+    $capQuote=CommercePromoService::quote($db,$org,$next,[$f['performance']=>['subtotal'=>2000,'discount'=>0]]);
+    $ok($capQuote['discount']===500,'Percentage promo respects configured maximum discount');
+    CommercePromoService::apply($db,$tester,$org,$next,'');
+    $account=$all;$account['code']='ACCOUNTLIMIT';$account['kind']='percent';$account['value']='10.00';$account['per_customer_limit']='1';CommercePromoService::create($db,$admin,$org,$account);CommercePromoService::apply($db,$tester,$org,$next,'ACCOUNTLIMIT');
+    $one=CommerceShoppingCheckoutService::start($db,$tester,$org,$next,'Promo Tester','patron@commerce.invalid','',$provider);
+    $second=(int)CommerceShoppingCartService::current($db,$admin,$org)['id'];CommerceShoppingCartService::add($db,$admin,$org,$second,$f['performance'],['a5'=>'Adult']);CommercePromoService::apply($db,$admin,$org,$second,'ACCOUNTLIMIT');
+    $ok(CommerceShoppingCheckoutService::start($db,$admin,$org,$second,'Promo Tester','patron@commerce.invalid','',$provider)['state']==='pending','Per-customer cap does not block a different signed-in account');
+    $mock->pay($one['remote_session_id']);CommerceShoppingCheckoutService::reconcile($db,$org,(int)$one['id'],$provider);
+    $third=(int)CommerceShoppingCartService::current($db,$tester,$org)['id'];CommerceShoppingCartService::add($db,$tester,$org,$third,$f['performance'],['a6'=>'Adult']);CommercePromoService::apply($db,$tester,$org,$third,'ACCOUNTLIMIT');
+    $ok($reject(fn()=>CommerceShoppingCheckoutService::start($db,$tester,$org,$third,'Promo Tester','patron@commerce.invalid','',$provider)),'One redemption per account prevents repeat checkout');
     echo "PASS $n Commerce promo and fulfillment checks\n";
 }finally{if($f)retireMyTheatreFixture($db,$f);}
