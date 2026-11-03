@@ -38,6 +38,9 @@ try{
     $paid=CommerceShoppingCheckoutService::reconcile($db,$org,(int)$p['id'],$provider);
     $q->execute([$org,$other]);$ok($paid['state']==='succeeded'&&!(int)$q->fetchColumn(),'Verified payment fulfills only the original promotion purchase');
     $q=$db->prepare('SELECT state FROM commerce_promo_claims WHERE organization_id=? AND purchase_id=?');$q->execute([$org,$p['id']]);$ok($q->fetchColumn()==='redeemed','Code is redeemed exactly once after verified fulfillment');
+    $mail=$db->prepare('SELECT q.text_body FROM commerce_shopping_deliveries d JOIN email_queue q ON q.id=d.email_queue_id WHERE d.organization_id=? AND d.purchase_id=?');
+    $mail->execute([$org,$p['id']]);$receipt=(string)$mail->fetchColumn();
+    $ok(str_contains($receipt,'Promo code: OPENING_20')&&str_contains($receipt,'saved USD 6.40'),'Consolidated receipt identifies redeemed promo and savings');
     CommerceShoppingCheckoutService::reconcile($db,$org,(int)$p['id'],$provider);
     $q=$db->prepare("SELECT COUNT(*) FROM commerce_promo_claims WHERE organization_id=? AND state='redeemed'");$q->execute([$org]);$ok((int)$q->fetchColumn()===1,'Payment replay does not redeem a code twice');
     CommercePromoService::apply($db,$tester,$org,$other,'');
