@@ -29,3 +29,14 @@
 .production-directory-copy>span{color:var(--ux-muted)}
 .production-public-empty{min-height:55vh;padding:75px 0}
 @media(max-width:760px){.production-public-feature{grid-template-columns:minmax(0,1fr);padding-top:12px}.production-public-art{width:min(280px,75vw);justify-self:center}.production-public-dates>div{grid-template-columns:1fr;gap:4px}.production-directory-item{grid-template-columns:95px minmax(0,1fr)}.production-directory-item>img,.production-directory-item>.production-poster-fallback{width:95px;height:140px}}
+
+/* Independent production details and ticket actions. No nested clickable links. */
+.production-directory-item{display:flex;flex-direction:column;align-items:stretch;gap:0}
+.production-directory-detail{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:18px;text-decoration:none;color:inherit;min-width:0}
+.production-directory-detail:hover .production-directory-copy strong{text-decoration:underline;text-underline-offset:4px}
+.production-directory-detail>img,.production-directory-detail>.production-poster-fallback{width:120px;height:175px;aspect-ratio:auto;object-fit:cover;border-radius:5px;box-shadow:none}
+.production-ticket-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;align-self:flex-start;margin:12px 0 0 138px;padding:10px 16px;border-radius:999px;background:var(--stage-primary,#8b233b);color:var(--organization-on-primary,#fff)!important;text-decoration:none;font-weight:750;font-size:.875rem}
+.production-ticket-link:hover{filter:brightness(.9)}
+.production-directory-detail:focus-visible,.production-ticket-link:focus-visible{outline:3px solid var(--stage-accent,#b58a33);outline-offset:3px}
+@media(max-width:760px){.production-directory-detail{grid-template-columns:95px minmax(0,1fr)}.production-directory-detail>img,.production-directory-detail>.production-poster-fallback{width:95px;height:140px}.production-ticket-link{margin-left:113px}}
+@media(max-width:420px){.production-ticket-link{margin-left:0;align-self:stretch}}
