@@ -1,5 +1,7 @@
 # Commerce Phase 4 implementation
 
+> **Current-source update, November 2, 2026:** This page records the original Phase 4 UX milestone and its historical test evidence. Later changes include the home-inspired customer ticket header, show-specific ticket links on public production pages, automatic workspace refresh after saved drawers close, a compact monthly scheduling page, sales/fee/tax configuration at Add Performance, and a dedicated **Discounts & promo codes** destination. Multi-performance cart, Stripe **test** checkout, promotion restrictions, $0 provider-free completion and central Eastern Time are documented in [Current Commerce implementation](CONNECT_COMMERCE_CURRENT.md). This historical report does not establish a hosted rollout.
+
 Implemented on `audit/board-pilot-readiness`. No branch creation, deployment, schema migration, service changes, live payment activation or public-sales activation. Shared CTSMD application navigation is retained.
 
 ## Before and after
