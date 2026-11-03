@@ -38,6 +38,7 @@
       let input = [...rows.querySelectorAll('[data-exact-date]')].find(field => !field.value);
       if (!input) input = makeRow().querySelector('[data-exact-date]');
       input.value = button.dataset.calendarDate;
+      const advanced=rows.closest('details.commerce-schedule-editor');if(advanced)advanced.open=true;
       input.closest('.commerce-showtime-row').querySelector('[type="time"]').focus();
     });
   });
