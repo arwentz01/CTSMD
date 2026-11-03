@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/AppClock.php';
+
 final class CTSMDPDO extends PDO
 {
     private static function rewriteLegacyIdentity(string $sql): string
@@ -38,7 +40,7 @@ final class Database
     {
         self::loadEnv($projectRoot . '/.env');
 
-        $timezone = self::env('APP_TIMEZONE', 'America/New_York');
+        $timezone = AppClock::name();
         if (!@date_default_timezone_set($timezone)) {
             throw new RuntimeException('APP_TIMEZONE is not a valid timezone.');
         }
