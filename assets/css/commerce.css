@@ -243,3 +243,10 @@
 .commerce-schedule-page details.commerce-schedule-editor[open]>summary{border-bottom:1px solid var(--commerce-line)}
 .commerce-schedule-page details.commerce-schedule-editor .commerce-schedule-editor-intro,.commerce-schedule-page details.commerce-schedule-editor>form{margin:14px 17px}
 .commerce-schedule-page details.commerce-schedule-editor>form{max-width:none}
+
+/* Keep the former automatic performance discount available without making it routine setup. */
+.commerce-legacy-discount{margin:12px 0 16px;border:1px solid #e4d8d4;border-radius:8px;padding:0 14px;background:#fcfaf8}
+.commerce-legacy-discount>summary{cursor:pointer;font-size:13px;font-weight:650;color:#6f3548;padding:12px 0}
+.commerce-legacy-discount[open]>summary{border-bottom:1px solid #eadfdb}
+.commerce-legacy-discount>p{font-size:12px;line-height:1.55;color:#61555b;margin:12px 0 8px}
+.commerce-legacy-discount>label{display:block;margin-bottom:14px}
