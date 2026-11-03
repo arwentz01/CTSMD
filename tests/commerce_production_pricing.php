@@ -16,6 +16,16 @@ $ok(CommerceStore::row($db,'performances',$org,$f['performance'])['prices_json']
 $r=CommercePricingService::preview($db,$u,$org,$production,'inherit',[$f['performance']],[],'Enable inheritance',false);CommercePricingService::apply($db,$u,$org,$r,$r['hash'],bin2hex(random_bytes(16)));
 $input=['dates'=>[date('Y-m-d',time()+4*86400),date('Y-m-d',time()+4*86400)],'times'=>['14:00','19:00'],'pricing_source'=>'production','seating_mode'=>'general_admission'];$prices=CommercePricingService::defaults($db,$org,$production)['prices'];$preview=CommerceScheduleService::preview($db,$u,$org,$production,$f['layout'],$prices,$input);$ids=CommerceScheduleService::create($db,$u,$org,$production,$f['layout'],$prices,$input,$preview['hash'],bin2hex(random_bytes(16)));
 $ok(count($ids)===2&&CommerceStore::row($db,'performances',$org,$ids[0])['seating_mode']==='general_admission','Same-day matinee and evening use atomic existing creator with GA inheritance');
+$ok(CommerceStore::row($db,'performances',$org,$ids[0])['sales_status']==='closed','Default creation keeps sales closed');
+$openInput=['dates'=>[date('Y-m-d',time()+6*86400)],'times'=>['15:00'],'pricing_source'=>'production','seating_mode'=>'reserved','initial_sales'=>'open','fee_amount'=>'2.50','tax_percent'=>'6.00','discount_amount'=>'1.25'];
+$openReview=CommerceScheduleService::preview($db,$u,$org,$production,$f['layout'],$prices,$openInput);
+$ok($openReview['initial_sales']==='open'&&$openReview['fee_minor']===250&&$openReview['tax_basis_points']===600&&$openReview['discount_minor']===125,'Reviewed schedule captures every initial sales term');
+$openIds=CommerceScheduleService::create($db,$u,$org,$production,$f['layout'],$prices,$openInput,$openReview['hash'],bin2hex(random_bytes(16)));
+$createdOpen=CommerceStore::row($db,'performances',$org,$openIds[0]);
+$ok($createdOpen['sales_status']==='open'&&(int)$createdOpen['fee_minor']===250&&(int)$createdOpen['tax_basis_points']===600&&(int)$createdOpen['discount_minor']===125,'Performance opens sales with the reviewed fee tax and discount atomically');
+$invalidInput=$openInput;$invalidInput['tax_percent']='100.01';
+$reject(fn()=>CommerceScheduleService::preview($db,$u,$org,$production,$f['layout'],$prices,$invalidInput),'Over-limit initial tax rejected before creation');
+
 $token=bin2hex(random_bytes(32));$o=CommerceInventoryService::holdQuantities($db,$u,$org,$f['performance'],['a1'],['standard'=>['Adult'=>1]],'Synthetic Pricing Guest','pricing@commerce.invalid','',bin2hex(random_bytes(16)),$token);CommercePaymentService::start($db,$u,$org,$o['id'],$token,'success');CommercePaymentService::refresh($db,$u,$org,$o['id'],$token);
 $reject(fn()=>CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>3000]],'Missing acknowledgement',false),'Orders require explicit acknowledgement');
 $r=CommercePricingService::preview($db,$u,$org,$production,'defaults',[],['standard'=>['Adult'=>3000]],'Reviewed default increase',true);$key=bin2hex(random_bytes(16));$result=CommercePricingService::apply($db,$u,$org,$r,$r['hash'],$key);$ok(count($result['performances'])===3,'Default update includes all future inherited performances');$ok(CommercePricingService::apply($db,$u,$org,$r,$r['hash'],$key)==$result,'Pricing apply retry is idempotent');
