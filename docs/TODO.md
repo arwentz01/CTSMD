@@ -1,10 +1,24 @@
 # CTSMD Connect — Single Source of Truth: To-Do & Product Backlog
 
-**Updated:** October 29, 2026 · **Working branch:** `audit/board-pilot-readiness`
+**Updated:** November 2, 2026 · **Working branch:** `audit/board-pilot-readiness`
 
 **This is the ONE maintained list of active work, pilot gates, and approved feature backlog.** Checkboxes represent verification or implementation remaining; a merged commit is not proof of production deployment. Keep status/owner/evidence here, link details elsewhere, and do not create new competing active to-do documents.
 
 **Release stance:** The most recent [board pilot report](BOARD_PILOT_READINESS.md) remains **NO-GO for a real-family pilot** until its open gates are accepted. Older percentages are dated evidence, not current calculated coverage.
+
+## Commerce release and acceptance — November 2, 2026
+
+**Current source of truth:** [Commerce current implementation, routes, migrations and timezone](CONNECT_COMMERCE_CURRENT.md). The original Phase 1–4 implementation reports are historical; they do not describe the current combined-cart/discount functionality. Source and isolated CI are **not** hosted deployment or live-payment approval.
+
+- [x] **Commerce source:** production-centered cards, saved-drawer refresh, Add Performance sales-open/closed with fees/tax, compact calendar/Advanced batch creation, customer storefront home-style navigation, and conditional public-production View tickets links.
+- [x] **Combined-cart restricted pilot source:** multi-show ticket selection, one test-mode Stripe Checkout session per purchase, protected idempotent reconciliation/refund/fulfillment and consolidated ticket/QR receipt. Operator reported reaching a hosted Stripe **test** Checkout page; this does not prove end-to-end host fulfillment.
+- [x] **Discounts & promo code source:** Box Office → Discounts & promo codes, one code per cart, production/all-production scope, amount/percentage, expiry, aggregate and per-account limits, minimum eligible subtotal, percentage caps and durable reservation/redemption claims. Existing per-performance discount moved to Advanced and cannot stack on eligible shows.
+- [x] **$0 promo checkout source:** no Stripe session/payment, preserved inventory, authoritative zero-total order, normal tickets/QR and receipt, replays and owner-initiated interrupted-purchase recovery.
+- [x] **Eastern-time source policy:** `APP_TIMEZONE=America/New_York` through `AppClock`, DST-aware promo expiration and readable EST/EDT, without rewriting stored historical performance instants. [RC1 isolated CI](https://github.com/arwentz01/CTSMD/actions/runs/41576124381) and [PHP safety/DST CI](https://github.com/arwentz01/CTSMD/actions/runs/41576124361) passed at source revision `2f1dfb2`; later documentation-only commits do not change runtime behavior.
+- [ ] **Hosted schema and deployment preflight:** inspect actual schema and migration ledger/state for existing prerequisites 101–120 and apply only separately approved missing statements; review additive **121**, then **122**, after a verified protected backup/restore rehearsal. Never infer applied migrations from GitHub uploads or run blind import/replay.
+- [ ] **Hosted test-only checkout acceptance:** verify paid and fully discounted multi-show carts, single-use competing claims, expiration near DST, one QR per purchased ticket, Box Office financial labels, signed test webhook reconciliation/refund behavior and approved test-inbox receipt. Confirm host revision and release flags before any pilot signoff.
+- [ ] **Global timezone audit:** inventory remaining legacy staff/member/mobile emails, date inputs, reports, cron jobs and stored SQL datetime assumptions. Use Eastern for human business context, venue-local time for actual performances and UTC for UTC-designated persistence/API instants. Do not bulk-convert historical fields. Test DST changes and server migration independently.
+- [ ] **Commerce UX and release gate:** physical device, screen-reader/keyboard, authorized account/caregiver flows, one-show vs mixed-production promotions, and financial/operator review. Public/live payment, general audience email, and real-family rollout remain explicitly **not approved**.
 
 ## RC1 signoff blockers — October 28, 2026
 
