@@ -106,7 +106,7 @@ final class CommerceExperience
         $groups=[
             'overview'=>['Overview',['overview'=>['Today',null]]],
             'productions'=>['Productions & Performances',['performances'=>['Productions','inventory'],'schedule'=>['Calendar & scheduling','inventory'],'blocks'=>['Seat blocking','inventory']]],
-            'boxoffice'=>['Box Office',['sales'=>['Sell tickets','sell'],'orders'=>['Orders & refunds','report'],'promotions'=>['Promo codes','configure'],'complimentary'=>['Complimentary tickets','complimentary'],'checkin'=>['Door check-in','checkin']]],
+            'boxoffice'=>['Box Office',['sales'=>['Sell tickets','sell'],'orders'=>['Orders & refunds','report'],'promotions'=>['Discounts & promo codes','configure'],'complimentary'=>['Complimentary tickets','complimentary'],'checkin'=>['Door check-in','checkin']]],
             'settings'=>['Settings',['venues'=>['Venues & spaces','venues'],'configure'=>['Configuration & access','configure']]]
         ];
         $active=match($tab){'performance_details'=>'overview','layout'=>'venues','performance','pricing','add_performance'=>'performances','tickets'=>'orders','checkout','select'=>'sales',default=>$tab};
@@ -354,7 +354,7 @@ final class CommerceExperience
     private static function promotions():void
     {
         CommerceAccess::demand(self::$db,self::$user,self::$org,'configure');
-        echo '<div class="commerce-heading"><h1>Promo codes</h1></div><p>Create a code for all current productions or restrict it to one production. Discounts apply to eligible ticket prices before tax, not fees. One code per cart.</p>';
+        echo '<div class="commerce-heading"><h1>Discounts &amp; promo codes</h1></div><p>Create a code for all current productions or restrict it to one production. Discounts apply to eligible ticket prices before tax, not fees. One code per cart.</p>';
         if(!CommercePromoService::available(self::$db)){echo '<p role="status">Promo codes require migration 121. No codes are active.</p>';return;}
         echo '<section class="commerce-promo-panel"><h2>Create promo code</h2>';self::form('promo_create');
         self::input('code','Code','text','','required minlength="3" maxlength="48" pattern="[A-Za-z0-9_-]{3,48}" autocomplete="off" placeholder="OPENINGNIGHT"');
@@ -363,13 +363,13 @@ final class CommerceExperience
         echo '</select></label><div class="commerce-finance-grid"><label>Discount type<select name="kind"><option value="amount">Fixed amount off eligible tickets</option><option value="percent">Percentage off eligible tickets</option></select></label>';
         self::input('value','Amount or percent','number','','required min="0.01" max="100000" step="0.01"');
         self::input('limit','Maximum redemptions (0 = unlimited)','number','1','required min="0" max="1000000" step="1"');
-        echo '</div>';self::input('expires','Expires on (UTC)','date',gmdate('Y-m-d',time()+30*86400),'required min="'.gmdate('Y-m-d').'"');
+        echo '</div><details class="commerce-legacy-discount"><summary>Advanced restrictions · optional</summary><div class="commerce-finance-grid">';self::input('minimum_amount','Minimum eligible ticket subtotal','number','0.00','min="0" max="10000" step="0.01" required');self::input('per_customer_limit','Uses per customer (0 = unlimited)','number','0','min="0" max="1000000" step="1" required');self::input('max_discount_amount','Maximum discount for percentage codes','number','0.00','min="0" max="10000" step="0.01" required');echo '</div><p>These apply only to qualifying tickets, not fees or taxes. Per-customer limits use the signed-in CTSMD account. A zero discount cap means no cap.</p></details>';self::input('expires','Expires on (UTC)','date',gmdate('Y-m-d',time()+30*86400),'required min="'.gmdate('Y-m-d').'"');
         echo '<button>Create code</button></form><p>Single use: set maximum redemptions to 1. For multi-use, choose a higher number or zero for unlimited. An unresolved payment reserves one use until it is safely resolved.</p></section>';
         $codes=self::rows("SELECT p.*,pr.title AS production_title,(SELECT COUNT(*) FROM commerce_promo_claims x WHERE x.promo_id=p.id AND x.organization_id=p.organization_id AND x.state='redeemed') redeemed,(SELECT COUNT(*) FROM commerce_promo_claims x WHERE x.promo_id=p.id AND x.organization_id=p.organization_id AND x.state='reserved') reserved FROM commerce_promo_codes p LEFT JOIN productions pr ON pr.id=p.production_id WHERE p.organization_id=? ORDER BY p.id DESC LIMIT 100",[self::$org]);
         echo '<section><h2>Existing codes</h2>';
         if(!$codes)echo '<p>No codes created yet.</p>';
         foreach($codes as $p){$value=$p['discount_kind']==='percent'?number_format((int)$p['discount_value']/100,2).'%':self::money((int)$p['discount_value'],CommerceStore::organization(self::$db,self::$org)['currency']);$active=(int)$p['enabled']&&$p['expires_at_utc']>=gmdate('Y-m-d H:i:s');
-            echo '<article class="commerce-record"><strong>'.self::e($p['code']).'</strong><p>'.self::e($p['production_title']??'All productions').' · '.self::e($value).' · '.($active?'Enabled':'Inactive').'</p><p>'.(int)$p['redeemed'].' redeemed · '.(int)$p['reserved'].' awaiting payment · '.((int)$p['max_redemptions']===0?'Unlimited uses':(int)$p['max_redemptions'].' maximum uses').' · Expires '.self::e($p['expires_at_utc']).' UTC</p>';
+            echo '<article class="commerce-record"><strong>'.self::e($p['code']).'</strong><p>'.self::e($p['production_title']??'All productions').' · '.self::e($value).' · '.($active?'Enabled':'Inactive').'</p><p>'.(int)$p['redeemed'].' redeemed · '.(int)$p['reserved'].' awaiting payment · '.((int)$p['max_redemptions']===0?'Unlimited uses':(int)$p['max_redemptions'].' maximum uses').' · Expires '.self::e($p['expires_at_utc']).' UTC</p><p>Minimum eligible subtotal: '.self::money((int)($p['minimum_subtotal_minor']??0),CommerceStore::organization(self::$db,self::$org)['currency']).' · Per customer: '.((int)($p['per_customer_limit']??0)===0?'Unlimited':(int)$p['per_customer_limit']).' · Discount cap: '.((int)($p['max_discount_minor']??0)===0?'None':self::money((int)$p['max_discount_minor'],CommerceStore::organization(self::$db,self::$org)['currency'])).'</p>';
             if((int)$p['enabled']){self::form('promo_disable',['id'=>(int)$p['id']]);echo '<button type="submit">Disable code</button></form>';}
             echo '</article>';
         }
