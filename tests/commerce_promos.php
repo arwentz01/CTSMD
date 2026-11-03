@@ -55,5 +55,13 @@ try{
     $allQuote=CommercePromoService::quote($db,$org,$other,[$f['performance']=>['subtotal'=>2000,'discount'=>0]]);
     $ok($allQuote['discount']===500,'Fixed-amount promotion applies to all productions');
     $ok($reject(fn()=>CommercePromoService::quote($db,$org,$other,[$f['performance']=>['subtotal'=>2000,'discount'=>50]])),'Legacy and promo discounts cannot stack');
+    $unauthorized=$all;$unauthorized['code']='UNAUTHORIZED';
+    $ok($reject(fn()=>CommercePromoService::create($db,$tester,$org,$unauthorized)),'Only Commerce administrators can create promotion codes');
+    $q=$db->prepare("SELECT id FROM commerce_promo_codes WHERE organization_id=? AND code='ALLSHOWS5'");$q->execute([$org]);$promoId=(int)$q->fetchColumn();
+    $ok($reject(fn()=>CommercePromoService::disable($db,$tester,$org,$promoId)),'Customers cannot disable promotion codes');
+    CommercePromoService::disable($db,$admin,$org,$promoId);
+    $ok($reject(fn()=>CommercePromoService::quote($db,$org,$other,[$f['performance']=>['subtotal'=>2000,'discount'=>0]])),'Disabled promo code no longer discounts carts');
+    CommercePromoService::apply($db,$tester,$org,$other,'');
+
     echo "PASS $n Commerce promo and fulfillment checks\n";
 }finally{if($f)retireMyTheatreFixture($db,$f);}
