@@ -1,5 +1,7 @@
 # Commerce performance scheduling and multi-show seat management
 
+> **Current-source addendum (2026-11-02):** The original October 31 implementation/testing below is retained as dated evidence. See [Current Commerce implementation](CONNECT_COMMERCE_CURRENT.md) for the compact calendar/advanced recurrence UI, transactional **on-sale or closed** creation with per-show fees/tax, drawer-close refresh, public ticket links, and central Eastern business-time policy. Older statements that *all* newly created showtimes must have sales closed and zero fees/tax describe the **old default workflow**, not the current Add Performance options.
+
 Implemented on `audit/board-pilot-readiness`, October 31, 2026. Backend milestone `7f59418`; calendar/review/customer milestone `3055782`. No deployment, production SQL import, real payment, audience email or live-account test was performed.
 
 ## Staff entry points
@@ -20,7 +22,7 @@ Use optional weekly templates with independent Monday–Sunday time lists and a 
 
 Review shows the production, venue/auditorium, layout version, seating mode, ticket prices, every local showtime, UTC offset and UTC instant. Conflicts disable creation. Apply revalidates the payload and creates every performance/inventory snapshot in one transaction through `CommerceInventoryService::createLocked`; a failure creates none. No performance or inventory is inferred from production start/end dates or from blank calendar days.
 
-Each new performance uses the chosen published layout and reviewed ticket-price map. Choose reserved seating or general admission; GA uses the existing inventory capacity and shared mode configuration. New sales are closed, check-in is disabled, and fees/tax/discount start at zero. Configure those settings deliberately before opening sales; current order snapshots are never rewritten.
+Each new performance uses the chosen published layout and reviewed ticket-price map. Choose reserved seating or general admission; GA uses the existing inventory capacity and shared mode configuration. The advanced batch scheduler retains closed-sales defaults. The current **Add Performance drawer** can deliberately open sales and configure fees and tax within the reviewed creation. Legacy fixed performance discount is an Advanced option; promo codes are configured separately. Current order snapshots are never rewritten.
 
 A database uniqueness key reserves each **organization + physical auditorium + UTC showtime**. Different layout versions or productions cannot double-book that auditorium at the same instant. Separate auditoriums in a multi-space venue can host simultaneous shows. This is an exact-start collision check; no duration/overlap model has been invented. Cancelled slots remain reserved as historical identities. Idempotent creation keys return the original IDs after repeated submissions, and concurrent distinct requests cannot create duplicate slots.
 
