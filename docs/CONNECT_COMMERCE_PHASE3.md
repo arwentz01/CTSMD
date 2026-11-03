@@ -1,5 +1,7 @@
 # Connect Commerce Phase 3
 
+> **Historical Phase 3 evidence (November 2, 2026 pointer):** The current branch includes later combined-cart checkout, provider-safe Stripe session recovery, promotional discounts, zero-dollar non-Stripe purchases and a shared Eastern Time policy. Those later capabilities and required migrations are documented in [current Commerce implementation](CONNECT_COMMERCE_CURRENT.md). Phase 3's dated release findings remain valid for their original revision but do not establish hosted financial acceptance or public/live activation.
+
 Assignment: [GitHub issue #4](https://github.com/arwentz01/CTSMD/issues/4). Work continues from `e9cf460` on `audit/board-pilot-readiness`. No deployment, hosted SQL, live charge, unrestricted public checkout or audience email is authorized by this implementation.
 
 ## Milestone 1 — Stripe test-mode integration
