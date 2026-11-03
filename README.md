@@ -13,6 +13,8 @@ The prototype is server-rendered PHP with a lightweight MySQL data layer. It inc
 
 Start at [docs/INDEX.md](docs/INDEX.md) for the current documentation map, then review [docs/PLATFORM_LAUNCH_READINESS.md](docs/PLATFORM_LAUNCH_READINESS.md) for the release punch list and required verification. Historic implementation notes and commits are not evidence of a live deployment.
 
+**Current Commerce specification:** [docs/CONNECT_COMMERCE_CURRENT.md](docs/CONNECT_COMMERCE_CURRENT.md) records production-based scheduling, the multi-performance test-only cart/Stripe Checkout, Box Office discounts and promo codes, provider-free $0 promotion orders, migrations 121/122, and the `America/New_York` operating-time policy. Code/CI status is not hosted deployment evidence; do not activate public/live sales based on this document.
+
 ## Canonical product backlog
 
 All active work, release gates, future product ideas, and verified completions are tracked in [`docs/TODO.md`](docs/TODO.md). That document is the source of truth for “what comes next” rather than older build-checkpoint notes.
