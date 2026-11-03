@@ -233,3 +233,13 @@
 .commerce-finance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .commerce-finance-grid label{min-width:0}
 @media(max-width:680px){.commerce-schedule-page .commerce-calendar{gap:2px}.commerce-schedule-page .commerce-calendar-day{min-height:49px;border-radius:4px}.commerce-schedule-page .commerce-calendar-day button{padding:3px 5px;font-size:11px;min-height:25px}.commerce-schedule-page .commerce-calendar-day a{font-size:9px;padding:2px 4px}.commerce-schedule-page .commerce-schedule-editor>form{grid-template-columns:minmax(0,1fr)}.commerce-schedule-page .commerce-showtime-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.commerce-schedule-page .commerce-showtime-row button{grid-column:1/-1}.commerce-finance-grid{grid-template-columns:1fr}}
+
+.commerce-schedule-quick-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 4px}
+.commerce-schedule-quick-actions .button{display:inline-flex;align-items:center;text-decoration:none;font-weight:700}
+.commerce-schedule-quick-actions span{font-size:12px;color:var(--commerce-muted)}
+.commerce-schedule-page details.commerce-schedule-editor{padding-top:0;margin:16px 0 0;border:1px solid var(--commerce-line);border-radius:8px;background:#fffdfa}
+.commerce-schedule-page details.commerce-schedule-editor>summary{font-weight:700;cursor:pointer;padding:15px 17px;color:var(--commerce-accent);list-style-position:inside}
+.commerce-schedule-page details.commerce-schedule-editor>summary:hover{background:#f7efec}
+.commerce-schedule-page details.commerce-schedule-editor[open]>summary{border-bottom:1px solid var(--commerce-line)}
+.commerce-schedule-page details.commerce-schedule-editor .commerce-schedule-editor-intro,.commerce-schedule-page details.commerce-schedule-editor>form{margin:14px 17px}
+.commerce-schedule-page details.commerce-schedule-editor>form{max-width:none}
