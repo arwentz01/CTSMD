@@ -101,6 +101,8 @@ jobs:
           node --check tests/my_theatre_browser.mjs
           node --check tests/my_theatre_interactions.mjs
           node --check assets/js/ux-member.js
+      - name: Eastern business timezone and DST invariants
+        run: php tests/app_clock.php
       - name: Staff production directory ordering and past grouping
         run: php tests/pilot_production_directory.php
       - name: Lifecycle write-boundary source contract
