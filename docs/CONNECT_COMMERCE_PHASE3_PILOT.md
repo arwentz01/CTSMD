@@ -1,5 +1,8 @@
 # Connect Commerce Phase 3 — hosted pilot runbook
 
+> **November 2, 2026 release-scope update:** The procedures below were written for Phase 3 and principally cover migrations **101–109**. They are **not a complete deployment plan for today's rebuilt shopping cart and promotions**. Consult [Current Commerce implementation and release boundary](CONNECT_COMMERCE_CURRENT.md) and [RC1 release runbook](RC1_RELEASE_RUNBOOK.md). A current Commerce release also requires an inventory of **110–120**, followed by approved additive migrations **121** (promotion codes/claims) and **122** (minimum, per-account and cap restrictions), subject to host-specific schema review. No migration or Stripe/public activation is authorized by this note. The checkout remains a restricted **Stripe test-mode** pilot; a reported hosted Stripe Checkout page is not proof of paid fulfillment or delivered mail.
+
+
 Scope: [issue #4](https://github.com/arwentz01/CTSMD/issues/4), existing `audit/board-pilot-readiness`, baseline `e9cf460`. This is a **test-only release**. Implementation, fixture tests and release preparation do not authorize deployment, hosted SQL, live payments, public checkout, notification workers or audience email. The current deployment method is a local Git pull followed by FTP; FTP does not apply SQL.
 
 ## Release contents and compatibility
