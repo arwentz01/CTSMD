@@ -36,6 +36,14 @@ The CLI starts a read-only transaction, reads information_schema, rolls back, an
 
 Checks cover all source-declared tables/columns, latest trigger timing/event/table/body hash, obsolete trigger absence, InnoDB, and selected critical nullable types. Lexical trigger hashes normalize comments/whitespace outside literals while preserving literal case/content; they are not a SQL semantic equivalence proof. The JSON explicitly lists omissions: all index/FK/type/default definitions, data backfills, permission grants, provider configuration and migration history still need operator review. Existing `bin/check-schema.php` remains a smaller 079–086 check; runtime schema version 84 is insufficient RC1 evidence.
 
+## Commerce-specific extension — current source (November 2, 2026)
+
+The original RC1 release logic still applies. **For any release containing the rebuilt Commerce cart and promo code manager**, the operator must also consult [current Commerce implementation](CONNECT_COMMERCE_CURRENT.md), with source/schema hash matching and current acceptance evidence. Migrations **101–120** are dependencies to inventory; **121_commerce_promo_codes.sql** adds codes, cart selection and claim/redemption ledgers and **122_commerce_promo_restrictions.sql** adds minimum, account-limit and cap settings. Order is **121 → 122**, after verifying all applicable prior migrations. Do not assume either exists on CTSMD.me; SQL uploaded as a file is not an applied migration. MySQL DDL may partially commit on failure.
+
+Establish `APP_TIMEZONE=America/New_York` as the business clock (Eastern Time with EST/EDT) while respecting performance venue overrides and stored UTC instants. Do **not** change the host clock, bulk-convert legacy datetimes or reinterpret historical performance snapshots as part of this release. Test $0 promotional purchases separately from Stripe test-mode captured purchases, and treat canceled/unresolved promo claims as protected until authoritative reconciliation. Confirm independent approved test inbox, webhooks, QR/check-in and staff financial reporting. Live/public activation remains excluded.
+
+CI evidence at implementation revision `2f1dfb2`: [RC1 isolated acceptance](https://github.com/arwentz01/CTSMD/actions/runs/41576124381), [web PHP/DST safety](https://github.com/arwentz01/CTSMD/actions/runs/41576124361). This is **source validation, not hosted release proof**. Record a new exact revision/manifest and rerun preflight/acceptance after any later code changes.
+
 ## 3. Production/staging migration decision process
 
 1. Record candidate revision, environment, operator, DBA/reviewer, verified matched DB/private-file backup, server version and trigger privileges. Obtain a maintenance/change approval before **any** production write; this runbook is not that approval.
