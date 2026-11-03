@@ -1,5 +1,7 @@
 # RC1 acceptance evidence and signoff envelope
 
+> **Current Commerce source supplement (November 2, 2026):** The October 28 candidate and release decision below remain a historical RC1 snapshot. Newer Commerce production/scheduling, scoped promotions and zero-dollar checkout, Stripe **test** session recovery and Eastern business-time changes are described in [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md). Isolated source CI passed at `2f1dfb2` ([RC1](https://github.com/arwentz01/CTSMD/actions/runs/41576124381), [PHP/DST safety](https://github.com/arwentz01/CTSMD/actions/runs/41576124361)), but the later work is **not approved or evidenced as a hosted deployment**. Required host review of Commerce migrations 101–122, especially 121/122, stays open in [TODO.md](TODO.md). Do not replace the older audited candidate hash or mark RC1 gates closed from the newer CI alone.
+
 October 28, 2026 · `arwentz01/CTSMD` · `audit/board-pilot-readiness`.
 
 Verified candidate code: **`6a891e73d2889df36cd0ccd0fd15e91d02c84930`**. Later documentation-only evidence commits do not constitute a deployment or change the tested application source.
