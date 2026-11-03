@@ -1,5 +1,8 @@
 # Connect Commerce Phase 1
 
+> **Current documentation pointer (2026-11-02):** This long-form report captures the initial Commerce milestones and dated acceptance. For the **current** production-first workspace, rebuilt multi-performance cart, restricted Stripe test checkout, discounts/promo codes, $0 completion, migration 121–122 requirements, and Eastern Time contract, use [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md). Statements in earlier sections about simulated-only payments or future combined checkout remain historical; they must not be mistaken for the present source behavior or proof of public/live deployment.
+
+
 Optional, simulated-only Commerce is owned by `commerce_organizations`. Its key identifies the installation's configured Commerce owner; it is not a claim that Connect's identity, production, family, storage or communication systems are tenant-isolated.
 
 ## Activation and authorization
