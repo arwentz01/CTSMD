@@ -11,6 +11,7 @@ final class AppClock
         return new DateTimeZone($name);
     }
     public static function name():string{return self::timezone()->getName();}
+    public static function label():string{return self::name()==='America/New_York'?'Eastern Time':self::name();}
     public static function today():string{return (new DateTimeImmutable('now',self::timezone()))->format('Y-m-d');}
     public static function localDateTime(string $utc,string $format='M j, Y · g:i A T'):string
     {
