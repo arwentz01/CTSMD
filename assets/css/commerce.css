@@ -196,3 +196,40 @@
 .commerce-storefront .commerce-customer-header a:focus-visible{outline:3px solid var(--organization-accent,#b58a33);outline-offset:3px}
 @media(max-width:720px){.commerce-storefront .commerce-customer-header{align-items:flex-start;flex-direction:column;gap:10px;padding:15px 12px}.commerce-storefront .commerce-customer-nav{width:100%;justify-content:flex-start;gap:3px 16px}.commerce-storefront .commerce-customer-nav>a{min-height:40px}.commerce-storefront .commerce-customer-nav .commerce-customer-cart{margin-left:auto}}
 @media(max-width:380px){.commerce-storefront .commerce-customer-nav{gap:4px 12px}.commerce-storefront .commerce-customer-nav>a{font-size:.8rem}.commerce-storefront .commerce-customer-nav .commerce-customer-cart{padding:7px 10px}}
+
+/* Commerce schedule: dense, scannable calendar rather than a full-width form grid. */
+.commerce-schedule-page{max-width:1120px;margin:auto}
+.commerce-schedule-intro,.commerce-schedule-calendar-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.commerce-schedule-intro{padding-bottom:12px;border-bottom:1px solid var(--commerce-line)}
+.commerce-schedule-intro h2{margin:2px 0 5px;font-size:24px}
+.commerce-schedule-intro p,.commerce-schedule-editor-intro p,.commerce-schedule-calendar-head p{color:var(--commerce-muted);margin:3px 0 9px}
+.commerce-schedule-eyebrow{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--commerce-accent)!important}
+.commerce-schedule-action,.commerce-schedule-calendar-head nav a{display:inline-flex;align-items:center;min-height:36px;font-size:12px;font-weight:650;color:var(--commerce-accent);text-decoration:none}
+.commerce-schedule-calendar-head{margin-top:22px}
+.commerce-schedule-calendar-head h3{font-size:19px;margin:0}
+.commerce-schedule-calendar-head nav{display:flex;gap:15px}
+.commerce-schedule-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:14px 0 0!important}
+.commerce-schedule-toolbar label{flex:1 1 220px;max-width:420px;margin:0}
+.commerce-schedule-toolbar input,.commerce-schedule-toolbar select{min-height:40px}
+.commerce-schedule-toolbar button{margin:0;min-height:40px}
+.commerce-schedule-page .commerce-calendar{margin:10px 0 20px;gap:4px;max-width:900px}
+.commerce-schedule-page .commerce-calendar>strong{font-size:11px;font-weight:650;color:var(--commerce-muted);padding:5px}
+.commerce-schedule-page .commerce-calendar-day{min-height:62px;border-radius:6px;overflow:hidden;background:#fff}
+.commerce-schedule-page .commerce-calendar-day button{min-height:27px;text-align:left;padding:4px 7px;font-size:12px;font-weight:650;background:transparent}
+.commerce-schedule-page .commerce-calendar-day a{font-size:10px;line-height:1.25;padding:2px 7px 5px;color:var(--commerce-accent);overflow-wrap:normal}
+.commerce-schedule-page .commerce-calendar-day:has(a){border-color:#b99da6;background:#fff9fa}
+.commerce-schedule-editor{border-top:1px solid var(--commerce-line);margin-top:14px;padding-top:18px}
+.commerce-schedule-editor-intro h3{font-size:19px;margin:0 0 4px}
+.commerce-schedule-page .commerce-schedule-editor>form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:end;max-width:900px}
+.commerce-schedule-page .commerce-schedule-editor>form>label{margin:0;min-width:0}
+.commerce-schedule-page .commerce-schedule-editor>form>h3,.commerce-schedule-page .commerce-schedule-editor>form>p,.commerce-schedule-page .commerce-schedule-editor>form>[data-showtime-rows],.commerce-schedule-page .commerce-schedule-editor>form>details,.commerce-schedule-page .commerce-schedule-editor>form>fieldset{grid-column:1/-1}
+.commerce-schedule-page .commerce-schedule-editor>form>h3{margin:10px 0 0}
+.commerce-schedule-page .commerce-showtime-row{grid-template-columns:minmax(120px,1fr) minmax(110px,1fr) auto;gap:8px;margin:6px 0;align-items:end}
+.commerce-schedule-page .commerce-showtime-row label{margin:0}
+.commerce-schedule-page .commerce-showtime-row input[type=hidden]{display:none}
+.commerce-creation-terms{border:1px solid var(--commerce-line);padding:14px;border-radius:8px}
+.commerce-creation-terms>label{display:block}
+.commerce-creation-terms p{color:var(--commerce-muted);font-size:12px}
+.commerce-finance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.commerce-finance-grid label{min-width:0}
+@media(max-width:680px){.commerce-schedule-page .commerce-calendar{gap:2px}.commerce-schedule-page .commerce-calendar-day{min-height:49px;border-radius:4px}.commerce-schedule-page .commerce-calendar-day button{padding:3px 5px;font-size:11px;min-height:25px}.commerce-schedule-page .commerce-calendar-day a{font-size:9px;padding:2px 4px}.commerce-schedule-page .commerce-schedule-editor>form{grid-template-columns:minmax(0,1fr)}.commerce-schedule-page .commerce-showtime-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.commerce-schedule-page .commerce-showtime-row button{grid-column:1/-1}.commerce-finance-grid{grid-template-columns:1fr}}
