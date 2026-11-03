@@ -1,5 +1,7 @@
 # CTSMD Connect — Platform launch readiness
 
+> **November 2, 2026:** For current Commerce source, required 121/122 promo migrations, zero-dollar checkout, Stripe **test** restrictions, and `APP_TIMEZONE=America/New_York`, consult [CONNECT_COMMERCE_CURRENT.md](CONNECT_COMMERCE_CURRENT.md). The active tasks and hosted release gates are maintained only in [TODO.md](TODO.md). These features are not evidence of deployed or production-approved payment infrastructure.
+
 Updated 2026-10-26. **Supporting launch-audit reference, not a second maintained To-Do.** All actionable priorities and completions are tracked in [TODO.md](TODO.md). Separate from per-production Readiness or Tasks.
 
 **Evidence rule:** "In code" is not "verified live". Mark production-ready only after acceptance with date, environment, tester, and evidence. This checklist does not supersede the pilot NO-GO in [BOARD_PILOT_READINESS.md](BOARD_PILOT_READINESS.md).
