@@ -22,6 +22,7 @@ try{
     CommercePromoService::apply($db,$admin,$org,$cart,'opening_20');
     $quote=CommercePromoService::quote($db,$org,$cart,[$f['performance']=>['subtotal'=>3200,'discount'=>0],$f['performance2']=>['subtotal'=>2000,'discount'=>0]]);
     $ok($quote['code']==='OPENING_20'&&$quote['discount']===640&&$quote['allocations']===[$f['performance']=>640],'Promotion applies only to the selected production');
+    $expiry=$db->prepare('SELECT expires_at_utc FROM commerce_promo_codes WHERE organization_id=? AND code=?');$expiry->execute([$org,'OPENING_20']);$stored=(string)$expiry->fetchColumn();$ok($stored===AppClock::endOfLocalDayUtc($input['expires']),'Promotion expiration is stored as the end of the local business day, converted to UTC');
     $ok($reject(fn()=>CommercePromoService::apply($db,$tester,$org,$cart,'OPENING_20')),'Another account cannot change an existing cart promo');
     $mock=new CommerceStripeFixture();$provider=$mock->adapter();
     $buy=fn($who,$cartId)=>CommerceShoppingCheckoutService::start($db,$who,$org,$cartId,'Promo Tester','patron@commerce.invalid','',$provider);
