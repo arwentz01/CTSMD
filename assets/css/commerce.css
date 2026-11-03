@@ -176,3 +176,23 @@
 .commerce-storefront .commerce-customer-cart .commerce-cart-count{font-weight:700;color:inherit}
 .commerce-storefront .commerce-content>p[role=status]:empty{display:none}
 @media(max-width:520px){.commerce-storefront .commerce-customer-header{padding:12px;gap:10px}.commerce-storefront .commerce-customer-header .commerce-customer-brand{font-size:16px}.commerce-storefront .commerce-customer-header .commerce-customer-cart{padding:8px 10px}}
+
+/* Ticket storefront shares the public home masthead's brand language. */
+.commerce-storefront .commerce-customer-header{box-sizing:border-box;max-width:1100px;margin:0 auto;min-height:88px;padding:16px 20px;border-bottom:1px solid #d4c7bc;display:flex;align-items:center;justify-content:space-between;gap:22px;background:transparent}
+.commerce-storefront .commerce-customer-brand{display:inline-flex;align-items:center;gap:11px;min-height:44px;text-decoration:none;color:var(--commerce-ink);flex-shrink:0}
+.commerce-storefront .commerce-customer-brand img{display:block;width:40px;height:40px;object-fit:contain}
+.commerce-storefront .commerce-brand-monogram{display:grid;place-items:center;width:39px;height:39px;min-width:39px;border-radius:50%;background:var(--organization-primary,#8b233b);border:2px solid var(--organization-accent,#b58a33);color:var(--organization-on-primary,#fff);font:700 1.3rem/1 Georgia,serif}
+.commerce-storefront .commerce-customer-header .commerce-brand-wordmark{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1}
+.commerce-storefront .commerce-brand-wordmark strong{color:var(--commerce-ink);font-size:1.35rem;font-weight:850;letter-spacing:-.035em}
+.commerce-storefront .commerce-brand-wordmark>span{color:var(--organization-primary,#8b233b);font-size:.63rem;font-weight:850;letter-spacing:.24em}
+.commerce-storefront .commerce-customer-nav{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 20px}
+.commerce-storefront .commerce-customer-nav>a{display:inline-flex;min-height:44px;align-items:center;text-decoration:none;color:var(--commerce-ink);font-size:.875rem;font-weight:550;white-space:nowrap}
+.commerce-storefront .commerce-customer-nav>a:not(.commerce-customer-cart):hover{text-decoration:underline;text-underline-offset:5px}
+.commerce-storefront .commerce-customer-nav>a[aria-current=page]:not(.commerce-customer-cart){font-weight:750;color:var(--organization-primary,#8b233b)}
+.commerce-storefront .commerce-customer-nav .commerce-customer-cart{margin-left:0;gap:6px;min-height:42px;padding:9px 15px;border:1px solid var(--organization-primary,#8b233b);border-radius:999px;background:var(--organization-primary,#8b233b);color:var(--organization-on-primary,#fff);font-size:.875rem;font-weight:750}
+.commerce-storefront .commerce-customer-nav .commerce-customer-cart:hover,.commerce-storefront .commerce-customer-nav .commerce-customer-cart:focus-visible{background:#5e2538;color:#fff;border-color:#5e2538}
+.commerce-storefront .commerce-customer-nav .commerce-customer-cart[aria-current=page]{box-shadow:0 0 0 3px color-mix(in srgb,var(--organization-primary,#8b233b) 22%,transparent)}
+.commerce-storefront .commerce-customer-nav .commerce-customer-cart .commerce-cart-count{color:inherit;font-weight:750}
+.commerce-storefront .commerce-customer-header a:focus-visible{outline:3px solid var(--organization-accent,#b58a33);outline-offset:3px}
+@media(max-width:720px){.commerce-storefront .commerce-customer-header{align-items:flex-start;flex-direction:column;gap:10px;padding:15px 12px}.commerce-storefront .commerce-customer-nav{width:100%;justify-content:flex-start;gap:3px 16px}.commerce-storefront .commerce-customer-nav>a{min-height:40px}.commerce-storefront .commerce-customer-nav .commerce-customer-cart{margin-left:auto}}
+@media(max-width:380px){.commerce-storefront .commerce-customer-nav{gap:4px 12px}.commerce-storefront .commerce-customer-nav>a{font-size:.8rem}.commerce-storefront .commerce-customer-nav .commerce-customer-cart{padding:7px 10px}}
