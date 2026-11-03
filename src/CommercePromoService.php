@@ -65,8 +65,8 @@ final class CommercePromoService
             if((int)$g['discount']>0)throw new RuntimeException('Promo codes cannot be combined with an existing per-performance discount. Ask the box office to remove the legacy discount.');$n=max(0,(int)$g['subtotal']-(int)$g['discount']);
             if($n>0){$eligible[(int)$performance]=$n;$base+=$n;}
         }
-        if($base===0)throw new RuntimeException('This promo code does not apply to the current tickets.');
-        $amount=$p['discount_kind']==='percent'?intdiv($base*(int)$p['discount_value']+5000,10000):min($base,(int)$p['discount_value']);
+        if($base===0)throw new RuntimeException('This promo code does not apply to the current tickets.');if($base<(int)($p['minimum_subtotal_minor']??0))throw new RuntimeException('This promo code requires a larger eligible ticket subtotal.');
+        $amount=$p['discount_kind']==='percent'?intdiv($base*(int)$p['discount_value']+5000,10000):min($base,(int)$p['discount_value']);if((int)($p['max_discount_minor']??0)>0)$amount=min($amount,(int)$p['max_discount_minor']);
         if($amount<=0)throw new RuntimeException('This promo code cannot reduce the current ticket total.');
         $alloc=[];$remainders=[];$distributed=0;
         foreach($eligible as $id=>$n){$product=$amount*$n;$alloc[$id]=intdiv($product,$base);$remainders[$id]=$product%$base;$distributed+=$alloc[$id];}
@@ -82,7 +82,7 @@ final class CommercePromoService
         $p=self::row($db,$org,(int)$quote['promo']['id'],true);self::valid($p);
         $q=$db->prepare("SELECT COUNT(*) FROM commerce_promo_claims WHERE organization_id=? AND promo_id=? AND state IN ('reserved','redeemed')");
         $q->execute([$org,$p['id']]);$used=(int)$q->fetchColumn();
-        if((int)$p['max_redemptions']!==0&&$used>=(int)$p['max_redemptions'])throw new RuntimeException('This promo code has reached its usage limit.');
+        if((int)$p['max_redemptions']!==0&&$used>=(int)$p['max_redemptions'])throw new RuntimeException('This promo code has reached its usage limit.');if((int)($p['per_customer_limit']??0)>0){$q=$db->prepare("SELECT COUNT(*) FROM commerce_promo_claims c JOIN commerce_shopping_purchases s ON s.id=c.purchase_id AND s.organization_id=c.organization_id JOIN commerce_shopping_purchases here ON here.organization_id=s.organization_id AND here.id=? WHERE c.organization_id=? AND c.promo_id=? AND c.state IN ('reserved','redeemed') AND s.owner_user_id=here.owner_user_id");$q->execute([$purchase,$org,$p['id']]);if((int)$q->fetchColumn()>=(int)$p['per_customer_limit'])throw new RuntimeException('This promo code has reached your account redemption limit.');}
         $db->prepare("INSERT INTO commerce_promo_claims(purchase_id,organization_id,promo_id,discount_minor,state) VALUES(?,?,?,?,'reserved')")->execute([$purchase,$org,$p['id'],$quote['discount']]);
     }
     public static function redeem(PDO $db,int $org,int $purchase):void
@@ -109,9 +109,9 @@ final class CommercePromoService
         if($limit===false)throw new RuntimeException('Usage limit must be zero for unlimited or a positive number.');
         $production=(int)($input['production']??0);
         if($production){$q=$db->prepare("SELECT COUNT(*) FROM productions WHERE id=? AND lifecycle_stage IN ('upcoming','planning','in_production','performing')");$q->execute([$production]);if(!(int)$q->fetchColumn())throw new RuntimeException('Choose a current or upcoming production.');}
-        $date=(string)($input['expires']??'');
+        $money=static function(string $value,string $label):int{if(!preg_match('/^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,2})?$/D',$value))throw new RuntimeException('Enter a valid '.$label.'.');$p=explode('.',$value);return (int)$p[0]*100+(int)str_pad($p[1]??'',2,'0');};$minimum=$money(trim((string)($input['minimum_amount']??'0')),'minimum purchase');$maxDiscount=$money(trim((string)($input['max_discount_amount']??'0')),'maximum discount');$perCustomer=filter_var($input['per_customer_limit']??'0',FILTER_VALIDATE_INT,['options'=>['min_range'=>0,'max_range'=>1000000]]);if($perCustomer===false)throw new RuntimeException('Per-customer limit must be zero for unlimited or a positive number.');if($kind!=='percent'&&$maxDiscount>0)throw new RuntimeException('A discount cap applies only to percentage promotions.');$date=(string)($input['expires']??'');
         if(!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||$date<gmdate('Y-m-d'))throw new RuntimeException('Choose a valid future expiration date.');
-        $db->prepare('INSERT INTO commerce_promo_codes(organization_id,code,production_id,discount_kind,discount_value,max_redemptions,expires_at_utc,created_by_user_id) VALUES(?,?,?,?,?,?,?,?)')->execute([$org,$code,$production?:null,$kind,$minor,$limit,$date.' 23:59:59',$user['id']]);
+        $db->prepare('INSERT INTO commerce_promo_codes(organization_id,code,production_id,discount_kind,discount_value,max_redemptions,expires_at_utc,created_by_user_id,minimum_subtotal_minor,per_customer_limit,max_discount_minor) VALUES(?,?,?,?,?,?,?,?,?,?,?)')->execute([$org,$code,$production?:null,$kind,$minor,$limit,$date.' 23:59:59',$user['id'],$minimum,$perCustomer,$maxDiscount]);
         CommerceStore::audit($db,$org,(int)$user['id'],'commerce.promo_created','organization',$org,['code_id'=>(int)$db->lastInsertId(),'scope'=>$production?:'all','max_redemptions'=>$limit]);
     }
     public static function disable(PDO $db,array $user,int $org,int $id):void
