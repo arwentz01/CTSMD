@@ -349,6 +349,30 @@ final class CommerceExperience
         }
         echo '<p class="commerce-discovery-note">Applicable fees and taxes are shown before purchase. This is a restricted test environment; no live purchases are available.</p>';
     }
+    private static function promotions():void
+    {
+        CommerceAccess::demand(self::$db,self::$user,self::$org,'configure');
+        echo '<div class="commerce-heading"><h1>Promo codes</h1></div><p>Create a code for all current productions or restrict it to one production. Discounts apply to eligible ticket prices before tax, not fees. One code per cart.</p>';
+        if(!CommercePromoService::available(self::$db)){echo '<p role="status">Promo codes require migration 121. No codes are active.</p>';return;}
+        echo '<section class="commerce-promo-panel"><h2>Create promo code</h2>';self::form('promo_create');
+        self::input('code','Code','text','','required minlength="3" maxlength="48" pattern="[A-Za-z0-9_-]{3,48}" autocomplete="off" placeholder="OPENINGNIGHT"');
+        echo '<label>Applies to<select name="production"><option value="0">All current and future productions</option>';
+        foreach(self::rows("SELECT id,title FROM productions WHERE lifecycle_stage IN ('upcoming','planning','in_production','performing') ORDER BY title") as $p)echo '<option value="'.(int)$p['id'].'">'.self::e($p['title']).'</option>';
+        echo '</select></label><div class="commerce-finance-grid"><label>Discount type<select name="kind"><option value="amount">Fixed amount off eligible tickets</option><option value="percent">Percentage off eligible tickets</option></select></label>';
+        self::input('value','Amount or percent','number','','required min="0.01" max="100000" step="0.01"');
+        self::input('limit','Maximum redemptions (0 = unlimited)','number','1','required min="0" max="1000000" step="1"');
+        echo '</div>';self::input('expires','Expires on (UTC)','date',gmdate('Y-m-d',time()+30*86400),'required min="'.gmdate('Y-m-d').'"');
+        echo '<button>Create code</button></form><p>Single use: set maximum redemptions to 1. For multi-use, choose a higher number or zero for unlimited. An unresolved payment reserves one use until it is safely resolved.</p></section>';
+        $codes=self::rows("SELECT p.*,pr.title AS production_title,(SELECT COUNT(*) FROM commerce_promo_claims x WHERE x.promo_id=p.id AND x.organization_id=p.organization_id AND x.state='redeemed') redeemed,(SELECT COUNT(*) FROM commerce_promo_claims x WHERE x.promo_id=p.id AND x.organization_id=p.organization_id AND x.state='reserved') reserved FROM commerce_promo_codes p LEFT JOIN productions pr ON pr.id=p.production_id WHERE p.organization_id=? ORDER BY p.id DESC LIMIT 100",[self::$org]);
+        echo '<section><h2>Existing codes</h2>';
+        if(!$codes)echo '<p>No codes created yet.</p>';
+        foreach($codes as $p){$value=$p['discount_kind']==='percent'?number_format((int)$p['discount_value']/100,2).'%':self::money((int)$p['discount_value'],CommerceStore::organization(self::$db,self::$org)['currency']);$active=(int)$p['enabled']&&$p['expires_at_utc']>=gmdate('Y-m-d H:i:s');
+            echo '<article class="commerce-record"><strong>'.self::e($p['code']).'</strong><p>'.self::e($p['production_title']??'All productions').' · '.self::e($value).' · '.($active?'Enabled':'Inactive').'</p><p>'.(int)$p['redeemed'].' redeemed · '.(int)$p['reserved'].' awaiting payment · '.((int)$p['max_redemptions']===0?'Unlimited uses':(int)$p['max_redemptions'].' maximum uses').' · Expires '.self::e($p['expires_at_utc']).' UTC</p>';
+            if((int)$p['enabled']){self::form('promo_disable',['id'=>(int)$p['id']]);echo '<button type="submit">Disable code</button></form>';}
+            echo '</article>';
+        }
+        echo '</section>';
+    }
     private static function cart():void
     {
         if(self::rebuiltCart()){self::rebuiltCartPage();return;}
