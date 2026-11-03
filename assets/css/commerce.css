@@ -250,3 +250,16 @@
 .commerce-legacy-discount[open]>summary{border-bottom:1px solid #eadfdb}
 .commerce-legacy-discount>p{font-size:12px;line-height:1.55;color:#61555b;margin:12px 0 8px}
 .commerce-legacy-discount>label{display:block;margin-bottom:14px}
+
+/* Staff promotion manager and purchaser code entry */
+.commerce-promo-panel,.commerce-promo-entry{border:1px solid #ddcfcb;border-radius:10px;padding:18px;background:#fffdfb;margin:18px 0}
+.commerce-promo-panel h2,.commerce-promo-entry h3{margin:0 0 12px}
+.commerce-promo-panel>form{display:grid;gap:12px;max-width:850px}
+.commerce-promo-panel>form>label{display:block;margin:0}
+.commerce-promo-panel>form>button{justify-self:start}
+.commerce-promo-panel>p{font-size:12px;color:#685e61;margin:12px 0 0}
+.commerce-promo-entry form{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:8px 0}
+.commerce-promo-entry form label{flex:1 1 180px;max-width:330px;margin:0}
+.commerce-promo-entry form button{min-height:40px}
+.commerce-promo-entry>p{margin:10px 0 0;font-size:12px}
+@media(max-width:600px){.commerce-promo-panel{padding:13px}.commerce-promo-entry{padding:13px}}
