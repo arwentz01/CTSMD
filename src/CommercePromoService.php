@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/CommerceShoppingCartService.php';
+require_once __DIR__.'/AppClock.php';
 
 /** One scoped ticket promotion per cart; claims are serialized before Stripe checkout. */
 final class CommercePromoService
@@ -110,8 +111,8 @@ final class CommercePromoService
         $production=(int)($input['production']??0);
         if($production){$q=$db->prepare("SELECT COUNT(*) FROM productions WHERE id=? AND lifecycle_stage IN ('upcoming','planning','in_production','performing')");$q->execute([$production]);if(!(int)$q->fetchColumn())throw new RuntimeException('Choose a current or upcoming production.');}
         $money=static function(string $value,string $label):int{if(!preg_match('/^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,2})?$/D',$value))throw new RuntimeException('Enter a valid '.$label.'.');$p=explode('.',$value);return (int)$p[0]*100+(int)str_pad($p[1]??'',2,'0');};$minimum=$money(trim((string)($input['minimum_amount']??'0')),'minimum purchase');$maxDiscount=$money(trim((string)($input['max_discount_amount']??'0')),'maximum discount');$perCustomer=filter_var($input['per_customer_limit']??'0',FILTER_VALIDATE_INT,['options'=>['min_range'=>0,'max_range'=>1000000]]);if($perCustomer===false)throw new RuntimeException('Per-customer limit must be zero for unlimited or a positive number.');if($kind!=='percent'&&$maxDiscount>0)throw new RuntimeException('A discount cap applies only to percentage promotions.');$date=(string)($input['expires']??'');
-        if(!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||$date<gmdate('Y-m-d'))throw new RuntimeException('Choose a valid future expiration date.');
-        $db->prepare('INSERT INTO commerce_promo_codes(organization_id,code,production_id,discount_kind,discount_value,max_redemptions,expires_at_utc,created_by_user_id,minimum_subtotal_minor,per_customer_limit,max_discount_minor) VALUES(?,?,?,?,?,?,?,?,?,?,?)')->execute([$org,$code,$production?:null,$kind,$minor,$limit,$date.' 23:59:59',$user['id'],$minimum,$perCustomer,$maxDiscount]);
+        if(!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||$date<AppClock::today())throw new RuntimeException('Choose a valid future expiration date.');$expiresUtc=AppClock::endOfLocalDayUtc($date);
+        $db->prepare('INSERT INTO commerce_promo_codes(organization_id,code,production_id,discount_kind,discount_value,max_redemptions,expires_at_utc,created_by_user_id,minimum_subtotal_minor,per_customer_limit,max_discount_minor) VALUES(?,?,?,?,?,?,?,?,?,?,?)')->execute([$org,$code,$production?:null,$kind,$minor,$limit,$expiresUtc,$user['id'],$minimum,$perCustomer,$maxDiscount]);
         CommerceStore::audit($db,$org,(int)$user['id'],'commerce.promo_created','organization',$org,['code_id'=>(int)$db->lastInsertId(),'scope'=>$production?:'all','max_redemptions'=>$limit]);
     }
     public static function disable(PDO $db,array $user,int $org,int $id):void
