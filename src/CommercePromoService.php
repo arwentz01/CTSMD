@@ -62,7 +62,7 @@ final class CommercePromoService
             $q=$db->prepare('SELECT production_id FROM commerce_performances WHERE organization_id=? AND id=?');
             $q->execute([$org,(int)$performance]);$production=(int)$q->fetchColumn();
             if($p['production_id']!==null&&$production!==(int)$p['production_id'])continue;
-            $n=max(0,(int)$g['subtotal']-(int)$g['discount']);
+            if((int)$g['discount']>0)throw new RuntimeException('Promo codes cannot be combined with an existing per-performance discount. Ask the box office to remove the legacy discount.');$n=max(0,(int)$g['subtotal']-(int)$g['discount']);
             if($n>0){$eligible[(int)$performance]=$n;$base+=$n;}
         }
         if($base===0)throw new RuntimeException('This promo code does not apply to the current tickets.');
