@@ -15,7 +15,7 @@ The app is the everyday CTSMD Connect companion, **not a second copy of every we
 - Shared `Screen` now has a compact CTSMD monogram/wordmark and consistent titles/spacing. More groups member destinations separately from conditional staff/admin tools; web handoffs are marked with the external-link icon and an explicit website description.
 - The native calendar is now a compact grouped agenda with Upcoming/All visible controls. It uses event records already authorized by `/api/mobile/theatre`; there is no new schedule-write permission or inference from production date ranges.
 - Website destinations are centralized and allowlisted in `mobile/src/navigation/website.ts`; current member access tokens do not automatically authenticate the separate website session. Non-CTSMD resource and Ludus destinations remain explicit external URLs.
-- Visual work is an initial shared-shell pass. It is **not** a complete implementation of every web UI token, dark mode, tablet navigation pattern or accessibility acceptance.
+- Visual work includes a compact Community feed with small author rows, concise timestamp/reaction footers, reduced feed switch height, and an optional compact shared-screen spacing mode. It is **not** a complete implementation of every web UI token, dark mode, tablet navigation pattern or accessibility acceptance.
 
 ## Surface-by-surface inventory
 
