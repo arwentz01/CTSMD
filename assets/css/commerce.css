@@ -424,3 +424,18 @@
 .commerce-page [data-seat-selector]:not(.commerce-staff-seat-selector)>.commerce-purchase-layout>.commerce-map-column,
 .commerce-page [data-seat-selector]:not(.commerce-staff-seat-selector)>.commerce-purchase-layout>.commerce-checkout-column{min-width:0;width:auto}
 @media(max-width:800px){.commerce-page [data-seat-selector]:not(.commerce-staff-seat-selector)>.commerce-purchase-layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Shared seat finder and purchase summary */
+.commerce-page .commerce-suggestion{margin:12px 0 16px;padding:12px 14px;border:1px solid #d8c6ca;border-left:4px solid #702a3f;border-radius:10px;background:#fcf8f7}
+.commerce-page .commerce-suggestion>summary{font-weight:700;font-size:1rem;cursor:pointer;padding:4px 0}
+.commerce-page .commerce-suggestion-hint{margin-left:8px;font-size:.8rem;font-weight:400;color:#66565c}
+.commerce-page .commerce-suggestion[open]>summary{margin-bottom:8px}
+.commerce-page .commerce-suggestion p{margin:6px 0 12px}
+.commerce-page .commerce-suggestion form{margin:0}
+.commerce-page .commerce-suggestion .commerce-columns{gap:10px}
+.commerce-page .commerce-suggestion button{margin-top:8px}
+[data-seat-selector] .commerce-checkout-column .commerce-summary{background:transparent;border:0;padding:0;margin:0 0 14px}
+[data-seat-selector] .commerce-checkout-column .commerce-summary>h3{margin:0 0 10px;font-size:1.05rem}
+[data-seat-selector] .commerce-checkout-column .commerce-summary [data-selected-seats]{margin:8px 0;line-height:1.5}
+[data-seat-selector] .commerce-checkout-column .commerce-summary [data-selection-total]{margin:10px 0;font-weight:600}
+@media(max-width:600px){.commerce-page .commerce-suggestion-hint{display:block;margin:4px 0 0}}
