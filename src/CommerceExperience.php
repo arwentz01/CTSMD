@@ -265,43 +265,50 @@ final class CommerceExperience
     {
         CommerceAccess::demand(self::$db,self::$user,self::$org,'venues');
         $venues=self::rows('SELECT * FROM commerce_venues WHERE organization_id=? ORDER BY name',[self::$org]);
-        $showInactive=($_GET['show']??'active')==='inactive';$visibleVenues=array_values(array_filter($venues,fn($v)=>(bool)$v['is_active']!==$showInactive));
-        $layouts=self::rows('SELECT l.*,s.name space_name,v.name venue_name,v.id venue_id FROM commerce_layouts l JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE l.organization_id=? ORDER BY v.name,s.name,l.version_number DESC',[self::$org]);
-        echo '<div class="commerce-venue-header"><div><h2>Venues & seating</h2><p>Manage your theatres and their seating plans. Publish a layout when it is ready to use for performances.</p></div><a class="commerce-venue-schedule-link" href="'.self::e(self::url('schedule')).'">Performance schedule &rarr;</a></div>';
-        echo '<nav aria-label="Venue status" class="commerce-actions"><a href="'.self::e(self::url('venues',['show'=>'active'])).'"'.(!$showInactive?' aria-current="page"':'').'>Active venues</a><a href="'.self::e(self::url('venues',['show'=>'inactive'])).'"'.($showInactive?' aria-current="page"':'').'>Inactive venues</a></nav>';
-        echo '<div class="commerce-venue-group"><h3>Seating layouts</h3>';
-        $layouts=array_values(array_filter($layouts,fn($l)=>in_array((int)$l['venue_id'],array_map(fn($v)=>(int)$v['id'],$visibleVenues),true)));
-        if(!$layouts)echo '<p class="commerce-venue-muted">No seating layouts yet. Create a venue and performance space below to get started.</p>';
-        else {
-            $last='';
-            foreach($layouts as $l){
-                $group=$l['venue_id'].'/'.$l['space_name'];
-                if($group!==$last){if($last!=='')echo '</div></div>';echo '<div class="commerce-venue-layout-group"><h4>'.self::e($l['venue_name'].' / '.$l['space_name']).'</h4><div class="commerce-venue-layout-list">';$last=$group;}
-                echo '<a class="commerce-venue-layout" href="'.self::e(self::url('layout',['id'=>$l['id']])).'"><span>Version '.(int)$l['version_number'].'</span><span class="commerce-venue-layout-status '.($l['status']==='published'?'is-published':'').'">'.self::e(ucfirst($l['status'])).'</span><span aria-hidden="true">&rarr;</span></a>';
-            }
-            if($last!=='')echo '</div></div>';
-        }
-        $spaces=self::rows('SELECT s.name,v.name venue,v.id venue_id FROM commerce_spaces s JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE s.organization_id=? AND NOT EXISTS(SELECT 1 FROM commerce_layouts l WHERE l.space_id=s.id AND l.organization_id=s.organization_id)',[self::$org]);foreach($spaces as $space)if(in_array((int)$space['venue_id'],array_map(fn($v)=>(int)$v['id'],$visibleVenues),true))echo '<p>'.self::e($space['venue'].' / '.$space['name']).' · No layout versions</p>';echo '</div>';
-        echo '<div class="commerce-venue-group"><h3>Venue settings</h3><p class="commerce-venue-muted">Choose a timezone for each venue. Existing performance times will not change.</p>';
-        if(!$venues)echo '<p>No venues created yet.</p>';
+        $spaces=self::rows('SELECT * FROM commerce_spaces WHERE organization_id=? ORDER BY name',[self::$org]);
+        $layouts=self::rows('SELECT l.* FROM commerce_layouts l WHERE l.organization_id=? ORDER BY l.version_number DESC',[self::$org]);
+        $showInactive=($_GET['show']??'active')==='inactive';
+        $visibleVenues=array_values(array_filter($venues,fn($v)=>(bool)$v['is_active']!==$showInactive));
+        $activeCount=count(array_filter($venues,fn($v)=>(bool)$v['is_active']));
+        $inactiveCount=count($venues)-$activeCount;
+        echo '<div class="commerce-venue-header"><div><h2>Venues & spaces</h2><p>Manage venues, their performance spaces, and seating layouts together.</p></div><a class="commerce-venue-schedule-link" href="'.self::e(self::url('schedule')).'">Performance schedule &rarr;</a></div>';
+        echo '<nav aria-label="Venue status" class="commerce-venue-filters"><a href="'.self::e(self::url('venues',['show'=>'active'])).'"'.(!$showInactive?' aria-current="page"':'').'>Active ('.$activeCount.')</a><a href="'.self::e(self::url('venues',['show'=>'inactive'])).'"'.($showInactive?' aria-current="page"':'').'>Inactive ('.$inactiveCount.')</a></nav>';
+        if(!$visibleVenues)echo '<p class="commerce-venue-muted">'.($showInactive?'No inactive venues.':'No active venues. Add a venue below to get started.').'</p>';
         foreach($visibleVenues as $venue){
+            $id=(int)$venue['id'];
             $default=(string)($venue['timezone_name']?:getenv('COMMERCE_VENUE_TIMEZONE')?:getenv('APP_TIMEZONE')?:'America/New_York');
-            $zones=DateTimeZone::listIdentifiers();
-            if(!in_array($default,$zones,true))array_unshift($zones,$default);
-            echo '<div class="commerce-venue-setting"><div><strong>'.self::e($venue['name']).'</strong>';if(trim((string)$venue['location'])!=='')echo '<p>'.self::e($venue['location']).'</p>';echo '<p class="commerce-venue-muted">'.($showInactive?'Inactive venue':'Active venue').'</p></div>';
-            echo '<div class="commerce-venue-management">';
-            self::form('venue_status',['id'=>$venue['id'],'active'=>$showInactive?'1':'0']);
-            echo '<button type="submit" class="commerce-venue-status-action"'.(!$showInactive?' onclick="return confirm(\'Deactivate this venue? It will be hidden from new scheduling selections, but its history and seating plans will be retained.\')"':'').'>'.($showInactive?'Reactivate venue':'Deactivate venue').'</button></form>';
+            $venueSpaces=array_values(array_filter($spaces,fn($space)=>(int)$space['venue_id']===$id));
+            echo '<section class="commerce-venue-record" aria-label="'.self::e($venue['name']).'">';
+            echo '<div class="commerce-venue-record-head"><div><h3>'.self::e($venue['name']).'</h3>';
+            if(trim((string)$venue['location'])!=='')echo '<p>'.self::e($venue['location']).'</p>';
+            echo '<p class="commerce-venue-muted">'.($showInactive?'Inactive':'Active').' &middot; '.self::e($default).' &middot; '.count($venueSpaces).' '.(count($venueSpaces)===1?'space':'spaces').'</p></div>';
+            echo '<details class="commerce-venue-actions"><summary>Manage venue</summary><div class="commerce-venue-actions-body">';
             echo '<details class="commerce-venue-timezone"><summary>Edit timezone</summary>';
-            self::form('venue_timezone',['id'=>$venue['id']]);
-            echo '<label>Timezone<select name="timezone" required>';
+            self::form('venue_timezone',['id'=>$id]);echo '<label>Timezone<select name="timezone" required>';
+            $zones=DateTimeZone::listIdentifiers();if(!in_array($default,$zones,true))array_unshift($zones,$default);
             foreach($zones as $zone){$label=str_replace('_',' ',str_replace('/',' / ',$zone));echo '<option value="'.self::e($zone).'"'.($zone===$default?' selected':'').'>'.self::e($label).'</option>';}
-            echo '</select></label><button>Save timezone</button></form></details></div>';
+            echo '</select></label><button>Save timezone</button></form></details>';
+            self::form('venue_status',['id'=>$id,'active'=>$showInactive?'1':'0']);
+            echo '<button type="submit" class="commerce-venue-status-action"'.(!$showInactive?' onclick="return confirm(\'Deactivate this venue? It will be hidden from new scheduling selections, but its history and seating plans will be retained.\')"':'').'>'.($showInactive?'Reactivate venue':'Deactivate venue').'</button></form>';
+            echo '</div></details></div>';
+            echo '<div class="commerce-venue-spaces">';
+            if(!$venueSpaces)echo '<p class="commerce-venue-muted">No performance spaces yet.</p>';
+            foreach($venueSpaces as $space){
+                $spaceLayouts=array_values(array_filter($layouts,fn($layout)=>(int)$layout['space_id']===(int)$space['id']));
+                echo '<div class="commerce-venue-space"><div class="commerce-venue-space-title"><strong>'.self::e($space['name']).'</strong><span class="commerce-venue-muted">'.count($spaceLayouts).' '.(count($spaceLayouts)===1?'layout':'layouts').'</span></div>';
+                if(!$spaceLayouts)echo '<p class="commerce-venue-muted">No seating layouts yet.</p>';
+                else {echo '<div class="commerce-venue-layout-list">';foreach($spaceLayouts as $layout){
+                    echo '<a class="commerce-venue-layout" href="'.self::e(self::url('layout',['id'=>$layout['id']])).'"><span>Version '.(int)$layout['version_number'].'</span><span class="commerce-venue-layout-status '.($layout['status']==='published'?'is-published':'').'">'.self::e(ucfirst($layout['status'])).'</span><span aria-hidden="true">&rarr;</span></a>';
+                }echo '</div>';}
+                echo '</div>';
+            }
+            echo '</div></section>';
         }
-        echo '</div>';
-        echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an existing venue.</p>';
-        if(array_filter($venues,fn($v)=>(bool)$v['is_active'])){self::form('space');echo '<label>Venue<select name="venue" required>';foreach(array_filter($venues,fn($v)=>(bool)$v['is_active']) as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
-        else echo '<p>Create your first venue before adding a performance space.</p>';
+        echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';
+        self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section>';
+        echo '<section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an active venue.</p>';
+        if($activeCount){self::form('space');echo '<label>Venue<select name="venue" required>';foreach($venues as $v)if((bool)$v['is_active'])echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
+        else echo '<p>Reactivate or create a venue before adding a space.</p>';
         echo '</section></div></details>';
     }
     private static function layout():void
