@@ -335,3 +335,12 @@
 .commerce-checkout-column [data-selection-continue]{width:100%;margin-top:.8rem}
 .commerce-checkout-column input{max-width:100%}
 @media(min-width:1050px){.commerce-purchase-layout{grid-template-columns:minmax(0,1.8fr) minmax(270px,1fr);gap:1.25rem}.commerce-checkout-column{position:sticky;top:1rem}}
+
+/* Checkout continuation: prioritize purchaser, tickets and payment */
+.commerce-order-reference{margin:.35rem 0 .8rem;font-size:.875rem}
+.commerce-order-reference summary{cursor:pointer;color:inherit}
+.commerce-order-reference p{overflow-wrap:anywhere}
+.commerce-totals{max-width:34rem;margin:1rem 0;padding:.85rem 1rem;border:1px solid var(--commerce-border,#ddd);border-radius:.7rem}
+.commerce-totals>div{display:flex;justify-content:space-between;gap:1rem;padding:.25rem 0}
+.commerce-totals dt,.commerce-totals dd{margin:0}
+.commerce-totals .commerce-total{border-top:1px solid var(--commerce-border,#ddd);margin-top:.5rem;padding-top:.65rem;font-weight:700;font-size:1.15rem}
