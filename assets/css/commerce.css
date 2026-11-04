@@ -324,3 +324,14 @@
 [data-seat-selector] .commerce-summary{position:relative;margin:1rem 0;padding:.8rem 1rem;border:1px solid var(--commerce-border,#ddd);border-radius:.75rem}
 [data-seat-selector] [data-ticket-zone]{margin:.65rem 0}
 @media(min-width:900px){[data-seat-selector]>.commerce-ticket-types{padding:1rem 1.25rem}[data-seat-selector] .commerce-map-wrap{max-height:65vh;overflow:auto}}
+
+/* Shared storefront and POS transaction workspace */
+.commerce-purchase-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;align-items:start}
+.commerce-map-column{min-width:0}
+.commerce-map-column>h3{margin-top:0}
+.commerce-checkout-column{min-width:0;padding:1rem;border:1px solid var(--commerce-border,#ddd);border-radius:.75rem;background:var(--commerce-panel-bg,#fff)}
+.commerce-checkout-column>h3{margin:.8rem 0 .5rem}
+.commerce-checkout-column .commerce-summary{margin:0 0 1rem;padding:0;border:0}
+.commerce-checkout-column [data-selection-continue]{width:100%;margin-top:.8rem}
+.commerce-checkout-column input{max-width:100%}
+@media(min-width:1050px){.commerce-purchase-layout{grid-template-columns:minmax(0,1.8fr) minmax(270px,1fr);gap:1.25rem}.commerce-checkout-column{position:sticky;top:1rem}}
