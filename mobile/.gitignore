@@ -3,3 +3,8 @@ node_modules/
 dist/
 .env
 *.log
+
+# Keep Firebase credentials and local credentials out of source control
+google-services.json
+*-service-account*.json
+credentials.json
