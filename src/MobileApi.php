@@ -532,7 +532,7 @@ final class MobileApi
     private static function communityFeed(PDO $db,array $user): never
     {
         self::requireMethod('GET');
-        $result=CommunityExperience::activityFeed($db,$user,(int)($_GET['page']??0));
+        try {$result=CommunityExperience::activityFeed($db,$user,0,isset($_GET['cursor'])?(string)$_GET['cursor']:null);} catch (InvalidArgumentException $e) {self::json(['error'=>'Invalid feed cursor.'],400);}
         self::addHeartCounts($db,$result['posts'],(int)$user['id']);
         self::json($result);
     }

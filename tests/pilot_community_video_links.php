@@ -12,7 +12,9 @@ expectLink(str_contains($html,'<a class="community-video-link" href="/videos/vie
 expectLink(!str_contains($html,'https://ctsmd.me/videos/view'),'the long URL is not shown in Community');
 expectLink(CommunityExperience::renderPostBody('[Blocking](/videos/view?id=7)')==='<a class="community-video-link" href="/videos/view?id=7">Blocking</a>','relative CTSMD video links work');
 $unsafe=CommunityExperience::renderPostBody('[Click](https://example.com/videos/view?id=1) <script>alert(1)</script>');
-expectLink(!str_contains($unsafe,'<a class=')&&str_contains($unsafe,'&lt;script&gt;'),'external links and HTML remain non-executable');
+expectLink(str_contains($unsafe,'href="https://example.com/videos/view?id=1"')&&str_contains($unsafe,'&lt;script&gt;'),'HTTPS links are clickable and HTML remains escaped');
+expectLink(!str_contains(CommunityExperience::renderPostBody('[bad](javascript:alert)'),'<a '),'unsafe link schemes are not executable');
+expectLink(str_contains(CommunityExperience::renderPostBody('Visit https://example.com.'),'href="https://example.com"'),'ordinary URLs are linked without trailing punctuation');
 expectLink(RehearsalVideoExperience::handles('/videos/view'),'video detail route is recognized');
 
 $pdo=new class extends PDO {public function __construct() {}};

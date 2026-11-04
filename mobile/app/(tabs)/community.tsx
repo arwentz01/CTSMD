@@ -23,15 +23,15 @@ function shortDate(value:string):string {
 }
 export default function Community(){
  const [view,setView]=useState<'Feed'|'Channels'>('Feed');
- const [more,setMore]=useState<CommunityFeedPost[]>([]),[page,setPage]=useState(0),[hasMore,setHasMore]=useState(true),[paging,setPaging]=useState(false);
+ const [more,setMore]=useState<CommunityFeedPost[]>([]),[cursor,setCursor]=useState<string|null>(null),[started,setStarted]=useState(false),[hasMore,setHasMore]=useState(true),[paging,setPaging]=useState(false);
  const {production_id}=useLocalSearchParams<{production_id?:string}>();
  const id=Number(production_id);
  const filtered=!!production_id&&Number.isSafeInteger(id)&&id>0;
  const load=useCallback(async()=>{const [directory,feed]=await Promise.all([channels(),communityFeed()]);return {directory,feed}},[]);
  const {data,error,loading,retry}=useScreenData(load,true);
  const visible=(data?.directory.channels||[]).filter(c=>!filtered||c.production_id===id);
- const posts=[...(data?.feed.posts||[]),...more.filter(p=>!(data?.feed.posts||[]).some(first=>first.id===p.id))].filter(p=>!filtered||p.production_id===id);
- const nextPage=async()=>{if(paging)return;setPaging(true);try{const next=await communityFeed(page+1);setMore(old=>[...old,...next.posts.filter(p=>!old.some(item=>item.id===p.id))]);setPage(p=>p+1);setHasMore(next.has_more)}catch{ /* Keep existing posts available; retry using the same control. */ }finally{setPaging(false)}};
+ const posts=[...(data?.feed.posts||[]),...more.filter(p=>(data?.directory.channels||[]).some(c=>Number(c.id)===Number(p.channel_id))&&!(data?.feed.posts||[]).some(first=>first.id===p.id))].filter(p=>!filtered||p.production_id===id);
+ const nextPage=async()=>{if(paging)return;setPaging(true);try{const next=await communityFeed(cursor||data?.feed.next_cursor||undefined);setMore(old=>[...old,...next.posts.filter(p=>!old.some(item=>item.id===p.id))]);setCursor(next.next_cursor);setStarted(true);setHasMore(next.has_more)}catch{ /* Keep existing posts available; retry using the same control. */ }finally{setPaging(false)}};
  const general=visible.filter(c=>c.production_id===null);
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
@@ -52,12 +52,12 @@ export default function Community(){
           </View>
           <Ionicons name="chevron-forward" color={colors.muted} size={17}/>
         </View>
-        <Text numberOfLines={4} style={s.preview}>{p.body}</Text>
+        <CommunityBody body={p.body} numberOfLines={4}/>
       </Pressable>
       <CommunityPhotos attachments={p.attachments}/>
       <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
     </View>)}
-    {(page===0?data.feed.has_more:hasMore)&&<Pressable accessibilityRole="button" onPress={()=>void nextPage()}><Text style={s.link}>{paging?'Loading…':'Load more posts'}</Text></Pressable>}
+    {(started?hasMore:data.feed.has_more)&&<Pressable accessibilityRole="button" onPress={()=>void nextPage()}><Text style={s.link}>{paging?'Loading…':'Load more posts'}</Text></Pressable>}
   </>}
   {data&&view==='Channels'&&<>
    {visible.length===0&&<Text style={s.muted}>No channels available.</Text>}
@@ -76,10 +76,10 @@ const s=StyleSheet.create({
  tabText:{fontSize:14,fontWeight:'700',color:colors.muted},
  selectedText:{color:colors.ivory},
  section:{fontSize:18,fontWeight:'700',color:colors.navy},
- post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:3,borderLeftColor:colors.primary,borderRadius:12,paddingHorizontal:12,paddingVertical:10,gap:3},
- postOpen:{gap:8,minHeight:48,justifyContent:'center'},
+ post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:3,borderLeftColor:colors.primary,borderRadius:12,paddingHorizontal:10,paddingVertical:8,gap:2},
+ postOpen:{gap:5,minHeight:48,justifyContent:'center'},
  authorRow:{flexDirection:'row',gap:9,alignItems:'center'},
- avatar:{height:34,width:34,borderRadius:17,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:1},
+ avatar:{height:30,width:30,borderRadius:15,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:1},
  avatarText:{fontSize:12,fontWeight:'700',color:colors.ivory},
  authorDetails:{flex:1,gap:1},
  author:{color:colors.text,fontWeight:'700',fontSize:15},

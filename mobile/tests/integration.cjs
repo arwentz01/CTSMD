@@ -154,7 +154,7 @@ test('Community cards use compact layout with accessible posts and reactions',()
  assert.match(feed,/shortDate\(p\.created_at\)/);
  assert.match(feed,/postFooter:/);
  assert.match(feed,/minHeight:42/);
- assert.match(feed,/paddingVertical:10,gap:3/);
+ assert.match(feed,/<CommunityBody body=\{p\.body\} numberOfLines=\{4\}\/>/);
  assert.match(feed,/accessibilityLabel=\{'Open post by '/);
  assert.match(screen,/compactContent:\{paddingTop:12,gap:9\}/);
  assert.match(heart,/minHeight:44,minWidth:52/);

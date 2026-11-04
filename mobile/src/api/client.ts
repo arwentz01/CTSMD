@@ -28,7 +28,7 @@ export const conversations=()=>api<MessagesResult>('messages');
 export const channels=()=>api<ChannelsResult>('channels');
 export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean};
 export const toggleCommunityHeart=(post_id:number)=>api<{ok:boolean;hearted:boolean}>('channel-reaction',{method:'POST',body:{post_id}});
-export const communityFeed=(page=0)=>api<{posts:CommunityFeedPost[];has_more:boolean}>('community-feed?page='+page);
+export const communityFeed=(cursor?:string)=>api<{posts:CommunityFeedPost[];has_more:boolean;next_cursor:string|null}>('community-feed'+(cursor?'?cursor='+encodeURIComponent(cursor):''));
 export const theatre=()=>api<TheatreResult>('theatre');
 export const eventDetail=(id:number)=>api<{event:import('../types/ctsmd').TheatreEvent&{notes?:string|null;description?:string|null}}>('event?id='+encodeURIComponent(String(id)));
 export const tasks=()=>api<TasksResult>('daily-tasks');
