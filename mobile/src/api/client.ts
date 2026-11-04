@@ -22,6 +22,8 @@ export async function login(email:string,password:string){return api<{token:stri
 export const me=()=>api<MeResult>('me');
 export type FamilyMember={id?:number;name?:string;first_name?:string;is_primary?:number;relationship_type?:'parent'|'guardian'|'caregiver'};
 export const myFamily=()=>api<{students:FamilyMember[];guardians:FamilyMember[]}>('my-family');
+export type CaregiverCall={student_first_name:string;production_title:string;title:string;starts_at:string;ends_at:string|null;location:string|null};
+export const caregiverSchedule=()=>api<{calls:CaregiverCall[]}>('caregiver-schedule');
 export const conversations=()=>api<MessagesResult>('messages');
 export const channels=()=>api<ChannelsResult>('channels');
 export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean};
