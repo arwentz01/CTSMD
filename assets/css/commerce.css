@@ -263,3 +263,29 @@
 .commerce-promo-entry form button{min-height:40px}
 .commerce-promo-entry>p{margin:10px 0 0;font-size:12px}
 @media(max-width:600px){.commerce-promo-panel{padding:13px}.commerce-promo-entry{padding:13px}}
+
+
+/* Venue hierarchy: keep each venue's actions, spaces and layouts together. */
+.commerce-venue-filters{display:flex;gap:.4rem;flex-wrap:wrap;margin:1rem 0}
+.commerce-venue-filters a{display:inline-block;padding:.45rem .8rem;border:1px solid var(--border-color,#d9d0ca);border-radius:.5rem;text-decoration:none}
+.commerce-venue-filters a[aria-current="page"]{font-weight:700;background:var(--surface-muted,#f3ede9);border-color:currentColor}
+.commerce-venue-record{border:1px solid var(--border-color,#ddd4cf);border-radius:.75rem;margin:0 0 1rem;padding:1rem;background:var(--surface,#fff)}
+.commerce-venue-record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.commerce-venue-record-head h3{margin:0 0 .3rem}
+.commerce-venue-record-head p{margin:.2rem 0}
+.commerce-venue-actions{position:relative;min-width:10rem}
+.commerce-venue-actions>summary{cursor:pointer;list-style:none;border:1px solid var(--border-color,#d9d0ca);border-radius:.5rem;padding:.5rem .8rem;font-weight:600}
+.commerce-venue-actions>summary::-webkit-details-marker{display:none}
+.commerce-venue-actions>summary::after{content:" ▾"}
+.commerce-venue-actions[open]>summary::after{content:" ▴"}
+.commerce-venue-actions-body{display:grid;gap:.75rem;padding:.8rem 0;min-width:min(19rem,80vw)}
+.commerce-venue-actions-body form{margin:0}
+.commerce-venue-actions-body .commerce-venue-status-action{background:transparent;color:var(--danger,#8c2944);border:1px solid currentColor}
+.commerce-venue-timezone>summary{cursor:pointer;padding:.4rem 0}
+.commerce-venue-timezone form{padding:.5rem 0}
+.commerce-venue-spaces{display:grid;gap:.65rem;margin-top:1rem}
+.commerce-venue-space{border-top:1px solid var(--border-color,#e4dcd7);padding-top:.75rem}
+.commerce-venue-space-title{display:flex;justify-content:space-between;gap:.5rem;align-items:center;margin-bottom:.4rem}
+.commerce-venue-space .commerce-venue-layout-list{margin:0}
+.commerce-venue-create{margin-top:1rem}
+@media(max-width:640px){.commerce-venue-record{padding:.8rem}.commerce-venue-record-head{display:block}.commerce-venue-actions{margin-top:.75rem}.commerce-venue-actions-body{min-width:0}.commerce-venue-space-title{align-items:flex-start}}
