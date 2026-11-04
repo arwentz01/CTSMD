@@ -159,3 +159,22 @@ test('Community cards use compact layout with accessible posts and reactions',()
  assert.match(screen,/compactContent:\{paddingTop:12,gap:9\}/);
  assert.match(heart,/minHeight:44,minWidth:52/);
 });
+
+test('Community feed preserves originating post and is not narrowed by a production channel filter',()=>{
+ const feed=fs.readFileSync(path.join(__dirname,'../app/(tabs)/community.tsx'),'utf8');
+ const channel=fs.readFileSync(path.join(__dirname,'../app/community/[id].tsx'),'utf8');
+ assert.match(feed,/id:String\(p\.channel_id\),post_id:String\(p\.id\)/);
+ assert.doesNotMatch(feed,/\.filter\(p=>!filtered\|\|p\.production_id===id\)/);
+ assert.match(channel,/posts\.findIndex\(p=>String\(p\.id\)===String\(post_id\)\)/);
+ assert.match(channel,/scrollToIndex\(\{index,animated:false,viewPosition:\.5\}\)/);
+});
+test('both conversation screens share one keyboard viewport and Android resize configuration',()=>{
+ const config=require('../app.config.js')({config:{android:{package:'test'}}});
+ assert.equal(config.android.softwareKeyboardLayoutMode,'resize');
+ for(const name of ['../app/messages/[id].tsx','../app/community/[id].tsx']){
+  const source=fs.readFileSync(path.join(__dirname,name),'utf8');
+  assert.match(source,/<ConversationViewport>/);
+  assert.match(source,/keyboardShouldPersistTaps="handled"/);
+  assert.doesNotMatch(source,/<KeyboardAvoidingView/);
+ }
+});

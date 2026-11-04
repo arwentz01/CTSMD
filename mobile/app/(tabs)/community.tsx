@@ -30,14 +30,14 @@ export default function Community(){
  const load=useCallback(async()=>{const [directory,feed]=await Promise.all([channels(),communityFeed()]);return {directory,feed}},[]);
  const {data,error,loading,retry}=useScreenData(load,true);
  const visible=(data?.directory.channels||[]).filter(c=>!filtered||c.production_id===id);
- const posts=[...(data?.feed.posts||[]),...more.filter(p=>(data?.directory.channels||[]).some(c=>Number(c.id)===Number(p.channel_id))&&!(data?.feed.posts||[]).some(first=>first.id===p.id))].filter(p=>!filtered||p.production_id===id);
+ const posts=[...(data?.feed.posts||[]),...more.filter(p=>(data?.directory.channels||[]).some(c=>Number(c.id)===Number(p.channel_id))&&!(data?.feed.posts||[]).some(first=>first.id===p.id))];
  const nextPage=async()=>{if(paging)return;setPaging(true);try{const next=await communityFeed(cursor||data?.feed.next_cursor||undefined);setMore(old=>[...old,...next.posts.filter(p=>!old.some(item=>item.id===p.id))]);setCursor(next.next_cursor);setStarted(true);setHasMore(next.has_more)}catch{ /* Keep existing posts available; retry using the same control. */ }finally{setPaging(false)}};
  const general=visible.filter(c=>c.production_id===null);
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
  const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button"><Item title={c.name} subtitle={(c.description||'Community channel')+(c.unread_count>0?' · '+c.unread_count+' unread':'')}/></Pressable>;
  return <Screen title="Community" compact>
-  {filtered&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
+  {filtered&&view==='Channels'&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
   <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="button" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&view==='Feed'&&<>
