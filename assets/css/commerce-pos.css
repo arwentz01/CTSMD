@@ -1,0 +1,34 @@
+/* Dedicated reserved-seat POS layout. Owns layout; commerce.css owns shared components. */
+.commerce-page:has(.commerce-pos){max-width:none;width:100%;margin:0;box-sizing:border-box}
+.commerce-page:has(.commerce-pos) .commerce-workspace{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;min-width:0}
+.commerce-page:has(.commerce-pos) .commerce-content{min-width:0;max-width:none;width:auto}
+.commerce-page:has(.commerce-pos) .commerce-content>form:has(.commerce-pos){display:block;min-width:0;max-width:none;width:100%}
+.commerce-pos,.commerce-pos *{box-sizing:border-box}
+.commerce-pos{width:100%;min-width:0}
+.commerce-pos .commerce-pos-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+.commerce-pos .commerce-pos-configuration{grid-area:config;min-width:0}
+.commerce-pos .commerce-purchase-layout{display:contents}
+.commerce-pos .commerce-map-column{grid-area:map;min-width:0}
+.commerce-pos .commerce-checkout-column{grid-area:checkout;min-width:0;position:static}
+.commerce-pos .commerce-ticket-types{margin:0;padding:10px 12px}
+.commerce-pos .commerce-ticket-types>h3{margin:0 0 4px}
+.commerce-pos .commerce-ticket-types>p{margin:0 0 6px}
+.commerce-pos .commerce-ticket-types fieldset{margin:0;padding:8px 10px}
+.commerce-pos .commerce-ticket-types fieldset p{margin:0 0 6px}
+.commerce-pos .commerce-quantity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px}
+.commerce-pos .commerce-quantity-grid label{min-width:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.commerce-pos .commerce-quantity-grid input{width:100%;max-width:none;margin:0}
+.commerce-pos .commerce-map-column>h3{margin:0 0 6px}
+.commerce-pos .commerce-map-column>p{margin:4px 0 8px}
+.commerce-pos .commerce-map-wrap{max-height:none;overflow:visible;min-width:0}
+.commerce-pos .commerce-map{display:block;width:100%;height:clamp(350px,55vh,680px)}
+.commerce-pos .commerce-checkout-column{padding:12px}
+.commerce-pos .commerce-checkout-column .commerce-summary{background:transparent}
+.commerce-pos .commerce-checkout-column .commerce-summary p{overflow-wrap:anywhere}
+@media(min-width:1050px){
+ .commerce-pos .commerce-pos-layout{grid-template-areas:"config checkout" "map checkout";grid-template-columns:minmax(0,1fr) 310px;align-items:start;gap:12px 18px}
+ .commerce-pos .commerce-checkout-column{position:sticky;top:12px;align-self:start}
+}
+@media(max-width:1049px){.commerce-pos .commerce-pos-layout{grid-template-areas:"config" "map" "checkout"}}
+@media(max-width:850px){.commerce-page:has(.commerce-pos) .commerce-workspace{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.commerce-pos .commerce-map{height:340px}.commerce-pos .commerce-quantity-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
