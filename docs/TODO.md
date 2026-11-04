@@ -12,6 +12,7 @@
 
 - [x] Source inventory of five-tab Expo routes, available member APIs and the newer web surfaces; native versus website handoff decisions documented without claiming completed native parity.
 - [x] Compact CTSMD native screen masthead, grouped More destinations, permission-aware staff/admin website handoffs, and improved personal calendar agenda; current ticket purchase remains Ludus.
+- [x] Condense native Community feed cards, author metadata, Feed/Channels switch and timestamps without shrinking reaction hit targets.
 - [ ] Full member-screen visual pass and device capture: Today/Action Center, Theatre details, Community, Messages, Forms, Volunteer, Family, Notifications, Videos, settings, empty/error/large-type states.
 - [x] Build caregiver-safe native logistics agenda from the existing restricted API, plus caregiver-only Home/More/Family destinations and hidden unauthorized tabs; backend continues to enforce restrictions.
 - [ ] Complete parent/guardian/caregiver device and HTTP authorization testing, relationship revocation/no-leak checks, and accessibility validation.
