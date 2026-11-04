@@ -364,3 +364,25 @@
 .commerce-review-payment>form>button{width:100%;margin-top:.65rem}
 .commerce-review-payment [data-tender-terminal][hidden],.commerce-review-payment [data-tender-cash][hidden]{display:none}
 @media(min-width:950px){.commerce-review-workspace{grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:1.4rem}.commerce-review-payment{position:sticky;top:1rem}}
+
+/* Box Office: use available application width instead of constraining the seating workspace */
+.commerce-page:has([data-seat-selector]){max-width:none;width:100%;box-sizing:border-box;margin:0;padding:12px 16px}
+.commerce-page:has([data-seat-selector]) .commerce-workspace{grid-template-columns:156px minmax(0,1fr);gap:12px}
+.commerce-page:has([data-seat-selector]) .commerce-content{padding:16px;min-width:0}
+.commerce-page:has([data-seat-selector]) .commerce-sale-pricing-details{margin:8px 0 12px;font-size:12px}
+.commerce-page:has([data-seat-selector]) .commerce-sale-pricing-details>summary{min-height:0;padding:6px 0;color:var(--commerce-muted)}
+.commerce-page:has([data-seat-selector]) .commerce-sale-pricing-details .commerce-pricing-terms{font-size:12px;margin:4px 0 8px}
+[data-seat-selector]>.commerce-ticket-types{padding:10px 12px;margin:8px 0 12px}
+[data-seat-selector]>.commerce-ticket-types>p{margin:2px 0 8px}
+[data-seat-selector] .commerce-ticket-types fieldset{padding:8px 10px;margin:0}
+[data-seat-selector] .commerce-ticket-types fieldset p{margin:2px 0 6px}
+[data-seat-selector] .commerce-quantity-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+[data-seat-selector] .commerce-quantity-grid label{margin:0;gap:2px}
+[data-seat-selector] .commerce-quantity-grid input{margin-top:2px;max-width:100%;min-height:38px}
+[data-seat-selector] .commerce-ticket-types [data-ticket-quantity-status]{margin:8px 0 0}
+[data-seat-selector] .commerce-purchase-layout{grid-template-columns:minmax(0,1fr);gap:12px}
+[data-seat-selector] .commerce-map-column .commerce-map{height:420px}
+[data-seat-selector] .commerce-checkout-column{padding:12px}
+@media(min-width:1150px){[data-seat-selector] .commerce-purchase-layout{grid-template-columns:minmax(0,1fr) 280px}}
+@media(max-width:900px){.commerce-page:has([data-seat-selector]) .commerce-workspace{grid-template-columns:minmax(0,1fr)}.commerce-page:has([data-seat-selector]) .commerce-content{padding:12px}}
+@media(max-width:600px){.commerce-page:has([data-seat-selector]){padding:8px}.commerce-page:has([data-seat-selector]) .commerce-content{padding:10px}[data-seat-selector] .commerce-map-column .commerce-map{height:320px}}
