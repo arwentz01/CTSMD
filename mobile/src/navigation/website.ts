@@ -2,7 +2,8 @@ import {Linking} from 'react-native';
 
 /** Audited browser handoffs. These do not imply native authorization or shared login cookies. */
 export const webRoutes={
- tickets:'/tickets',
+ // The CTSMD storefront is still a restricted pilot. Live ticket purchases remain on Ludus.
+
  publicProductions:'/productions',
  registration:'/register',
  productionWorkspace:'/production',
