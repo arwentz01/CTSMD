@@ -313,3 +313,14 @@
 .commerce-filter>label{flex:1 1 13rem;min-width:0}
 .commerce-filter button{flex:0 0 auto}
 @media(max-width:640px){.commerce-filter{display:block}.commerce-filter>label{display:block;margin-bottom:.6rem}.commerce-panel form input[type="number"]{max-width:100%}}
+
+/* Quantity-first storefront and Box Office purchase flow */
+[data-seat-selector]>.commerce-ticket-types{margin:1rem 0;padding:1rem;border:1px solid var(--commerce-border,#ddd);border-radius:.75rem}
+[data-seat-selector]>.commerce-ticket-types>h3{margin:0 0 .3rem}
+[data-seat-selector]>.commerce-ticket-types>p{margin:.3rem 0 .8rem}
+[data-seat-selector] .commerce-quantity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem}
+[data-seat-selector] .commerce-quantity-grid label{display:flex;flex-direction:column;gap:.25rem}
+[data-seat-selector] .commerce-quantity-grid input{max-width:8rem}
+[data-seat-selector] .commerce-summary{position:relative;margin:1rem 0;padding:.8rem 1rem;border:1px solid var(--commerce-border,#ddd);border-radius:.75rem}
+[data-seat-selector] [data-ticket-zone]{margin:.65rem 0}
+@media(min-width:900px){[data-seat-selector]>.commerce-ticket-types{padding:1rem 1.25rem}[data-seat-selector] .commerce-map-wrap{max-height:65vh;overflow:auto}}
