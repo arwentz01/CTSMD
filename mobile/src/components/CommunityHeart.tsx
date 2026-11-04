@@ -8,7 +8,7 @@ export function CommunityHeart({postId,count,hearted}:{postId:number;count:numbe
  const [active,setActive]=useState(hearted),[total,setTotal]=useState(count),[busy,setBusy]=useState(false);
  useEffect(()=>{setActive(hearted);setTotal(count)},[postId,hearted,count]);
  const toggle=async()=>{if(busy)return;setBusy(true);try{const next=await toggleCommunityHeart(postId);setTotal(x=>Math.max(0,x+(next.hearted===active?0:next.hearted?1:-1)));setActive(next.hearted);}catch(e){Alert.alert('Reaction unavailable',e instanceof Error?e.message:'Please try again.')}finally{setBusy(false)}};
- return <Pressable accessibilityRole="button" accessibilityLabel={active?'Remove heart reaction':'Heart this post'} accessibilityState={{selected:active,disabled:busy}} disabled={busy} onPress={()=>void toggle()} style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:6,paddingVertical:5,paddingHorizontal:4}}>
+ return <Pressable accessibilityRole="button" accessibilityLabel={active?'Remove heart reaction':'Heart this post'} accessibilityState={{selected:active,disabled:busy}} disabled={busy} onPress={()=>void toggle()} style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:6,minHeight:44,minWidth:52,paddingVertical:7,paddingHorizontal:4}}>
   <Ionicons name={active?'heart':'heart-outline'} color={active?colors.primary:colors.muted} size={20}/><Text style={{fontSize:13,color:active?colors.primary:colors.muted,fontWeight:'600'}}>{total}</Text>
  </Pressable>;
 }
