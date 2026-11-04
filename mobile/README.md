@@ -2,6 +2,12 @@
 
 Native CTSMD Connect is maintained in `mobile/` on `audit/board-pilot-readiness`. The PHP backend remains responsible for authentication, safeguarding, eligibility, and authorization.
 
+## Native scope and parity
+
+See [Native visual and surface reconciliation](../docs/NATIVE_VISUAL_PARITY_2026_11.md) for which workflows are implemented in Expo, which open CTSMD's authenticated website, and which still require API/UX work. **Tickets still open Ludus** (`https://ctsmd.ludus.com/index.php`), not the restricted self-hosted `/tickets` pilot. This does not change until an explicit storefront cutover decision.
+
+The shared header, grouped member/staff More navigation, centralized allowlisted website handoffs and compact agenda are implemented in source, not yet approved on physical devices. Server-side authorization remains required for all web/native actions. Web handoffs may require a separate login.
+
 ## Visual Studio Code setup
 
 Use Node.js 22.13 or later, then open the `mobile` directory in VS Code:
