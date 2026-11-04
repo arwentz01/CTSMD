@@ -1,0 +1,7 @@
+# Privacy and deletion review
+
+Local `/privacy` is an unauthenticated, mobile-friendly **draft** in `src/PrivacyExperience.php`, routed before authentication and schema checks by `front.php`; canonical URL is `https://ctsmd.me/privacy` for both stores. `/account-deletion` is a separate public draft in `src/PublicPolicyExperience.php`. Public landing, login, registration and mobile Settings contain links. Local unauthenticated GET and POST checks are documented in README.
+
+Before approval: confirm actual effective date, responsible legal entity and monitored contact, request-intake handling, identity/guardian verification, response timeline, retention categories and periods, deletion/de-identification including backups and service providers, safeguarding exceptions, children's consent obligations, actual processors, international transfers, payment, notifications, analytics/crash logs and external sites. Confirm public contact form reaches an authorized trained operator. The generic organizational contact form exists at https://www.ctsmd.org/; privacy-specific use and service levels are not verified.
+
+The draft says no specific retention periods and does not claim encryption at rest. It does not authorize deletion or promise automatic deletion. A local page is not a published policy. Do not publish or enter URLs as complete in stores until approved and deployed. Confirm whether a separate in-app request mechanism is needed under current Play policy and the actual account-creation flow.

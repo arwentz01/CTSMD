@@ -6,6 +6,7 @@ final class PrivacyExperience
 {
     public static function render(): never
     {
+        if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET','HEAD'], true)) { header('Allow: GET, HEAD'); http_response_code(405); exit('Method not allowed'); }
         header('Content-Type: text/html; charset=utf-8');
         ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#702a3f"><link rel="canonical" href="https://ctsmd.me/privacy"><title>Privacy policy · CTSMD Connect</title><style>
         :root{color-scheme:light;font:16px/1.65 system-ui,sans-serif;color:#30282a;background:#faf7f1}*{box-sizing:border-box}body{margin:0}header{background:#702a3f;color:white;padding:18px max(20px,calc((100% - 820px)/2))}header a{color:white;font-weight:700;text-decoration:none}main{max-width:860px;margin:auto;padding:clamp(20px,5vw,40px)}h1{font-size:clamp(1.8rem,5vw,2.4rem);line-height:1.2}h2{font-size:1.2rem;margin-top:2rem}a{color:#702a3f;text-underline-offset:3px}a:focus-visible{outline:3px solid #b58a33;outline-offset:3px}.notice{border-left:4px solid #b58a33;background:#f3ead8;padding:12px 16px}footer{border-top:1px solid #ddd1cb;padding-top:20px;margin-top:36px}li{margin:.4rem 0}

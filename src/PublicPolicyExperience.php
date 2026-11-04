@@ -81,7 +81,7 @@ final class PublicPolicyExperience
 <?php if ($verifiedEmail !== ''): ?>
 <p>Email <a href="mailto:<?= $escape($verifiedEmail) ?>?subject=CTSMD%20Connect%20account%20deletion%20request"><?= $escape($verifiedEmail) ?></a> with the subject <strong>CTSMD Connect account deletion request</strong>. Include the email address associated with your account and whether the request concerns your account or a student under your care. Do not send passwords, medical information, or other sensitive records by email.</p>
 <?php else: ?>
-<p class="note"><strong>Deletion request intake is not yet configured.</strong> Contact your CTSMD organizational administrator to initiate a request. Before app-store publication, CTSMD must publish a verified deletion-request contact or web intake process on this page.</p>
+<p class="note"><strong>Deletion request intake is not yet configured.</strong> Use the <a href="https://www.ctsmd.org/">CTSMD website contact form</a> to request deletion and identify the request as concerning CTSMD Connect. Before app-store publication, CTSMD must publish a verified deletion-request contact or web intake process on this page.</p>
 <?php endif; ?>
 <h2>Verification and review</h2>
 <p>CTSMD must verify that a request comes from the account holder or an authorized parent or guardian before taking action. A request may require follow-up so that another person's information or legitimate family access is not affected.</p>

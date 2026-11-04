@@ -1,0 +1,3 @@
+# Reviewer access preparation
+
+Member functionality needs an authenticated account. Owner must prepare an active, dedicated synthetic adult review identity with only the permissions and productions necessary to exercise the intended release, seed sanitized content, specify sign-in steps and any approval/expiry, and verify access from a clean Android installation. Do not use real children, messages, safeguarding records or contact details. Do not store credentials in Git; enter them only in the secure Play Console review-access fields through an authorized owner. Include contact for review problems and explain any functions requiring a guardian/student relationship using synthetic records and approved safeguards. No reviewer account was created or tested here.
