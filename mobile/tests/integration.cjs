@@ -52,6 +52,7 @@ test('permission denial removes only the stored device and never requests a nati
  const device=load('src/notifications/device.ts',{},null,{
   'expo-secure-store':{getItemAsync:async()=>identity,deleteItemAsync:async()=>{identity=null}},
   'expo-notifications':{getPermissionsAsync:async()=>({granted:false}),requestPermissionsAsync:async()=>({granted:false}),getDevicePushTokenAsync:async()=>{tokenCalls++}},
+  'expo-constants':{default:{executionEnvironment:'standalone'}},
   'react-native':{Platform:{OS:'ios'}},
   '../api/client':{unregisterPush:async value=>{removed=value}}
  });
@@ -62,7 +63,7 @@ test('native registration rotates the prior identity but explicitly reports deli
  let identity='old-device',payload,previous;
  const device=load('src/notifications/device.ts',{},null,{
   'expo-secure-store':{getItemAsync:async()=>identity,setItemAsync:async(key,value)=>{identity=value}},
-  'expo-notifications':{},'react-native':{Platform:{OS:'android'}},
+  'expo-notifications':{},'expo-constants':{default:{executionEnvironment:'standalone'}},'react-native':{Platform:{OS:'android'}},
   '../api/client':{registerPush:async(value,prior)=>{payload=value;previous=prior;return {delivery_type:'native_pending'}}}
  });
  assert.match(await device.storeDeviceToken({type:'android',data:'new-device'}),/not configured or verified/);
@@ -121,4 +122,18 @@ test('caregiver typed endpoint requests only authorized schedule',async()=>{
  const schedule=await client.caregiverSchedule();
  assert.deepEqual(schedule.calls,[]);
  assert.equal(captured,'https://ctsmd.me/api/mobile/caregiver-schedule');
+});
+
+test('Expo Go skips unsupported native push imports and explains development builds',async()=>{
+ const device=load('src/notifications/device.ts',{},null,{
+  'expo-secure-store':{getItemAsync:async()=>null,deleteItemAsync:async()=>{}},
+  'expo-constants':{default:{executionEnvironment:'storeClient'}},
+  'react-native':{Platform:{OS:'android'}},
+  '../api/client':{registerPush:async()=>{throw Error('Unexpected registration')},unregisterPush:async()=>{}}
+ });
+ await assert.rejects(device.enableDeviceNotifications(),/development build/);
+ const integration=fs.readFileSync(path.join(__dirname,'../src/notifications/NotificationIntegration.tsx'),'utf8');
+ assert.doesNotMatch(integration,/^import \* as Notifications from 'expo-notifications'/m);
+ assert.match(integration,/executionEnvironment==='storeClient'/);
+ assert.match(integration,/import\('expo-notifications'\)/);
 });
