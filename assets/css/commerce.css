@@ -413,3 +413,11 @@
 .commerce-page .commerce-staff-seat-selector>.commerce-purchase-layout>.commerce-map-column{min-width:0;width:auto}
 .commerce-page .commerce-staff-seat-selector>.commerce-purchase-layout>.commerce-checkout-column{min-width:0;width:auto}
 @media(max-width:800px){.commerce-page .commerce-staff-seat-selector>.commerce-purchase-layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Storefront: same measured nested-grid defect as staff POS, independently scoped. */
+.commerce-page .commerce-customer-seat-selector{display:block;grid-template-columns:none;width:100%;min-width:0}
+.commerce-page .commerce-customer-seat-selector>.commerce-ticket-types{width:100%;max-width:none}
+.commerce-page .commerce-customer-seat-selector>.commerce-purchase-layout{display:grid;width:100%;min-width:0;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.commerce-page .commerce-customer-seat-selector>.commerce-purchase-layout>.commerce-map-column,
+.commerce-page .commerce-customer-seat-selector>.commerce-purchase-layout>.commerce-checkout-column{min-width:0;width:auto}
+@media(max-width:800px){.commerce-page .commerce-customer-seat-selector>.commerce-purchase-layout{grid-template-columns:minmax(0,1fr)}}
