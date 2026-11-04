@@ -35,7 +35,7 @@ The app is the everyday CTSMD Connect companion, **not a second copy of every we
 | Caregiver logistics | **Native source implemented; device acceptance open** | `/caregiver-schedule` reads the existing scoped mobile API; caregiver-only Home, Family and More link to it | Verify identity gating, dynamic type, real-device behavior and relationship revocation |
 | Personal Theatre history/performer consent | Website handoff | More → Theatre history / Performer profile | Prioritize native read/edit only after scoped API and authorization review |
 | Student audition/registration | Website handoff | More → Auditions & registration | Complex builder/registration web-first for this phase |
-| Production staff workspace | Website handoff | More → Production workspace | Native staff overview, production switching and daily operational tasks are high-priority gaps |
+| Production staff workspace | Native read-only shortcuts plus website handoff | Authorized production detail → Tasks, People, Production day, Readiness; More → workspace | Staff working-production selection, operational read dashboard and write actions remain native gaps |
 | Production day/attendance | Website handoff | More → Production day & attendance | Candidate for native Phase 2, needs mutation/role/clock consistency contract |
 | Production tasks and people | Website handoff | More → Production tasks/people | Native assigned work exists; staff create/edit, roster and casting management missing |
 | Readiness/production notices | Website handoff | More → Readiness & notices | Native staff read/action summaries in next phase |
@@ -57,7 +57,7 @@ The app is the everyday CTSMD Connect companion, **not a second copy of every we
 
 **Phase A: Member visual parity and completeness (in progress).** Audit Home, Theatre detail, Community, Messages, assigned Forms, Volunteer, Action Center, Notifications, Family, and Videos at common phone widths. Apply shared design components and practical navigation/empty states. Recent source updates cover shared masthead, More grouping, web handoff allowlist and agenda presentation.
 
-**Phase B: Caregiver and staff operational essentials.** Caregiver-only native schedule and limited navigation are implemented in source. Next add production staff overview, production selector, assigned tasks and production day read view before enabling mutations. Create/extend specific mobile APIs with role, production, lifecycle and family guards. Do not imitate staff permission with client-only checks.
+**Phase B: Caregiver and staff operational essentials.** Caregiver-only native schedule and limited navigation are implemented in source, and production detail offers permission-aware website shortcuts for Tasks, People, Production day and Readiness. Next add a native production staff overview, production selector, assigned tasks and production day read view before enabling mutations. Create/extend specific mobile APIs with role, production, lifecycle and family guards. Do not imitate staff permission with client-only checks.
 
 **Phase C: Full lifecycle parity and high-value writing actions.** Evaluate native staff attendance, schedule acknowledgment, task assignment, volunteer lead workflow, family/pickup management and structured forms only after server authorization tests and user acceptance. Complex editing and financial products can stay web-first.
 
