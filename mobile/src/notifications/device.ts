@@ -1,13 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
 import type * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
+import {supportsNativePush} from './runtime';
 import {Platform} from 'react-native';
 import {registerPush,unregisterPush} from '../api/client';
 const KEY='ctsmd-mobile-push-identity';
 export const storedPushIdentity=()=>SecureStore.getItemAsync(KEY);
 export const forgetPushIdentity=()=>SecureStore.deleteItemAsync(KEY);
 export async function enableDeviceNotifications(){
- if(Constants.executionEnvironment==='storeClient')throw new Error('Remote push notifications require a CTSMD development build. Expo Go can be used to preview the rest of the app.');
+ if(!supportsNativePush())throw new Error('Remote push notifications require a CTSMD development build. Expo Go can be used to preview the rest of the app.');
  const Notifications=await import('expo-notifications');
  if(Platform.OS!=='ios'&&Platform.OS!=='android')throw new Error('Use an iOS or Android development build for native notifications.');
  if(Platform.OS==='android')await Notifications.setNotificationChannelAsync('default',{name:'CTSMD updates',importance:Notifications.AndroidImportance.DEFAULT});
