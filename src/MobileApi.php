@@ -532,15 +532,9 @@ final class MobileApi
     private static function communityFeed(PDO $db,array $user): never
     {
         self::requireMethod('GET');
-        $channels=$db->query("SELECT id FROM channels WHERE archived_at IS NULL AND include_in_feed=1")->fetchAll(PDO::FETCH_COLUMN);
-        $allowed=[];
-        foreach($channels as $id){if(CommunicationReadStateService::canAccessChannel($db,$user,(int)$id))$allowed[]=(int)$id;}
-        if(!$allowed){self::json(['posts'=>[]]);}
-        $placeholders=implode(',',array_fill(0,count($allowed),'?'));
-        // Feed browsing must not call markChannelRead; unread state belongs to each channel.
-        $stmt=$db->prepare("SELECT cp.id,cp.channel_id,c.name channel_name,c.production_id,p.title production_title,cp.body,cp.created_at,cp.pinned,cp.author_user_id,u.initials,CONCAT(u.first_name,' ',u.last_name) author FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id IN ($placeholders) AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at DESC,cp.id DESC LIMIT 60");
-        $stmt->execute($allowed);
-        $posts=$stmt->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $p):int=>(int)$p['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['posts'=>$posts]);
+        $result=CommunityExperience::activityFeed($db,$user,(int)($_GET['page']??0));
+        self::addHeartCounts($db,$result['posts'],(int)$user['id']);
+        self::json($result);
     }
 
     private static function addHeartCounts(PDO $db,array &$posts,int $viewerId): void

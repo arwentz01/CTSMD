@@ -415,3 +415,5 @@ body[data-native-route="channels-view"] .community-page.channel-open .community-
   }
   body[data-native-route="channels"] .community-pane{display:none!important}
 }
+
+.community-target-highlight{outline:2px solid var(--gold);outline-offset:2px;background:var(--red-soft,#fff4f5)!important}
