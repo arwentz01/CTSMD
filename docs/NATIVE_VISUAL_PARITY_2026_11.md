@@ -32,7 +32,7 @@ The app is the everyday CTSMD Connect companion, **not a second copy of every we
 | Notifications, action routing | Native partial | `/notifications`, `/settings` | Actual APNs/FCM delivery, OS taps and real-device consent testing still open |
 | Video library/player | Native | `/videos`, `/videos/[id]` | Physical device playback/accessibility and secure media lifecycle testing |
 | Family relationships | Native read-only | `/family`; management website | Native family hub and guardian-managed pickup controls need separate secure API |
-| Caregiver logistics | **Gap** | Existing `/api/mobile/caregiver-schedule` backend endpoint | Build a distinct, minimal caregiver-safe native agenda without escalating family/production disclosure |
+| Caregiver logistics | **Native source implemented; device acceptance open** | `/caregiver-schedule` reads the existing scoped mobile API; caregiver-only Home, Family and More link to it | Verify identity gating, dynamic type, real-device behavior and relationship revocation |
 | Personal Theatre history/performer consent | Website handoff | More → Theatre history / Performer profile | Prioritize native read/edit only after scoped API and authorization review |
 | Student audition/registration | Website handoff | More → Auditions & registration | Complex builder/registration web-first for this phase |
 | Production staff workspace | Website handoff | More → Production workspace | Native staff overview, production switching and daily operational tasks are high-priority gaps |
@@ -57,13 +57,15 @@ The app is the everyday CTSMD Connect companion, **not a second copy of every we
 
 **Phase A: Member visual parity and completeness (in progress).** Audit Home, Theatre detail, Community, Messages, assigned Forms, Volunteer, Action Center, Notifications, Family, and Videos at common phone widths. Apply shared design components and practical navigation/empty states. Recent source updates cover shared masthead, More grouping, web handoff allowlist and agenda presentation.
 
-**Phase B: Caregiver and staff operational essentials.** Add protected caregiver-only native schedule using the existing minimal endpoint; add production staff overview, production selector, assigned tasks and production day read view before enabling mutations. Create/extend specific mobile APIs with role, production, lifecycle and family guards. Do not imitate staff permission with client-only checks.
+**Phase B: Caregiver and staff operational essentials.** Caregiver-only native schedule and limited navigation are implemented in source. Next add production staff overview, production selector, assigned tasks and production day read view before enabling mutations. Create/extend specific mobile APIs with role, production, lifecycle and family guards. Do not imitate staff permission with client-only checks.
 
 **Phase C: Full lifecycle parity and high-value writing actions.** Evaluate native staff attendance, schedule acknowledgment, task assignment, volunteer lead workflow, family/pickup management and structured forms only after server authorization tests and user acceptance. Complex editing and financial products can stay web-first.
 
 **Phase D: Device acceptance and release.** Confirm iOS/Android build, Expo package compatibility, dynamic type, VoiceOver/TalkBack, real photo/video upload, signed-in and denied roles, student/guardian/caregiver household boundaries, cold starts, token revocation, OS notifications, offline privacy and browser handoffs. Retain no-go until device and hosted backend evidence is recorded.
 
 ## Verification and limitations
+
+The caregiver-only `/api/mobile/me` response now provides a `caregiver_only` UI hint, derived from active caregiver relationships and independent participant/staff classification; it does **not** replace the backend route gate. Home uses a distinct minimal logistics view and Theatre/Community tabs are hidden for this restricted account. The existing API returns only first names and call logistics, not student IDs/last names. This still requires denied-role and relationship-revocation device acceptance.
 
 The updated route/module sources are tracked in `mobile/tests/integration.cjs`, `mobile/README.md` and CI's `CTSMD Expo mobile checks` workflow. Expo dependency compatibility currently reports SDK 58 patch drift (see its CI log): the TypeScript and bundle results must not be represented as an entirely green workflow until `npx expo install --check` passes on a coherent lockfile. Existing [native Phase 4 evidence](NATIVE_PHASE4_ACCEPTANCE.md) remains dated, and physical-device acceptance is still outstanding.
 
