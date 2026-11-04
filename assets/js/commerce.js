@@ -64,6 +64,7 @@
    if(!valid||ticketCount!==seatCount)quantitiesValid=false;totalTickets+=ticketCount;
   });
   quantitiesValid=quantitiesValid&&totalTickets>0&&totalTickets<=maxSeats;
+  const remaining=Math.max(0,totalTickets-selected.length);root.querySelectorAll('[data-seat-check]').forEach(c=>{if(!c.checked&&!c.disabled){const zone=byKey[c.value].seat.zone,zoneTickets=quantityInputs.filter(i=>i.dataset.zone===zone).reduce((n,i)=>n+(Number(i.value)||0),0);c.setAttribute('aria-disabled',String((selectedByZone[zone]??0)>=zoneTickets||remaining===0));}});
   const discount=Math.min(payload.discount,subtotal),tax=Math.floor(((subtotal-discount)*payload.tax+5000)/10000),total=subtotal-discount+tax+payload.fee;
   root.querySelector('[data-selected-seats]').textContent=selected.map(c=>{const s=byKey[c.value].seat;return [s.section_name,s.row_name?`Row ${s.row_name}`:'',`Seat ${s.label}`].filter(Boolean).join(', ');}).join(' · ');
   root.querySelector('[data-selection-count]').textContent=`${selected.length} seat${selected.length===1?'':'s'} selected`;
