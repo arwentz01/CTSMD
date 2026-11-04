@@ -10,7 +10,7 @@ body[data-native-route="messages-thread"] .comm-page{overflow:hidden!important}
   display:flex;flex-direction:column;gap:8px;
 }
 .comm-thread-screen .comm-thread-head{flex:0 0 auto}
-.comm-thread-screen .comm-participants{flex:0 0 auto}
+.comm-thread-screen .comm-participants{flex:0 1 auto;max-height:35%;overflow-y:auto}
 .comm-thread-screen .comm-thread-layout{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;max-width:none;margin:0}
 .comm-thread-screen .comm-thread{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:14px}
 .comm-thread-screen .comm-composer{flex:0 0 auto;margin:0}
@@ -26,6 +26,7 @@ body[data-native-route="messages-thread"] .comm-page{overflow:hidden!important}
 .comm-avatar-stack i.guardian{background:var(--gold);color:#342600}.comm-avatar-stack i.student{background:var(--red);color:#fff}
 .comm-people-toggle{appearance:none;border:0;background:transparent;color:var(--red);padding:5px 0;font:800 11px/1.2 system-ui;cursor:pointer}.comm-people-toggle:hover{text-decoration:underline}
 .comm-participants{max-width:none;margin:0;padding:0;border:1px solid var(--line);border-radius:13px;background:#fff;overflow:hidden}
+.comm-safety-description{margin:10px 18px 2px;color:var(--muted);font-size:12px;line-height:1.4}
 .comm-participants.collapsed{display:none}.comm-participants-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;padding:5px 10px}
 .comm-participants-list>div{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:8px;padding:7px 8px}.comm-participants-list i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#f2edef;color:var(--red);font-style:normal;font-size:8px;font-weight:850}.comm-participants-list span{display:grid;min-width:0}.comm-participants-list b{font-size:11px;line-height:1.2}.comm-participants-list small{font-size:9px;color:var(--muted)}
 .comm-thread{display:block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 18px}.comm-day-separator{display:flex;align-items:center;gap:10px;margin:13px 0 10px;color:#8a7e82;font-size:10px;font-weight:750;text-align:center}.comm-day-separator:before,.comm-day-separator:after{content:'';height:1px;background:var(--line);flex:1}
