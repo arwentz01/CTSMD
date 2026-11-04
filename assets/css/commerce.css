@@ -350,3 +350,17 @@
 .commerce-test-actions>summary{cursor:pointer;font-weight:600}
 .commerce-test-actions[open]>summary{margin-bottom:.75rem}
 .commerce-test-actions form{margin:.8rem 0}
+
+/* Review and payment remain one continuous transaction workspace */
+.commerce-review-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:1.1rem;align-items:start;margin-top:1rem}
+.commerce-review-details,.commerce-review-payment{min-width:0}
+.commerce-review-details>h2{margin:0 0 .35rem;font-size:1.2rem}
+.commerce-review-details>p{margin:.35rem 0}
+.commerce-review-details .commerce-table-scroll{margin:.85rem 0}
+.commerce-review-details .commerce-totals{max-width:none}
+.commerce-review-payment{border:1px solid var(--commerce-border,#ddd);border-radius:.75rem;padding:1rem;background:var(--commerce-panel-bg,#fff)}
+.commerce-review-payment>form{margin:.7rem 0 1rem}
+.commerce-review-payment>form>h3{margin:.3rem 0 .5rem}
+.commerce-review-payment>form>button{width:100%;margin-top:.65rem}
+.commerce-review-payment [data-tender-terminal][hidden],.commerce-review-payment [data-tender-cash][hidden]{display:none}
+@media(min-width:950px){.commerce-review-workspace{grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:1.4rem}.commerce-review-payment{position:sticky;top:1rem}}
