@@ -5,10 +5,10 @@
 .commerce-page:has(.commerce-pos-staff) .commerce-content>form:has(.commerce-pos-staff){display:block;min-width:0;max-width:none;width:100%}
 .commerce-pos-staff,.commerce-pos-staff *{box-sizing:border-box}
 .commerce-pos-staff{width:100%;min-width:0}
-.commerce-pos-staff .commerce-pos-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;width:100%;min-width:0}
+.commerce-page:has(.commerce-pos-staff) .commerce-pos-staff .commerce-pos-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;width:100%;min-width:0}
 .commerce-pos-staff .commerce-pos-main{min-width:0;width:100%}
 .commerce-pos-staff .commerce-pos-configuration{width:100%;min-width:0}
-.commerce-pos-staff .commerce-purchase-layout{display:block;width:100%;min-width:0}
+.commerce-page:has(.commerce-pos-staff) .commerce-pos-staff .commerce-purchase-layout{display:block;grid-template-columns:none;width:100%;min-width:0}
 .commerce-pos-staff .commerce-map-column{min-width:0;width:100%}
 .commerce-pos-staff .commerce-checkout-column{min-width:0;width:100%;position:sticky;top:12px;padding:12px}
 .commerce-pos-staff .commerce-ticket-types{margin:0 0 10px;padding:10px 12px;width:100%}
@@ -25,6 +25,6 @@
 .commerce-pos-staff .commerce-map{display:block;width:100%;height:clamp(350px,55vh,680px)}
 .commerce-pos-staff .commerce-checkout-column .commerce-summary{background:transparent}
 .commerce-pos-staff .commerce-checkout-column .commerce-summary p{overflow-wrap:anywhere}
-@media(max-width:1100px){.commerce-pos-staff .commerce-pos-layout{grid-template-columns:minmax(0,1fr)}.commerce-pos-staff .commerce-checkout-column{position:static}}
+@media(max-width:1100px){.commerce-page:has(.commerce-pos-staff) .commerce-pos-staff .commerce-pos-layout{grid-template-columns:minmax(0,1fr)}.commerce-pos-staff .commerce-checkout-column{position:static}}
 @media(max-width:850px){.commerce-page:has(.commerce-pos-staff) .commerce-workspace{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.commerce-pos-staff .commerce-map{height:340px}.commerce-pos-staff .commerce-quantity-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
