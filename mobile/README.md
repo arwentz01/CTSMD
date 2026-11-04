@@ -6,7 +6,7 @@ Native CTSMD Connect is maintained in `mobile/` on `audit/board-pilot-readiness`
 
 See [Native visual and surface reconciliation](../docs/NATIVE_VISUAL_PARITY_2026_11.md) for which workflows are implemented in Expo, which open CTSMD's authenticated website, and which still require API/UX work. **Tickets still open Ludus** (`https://ctsmd.ludus.com/index.php`), not the restricted self-hosted `/tickets` pilot. This does not change until an explicit storefront cutover decision.
 
-The shared header, grouped member/staff More navigation, centralized allowlisted website handoffs and compact agenda are implemented in source, not yet approved on physical devices. Server-side authorization remains required for all web/native actions. Web handoffs may require a separate login.
+The shared header, grouped member/staff More navigation, centralized allowlisted website handoffs, compact agenda, and caregiver-only logistics Home/schedule are implemented in source, not yet approved on physical devices. The caregiver-only view is based on a server-provided navigation hint; the backend still enforces every authorization decision. Server-side authorization remains required for all web/native actions. Web handoffs may require a separate login.
 
 ## Visual Studio Code setup
 
