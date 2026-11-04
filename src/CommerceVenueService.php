@@ -22,7 +22,7 @@ final class CommerceVenueService
             $row=CommerceStore::row($db,'venues',$org,$venue,true);
             if((bool)$row['is_active']===$active)return;
             if(!$active){
-                $q=$db->prepare("SELECT COUNT(*) FROM commerce_performances p JOIN commerce_layouts l ON l.id=p.layout_id AND l.organization_id=p.organization_id JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id WHERE p.organization_id=? AND s.venue_id=? AND p.starts_at>=NOW()");
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_performances p JOIN commerce_layouts l ON l.id=p.layout_id AND l.organization_id=p.organization_id JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id WHERE p.organization_id=? AND s.venue_id=? AND COALESCE(p.starts_at_utc,p.starts_at)>=UTC_TIMESTAMP() AND p.schedule_status NOT IN ('cancelled','completed')");
                 $q->execute([$org,$venue]);
                 if((int)$q->fetchColumn()>0)throw new RuntimeException('This venue has upcoming performances. Move or cancel them before deactivating it.');
             }
