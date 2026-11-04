@@ -15,8 +15,8 @@ function AppHeader(){
   {path!=='/more'&&<Pressable accessibilityRole="button" accessibilityLabel="Open account and settings" style={styles.headerButton} onPress={()=>router.navigate('/(tabs)/more')}><Ionicons name="person-outline" size={22} color={colors.primary}/></Pressable>}
  </View>;
 }
-export function Screen({title,children}:{title:string;children:React.ReactNode}){
- return <SafeAreaView edges={['top','left','right']} style={styles.safe}><AppHeader/><KeyboardAvoidingView style={styles.safe} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}><Text accessibilityRole="header" style={styles.title}>{title}</Text>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView>;
+export function Screen({title,children,compact=false}:{title:string;children:React.ReactNode;compact?:boolean}){
+ return <SafeAreaView edges={['top','left','right']} style={styles.safe}><AppHeader/><KeyboardAvoidingView style={styles.safe} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content,compact&&styles.compactContent]}><Text accessibilityRole="header" style={styles.title}>{title}</Text>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView>;
 }
 export function Item({title,subtitle}:{title:string;subtitle?:string}){
  return <View style={styles.item}><Text style={styles.itemTitle}>{title}</Text>{!!subtitle&&<Text style={styles.subtitle}>{subtitle}</Text>}</View>;
@@ -27,6 +27,7 @@ const styles=StyleSheet.create({
  brandMark:{width:36,height:36},brand:{flex:1,gap:1},brandName:{fontSize:17,fontWeight:'800',color:colors.navy,letterSpacing:-0.4},brandSubtitle:{fontSize:9,letterSpacing:2.3,fontWeight:'800',color:colors.primary},
  headerButton:{width:44,height:48,alignItems:'center',justifyContent:'center'},
  content:{width:'100%',maxWidth:1000,alignSelf:'center',paddingHorizontal:16,paddingTop:17,paddingBottom:32,gap:14,flexGrow:1},
+ compactContent:{paddingTop:12,gap:9},
  title:{fontSize:25,fontWeight:'800',color:colors.navy,letterSpacing:-0.45,marginBottom:2},
  item:{backgroundColor:colors.card,borderRadius:12,borderWidth:1,borderColor:colors.border,padding:13,gap:5},
  itemTitle:{fontSize:17,fontWeight:'600',color:colors.text},subtitle:{fontSize:15,lineHeight:22,color:colors.muted},
