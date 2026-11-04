@@ -20,6 +20,8 @@
 - [ ] **Global timezone audit:** inventory remaining legacy staff/member/mobile emails, date inputs, reports, cron jobs and stored SQL datetime assumptions. Use Eastern for human business context, venue-local time for actual performances and UTC for UTC-designated persistence/API instants. Do not bulk-convert historical fields. Test DST changes and server migration independently.
 - [ ] **Commerce UX and release gate:** physical device, screen-reader/keyboard, authorized account/caregiver flows, one-show vs mixed-production promotions, and financial/operator review. Public/live payment, general audience email, and real-family rollout remain explicitly **not approved**.
 
+- [ ] **Stripe Checkout branding (deferred):** Brand hosted Stripe Checkout with the CTSMD logo, approved business display name and colors; show production-specific or multi-production ticket descriptions rather than generic “Tickets”; evaluate a Stripe-supported custom checkout domain and any associated fees. Preserve the hosted payment flow, existing reservations and reconciliation. No switch to embedded Elements or live-payment activation is authorized by this task.
+
 ## RC1 signoff blockers — October 28, 2026
 
 ### Operations UX implementation and acceptance exceptions
