@@ -15,7 +15,8 @@
 - [ ] Full member-screen visual pass and device capture: Today/Action Center, Theatre details, Community, Messages, Forms, Volunteer, Family, Notifications, Videos, settings, empty/error/large-type states.
 - [x] Build caregiver-safe native logistics agenda from the existing restricted API, plus caregiver-only Home/More/Family destinations and hidden unauthorized tabs; backend continues to enforce restrictions.
 - [ ] Complete parent/guardian/caregiver device and HTTP authorization testing, relationship revocation/no-leak checks, and accessibility validation.
-- [ ] Add staff production dashboard/context switching, production day/attendance read, readiness and task overview with narrow authorized APIs; keep mutations on website until independently accepted.
+- [x] Add compact permission-aware staff shortcut links on authorized native production detail for Tasks, People, Production day and Readiness, opening existing website workflows.
+- [ ] Add genuine native staff production dashboard/context switching, production day/attendance read, readiness and task overview with narrow authorized APIs; keep mutations on website until independently accepted.
 - [ ] Prioritize later native write workflows: production tasks, attendance, family pickup, structured forms, volunteer leads and native video authoring. Do not copy financial/admin editing wholesale into Expo.
 - [ ] Resolve Expo 58 patch dependency/lockfile drift reported by `npx expo install --check`; then repeat web/backend parity tests, iOS/Android exports, simulator/device accessibility, safeguarding and push delivery acceptance.
 - [ ] Audit live URLs and web handoffs; keep Ludus until a separate approved ticketing migration. Browser handoff is **not** native parity or a guarantee of shared login.
