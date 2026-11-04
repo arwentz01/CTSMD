@@ -439,3 +439,16 @@
 [data-seat-selector] .commerce-checkout-column .commerce-summary [data-selected-seats]{margin:8px 0;line-height:1.5}
 [data-seat-selector] .commerce-checkout-column .commerce-summary [data-selection-total]{margin:10px 0;font-weight:600}
 @media(max-width:600px){.commerce-page .commerce-suggestion-hint{display:block;margin:4px 0 0}}
+
+/* Purchase flow UX: prominent optional neighbor finder, no redundant fee panel. */
+.commerce-page:has([data-seat-selector]) .commerce-suggestion{display:block;border:1px solid #c8aeb6;border-left:5px solid #702a3f;border-radius:10px;background:#faf4f5;padding:12px 16px;margin:12px 0 18px}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion>summary{font-size:1rem;font-weight:750;color:#512230;padding:6px 0;min-height:0}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion>summary::after{content:"  · Find neighboring seats automatically";font-size:.82rem;font-weight:400;color:#67545a}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion[open]>summary{margin-bottom:10px}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion form{margin-bottom:0}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion .commerce-columns{gap:12px}
+.commerce-page:has([data-seat-selector]) .commerce-sale-pricing-details{display:none}
+.commerce-page:has([data-seat-selector]) .commerce-checkout-column .commerce-summary{background:transparent;border:0;border-radius:0;padding:0;margin:0 0 12px}
+.commerce-page:has([data-seat-selector]) .commerce-checkout-column .commerce-summary p{background:transparent;padding:0;margin:7px 0;line-height:1.45}
+.commerce-page:has([data-seat-selector]) .commerce-checkout-column .commerce-summary [data-selection-total]{font-weight:600}
+@media(max-width:650px){.commerce-page:has([data-seat-selector]) .commerce-suggestion>summary::after{display:block;margin:4px 0 0}.commerce-page:has([data-seat-selector]) .commerce-suggestion .commerce-columns{grid-template-columns:minmax(0,1fr)}}
