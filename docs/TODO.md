@@ -6,6 +6,19 @@
 
 **Release stance:** The most recent [board pilot report](BOARD_PILOT_READINESS.md) remains **NO-GO for a real-family pilot** until its open gates are accepted. Older percentages are dated evidence, not current calculated coverage.
 
+## Native app UX and web parity — November 3, 2026
+
+**Current mobile reconciliation:** [NATIVE_VISUAL_PARITY_2026_11.md](NATIVE_VISUAL_PARITY_2026_11.md). Preserve the current live **Ludus** ticket link; CTSMD's new ticket storefront is a restricted pilot and is **not** the mobile checkout destination.
+
+- [x] Source inventory of five-tab Expo routes, available member APIs and the newer web surfaces; native versus website handoff decisions documented without claiming completed native parity.
+- [x] Compact CTSMD native screen masthead, grouped More destinations, permission-aware staff/admin website handoffs, and improved personal calendar agenda; current ticket purchase remains Ludus.
+- [ ] Full member-screen visual pass and device capture: Today/Action Center, Theatre details, Community, Messages, Forms, Volunteer, Family, Notifications, Videos, settings, empty/error/large-type states.
+- [ ] Build caregiver-safe native logistics agenda against existing restricted API; perform dedicated parent/guardian/caregiver authorization and no-leak testing.
+- [ ] Add staff production dashboard/context switching, production day/attendance read, readiness and task overview with narrow authorized APIs; keep mutations on website until independently accepted.
+- [ ] Prioritize later native write workflows: production tasks, attendance, family pickup, structured forms, volunteer leads and native video authoring. Do not copy financial/admin editing wholesale into Expo.
+- [ ] Resolve Expo 58 patch dependency/lockfile drift reported by `npx expo install --check`; then repeat web/backend parity tests, iOS/Android exports, simulator/device accessibility, safeguarding and push delivery acceptance.
+- [ ] Audit live URLs and web handoffs; keep Ludus until a separate approved ticketing migration. Browser handoff is **not** native parity or a guarantee of shared login.
+
 ## Commerce release and acceptance — November 2, 2026
 
 **Current source of truth:** [Commerce current implementation, routes, migrations and timezone](CONNECT_COMMERCE_CURRENT.md). The original Phase 1–4 implementation reports are historical; they do not describe the current combined-cart/discount functionality. Source and isolated CI are **not** hosted deployment or live-payment approval.
