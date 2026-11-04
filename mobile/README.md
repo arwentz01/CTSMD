@@ -21,6 +21,8 @@ npx expo-doctor@latest
 npx expo start --clear
 ```
 
+**Expo Go and push notifications:** Since Expo SDK 53, Android Expo Go does not support remote push notifications. CTSMD detects Expo Go and skips native push-token listeners at startup, while keeping the rest of the mobile UI available for testing. Settings will explain that registering remote push requires a CTSMD **development build**. A native build must still be tested separately for APNs/FCM permissions, token rotation and push taps. A missing `ExpoTopicSubscriptionModule` or `warnOfExpoGoPushUsage` exception indicates an old JS bundle or an unsupported push listener; update the source, install matching SDK dependencies and restart Metro with `npx expo start --clear`. Route “missing default export” warnings can be secondary to that startup exception rather than missing screen components.
+
 For a simulator or installable development build, use Expo's native development-build workflow (for example `npx expo run:android` or `npx expo run:ios` on macOS with Xcode). Expo Go SDK 58 availability varies by store/platform during the release rollout.
 
 The source does not commit `ios/` or `android/`: native projects are generated for the target SDK during prebuild. Regenerate any old SDK 54 native directories rather than reusing them. If an SDK upgrade fails due to conflicting dependencies, use `npx expo install --fix` and inspect the output, rather than forcing npm peer dependencies.
