@@ -23,7 +23,7 @@ test('authorization role labels do not infer authority and web handoffs use conf
 test('notification routes are allowlisted and reject arbitrary destinations',()=>{
  const {notificationDestination:route}=load('src/notifications/destination.ts');
  for(const [input,expected] of [
-  ['/messages/thread?id=12','/messages/12'],['/channels/view?id=3','/community/3'],['/forms/view?id=7','/forms/7'],['/calendar/event?id=42','/events/42'],['/calendar','/calendar'],['/notifications?offer=2','/action-center'],
+  ['/messages/thread?id=12','/messages/12'],['/channels/view?id=3','/community/3'],['/channels/view?id=3#community-post-17','/community/3?post_id=17'],['/forms/view?id=7','/forms/7'],['/calendar/event?id=42','/events/42'],['/calendar','/calendar'],['/notifications?offer=2','/action-center'],
   ['https://evil.example/messages/thread?id=1','/notifications'],['//evil.example','/notifications'],['/messages/thread?id=-1','/notifications'],['/messages/thread?id=1/../../settings','/notifications'],['/admin','/notifications'],['/messages/thread?id=0','/notifications'],['/messages/thread?id=99999999999','/notifications']
  ])assert.equal(route({action_path:input}),expected);
  assert.equal(route({action_path:{}}),'/notifications');

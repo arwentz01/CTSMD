@@ -8,11 +8,11 @@ import {Screen,Item} from '../../src/components/Screen';
 import {CommunityPhotos} from '../../src/components/CommunityPhotos';
 import {CommunityHeart} from '../../src/components/CommunityHeart';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
-import {channels,communityFeed} from '../../src/api/client';
+import {channels,communityFeed,type CommunityFeedPost} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 
 function shortDate(value:string):string {
- const match=value.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/);
+ const match=value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
  if(!match)return value;
  const [,year,month,day,hour,minute]=match;
  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -23,13 +23,15 @@ function shortDate(value:string):string {
 }
 export default function Community(){
  const [view,setView]=useState<'Feed'|'Channels'>('Feed');
+ const [more,setMore]=useState<CommunityFeedPost[]>([]),[page,setPage]=useState(0),[hasMore,setHasMore]=useState(true),[paging,setPaging]=useState(false);
  const {production_id}=useLocalSearchParams<{production_id?:string}>();
  const id=Number(production_id);
  const filtered=!!production_id&&Number.isSafeInteger(id)&&id>0;
  const load=useCallback(async()=>{const [directory,feed]=await Promise.all([channels(),communityFeed()]);return {directory,feed}},[]);
- const {data,error,loading,retry}=useScreenData(load);
+ const {data,error,loading,retry}=useScreenData(load,true);
  const visible=(data?.directory.channels||[]).filter(c=>!filtered||c.production_id===id);
- const posts=(data?.feed.posts||[]).filter(p=>!filtered||p.production_id===id);
+ const posts=[...(data?.feed.posts||[]),...more.filter(p=>!(data?.feed.posts||[]).some(first=>first.id===p.id))].filter(p=>!filtered||p.production_id===id);
+ const nextPage=async()=>{if(paging)return;setPaging(true);try{const next=await communityFeed(page+1);setMore(old=>[...old,...next.posts.filter(p=>!old.some(item=>item.id===p.id))]);setPage(p=>p+1);setHasMore(next.has_more)}catch{ /* Keep existing posts available; retry using the same control. */ }finally{setPaging(false)}};
  const general=visible.filter(c=>c.production_id===null);
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
@@ -41,7 +43,7 @@ export default function Community(){
   {data&&view==='Feed'&&<>
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
     {posts.map(p=><View key={p.id} style={s.post}>
-      <Pressable accessibilityRole="button" accessibilityLabel={'Open post by '+p.author+' in '+p.channel_name} onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(p.channel_id)}})} style={s.postOpen}>
+      <Pressable accessibilityRole="button" accessibilityLabel={'Open post by '+p.author+' in '+p.channel_name} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(p.channel_id),post_id:String(p.id)}})} style={s.postOpen}>
         <View style={s.authorRow}>
           <View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View>
           <View style={s.authorDetails}>
@@ -50,14 +52,12 @@ export default function Community(){
           </View>
           <Ionicons name="chevron-forward" color={colors.muted} size={17}/>
         </View>
-        <CommunityBody body={p.body}/>
+        <Text numberOfLines={4} style={s.preview}>{p.body}</Text>
       </Pressable>
       <CommunityPhotos attachments={p.attachments}/>
-      <View style={s.postFooter}>
-        <CommunityHeart postId={p.id} count={p.heart_count} hearted={p.hearted}/>
-        <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
-      </View>
+      <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
     </View>)}
+    {(page===0?data.feed.has_more:hasMore)&&<Pressable accessibilityRole="button" onPress={()=>void nextPage()}><Text style={s.link}>{paging?'Loading…':'Load more posts'}</Text></Pressable>}
   </>}
   {data&&view==='Channels'&&<>
    {visible.length===0&&<Text style={s.muted}>No channels available.</Text>}
@@ -68,7 +68,7 @@ export default function Community(){
 }
 const s=StyleSheet.create({
  filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
- muted:{color:colors.muted,fontSize:12},
+ muted:{color:colors.muted,fontSize:12},preview:{fontSize:14,lineHeight:20,color:colors.text},
  link:{color:colors.primary,fontWeight:'700'},
  switch:{flexDirection:'row',borderRadius:11,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.border,padding:3},
  tab:{flex:1,minHeight:42,alignItems:'center',justifyContent:'center',borderRadius:8},

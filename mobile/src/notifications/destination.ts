@@ -7,7 +7,7 @@ export function notificationDestination(data:Record<string,unknown>):string{
  const id=params.get('id');
  const valid=id&&/^[1-9]\d{0,9}$/.test(id);
  if(valid&&route==='/messages/thread')return '/messages/'+id;
- if(valid&&route==='/channels/view')return '/community/'+id;
+ if(valid&&route==='/channels/view'){const match=path.match(/#community-post-([1-9]\d{0,9})$/);return '/community/'+id+(match?'?post_id='+match[1]:'');}
  if(valid&&route==='/forms/view')return '/forms/'+id;
  if(valid&&route==='/calendar/event')return '/events/'+id;
  if(route==='/calendar')return '/calendar';

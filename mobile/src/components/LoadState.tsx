@@ -2,14 +2,14 @@ import React,{useCallback,useState} from 'react';
 import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
 import {useFocusEffect} from 'expo-router';
 import {colors} from '../theme/colors';
-export function useScreenData<T>(load:()=>Promise<T>){
+export function useScreenData<T>(load:()=>Promise<T>,preserveOnFocus=false){
  const [data,setData]=useState<T|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[revision,setRevision]=useState(0);
  const retry=useCallback(()=>setRevision(value=>value+1),[]);
  useFocusEffect(useCallback(()=>{
-  let active=true;setData(null);setLoading(true);setError('');
+  let active=true;if(!preserveOnFocus)setData(null);setLoading(true);setError('');
   Promise.resolve().then(load).then(value=>{if(active)setData(value)}).catch(e=>{if(active){setData(null);setError(e instanceof Error?e.message:'Unable to load.')}}).finally(()=>{if(active)setLoading(false)});
-  return()=>{active=false;setData(null)};
- },[load,revision]));
+  return()=>{active=false;if(!preserveOnFocus)setData(null)};
+ },[load,revision,preserveOnFocus]));
  return {data,error,loading,retry};
 }
 export function LoadState({loading,error,onRetry}:{loading:boolean;error:string;onRetry?:()=>void}){
