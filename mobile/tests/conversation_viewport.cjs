@@ -11,6 +11,6 @@ function render(os,visible=false){
  return {tree:exports.ConversationViewport({children:'composer'}),handlers,removed};
 }
 for(const [os,behavior,show,hide] of [['android','height','keyboardDidShow','keyboardDidHide'],['ios','padding','keyboardWillShow','keyboardWillHide']])test(`${os} conversation viewport applies keyboard behavior and cleans up listeners`,()=>{
- const {tree,handlers,removed}=render(os);const avoid=tree.children[0];assert.equal(avoid.props.behavior,behavior);assert.equal(avoid.props.keyboardVerticalOffset,24);assert.equal(avoid.children[0],'composer');assert.ok(handlers[show]&&handlers[hide]);assert.deepEqual(removed,[show,hide]);
+ const {tree,handlers,removed}=render(os);const avoid=tree.children[0];assert.equal(avoid.props.behavior,behavior);assert.equal(avoid.props.keyboardVerticalOffset,os==='ios'?24:0);assert.equal(avoid.children[0],'composer');assert.ok(handlers[show]&&handlers[hide]);assert.deepEqual(removed,[show,hide]);
  const visible=render(os,true).tree;assert.equal(visible.props.edges.includes('bottom'),false);
 });

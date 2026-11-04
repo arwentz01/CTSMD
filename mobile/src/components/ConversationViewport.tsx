@@ -13,7 +13,7 @@ export function ConversationViewport({children}:{children:React.ReactNode}){
   return()=>{show.remove();hide.remove()};
  },[]);
  return <SafeAreaView edges={keyboardVisible?['top','left','right']:['top','bottom','left','right']} style={styles.screen}>
-  <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS==='ios'?'padding':'height'} keyboardVerticalOffset={top}>{children}</KeyboardAvoidingView>
+  <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS==='ios'?'padding':'height'} keyboardVerticalOffset={Platform.OS==='ios'?top:0}>{children}</KeyboardAvoidingView>
  </SafeAreaView>;
 }
 const styles=StyleSheet.create({screen:{flex:1,backgroundColor:colors.background}});
