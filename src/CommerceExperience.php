@@ -288,12 +288,15 @@ final class CommerceExperience
             $default=(string)($venue['timezone_name']?:getenv('COMMERCE_VENUE_TIMEZONE')?:getenv('APP_TIMEZONE')?:'America/New_York');
             $zones=DateTimeZone::listIdentifiers();
             if(!in_array($default,$zones,true))array_unshift($zones,$default);
-            echo '<div class="commerce-venue-setting"><div><strong>'.self::e($venue['name']).'</strong>';if(trim((string)$venue['location'])!=='')echo '<p>'.self::e($venue['location']).'</p>';echo '</div>';
+            echo '<div class="commerce-venue-setting"><div><strong>'.self::e($venue['name']).'</strong>';if(trim((string)$venue['location'])!=='')echo '<p>'.self::e($venue['location']).'</p>';echo '<p class="commerce-venue-muted">'.($showInactive?'Inactive venue':'Active venue').'</p></div>';
+            echo '<div class="commerce-venue-management">';
+            self::form('venue_status',['id'=>$venue['id'],'active'=>$showInactive?'1':'0']);
+            echo '<button type="submit" class="commerce-venue-status-action"'.(!$showInactive?' onclick="return confirm(\'Deactivate this venue? It will be hidden from new scheduling selections, but its history and seating plans will be retained.\')"':'').'>'.($showInactive?'Reactivate venue':'Deactivate venue').'</button></form>';
+            echo '<details class="commerce-venue-timezone"><summary>Edit timezone</summary>';
             self::form('venue_timezone',['id'=>$venue['id']]);
             echo '<label>Timezone<select name="timezone" required>';
             foreach($zones as $zone){$label=str_replace('_',' ',str_replace('/',' / ',$zone));echo '<option value="'.self::e($zone).'"'.($zone===$default?' selected':'').'>'.self::e($label).'</option>';}
-            echo '</select></label><button>Save timezone</button></form>';
-            self::form('venue_status',['id'=>$venue['id'],'active'=>$showInactive?'1':'0']);echo '<button type="submit">'.($showInactive?'Reactivate venue':'Deactivate venue').'</button></form></div>';
+            echo '</select></label><button>Save timezone</button></form></details></div>';
         }
         echo '</div>';
         echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an existing venue.</p>';
