@@ -69,7 +69,7 @@
   root.querySelector('[data-selected-seats]').textContent=selected.map(c=>{const s=byKey[c.value].seat;return [s.section_name,s.row_name?`Row ${s.row_name}`:'',`Seat ${s.label}`].filter(Boolean).join(', ');}).join(' · ');
   root.querySelector('[data-selection-count]').textContent=`${selected.length} seat${selected.length===1?'':'s'} selected`;
   root.querySelector('[data-ticket-quantity-status]').textContent=!totalTickets?'Choose your ticket quantities to begin.':quantitiesValid?`${totalTickets} tickets for ${selected.length} selected seats. Ready to continue.`:`${totalTickets} tickets for ${selected.length} selected seats. Match ticket quantities to seats in each pricing zone.`;
-  root.querySelector('[data-selection-total]').textContent=quantitiesValid?(payload.cart_mode?`Tickets ${money(subtotal)}. Review your full cart for fees and taxes.`:`Tickets ${money(subtotal)} − discount ${money(discount)} + tax ${money(tax)} + fee ${money(payload.fee)} = ${money(total)}`):selected.length?'Choose ticket-type quantities to see your total.':'Choose ticket quantities and matching seats to see your total.';
+  root.querySelector('[data-selection-total]').textContent=quantitiesValid?`Ticket subtotal ${money(subtotal)}. ${payload.cart_mode?'Fees and taxes appear in your cart.':'Discounts, fees and taxes are confirmed at order review.'}`:selected.length?'Choose ticket-type quantities to see your subtotal.':'Choose ticket quantities and matching seats to see your subtotal.';
   continueButton.disabled=!salesOpen||!quantitiesValid;
 
  }
@@ -84,6 +84,19 @@
  root.querySelector('[data-access-filter]').addEventListener('change',e=>root.querySelectorAll('[data-seat-row]').forEach(row=>row.hidden=e.target.checked&&row.dataset.accessible!=='1'));
  root.querySelectorAll('[data-select-zoom]').forEach(b=>b.onclick=()=>{const f=b.dataset.selectZoom==='in'?.8:1.25;view[2]*=f;view[3]*=f;update();});root.querySelectorAll('[data-select-pan]').forEach(b=>b.onclick=()=>{const dir=b.dataset.selectPan;view[0]+=(dir==='left'?-1:dir==='right'?1:0)*view[2]/4;view[1]+=(dir==='up'?-1:dir==='down'?1:0)*view[3]/4;update();});
  function fit(){view=geometry.bounds(payload.document.items);update();}root.querySelector('[data-select-fit]').onclick=fit;
+ // Suggestion-only default: honor selected adjacent seats, never overwrite a typed quantity.
+ const recommended=new URLSearchParams(window.location.search).has('recommend_count');
+ const preselected=checks.filter(c=>c.checked);
+ if(recommended&&preselected.length>0&&preselected.length<=maxSeats&&quantityInputs.every(input=>Number(input.value)===0)){
+  const counts={};
+  preselected.forEach(c=>{const zone=byKey[c.value].seat.zone;counts[zone]=(counts[zone]||0)+1;});
+  for(const [zone,count] of Object.entries(counts)){
+   const first=quantityInputs.find(input=>input.dataset.zone===zone);
+   if(first)first.value=String(count);
+  }
+  const message=root.querySelector('[data-selection-message]');
+  if(message)message.textContent='Suggested seats are selected, not reserved. We started with the first ticket type in each pricing zone. Adjust Adult and Child quantities if needed.';
+ }
  root.closest('form').addEventListener('submit',e=>{if(!checks.some(c=>c.checked)){e.preventDefault();root.querySelector('[data-selection-message]').textContent='Select at least one seat before continuing.';checks.find(c=>!c.disabled)?.focus();}else if(!quantitiesValid){e.preventDefault();root.querySelector('[data-selection-message]').textContent='Match ticket-type quantities to your selected seats before continuing.';quantityInputs.find(input=>!input.disabled)?.focus();}});fit();
 })();
 (() => {
