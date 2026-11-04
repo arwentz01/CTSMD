@@ -11,6 +11,16 @@ import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {channels,communityFeed} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 
+function shortDate(value:string):string {
+ const match=value.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/);
+ if(!match)return value;
+ const [,year,month,day,hour,minute]=match;
+ const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ const label=months[Number(month)-1];
+ if(!label)return value;
+ const h=Number(hour);
+ return `${label} ${Number(day)}${Number(year)!==new Date().getFullYear()?', '+year:''} · ${h%12||12}:${minute} ${h<12?'AM':'PM'}`;
+}
 export default function Community(){
  const [view,setView]=useState<'Feed'|'Channels'>('Feed');
  const {production_id}=useLocalSearchParams<{production_id?:string}>();
@@ -30,9 +40,23 @@ export default function Community(){
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&view==='Feed'&&<>
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
-    {posts.map(p=><View key={p.id} style={s.post}><Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(p.channel_id)}})}>
-      <View style={s.authorRow}><View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View><View style={{flex:1,gap:3}}><Text style={s.author}>{p.author}</Text><Text style={s.muted}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text></View><Ionicons name="chevron-forward" color={colors.muted} size={18}/></View>
-      <CommunityBody body={p.body}/><Text style={s.muted}>{p.created_at}</Text></Pressable><CommunityPhotos attachments={p.attachments}/><CommunityHeart postId={p.id} count={p.heart_count} hearted={p.hearted}/>
+    {posts.map(p=><View key={p.id} style={s.post}>
+      <Pressable accessibilityRole="button" accessibilityLabel={'Open post by '+p.author+' in '+p.channel_name} onPress={()=>router.push({pathname:'/community/post/[id]',params:{id:String(p.id),channel_id:String(p.channel_id)}})} style={s.postOpen}>
+        <View style={s.authorRow}>
+          <View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View>
+          <View style={s.authorDetails}>
+            <Text numberOfLines={1} style={s.author}>{p.author}</Text>
+            <Text numberOfLines={1} style={s.channel}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text>
+          </View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={17}/>
+        </View>
+        <CommunityBody body={p.body}/>
+      </Pressable>
+      <CommunityPhotos attachments={p.attachments}/>
+      <View style={s.postFooter}>
+        <CommunityHeart postId={p.id} count={p.heart_count} hearted={p.hearted}/>
+        <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
+      </View>
     </View>)}
   </>}
   {data&&view==='Channels'&&<>
@@ -42,4 +66,24 @@ export default function Community(){
   </>}
  </Screen>;
 }
-const s=StyleSheet.create({filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},muted:{color:colors.muted,fontSize:12},link:{color:colors.primary,fontWeight:'700'},switch:{flexDirection:'row',borderRadius:15,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.gold,padding:5},tab:{flex:1,paddingVertical:10,alignItems:'center',borderRadius:9},selected:{backgroundColor:colors.burgundy},tabText:{fontSize:14,fontWeight:'700',color:colors.muted},selectedText:{color:colors.ivory},section:{fontSize:25,fontWeight:'700',color:colors.navy},post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:4,borderLeftColor:colors.primary,borderRadius:16,padding:17,gap:12},authorRow:{flexDirection:'row',gap:10,alignItems:'center'},avatar:{height:43,width:43,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:2},avatarText:{fontSize:15,fontWeight:'700',color:colors.ivory},author:{color:colors.text,fontWeight:'700',fontSize:19},body:{color:colors.text,fontSize:15,lineHeight:22}});
+const s=StyleSheet.create({
+ filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+ muted:{color:colors.muted,fontSize:12},
+ link:{color:colors.primary,fontWeight:'700'},
+ switch:{flexDirection:'row',borderRadius:11,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.border,padding:3},
+ tab:{flex:1,minHeight:42,alignItems:'center',justifyContent:'center',borderRadius:8},
+ selected:{backgroundColor:colors.burgundy},
+ tabText:{fontSize:14,fontWeight:'700',color:colors.muted},
+ selectedText:{color:colors.ivory},
+ section:{fontSize:18,fontWeight:'700',color:colors.navy},
+ post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:3,borderLeftColor:colors.primary,borderRadius:12,paddingHorizontal:12,paddingVertical:10,gap:3},
+ postOpen:{gap:8,minHeight:48,justifyContent:'center'},
+ authorRow:{flexDirection:'row',gap:9,alignItems:'center'},
+ avatar:{height:34,width:34,borderRadius:17,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:1},
+ avatarText:{fontSize:12,fontWeight:'700',color:colors.ivory},
+ authorDetails:{flex:1,gap:1},
+ author:{color:colors.text,fontWeight:'700',fontSize:15},
+ channel:{color:colors.muted,fontSize:12},
+ postFooter:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12,minHeight:36},
+ postDate:{fontSize:11,color:colors.muted,textAlign:'right',flexShrink:1},
+});
