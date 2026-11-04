@@ -34,7 +34,7 @@ export default function Community(){
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
  const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button"><Item title={c.name} subtitle={(c.description||'Community channel')+(c.unread_count>0?' · '+c.unread_count+' unread':'')}/></Pressable>;
- return <Screen title="Community">
+ return <Screen title="Community" compact>
   {filtered&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
   <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="button" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error} onRetry={retry}/>
