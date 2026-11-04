@@ -47,6 +47,7 @@ function Section({title,description,items}:{title:string;description?:string;ite
 }
 export default function More(){
  const {user,signOut}=useAuth();const [expanded,setExpanded]=useState(false);
+ const caregiver=!!user?.caregiver_only;
  const staff=!!user?.roles?.some(role=>role==='production_staff'||role==='administrator');
  const admin=!!user?.roles?.includes('administrator');
  const member:LinkItem[]=[
@@ -58,6 +59,10 @@ export default function More(){
   {title:'Theatre history',description:'Past credits and shows · website',icon:'time-outline',website:'theatreHistory'},
   {title:'Auditions & registration',description:'Applications and audition forms · website',icon:'clipboard-outline',website:'registration'},
   {title:'Family & pickup management',description:'Authorized guardians and pickup people · website',icon:'shield-checkmark-outline',website:'familyManagement'}
+ ];
+ const caregiverItems:LinkItem[]=[
+  {title:'My family',description:'Active caregiver relationships',icon:'people-outline',native:'/family'},
+  {title:'Caregiver schedule',description:'Upcoming calls authorized for your care',icon:'calendar-outline',native:'/caregiver-schedule'}
  ];
  const staffItems:LinkItem[]=[
   {title:'Production workspace',description:'Production operations and preparation · website',icon:'film-outline',website:'productionWorkspace'},
@@ -78,9 +83,9 @@ export default function More(){
    <View style={s.profileDetails}><Text style={s.profileEyebrow}>MY CTSMD ACCOUNT</Text><Text style={s.profileName}>{user?.name||'My account'}</Text><Text numberOfLines={1} style={s.profileEmail}>{user?.email||''}</Text></View>
    <Ionicons name="chevron-forward" color={colors.ivory} size={20}/>
   </TouchTarget>
-  <Section title="My Theatre" items={member}/>
-  {staff&&<Section title="Production tools" description="Advanced staff workflows currently open the CTSMD website." items={staffItems}/>}
-  {admin&&<Section title="Administration" description="Permission-controlled web workspaces." items={adminItems}/>}
+  <Section title={caregiver?"Family logistics":"My Theatre"} items={caregiver?caregiverItems:member}/>
+  {!caregiver&&staff&&<Section title="Production tools" description="Advanced staff workflows currently open the CTSMD website." items={staffItems}/>}
+  {!caregiver&&admin&&<Section title="Administration" description="Permission-controlled web workspaces." items={adminItems}/>}
   <Section title="Tickets & resources" description="Ticket purchases currently use Ludus. CTSMD's own storefront remains a pilot." items={[
    {title:'Buy tickets',description:'Open the current Ludus ticket store',icon:'ticket-outline',external:LUDUS_TICKETS},
    {title:'Production resources',description:'Handbooks and production documents · website',icon:'folder-outline',website:'productionResources'}
