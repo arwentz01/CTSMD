@@ -57,7 +57,7 @@ function MemberHome(){
   const events=(data?.t.events||[]).filter(e=>Number.isFinite(toTime(e.starts_at))&&toTime(e.starts_at)>=now).sort((a,b)=>toTime(a.starts_at)-toTime(b.starts_at)).slice(0,3);
   const openForms=(data?.a.forms||[]).filter(f=>f.status!=='completed'&&f.submission_status!=='approved');
   const unread=(data?.m.conversations||[]).reduce((total,c)=>total+Math.max(0,c.unread_count||0),0);
-  return <Screen title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
+  return <Screen compact title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
     <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
@@ -86,8 +86,8 @@ const styles=StyleSheet.create({
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   sectionTitle:{fontSize:21,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
-  hero:{position:'relative',backgroundColor:colors.stage,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,height:166,overflow:'hidden'},
-  heroContent:{flex:1,paddingVertical:13,paddingLeft:16,paddingRight:67,gap:5,justifyContent:'center'},eventContent:{gap:3},
+  hero:{position:'relative',backgroundColor:colors.stage,borderRadius:17,borderWidth:1,borderColor:colors.gold,borderBottomWidth:3,minHeight:140,overflow:'hidden'},
+  heroContent:{paddingVertical:13,paddingLeft:16,paddingRight:67,gap:5,justifyContent:'center'},eventContent:{gap:3},
   heroHeader:{flexDirection:'row',alignItems:'center',gap:8},heroArrow:{position:'absolute',right:13,bottom:13,width:31,height:31,borderRadius:16,backgroundColor:colors.gold,alignItems:'center',justifyContent:'center'},
   heroEyebrow:{fontSize:12,fontWeight:'800',color:colors.gold,letterSpacing:2},
   heroTitle:{fontSize:23,fontWeight:'700',color:'#fff'},
@@ -95,7 +95,7 @@ const styles=StyleSheet.create({
   event:{backgroundColor:colors.card,padding:13,borderRadius:14,borderWidth:1,borderColor:colors.border,gap:3},
   rowTitle:{fontSize:17,fontWeight:'700',color:colors.text},
   sub:{color:colors.muted,fontSize:12},
-  panel:{backgroundColor:colors.card,borderRadius:14,borderWidth:1,borderColor:colors.border,padding:13,gap:8},
+  panel:{backgroundColor:colors.card,borderRadius:14,borderWidth:1,borderColor:colors.border,padding:11,gap:6},
   task:{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:5},
   shortcuts:{flexDirection:'row',flexWrap:'wrap',gap:9},
   shortcut:{width:'47%',backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:12,padding:13,gap:8},

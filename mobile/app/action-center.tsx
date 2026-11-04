@@ -1,3 +1,4 @@
+import {formatLocalDate} from '../src/utils/dates';
 import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useCallback,useEffect,useState} from 'react';
 import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
@@ -35,7 +36,7 @@ export default function ActionCenter(){
      <Text style={s.name}>{t.title}</Text>
      <Text style={s.muted}>{t.production_title}{t.required?' · Required':' · Optional'}</Text>
      <Text style={s.muted}>{t.is_own?'Assigned to you':'For '+t.student_first+' '+t.student_last}</Text>
-     {!!t.due_at&&<Text style={s.muted}>Due {t.due_at.replace(' ',' · ')}</Text>}
+     {!!t.due_at&&<Text style={s.muted}>Due {formatLocalDate(t.due_at,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</Text>}
      {!!t.notes&&<Text style={s.body}>{t.notes}</Text>}
      <Pressable disabled={busy!==null} accessibilityRole="button" style={[s.button,busy!==null&&s.disabled]} onPress={()=>void complete(t.assignment_id)}><Text style={s.buttonText}>Mark complete</Text></Pressable>
    </View>)}
