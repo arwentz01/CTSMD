@@ -8,3 +8,7 @@ dist/
 google-services.json
 *-service-account*.json
 credentials.json
+
+# Expo CNG: regenerate native projects from app config for EAS builds
+/ios
+/android
