@@ -108,6 +108,13 @@ test('caregiver-only mobile route uses minimum logistics API and hides inaccessi
  assert.match(schedule,/caregiverSchedule\(\)/);
  assert.doesNotMatch(schedule,/\b(student_id|student_last_name|guardian_user_id|casting_offer)\b/);
 });
+test('authorized production detail provides website-only staff operations without new native mutations',()=>{
+ const detail=fs.readFileSync(path.join(__dirname,'../app/theatre/[id].tsx'),'utf8');
+ assert.match(detail,/!production\.is_public_preview&&staff/);
+ for(const webRoute of ['productionTasks','productionPeople','productionDay','productionReadiness'])assert.ok(detail.includes("'"+webRoute+"'"),'Missing staff action '+webRoute);
+ assert.match(detail,/openWebsite\(route\)/);
+ assert.match(detail,/https:\/\/ctsmd\.ludus\.com\/index\.php/);
+});
 test('caregiver typed endpoint requests only authorized schedule',async()=>{
  let captured='';
  const client=load('src/api/client.ts',{readToken:async()=>null,clearToken:async()=>{}},async(url)=>{captured=url;return {status:200,ok:true,json:async()=>({calls:[]})}});
