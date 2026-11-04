@@ -90,3 +90,28 @@ test('mobile navigation exposes member, staff and authorized admin workflows wit
  assert.match(calendar,/All visible/);
  assert.match(calendar,/dateHeader\(key\)/);
 });
+
+test('caregiver-only mobile route uses minimum logistics API and hides inaccessible general navigation',()=>{
+ const api=fs.readFileSync(path.join(__dirname,'../../src/MobileApi.php'),'utf8');
+ assert.match(api,/caregiver_only.*caregiverOnly/);
+ assert.match(api,/\/'?api\/mobile\/caregiver-schedule/);
+ const tabs=fs.readFileSync(path.join(__dirname,'../app/(tabs)/_layout.tsx'),'utf8');
+ assert.match(tabs,/href:caregiver\?null:undefined/);
+ const home=fs.readFileSync(path.join(__dirname,'../app/(tabs)/index.tsx'),'utf8');
+ assert.match(home,/if\(user\?\.caregiver_only\)/);
+ assert.match(home,/\/caregiver-schedule/);
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ assert.match(more,/caregiver\?caregiverItems:member/);
+ const family=fs.readFileSync(path.join(__dirname,'../app/family.tsx'),'utf8');
+ assert.match(family,/user\?\.caregiver_only/);
+ const schedule=fs.readFileSync(path.join(__dirname,'../app/caregiver-schedule.tsx'),'utf8');
+ assert.match(schedule,/caregiverSchedule\(\)/);
+ assert.doesNotMatch(schedule,/\b(student_id|student_last_name|guardian_user_id|casting_offer)\b/);
+});
+test('caregiver typed endpoint requests only authorized schedule',async()=>{
+ let captured='';
+ const client=load('src/api/client.ts',{readToken:async()=>null,clearToken:async()=>{}},async(url)=>{captured=url;return {status:200,ok:true,json:async()=>({calls:[]})}});
+ const schedule=await client.caregiverSchedule();
+ assert.deepEqual(schedule.calls,[]);
+ assert.equal(captured,'https://ctsmd.me/api/mobile/caregiver-schedule');
+});
