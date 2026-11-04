@@ -1,5 +1,7 @@
 # Native Phase 4 — integration and acceptance evidence
 
+> **Newer source reconciliation, November 3, 2026:** The current native surface matrix, later web UX comparison, role-scoped website handoffs, Expo patch-version check and **Ludus-as-live-tickets** decision are in [NATIVE_VISUAL_PARITY_2026_11.md](NATIVE_VISUAL_PARITY_2026_11.md). The October 28 acceptance below remains historical and does not prove newer screen/device acceptance.
+
 October 28, 2026 · `audit/board-pilot-readiness` · starting baseline `5fd5d04`.
 
 ## Decision and scope
