@@ -153,7 +153,7 @@ final class CommerceExperience
         return (new DateTimeImmutable($local,new DateTimeZone('UTC')))->format('l, F j, Y · g:i A');
     }
     public static function seatLabel(array $seat):string
-    {$section=trim((string)($seat['section_name']??''));$row=trim((string)($seat['row_name']??''));$number=trim((string)($seat['label']??''));return ($section!==''&&strcasecmp($section,'Main')!==0?$section.', ':'').($row!==''?'Row '.$row.', ':'').'Seat '.$number;}
+    {$section=trim((string)($seat['section_name']??''));$row=trim((string)($seat['row_name']??''));$number=trim((string)($seat['label']??''));return ($section!==''?$section.', ':'').($row!==''?'Row '.$row.', ':'').'Seat '.$number;}
     public static function staffStatus(string $state):string
     {return match($state){'released','available'=>'Available','held'=>'Held','sold'=>'Sold','blocked'=>'Blocked','house'=>'House hold','complimentary'=>'Complimentary','missing'=>'Not in this layout','payment_pending'=>'Payment pending','refund_pending'=>'Refund pending','exception'=>'Needs payment review','external_terminal'=>'External terminal','cash'=>'Cash','canceled','cancelled'=>'Cancelled',default=>ucfirst(str_replace('_',' ',$state))};}
     public static function staffMessage(string $message):string
