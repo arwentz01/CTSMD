@@ -1,6 +1,6 @@
 import {useEffect} from 'react';
 import {router,type Href} from 'expo-router';
-import Constants from 'expo-constants';
+import {supportsNativePush} from './runtime';
 import type * as Notifications from 'expo-notifications';
 import {useAuth} from '../auth/AuthProvider';
 import {storedPushIdentity,storeDeviceToken} from './device';
@@ -10,7 +10,7 @@ import {notificationDestination} from './destination';
 export function NotificationIntegration(){
  const {user}=useAuth();
  useEffect(()=>{
-  if(!user||Constants.executionEnvironment==='storeClient')return;
+  if(!user||!supportsNativePush())return;
   let active=true;
   let responseListener:{remove:()=>void}|undefined;
   let tokenListener:{remove:()=>void}|undefined;
@@ -22,11 +22,17 @@ export function NotificationIntegration(){
     Notifications.clearLastNotificationResponse();
    };
    responseListener=Notifications.addNotificationResponseReceivedListener(navigate);
-   tokenListener=Notifications.addPushTokenListener(token=>{
-    void storedPushIdentity().then(identity=>{
-     if(active&&identity)return storeDeviceToken(token);
-    }).catch(()=>{});
-   });
+   // Expo Go and mismatched native runtimes may reject push listeners.
+   // The OS notification response listener can still remain functional.
+   try{
+    tokenListener=Notifications.addPushTokenListener(token=>{
+     void storedPushIdentity().then(identity=>{
+      if(active&&identity)return storeDeviceToken(token);
+     }).catch(()=>{});
+    });
+   }catch(error){
+    if(__DEV__)console.warn('Native push token listener is unavailable in this build.',error);
+   }
    navigate(Notifications.getLastNotificationResponse());
   }).catch(error=>{
    if(active&&__DEV__)console.warn('Native notification integration is unavailable in this runtime.',error);
