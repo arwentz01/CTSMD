@@ -289,3 +289,14 @@
 .commerce-venue-space .commerce-venue-layout-list{margin:0}
 .commerce-venue-create{margin-top:1rem}
 @media(max-width:640px){.commerce-venue-record{padding:.8rem}.commerce-venue-record-head{display:block}.commerce-venue-actions{margin-top:.75rem}.commerce-venue-actions-body{min-width:0}.commerce-venue-space-title{align-items:flex-start}}
+
+/* Performance management drawer hierarchy */
+.commerce-performance-management [data-performance-context]{padding:.75rem 1rem;border:1px solid #ddd4cf;border-radius:.65rem}
+.commerce-performance-management [data-performance-context] h3{margin:0 0 .35rem}
+.commerce-performance-management [data-performance-context] p{margin:.25rem 0}
+.commerce-performance-management .commerce-performance-nav{display:flex;flex-wrap:wrap;gap:.4rem;margin:.8rem 0;padding:.6rem 0;border-bottom:1px solid #ddd4cf}
+.commerce-performance-management .commerce-performance-nav a{padding:.45rem .65rem;border-radius:.4rem;font-weight:600;text-decoration:none}
+.commerce-performance-management .commerce-performance-nav a:hover,.commerce-performance-management .commerce-performance-nav a:focus-visible{text-decoration:underline}
+.commerce-performance-management section[id^="performance-"]{scroll-margin-top:1rem;padding:.85rem 0;border-bottom:1px solid #e6ded8}
+.commerce-performance-management section[id^="performance-"]>h3{margin:0 0 .55rem}
+.commerce-performance-management .commerce-pricing-summary{line-height:1.65;overflow-wrap:anywhere}
