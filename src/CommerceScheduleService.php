@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/CommerceVenueService.php';
 require_once __DIR__.'/CommerceInventoryService.php';
 require_once __DIR__.'/CommercePricingService.php';
 /** Schedule planning creates only reviewed, explicit showtime rows through the existing creator. */
