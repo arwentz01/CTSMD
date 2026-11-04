@@ -139,7 +139,7 @@ test('Expo Go skips unsupported native push imports and explains development bui
 });
 
 test('Expo Go detection does not disable real development builds',()=>{
- const runtime=(constants)=>load('src/notifications/runtime.ts',{},null,{'expo-constants':{default:constants},'react-native':{Platform:{OS:'android'}}});
+ const runtime=(constants)=>load('src/notifications/runtime.ts',{},null,{'expo-constants':{__esModule:true,default:constants},'react-native':{Platform:{OS:'android'}}});
  assert.equal(runtime({appOwnership:'expo',executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),false);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'storeClient',expoGoConfig:{}}).supportsNativePush(),false);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),true);
