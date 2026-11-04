@@ -64,7 +64,7 @@ final class MobileApi
                 self::json(['error'=>'Video Library access requires approved membership or active production participation.'],403);
             }
             match ($route) {
-                '/api/mobile/me' => self::json(['user' => self::publicUser($user)]),
+                '/api/mobile/me' => self::json(['user' => array_merge(self::publicUser($user),['caregiver_only'=>$caregiverOnly&&!$independentParticipant])]),
                 '/api/mobile/my-family' => self::myFamily($db, $user),
                 '/api/mobile/caregiver-schedule' => self::caregiverSchedule($db, $user),
                 '/api/mobile/theatre' => self::theatre($db, $user),
