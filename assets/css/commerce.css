@@ -386,3 +386,20 @@
 @media(min-width:1150px){[data-seat-selector] .commerce-purchase-layout{grid-template-columns:minmax(0,1fr) 280px}}
 @media(max-width:900px){.commerce-page:has([data-seat-selector]) .commerce-workspace{grid-template-columns:minmax(0,1fr)}.commerce-page:has([data-seat-selector]) .commerce-content{padding:12px}}
 @media(max-width:600px){.commerce-page:has([data-seat-selector]){padding:8px}.commerce-page:has([data-seat-selector]) .commerce-content{padding:10px}[data-seat-selector] .commerce-map-column .commerce-map{height:320px}}
+
+/* Box Office width correction: prevent inherited form/content sizing from squeezing checkout */
+.commerce-page:has([data-seat-selector]) .commerce-workspace,
+.commerce-page:has([data-seat-selector]) .commerce-content,
+.commerce-page:has([data-seat-selector]) .commerce-content>form:has([data-seat-selector]),
+.commerce-page:has([data-seat-selector]) [data-seat-selector]{width:100%;max-width:none;min-width:0;box-sizing:border-box}
+.commerce-page:has([data-seat-selector]) .commerce-content>form:has([data-seat-selector]){display:block}
+.commerce-page:has([data-seat-selector]) .commerce-production-intro{display:flex;align-items:center;gap:12px;margin:8px 0 10px}
+.commerce-page:has([data-seat-selector]) .commerce-production-intro .commerce-artwork{width:56px;height:76px;max-height:76px;object-fit:cover;flex-shrink:0}
+.commerce-page:has([data-seat-selector]) .commerce-production-intro>div{min-width:0}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion{margin:4px 0 8px}
+.commerce-page:has([data-seat-selector]) .commerce-suggestion>summary{padding:4px 0;min-height:0}
+.commerce-page:has([data-seat-selector]) [data-seat-selector]>.commerce-ticket-types{width:100%;box-sizing:border-box}
+.commerce-page:has([data-seat-selector]) [data-seat-selector] .commerce-quantity-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.commerce-page:has([data-seat-selector]) [data-seat-selector] .commerce-purchase-layout{width:100%;min-width:0}
+@media(min-width:1150px){.commerce-page:has([data-seat-selector]) [data-seat-selector] .commerce-purchase-layout{grid-template-columns:minmax(0,1fr) 300px;gap:16px}}
+@media(min-width:1450px){.commerce-page:has([data-seat-selector]) [data-seat-selector] .commerce-purchase-layout{grid-template-columns:minmax(0,1fr) 320px}}
