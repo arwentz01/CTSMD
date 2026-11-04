@@ -8,6 +8,13 @@ final class CommerceVenueService
         CommerceAccess::demand($db,$user,$org,'venues');$name=trim($name);if($name===''||mb_strlen($name)>190||mb_strlen($location)>500)throw new RuntimeException('Enter a venue name and location within the field limits.');
         return CommerceStore::tx($db,function()use($db,$org,$user,$name,$location){$db->prepare('INSERT INTO commerce_venues(organization_id,name,location) VALUES(?,?,?)')->execute([$org,$name,$location]);$id=(int)$db->lastInsertId();CommerceStore::audit($db,$org,(int)$user['id'],'commerce.venue_created','venue',$id);return$id;});
     }
+    public static function assertLayoutActive(PDO $db,int $org,int $layout,bool $lock=false):void
+    {
+        $sql='SELECT v.is_active FROM commerce_layouts l JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE l.id=? AND l.organization_id=?'.($lock?' FOR UPDATE':'');
+        $q=$db->prepare($sql);$q->execute([$layout,$org]);
+        $active=$q->fetchColumn();
+        if($active===false||!(bool)$active)throw new RuntimeException('This venue is inactive. Reactivate it before scheduling a performance.');
+    }
     public static function setActive(PDO $db,array $user,int $org,int $venue,bool $active):void
     {
         CommerceAccess::demand($db,$user,$org,'venues');
