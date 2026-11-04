@@ -99,11 +99,11 @@ export default function More(){
 const s=StyleSheet.create({
  profile:{flexDirection:'row',alignItems:'center',padding:16,gap:12,backgroundColor:colors.burgundy,borderRadius:15,borderWidth:1,borderColor:colors.gold},
  avatar:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center',backgroundColor:colors.stage,borderWidth:1,borderColor:colors.gold},
- initials:{fontSize:16,fontWeight:'800',color:'#fff'},profileDetails:{flex:1,gap:3},profileEyebrow:{fontSize:10,letterSpacing:1.2,fontWeight:'800',color:colors.gold},profileName:{fontSize:19,fontWeight:'750',color:colors.ivory},profileEmail:{fontSize:12,color:'#f5dcd2'},
- section:{gap:9},sectionHead:{gap:3},sectionTitle:{fontSize:19,fontWeight:'750',color:colors.navy},description:{fontSize:12,lineHeight:18,color:colors.muted},
+ initials:{fontSize:16,fontWeight:'800',color:'#fff'},profileDetails:{flex:1,gap:3},profileEyebrow:{fontSize:10,letterSpacing:1.2,fontWeight:'800',color:colors.gold},profileName:{fontSize:19,fontWeight:'700',color:colors.ivory},profileEmail:{fontSize:12,color:'#f5dcd2'},
+ section:{gap:9},sectionHead:{gap:3},sectionTitle:{fontSize:19,fontWeight:'700',color:colors.navy},description:{fontSize:12,lineHeight:18,color:colors.muted},
  sectionBody:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,overflow:'hidden'},
  destination:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:13,paddingVertical:10,minHeight:62,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:colors.border},
  icon:{height:36,width:36,borderRadius:10,backgroundColor:colors.background,alignItems:'center',justifyContent:'center'},
- destinationCopy:{flex:1,gap:3},destinationTitle:{flex:1,color:colors.text,fontSize:15,fontWeight:'650'},disclosure:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,padding:14},
+ destinationCopy:{flex:1,gap:3},destinationTitle:{flex:1,color:colors.text,fontSize:15,fontWeight:'600'},disclosure:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,padding:14},
  signOut:{flexDirection:'row',alignItems:'center',gap:10,minHeight:52,paddingHorizontal:14,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.card}
 });
