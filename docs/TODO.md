@@ -13,7 +13,8 @@
 - [x] Source inventory of five-tab Expo routes, available member APIs and the newer web surfaces; native versus website handoff decisions documented without claiming completed native parity.
 - [x] Compact CTSMD native screen masthead, grouped More destinations, permission-aware staff/admin website handoffs, and improved personal calendar agenda; current ticket purchase remains Ludus.
 - [ ] Full member-screen visual pass and device capture: Today/Action Center, Theatre details, Community, Messages, Forms, Volunteer, Family, Notifications, Videos, settings, empty/error/large-type states.
-- [ ] Build caregiver-safe native logistics agenda against existing restricted API; perform dedicated parent/guardian/caregiver authorization and no-leak testing.
+- [x] Build caregiver-safe native logistics agenda from the existing restricted API, plus caregiver-only Home/More/Family destinations and hidden unauthorized tabs; backend continues to enforce restrictions.
+- [ ] Complete parent/guardian/caregiver device and HTTP authorization testing, relationship revocation/no-leak checks, and accessibility validation.
 - [ ] Add staff production dashboard/context switching, production day/attendance read, readiness and task overview with narrow authorized APIs; keep mutations on website until independently accepted.
 - [ ] Prioritize later native write workflows: production tasks, attendance, family pickup, structured forms, volunteer leads and native video authoring. Do not copy financial/admin editing wholesale into Expo.
 - [ ] Resolve Expo 58 patch dependency/lockfile drift reported by `npx expo install --check`; then repeat web/backend parity tests, iOS/Android exports, simulator/device accessibility, safeguarding and push delivery acceptance.
