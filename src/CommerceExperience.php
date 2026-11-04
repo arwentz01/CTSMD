@@ -281,7 +281,7 @@ final class CommerceExperience
             }
             if($last!=='')echo '</div></div>';
         }
-        $spaces=self::rows('SELECT s.name,v.name venue FROM commerce_spaces s JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE s.organization_id=? AND NOT EXISTS(SELECT 1 FROM commerce_layouts l WHERE l.space_id=s.id AND l.organization_id=s.organization_id)',[self::$org]);foreach($spaces as $space)echo '<p>'.self::e($space['venue'].' / '.$space['name']).' · No layout versions</p>';echo '</div>';
+        $spaces=self::rows('SELECT s.name,v.name venue,v.id venue_id FROM commerce_spaces s JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE s.organization_id=? AND NOT EXISTS(SELECT 1 FROM commerce_layouts l WHERE l.space_id=s.id AND l.organization_id=s.organization_id)',[self::$org]);foreach($spaces as $space)if(in_array((int)$space['venue_id'],array_map(fn($v)=>(int)$v['id'],$visibleVenues),true))echo '<p>'.self::e($space['venue'].' / '.$space['name']).' · No layout versions</p>';echo '</div>';
         echo '<div class="commerce-venue-group"><h3>Venue settings</h3><p class="commerce-venue-muted">Choose a timezone for each venue. Existing performance times will not change.</p>';
         if(!$venues)echo '<p>No venues created yet.</p>';
         foreach($visibleVenues as $venue){
@@ -297,7 +297,7 @@ final class CommerceExperience
         }
         echo '</div>';
         echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an existing venue.</p>';
-        if($venues){self::form('space');echo '<label>Venue<select name="venue" required>';foreach(array_filter($venues,fn($v)=>(bool)$v['is_active']) as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
+        if(array_filter($venues,fn($v)=>(bool)$v['is_active'])){self::form('space');echo '<label>Venue<select name="venue" required>';foreach(array_filter($venues,fn($v)=>(bool)$v['is_active']) as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
         else echo '<p>Create your first venue before adding a performance space.</p>';
         echo '</section></div></details>';
     }
