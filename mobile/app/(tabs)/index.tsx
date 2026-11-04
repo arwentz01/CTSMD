@@ -31,7 +31,27 @@ function Shortcut({icon,title,onPress}:{icon:React.ComponentProps<typeof Ionicon
 }
 export default function Home(){
   const {user}=useAuth();
-  const load=useCallback(async()=>{const [t,a,m]=await Promise.all([theatre(),tasks(),conversations()]);return {t,a,m}},[]);
+  if(user?.caregiver_only)return <Screen title="Welcome back">
+    <Text style={styles.intro}>Family logistics and messages, in one place.</Text>
+    <Pressable accessibilityRole="button" onPress={()=>router.push('/caregiver-schedule')} style={styles.panel}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
+       <Ionicons name="calendar-outline" size={25} color={colors.primary}/>
+       <View style={{flex:1,gap:4}}><Text style={styles.sectionTitle}>Caregiver schedule</Text><Text style={styles.sub}>Upcoming authorized pickup and rehearsal calls</Text></View>
+       <Ionicons name="chevron-forward" size={20} color={colors.primary}/>
+      </View>
+    </Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>router.push('/family')} style={styles.panel}>
+      <Text style={styles.rowTitle}>My family connections</Text><Text style={styles.sub}>View active caregiver relationships</Text>
+    </Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>router.push('/(tabs)/messages')} style={styles.panel}>
+      <Text style={styles.rowTitle}>Messages</Text><Text style={styles.sub}>Contact people available to your account</Text>
+    </Pressable>
+  </Screen>;
+  return <MemberHome/>;
+}
+function MemberHome(){
+ const {user}=useAuth();
+ const load=useCallback(async()=>{const [t,a,m]=await Promise.all([theatre(),tasks(),conversations()]);return {t,a,m}},[]);
   const {data,error,loading,retry}=useScreenData(load);
   const now=Date.now();
   const events=(data?.t.events||[]).filter(e=>Number.isFinite(toTime(e.starts_at))&&toTime(e.starts_at)>=now).sort((a,b)=>toTime(a.starts_at)-toTime(b.starts_at)).slice(0,3);
