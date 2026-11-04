@@ -2,7 +2,7 @@ import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback} from 'react';
 import {useLocalSearchParams,router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Linking,StyleSheet,Text,View} from 'react-native';
+import {Alert,Linking,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
@@ -47,7 +47,7 @@ export default function ProductionPage(){
         ['People','productionPeople','people-outline'],
         ['Production day','productionDay','calendar-outline'],
         ['Readiness','productionReadiness','checkmark-circle-outline'],
-       ] as [string,WebRoute,React.ComponentProps<typeof Ionicons>['name']][]).map(([label,route,icon])=><Pressable key={route} accessibilityRole="link" style={s.staffAction} onPress={()=>void openWebsite(route)}><Ionicons name={icon} color={colors.primary} size={19}/><Text style={s.staffActionText}>{label}</Text><Ionicons name="open-outline" color={colors.muted} size={14}/></Pressable>)}</View>
+       ] as [string,WebRoute,React.ComponentProps<typeof Ionicons>['name']][]).map(([label,route,icon])=><Pressable key={route} accessibilityRole="link" style={s.staffAction} onPress={()=>void openWebsite(route).catch(error=>Alert.alert('Unable to open website',error instanceof Error?error.message:'Please try again.'))}><Ionicons name={icon} color={colors.primary} size={19}/><Text style={s.staffActionText}>{label}</Text><Ionicons name="open-outline" color={colors.muted} size={14}/></Pressable>)}</View>
       </View>}
      {!production.is_public_preview&&<Text style={s.heading}>Production Schedule</Text>}
      {!production.is_public_preview&&(events.length===0?<View style={s.card}><Text style={s.secondary}>No upcoming events for this production.</Text></View>:events.slice(0,5).map(event=><Pressable style={s.card} key={event.id} onPress={()=>router.push({pathname:'/events/[id]',params:{id:String(event.id)}})}><Text style={s.tileTitle}>{event.title}</Text><Text style={s.secondary}>{dateLabel(event.starts_at)}</Text>{!!event.location&&<Text style={s.secondary}>{event.location}</Text>}</Pressable>))}
