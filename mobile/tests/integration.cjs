@@ -145,3 +145,17 @@ test('Expo Go detection does not disable real development builds',()=>{
  assert.equal(runtime({appOwnership:null,executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),true);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'standalone',expoGoConfig:null}).supportsNativePush(),true);
 });
+
+test('Community cards use compact layout with accessible posts and reactions',()=>{
+ const feed=fs.readFileSync(path.join(__dirname,'../app/(tabs)/community.tsx'),'utf8');
+ const screen=fs.readFileSync(path.join(__dirname,'../src/components/Screen.tsx'),'utf8');
+ const heart=fs.readFileSync(path.join(__dirname,'../src/components/CommunityHeart.tsx'),'utf8');
+ assert.match(feed,/<Screen title="Community" compact>/);
+ assert.match(feed,/shortDate\(p\.created_at\)/);
+ assert.match(feed,/postFooter:/);
+ assert.match(feed,/minHeight:42/);
+ assert.match(feed,/paddingVertical:10,gap:3/);
+ assert.match(feed,/accessibilityLabel=\{'Open post by '/);
+ assert.match(screen,/compactContent:\{paddingTop:12,gap:9\}/);
+ assert.match(heart,/minHeight:44,minWidth:52/);
+});
