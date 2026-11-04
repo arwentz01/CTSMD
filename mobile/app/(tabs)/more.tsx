@@ -1,16 +1,15 @@
-import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useState} from 'react';
 import {Alert,Linking,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../../src/components/Screen';
-import {StageBackdrop} from '../../src/components/StageBackdrop';
+import {TouchTarget} from '../../src/components/TouchTarget';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
-import {participantWebsite} from '../../src/api/client';
+import {openWebsite,type WebRoute} from '../../src/navigation/website';
 
-const resources:[string,string][]=[
- ['Tickets','https://ctsmd.ludus.com/index.php'],
+type Icon=React.ComponentProps<typeof Ionicons>['name'];
+const policies:[string,string][]=[
  ['Anti-Discrimination Policy','https://www.ctsmd.org/anti-discrimination-policy.html'],
  ['Bylaws','https://www.ctsmd.org/bylaws.html'],
  ["Captain's Program Application",'https://forms.gle/ouqiAP2CUA3GCKUs6'],
@@ -21,40 +20,90 @@ const resources:[string,string][]=[
  ['Production Attendance and Commitment Policy','https://www.ctsmd.org/production-attendance-and-commitment-policy.html'],
  ['Volunteer Handbook','https://www.ctsmd.org/volunteer-handbook.html'],
  ['Volunteer Application','https://childrenstheatreofsouthernmaryland.ludus.com/volunteering.php'],
- ['Youth Safety Policy','https://www.ctsmd.org/youth-safety-policy.html'],
- ['Production Resources','https://ctsmd.me/resources']
+ ['Youth Safety Policy','https://www.ctsmd.org/youth-safety-policy.html']
 ];
-function External({title,url}:{title:string;url:string}){
- const open=async()=>{try{const supported=await Linking.canOpenURL(url);if(!supported)throw Error('This link cannot be opened on your device.');await Linking.openURL(url)}catch(e){Alert.alert('Unable to open link',e instanceof Error?e.message:'Please try again.')}};
- return <Pressable accessibilityRole="link" onPress={()=>void open()} style={s.item}><Text style={s.itemText}>{title}</Text><Ionicons name="open-outline" size={17} color={colors.muted}/></Pressable>;
+const LUDUS_TICKETS='https://ctsmd.ludus.com/index.php';
+type LinkItem={title:string;description?:string;icon:Icon;native?:string;website?:WebRoute;external?:string};
+function Destination({item}:{item:LinkItem}){
+ const external=item.website!==undefined||item.external!==undefined;
+ const go=async()=>{
+  if(item.native){router.push(item.native as never);return;}
+  try{
+   if(item.website)await openWebsite(item.website);
+   else if(item.external){
+    if(!await Linking.canOpenURL(item.external))throw new Error('This link is unavailable on your device.');
+    await Linking.openURL(item.external);
+   }
+  }catch(error){Alert.alert('Unable to open',error instanceof Error?error.message:'Please try again.');}
+ };
+ return <TouchTarget accessibilityRole={external?'link':'button'} accessibilityLabel={item.title+(external?', opens website':'')} onPress={()=>void go()} style={s.destination}>
+  <View style={s.icon}><Ionicons name={item.icon} color={colors.primary} size={21}/></View>
+  <View style={s.destinationCopy}><Text style={s.destinationTitle}>{item.title}</Text>{item.description&&<Text style={s.description}>{item.description}</Text>}</View>
+  <Ionicons name={external?'open-outline':'chevron-forward'} color={colors.muted} size={18}/>
+ </TouchTarget>;
 }
-function Local({title,detail,icon,path}:{title:string;detail:string;icon:'document-text-outline'|'hand-left-outline'|'people-outline';path:'/(tabs)/forms'|'/(tabs)/volunteer'|'/family'}){
- return <Pressable accessibilityRole="button" onPress={()=>router.push(path)} style={s.item}><Ionicons name={icon} size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>{title}</Text><Text style={s.muted}>{detail}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>;
+function Section({title,description,items}:{title:string;description?:string;items:LinkItem[]}){
+ return <View style={s.section}><View style={s.sectionHead}><Text accessibilityRole="header" style={s.sectionTitle}>{title}</Text>{description&&<Text style={s.description}>{description}</Text>}</View><View style={s.sectionBody}>{items.map(item=><Destination key={item.title} item={item}/>)}</View></View>;
 }
 export default function More(){
  const {user,signOut}=useAuth();const [expanded,setExpanded]=useState(false);
+ const staff=!!user?.roles?.some(role=>role==='production_staff'||role==='administrator');
+ const admin=!!user?.roles?.includes('administrator');
+ const member:LinkItem[]=[
+  {title:'My family',description:'Students and guardian relationships',icon:'people-outline',native:'/family'},
+  {title:'Forms',description:'Assigned forms and acknowledgements',icon:'document-text-outline',native:'/(tabs)/forms'},
+  {title:'Volunteer',description:'Signups and commitments',icon:'hand-left-outline',native:'/(tabs)/volunteer'},
+  {title:'Video Library',description:'Rehearsal recordings and shared videos',icon:'play-circle-outline',native:'/videos'},
+  {title:'Performer profile',description:'Profile and publication consent · website',icon:'person-circle-outline',website:'performerProfile'},
+  {title:'Theatre history',description:'Past credits and shows · website',icon:'time-outline',website:'theatreHistory'},
+  {title:'Auditions & registration',description:'Applications and audition forms · website',icon:'clipboard-outline',website:'registration'},
+  {title:'Family & pickup management',description:'Authorized guardians and pickup people · website',icon:'shield-checkmark-outline',website:'familyManagement'}
+ ];
+ const staffItems:LinkItem[]=[
+  {title:'Production workspace',description:'Production operations and preparation · website',icon:'film-outline',website:'productionWorkspace'},
+  {title:'Production day & attendance',description:'Check-in, calls and attendance · website',icon:'calendar-outline',website:'productionDay'},
+  {title:'Production people',description:'Cast, crew and assignments · website',icon:'people-circle-outline',website:'productionPeople'},
+  {title:'Production tasks',description:'Create, delegate and track work · website',icon:'checkmark-done-outline',website:'productionTasks'},
+  {title:'Readiness & notices',description:'Pre-show status and communications · website',icon:'list-outline',website:'productionReadiness'},
+  {title:'Playbills',description:'Production program tools · website',icon:'book-outline',website:'playbills'}
+ ];
+ const adminItems:LinkItem[]=[
+  {title:'Operations',description:'Administrative workspace · website',icon:'grid-outline',website:'adminOperations'},
+  {title:'Accounts & authorizations',description:'Role and relationship administration · website',icon:'key-outline',website:'adminAccounts'},
+  {title:'Commerce & Box Office',description:'Ticketing administration and promotions · website',icon:'card-outline',website:'commerce'}
+ ];
  return <Screen title="More">
-  <Pressable accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push("/account")} style={s.profile}><StageBackdrop/><View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View><View style={{flex:1,gap:5}}><Text style={s.name}>{user?.name||'My CTSMD'}</Text><Text style={s.profileEmail}>{user?.email||''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
-  <Text style={s.heading}>My CTSMD</Text>
-  <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
-  <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
-  <Local title="Volunteer" detail="Shifts, signups and approvals" icon="hand-left-outline" path="/(tabs)/volunteer"/>
-  <External title="Performer profile & publication consent · website" url={participantWebsite('/student-profile')}/>
-  <External title="My Theatre History · website" url={participantWebsite('/theatre-history')}/>
-  <External title="Auditions & registration · website" url={participantWebsite('/register')}/>
-  {user?.roles?.some(role=>role==='production_staff'||role==='administrator')&&<External title="Participation settings & staff tools · website" url={participantWebsite('/admin/productions')}/>}
-  {user?.roles?.includes('administrator')&&<External title="Account authorization roles · website" url={participantWebsite('/admin/accounts')}/>}
-  <Text style={s.muted}>These workflows open the CTSMD website and may require a separate sign-in. Casting offer responses remain in Action Center.</Text>
-  <Pressable accessibilityRole="button" onPress={()=>router.push('/videos')} style={s.item}><Ionicons name="play-circle-outline" size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>Video Library</Text><Text style={s.muted}>Rehearsals and CTSMD-wide videos</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
-  <Text style={s.heading}>Tickets & resources</Text>
-  <External title="Tickets" url={resources[0][1]}/>
-  <Pressable accessibilityRole="button" accessibilityState={{expanded}} onPress={()=>setExpanded(v=>!v)} style={s.item}><Ionicons name="library-outline" color={colors.primary} size={22}/><Text style={[s.itemText,{flex:1}]}>CTSMD forms, policies & resources</Text><Ionicons name={expanded?'chevron-up':'chevron-down'} color={colors.muted} size={19}/></Pressable>
-  {expanded&&<View style={{gap:7,paddingLeft:12}}>{resources.slice(1).map(([title,url])=><External key={url} title={title} url={url}/>)}</View>}
-  <Text style={s.heading}>Settings & support</Text>
-  <Pressable accessibilityRole="button" onPress={()=>router.push('/settings')} style={s.item}><Ionicons name="settings-outline" size={22} color={colors.primary}/><Text style={[s.itemText,{flex:1}]}>Settings</Text><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
-  <Pressable accessibilityRole="button" onPress={()=>router.push('/help')} style={s.item}><Ionicons name="help-circle-outline" size={22} color={colors.primary}/><Text style={[s.itemText,{flex:1}]}>Help & Support</Text><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
-  <Text style={s.heading}>Account</Text>
-  <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Sign out','Sign out of CTSMD Connect on this device?',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])} style={[s.item,{borderColor:colors.primary}]}><Ionicons name="log-out-outline" color={colors.primary} size={21}/><Text style={[s.itemText,{color:colors.primary}]}>Sign out</Text></Pressable>
+  <TouchTarget accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push('/account')} style={s.profile}>
+   <View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View>
+   <View style={s.profileDetails}><Text style={s.profileEyebrow}>MY CTSMD ACCOUNT</Text><Text style={s.profileName}>{user?.name||'My account'}</Text><Text numberOfLines={1} style={s.profileEmail}>{user?.email||''}</Text></View>
+   <Ionicons name="chevron-forward" color={colors.ivory} size={20}/>
+  </TouchTarget>
+  <Section title="My Theatre" items={member}/>
+  {staff&&<Section title="Production tools" description="Advanced staff workflows currently open the CTSMD website." items={staffItems}/>}
+  {admin&&<Section title="Administration" description="Permission-controlled web workspaces." items={adminItems}/>}
+  <Section title="Tickets & resources" description="Ticket purchases currently use Ludus. CTSMD's own storefront remains a pilot." items={[
+   {title:'Buy tickets',description:'Open the current Ludus ticket store',icon:'ticket-outline',external:LUDUS_TICKETS},
+   {title:'Production resources',description:'Handbooks and production documents · website',icon:'folder-outline',website:'productionResources'}
+  ]}/>
+  <View style={s.section}>
+   <TouchTarget accessibilityRole="button" accessibilityState={{expanded}} onPress={()=>setExpanded(v=>!v)} style={s.disclosure}><Ionicons name="library-outline" color={colors.primary} size={21}/><Text style={s.destinationTitle}>Policies & reference documents</Text><Ionicons name={expanded?'chevron-up':'chevron-down'} color={colors.muted} size={19}/></TouchTarget>
+   {expanded&&<View style={s.sectionBody}>{policies.map(([title,url])=><Destination key={url} item={{title,icon:'document-text-outline',external:url}}/>)}</View>}
+  </View>
+  <Section title="Settings & support" items={[
+   {title:'Settings',description:'Notifications and device preferences',icon:'settings-outline',native:'/settings'},
+   {title:'Help & support',description:'Find guidance and contact CTSMD',icon:'help-circle-outline',native:'/help'}
+  ]}/>
+  <TouchTarget accessibilityRole="button" onPress={()=>Alert.alert('Sign out','Sign out of CTSMD Connect on this device?',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])} style={s.signOut}><Ionicons name="log-out-outline" color={colors.primary} size={20}/><Text style={s.destinationTitle}>Sign out</Text></TouchTarget>
  </Screen>;
 }
-const s=StyleSheet.create({profile:{flexDirection:'row',alignItems:'center',gap:14,padding:20,backgroundColor:colors.burgundy,borderRadius:17,borderWidth:1,borderColor:colors.gold},avatar:{width:60,height:60,borderRadius:30,alignItems:'center',justifyContent:'center',backgroundColor:colors.stage,borderWidth:2,borderColor:colors.gold},initials:{color:'#fff',fontWeight:'800',fontSize:18},name:{color:colors.ivory,fontSize:22,fontWeight:'700'},muted:{color:colors.muted,fontSize:12,lineHeight:17},profileEmail:{color:'#f5dcd2',fontSize:12,lineHeight:17},heading:{fontSize:25,fontWeight:'700',color:colors.navy,marginTop:12},item:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:16,padding:17,flexDirection:'row',alignItems:'center',gap:12},itemText:{fontSize:17,fontWeight:'700',color:colors.text,flexShrink:1}});
+const s=StyleSheet.create({
+ profile:{flexDirection:'row',alignItems:'center',padding:16,gap:12,backgroundColor:colors.burgundy,borderRadius:15,borderWidth:1,borderColor:colors.gold},
+ avatar:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center',backgroundColor:colors.stage,borderWidth:1,borderColor:colors.gold},
+ initials:{fontSize:16,fontWeight:'800',color:'#fff'},profileDetails:{flex:1,gap:3},profileEyebrow:{fontSize:10,letterSpacing:1.2,fontWeight:'800',color:colors.gold},profileName:{fontSize:19,fontWeight:'750',color:colors.ivory},profileEmail:{fontSize:12,color:'#f5dcd2'},
+ section:{gap:9},sectionHead:{gap:3},sectionTitle:{fontSize:19,fontWeight:'750',color:colors.navy},description:{fontSize:12,lineHeight:18,color:colors.muted},
+ sectionBody:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,overflow:'hidden'},
+ destination:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:13,paddingVertical:10,minHeight:62,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:colors.border},
+ icon:{height:36,width:36,borderRadius:10,backgroundColor:colors.background,alignItems:'center',justifyContent:'center'},
+ destinationCopy:{flex:1,gap:3},destinationTitle:{flex:1,color:colors.text,fontSize:15,fontWeight:'650'},disclosure:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,padding:14},
+ signOut:{flexDirection:'row',alignItems:'center',gap:10,minHeight:52,paddingHorizontal:14,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.card}
+});
