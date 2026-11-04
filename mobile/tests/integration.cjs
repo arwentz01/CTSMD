@@ -68,3 +68,25 @@ test('native registration rotates the prior identity but explicitly reports deli
  assert.match(await device.storeDeviceToken({type:'android',data:'new-device'}),/not configured or verified/);
  assert.equal(payload.fcmToken,'new-device');assert.equal(previous,'old-device');assert.equal(identity,'new-device');
 });
+
+test('native website handoffs keep the CTSMD pilot storefront out of live ticket sales',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ assert.match(source,/https:\/\/ctsmd\.ludus\.com\/index\.php/);
+ assert.match(source,/Ticket purchases currently use Ludus/);
+ assert.doesNotMatch(source,/https:\/\/ctsmd\.me\/tickets/);
+ const {websiteUrl,webRoutes,openWebsite}=load('src/navigation/website.ts',{},null,{'react-native':{Linking:{canOpenURL:async()=>true,openURL:async()=>undefined}}});
+ assert.equal(websiteUrl('productionWorkspace'),'https://ctsmd.me/production');
+ assert.equal(websiteUrl('familyManagement'),'https://ctsmd.me/family/manage');
+ assert.equal(websiteUrl('commerce'),'https://ctsmd.me/admin/commerce');
+ assert.ok(!Object.values(webRoutes).includes('/tickets'),'Pilot storefront is deliberately not advertised as the current ticket vendor');
+ assert.equal(typeof openWebsite,'function');
+});
+test('mobile navigation exposes member, staff and authorized admin workflows without a duplicate checkout',()=>{
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ for(const destination of ['My family','Forms','Volunteer','Video Library','Production workspace','Production people','Production tasks','Administration','Commerce & Box Office','Settings'])assert.ok(more.includes(destination),'Missing mobile navigation: '+destination);
+ assert.match(more,/staff&&<Section title="Production tools"/);
+ assert.match(more,/admin&&<Section title="Administration"/);
+ const calendar=fs.readFileSync(path.join(__dirname,'../app/calendar.tsx'),'utf8');
+ assert.match(calendar,/All visible/);
+ assert.match(calendar,/dateHeader\(key\)/);
+});
