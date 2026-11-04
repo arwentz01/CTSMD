@@ -8,9 +8,24 @@ final class CommerceVenueService
         CommerceAccess::demand($db,$user,$org,'venues');$name=trim($name);if($name===''||mb_strlen($name)>190||mb_strlen($location)>500)throw new RuntimeException('Enter a venue name and location within the field limits.');
         return CommerceStore::tx($db,function()use($db,$org,$user,$name,$location){$db->prepare('INSERT INTO commerce_venues(organization_id,name,location) VALUES(?,?,?)')->execute([$org,$name,$location]);$id=(int)$db->lastInsertId();CommerceStore::audit($db,$org,(int)$user['id'],'commerce.venue_created','venue',$id);return$id;});
     }
+    public static function setActive(PDO $db,array $user,int $org,int $venue,bool $active):void
+    {
+        CommerceAccess::demand($db,$user,$org,'venues');
+        CommerceStore::tx($db,function()use($db,$user,$org,$venue,$active){
+            $row=CommerceStore::row($db,'venues',$org,$venue,true);
+            if((bool)$row['is_active']===$active)return;
+            if(!$active){
+                $q=$db->prepare("SELECT COUNT(*) FROM commerce_performances p JOIN commerce_layouts l ON l.id=p.layout_id AND l.organization_id=p.organization_id JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id WHERE p.organization_id=? AND s.venue_id=? AND p.starts_at>=NOW()");
+                $q->execute([$org,$venue]);
+                if((int)$q->fetchColumn()>0)throw new RuntimeException('This venue has upcoming performances. Move or cancel them before deactivating it.');
+            }
+            $db->prepare('UPDATE commerce_venues SET is_active=? WHERE organization_id=? AND id=?')->execute([$active?1:0,$org,$venue]);
+            CommerceStore::audit($db,$org,(int)$user['id'],$active?'commerce.venue_reactivated':'commerce.venue_deactivated','venue',$venue);
+        });
+    }
     public static function space(PDO $db,array $user,int $org,int $venue,string $name):int
     {
-        CommerceAccess::demand($db,$user,$org,'venues');CommerceStore::row($db,'venues',$org,$venue);$name=trim($name);if($name===''||mb_strlen($name)>190)throw new RuntimeException('Enter the auditorium name.');
+        CommerceAccess::demand($db,$user,$org,'venues');$venueRow=CommerceStore::row($db,'venues',$org,$venue);if(!(bool)$venueRow['is_active'])throw new RuntimeException('Reactivate this venue before adding a space.');$name=trim($name);if($name===''||mb_strlen($name)>190)throw new RuntimeException('Enter the auditorium name.');
         return CommerceStore::tx($db,function()use($db,$org,$user,$venue,$name){$db->prepare('INSERT INTO commerce_spaces(organization_id,venue_id,name) VALUES(?,?,?)')->execute([$org,$venue,$name]);$id=(int)$db->lastInsertId();$doc=['sections'=>[['key'=>'main','name'=>'Main','order'=>0]],'rows'=>[['key'=>'a','section'=>'main','name'=>'A','order'=>0]],'items'=>[['key'=>'stage','kind'=>'stage','label'=>'Stage','x'=>180,'y'=>20]]];$db->prepare('INSERT INTO commerce_layouts(organization_id,space_id,version_number,document_json) VALUES(?,?,1,?)')->execute([$org,$id,json_encode($doc)]);CommerceStore::audit($db,$org,(int)$user['id'],'commerce.space_created','space',$id);return$id;});
     }
     public static function validate(array $doc):array
