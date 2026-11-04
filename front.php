@@ -31,6 +31,7 @@ foreach ($privateIndexRoutes as $privateRoute) {
         break;
     }
 }
+if ($route === '/privacy') { require_once __DIR__.'/src/PrivacyExperience.php'; PrivacyExperience::render(); }
 require_once __DIR__ . '/src/Auth.php';Auth::startSession();
 if($route==='/commerce/webhooks/mail'){require_once __DIR__.'/src/CommerceMailEndpoint.php';CommerceMailEndpoint::render();}
 if($route==='/commerce/webhooks/stripe'){require_once __DIR__.'/src/CommerceStripeEndpoint.php';CommerceStripeEndpoint::render();}

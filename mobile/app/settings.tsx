@@ -1,6 +1,6 @@
 import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useState} from 'react';
-import {Alert,StyleSheet,Text,View} from 'react-native';
+import {Alert,Linking,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Screen} from '../src/components/Screen';
@@ -17,6 +17,7 @@ export default function Settings(){
   <View style={s.card}><Text style={s.label}>Signed in as</Text><Text style={s.value}>{user?.email||'CTSMD member'}</Text></View>
   <View style={s.card}><Text style={s.label}>Family access</Text><Text style={s.body}>Student and guardian access is determined by CTSMD's active family relationships. Changes cannot be made in the app.</Text></View>
   <View style={s.card}><Text style={s.label}>Device notifications</Text><Text accessibilityLiveRegion="polite" style={s.body}>{pushStatus}</Text><Pressable disabled={pushBusy} onPress={()=>void configure(true)}><Text style={s.link}>{pushBusy?'Updating…':'Register this device'}</Text></Pressable><Pressable disabled={pushBusy} onPress={()=>void configure(false)}><Text style={s.link}>Remove device registration</Text></Pressable><Text style={s.body}>Registration is not proof of delivery. Your OS permission and CTSMD delivery preferences remain separate.</Text></View>
+  <Pressable accessibilityRole="link" style={s.card} onPress={()=>void Linking.openURL('https://ctsmd.me/privacy').catch(()=>Alert.alert('Unable to open privacy policy','Please try again.'))}><Text style={s.link}>Privacy policy & account deletion</Text></Pressable>
   <Text style={s.heading}>Session</Text>
   <Pressable accessibilityRole="button" style={s.card} onPress={()=>Alert.alert('Sign out?','This will remove your sign-in session from this device.',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])}><Text style={[s.value,{color:colors.primary}]}>Sign out of this device</Text></Pressable>
   <Text style={s.footer}>CTSMD Connect · Version 0.1.0</Text>
