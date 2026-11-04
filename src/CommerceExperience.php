@@ -175,6 +175,7 @@ final class CommerceExperience
         $db=self::$db;$u=self::$user;$o=self::$org;$id=(int)($_POST['id']??0);
         switch($a){
             case 'pricing_review':case 'pricing_apply':case 'production_sales':return CommerceProductionExperience::command($db,$u,$o,$a);
+            case 'venue_status':CommerceVenueService::setActive($db,$u,$o,$id,($_POST['active']??'')==='1');return self::url('venues',['show'=>($_POST['active']??'')==='1'?'active':'inactive']);
             case 'venue':CommerceVenueService::venue($db,$u,$o,(string)($_POST['name']??''),(string)($_POST['location']??''));return self::url('venues');
             case 'space':$space=CommerceVenueService::space($db,$u,$o,(int)($_POST['venue']??0),(string)($_POST['name']??''));$r=self::rows('SELECT id FROM commerce_layouts WHERE organization_id=? AND space_id=?',[$o,$space]);return self::url('layout',['id'=>$r[0]['id']]);
             case 'save_layout':CommerceVenueService::save($db,$u,$o,$id,self::jsonInput('document'),(string)($_POST['expected']??''));return self::url('layout',['id'=>$id]);
@@ -264,9 +265,12 @@ final class CommerceExperience
     {
         CommerceAccess::demand(self::$db,self::$user,self::$org,'venues');
         $venues=self::rows('SELECT * FROM commerce_venues WHERE organization_id=? ORDER BY name',[self::$org]);
+        $showInactive=($_GET['show']??'active')==='inactive';$visibleVenues=array_values(array_filter($venues,fn($v)=>(bool)$v['is_active']!==$showInactive));
         $layouts=self::rows('SELECT l.*,s.name space_name,v.name venue_name,v.id venue_id FROM commerce_layouts l JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE l.organization_id=? ORDER BY v.name,s.name,l.version_number DESC',[self::$org]);
         echo '<div class="commerce-venue-header"><div><h2>Venues & seating</h2><p>Manage your theatres and their seating plans. Publish a layout when it is ready to use for performances.</p></div><a class="commerce-venue-schedule-link" href="'.self::e(self::url('schedule')).'">Performance schedule &rarr;</a></div>';
+        echo '<nav aria-label="Venue status" class="commerce-actions"><a href="'.self::e(self::url('venues',['show'=>'active'])).'"'.(!$showInactive?' aria-current="page"':'').'>Active venues</a><a href="'.self::e(self::url('venues',['show'=>'inactive'])).'"'.($showInactive?' aria-current="page"':'').'>Inactive venues</a></nav>';
         echo '<div class="commerce-venue-group"><h3>Seating layouts</h3>';
+        $layouts=array_values(array_filter($layouts,fn($l)=>in_array((int)$l['venue_id'],array_map(fn($v)=>(int)$v['id'],$visibleVenues),true)));
         if(!$layouts)echo '<p class="commerce-venue-muted">No seating layouts yet. Create a venue and performance space below to get started.</p>';
         else {
             $last='';
@@ -280,7 +284,7 @@ final class CommerceExperience
         $spaces=self::rows('SELECT s.name,v.name venue FROM commerce_spaces s JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE s.organization_id=? AND NOT EXISTS(SELECT 1 FROM commerce_layouts l WHERE l.space_id=s.id AND l.organization_id=s.organization_id)',[self::$org]);foreach($spaces as $space)echo '<p>'.self::e($space['venue'].' / '.$space['name']).' · No layout versions</p>';echo '</div>';
         echo '<div class="commerce-venue-group"><h3>Venue settings</h3><p class="commerce-venue-muted">Choose a timezone for each venue. Existing performance times will not change.</p>';
         if(!$venues)echo '<p>No venues created yet.</p>';
-        foreach($venues as $venue){
+        foreach($visibleVenues as $venue){
             $default=(string)($venue['timezone_name']?:getenv('COMMERCE_VENUE_TIMEZONE')?:getenv('APP_TIMEZONE')?:'America/New_York');
             $zones=DateTimeZone::listIdentifiers();
             if(!in_array($default,$zones,true))array_unshift($zones,$default);
@@ -288,11 +292,12 @@ final class CommerceExperience
             self::form('venue_timezone',['id'=>$venue['id']]);
             echo '<label>Timezone<select name="timezone" required>';
             foreach($zones as $zone){$label=str_replace('_',' ',str_replace('/',' / ',$zone));echo '<option value="'.self::e($zone).'"'.($zone===$default?' selected':'').'>'.self::e($label).'</option>';}
-            echo '</select></label><button>Save timezone</button></form></div>';
+            echo '</select></label><button>Save timezone</button></form>';
+            self::form('venue_status',['id'=>$venue['id'],'active'=>$showInactive?'1':'0']);echo '<button type="submit">'.($showInactive?'Reactivate venue':'Deactivate venue').'</button></form></div>';
         }
         echo '</div>';
         echo '<details class="commerce-venue-create"><summary>Add a venue or performance space</summary><div class="commerce-columns"><section><h3>New venue</h3><p class="commerce-venue-muted">Add a theatre or other location.</p>';self::form('venue');self::input('name','Venue name','text','','required maxlength="190"');self::input('location','Location','text','','maxlength="500"');echo '<button>Create venue</button></form></section><section><h3>New performance space</h3><p class="commerce-venue-muted">Add an auditorium or stage within an existing venue.</p>';
-        if($venues){self::form('space');echo '<label>Venue<select name="venue" required>';foreach($venues as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
+        if($venues){self::form('space');echo '<label>Venue<select name="venue" required>';foreach(array_filter($venues,fn($v)=>(bool)$v['is_active']) as $v)echo '<option value="'.(int)$v['id'].'">'.self::e($v['name']).'</option>';echo '</select></label>';self::input('name','Auditorium or space name','text','','required maxlength="190"');echo '<button>Create space</button></form>';}
         else echo '<p>Create your first venue before adding a performance space.</p>';
         echo '</section></div></details>';
     }
