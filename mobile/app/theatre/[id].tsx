@@ -7,10 +7,14 @@ import {Screen} from '../../src/components/Screen';
 import {ProductionHero} from '../../src/components/ProductionHero';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {theatre,channels,productionCasting} from '../../src/api/client';
+import {openWebsite,type WebRoute} from '../../src/navigation/website';
+import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
 
 const dateLabel=(value:string)=>{const date=new Date(value.replace(' ','T'));return Number.isFinite(date.getTime())?date.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):value;};
 export default function ProductionPage(){
+ const {user}=useAuth();
+ const staff=!!user?.roles?.some(role=>role==='production_staff'||role==='administrator');
  const {id}=useLocalSearchParams<{id:string}>();
  const productionId=Number(id);
  const valid=Number.isSafeInteger(productionId)&&productionId>0;
@@ -35,6 +39,16 @@ export default function ProductionPage(){
       <Pressable accessibilityRole="link" style={s.tile} onPress={()=>void Linking.openURL('https://ctsmd.ludus.com/index.php')}><Ionicons name="ticket-outline" color={colors.primary} size={23}/><Text style={s.tileTitle}>Tickets</Text><Text style={s.secondary}>Show tickets</Text></Pressable>
       <Pressable accessibilityRole="button" style={s.tile} onPress={()=>router.push({pathname:'/(tabs)/community',params:{production_id:String(productionId)}})}><Ionicons name="chatbubbles-outline" color={colors.primary} size={23}/><Text style={s.tileTitle}>Discussions</Text><Text style={s.secondary}>{relatedChannels.length} channels</Text></Pressable>
      </View>}
+     {!production.is_public_preview&&staff&&<View style={s.staffPanel}>
+       <View style={s.staffHeading}><Ionicons name="construct-outline" color={colors.primary} size={20}/><Text style={s.heading}>Production tools</Text></View>
+       <Text style={s.secondary}>These staff actions open the CTSMD website. You'll need the permissions assigned to your account.</Text>
+       <View style={s.staffActions}>{([
+        ['Tasks','productionTasks','checkbox-outline'],
+        ['People','productionPeople','people-outline'],
+        ['Production day','productionDay','calendar-outline'],
+        ['Readiness','productionReadiness','checkmark-circle-outline'],
+       ] as [string,WebRoute,React.ComponentProps<typeof Ionicons>['name']][]).map(([label,route,icon])=><Pressable key={route} accessibilityRole="link" style={s.staffAction} onPress={()=>void openWebsite(route)}><Ionicons name={icon} color={colors.primary} size={19}/><Text style={s.staffActionText}>{label}</Text><Ionicons name="open-outline" color={colors.muted} size={14}/></Pressable>)}</View>
+      </View>}
      {!production.is_public_preview&&<Text style={s.heading}>Production Schedule</Text>}
      {!production.is_public_preview&&(events.length===0?<View style={s.card}><Text style={s.secondary}>No upcoming events for this production.</Text></View>:events.slice(0,5).map(event=><Pressable style={s.card} key={event.id} onPress={()=>router.push({pathname:'/events/[id]',params:{id:String(event.id)}})}><Text style={s.tileTitle}>{event.title}</Text><Text style={s.secondary}>{dateLabel(event.starts_at)}</Text>{!!event.location&&<Text style={s.secondary}>{event.location}</Text>}</Pressable>))}
      {!production.is_public_preview&&<Text style={s.heading}>Production Channels</Text>}
@@ -42,4 +56,4 @@ export default function ProductionPage(){
     </>}
  </Screen>;
 }
-const s=StyleSheet.create({notice:{flexDirection:'row',gap:7,alignItems:'center',paddingHorizontal:10,paddingVertical:7,borderRadius:9,backgroundColor:'#fff1d9'},noticeText:{color:colors.burgundy,fontSize:12,flex:1},castEntry:{fontSize:14,color:colors.text,paddingVertical:3},back:{paddingHorizontal:20,paddingVertical:12,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:colors.card},backText:{color:colors.navy,fontWeight:'700',fontSize:16},secondary:{fontSize:13,color:colors.muted},heading:{fontSize:18,fontWeight:'800',color:colors.navy,marginTop:12},tiles:{flexDirection:'row',gap:10},tile:{flex:1,padding:14,gap:7,backgroundColor:colors.card,borderRadius:12,borderWidth:1,borderColor:colors.border},tileTitle:{fontWeight:'700',fontSize:15,color:colors.text},card:{backgroundColor:colors.card,padding:15,borderRadius:12,borderWidth:1,borderColor:colors.border,gap:5}});
+const s=StyleSheet.create({staffPanel:{gap:11,backgroundColor:colors.ivory,borderRadius:12,padding:13,borderWidth:1,borderColor:colors.border},staffHeading:{flexDirection:'row',alignItems:'center',gap:8},staffActions:{flexDirection:'row',flexWrap:'wrap',gap:8},staffAction:{flexBasis:'47%',flexGrow:1,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:10,flexDirection:'row',alignItems:'center',gap:7,padding:10},staffActionText:{flex:1,fontSize:13,fontWeight:'700',color:colors.text},notice:{flexDirection:'row',gap:7,alignItems:'center',paddingHorizontal:10,paddingVertical:7,borderRadius:9,backgroundColor:'#fff1d9'},noticeText:{color:colors.burgundy,fontSize:12,flex:1},castEntry:{fontSize:14,color:colors.text,paddingVertical:3},back:{paddingHorizontal:10,paddingVertical:8,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:colors.card},backText:{color:colors.navy,fontWeight:'700',fontSize:16},secondary:{fontSize:13,color:colors.muted},heading:{fontSize:18,fontWeight:'800',color:colors.navy,marginTop:12},tiles:{flexDirection:'row',gap:10},tile:{flex:1,padding:14,gap:7,backgroundColor:colors.card,borderRadius:12,borderWidth:1,borderColor:colors.border},tileTitle:{fontWeight:'700',fontSize:15,color:colors.text},card:{backgroundColor:colors.card,padding:12,borderRadius:12,borderWidth:1,borderColor:colors.border,gap:5}});
