@@ -14,5 +14,25 @@ $live=(string)getenv('COMMERCE_STRIPE_TEST_SECRET_KEY');putenv('COMMERCE_STRIPE_
 putenv('COMMERCE_STRIPE_CHECKOUT_ENABLED=1');$failed=commerceHold($db,$f,['a8'=>'Adult']);$fa=$start($failed);$mock->pay($fa['remote_session_id']);CommerceStripeService::reconcile($db,$org,(int)$failed['id'],$provider);$mock->refundFailed=true;$ok(CommerceStripeService::refund($db,$u,$org,(int)$failed['id'],'Synthetic failed refund',$provider)['state']==='paid','Authoritatively failed refund restores original paid state without releasing seats');$mock->refundFailed=false;$ok(CommerceStripeService::refund($db,$u,$org,(int)$failed['id'],'Retry known failed refund',$provider)['state']==='refunded','Explicit retry uses a new key only after verified failure');
 $late=commerceHold($db,$f,['a9'=>'Adult']);$la=$start($late);$mock->pay($la['remote_session_id']);$db->prepare('UPDATE productions SET announcement_published_at=NULL WHERE id=?')->execute([$f['productions']['A']]);$ok(CommerceStripeService::reconcile($db,$org,(int)$late['id'],$provider)['state']==='exception','Stripe late success cannot fulfill unpublished performance');$ok(CommerceStripeService::refund($db,$u,$org,(int)$late['id'],'Return unfulfillable capture',$provider)['state']==='refunded','Verified captured funds can be returned without issuing invalid tickets');$db->prepare('UPDATE productions SET announcement_published_at=NOW() WHERE id=?')->execute([$f['productions']['A']]);
 $lostEvent=commerceHold($db,$f,['a10'=>'Adult']);$mock->loseCreationResponse=true;$reject(fn()=>$start($lostEvent),'Second ambiguous remote creation captured for webhook recovery');$sessionIds=array_keys($mock->sessions);$lostSession=end($sessionIds);$mock->pay($lostSession);[$eraw,$esig]=$mock->event($lostSession);$event=json_decode($eraw,true);CommerceStripeService::receive($db,$org,$eraw,$esig,$provider);CommerceStripeService::processEvent($db,$org,$event['id'],$provider);$ok(CommerceStore::row($db,'orders',$org,(int)$lostEvent['id'])['state']==='paid','Signed event arriving before session persistence recovers authoritative session');
+// The original key is now incompatible with its corrected Checkout parameters.
+// Safely inspect Stripe Sessions before using a stable versioned recovery key.
+$conflict=commerceHold($db,$f,['a11'=>'Adult']);
+$mock->forceOriginalKeyConflict=true;
+$reject(fn()=>$start($conflict),'Checkout idempotency mismatch keeps original order protected');
+$conflictId=(int)$conflict['id'];
+$ok(CommerceStore::row($db,'orders',$org,$conflictId)['state']==='exception','Conflicted Checkout preserves inventory in exception state');
+$before=count($mock->sessions);
+$recovered=$start($conflict);
+$ok(count($mock->sessions)===$before+1&&str_starts_with((string)$recovered['remote_session_id'],'cs_test_'),'Exhaustive Stripe lookup permits one stable recovery Session when none existed');
+$ok(CommerceStore::row($db,'orders',$org,$conflictId)['state']==='exception','Recovery does not invent payment confirmation');
+$ok($start($conflict)['remote_session_id']===$recovered['remote_session_id'],'Recovery never creates a second Session');
+$discovered=commerceHold($db,$f,['a12'=>'Adult']);
+$reject(fn()=>$start($discovered),'Checkout conflict on separately reserved order');
+$existingAttempt=CommerceStripeService::attempt($db,$org,(int)$discovered['id']);
+$existingSession=$mock->request('POST','/v1/checkout/sessions',json_decode((string)$existingAttempt['request_json'],true),'synthetic-existing-session');
+$before=count($mock->sessions);
+$bound=$start($discovered);
+$ok($bound['remote_session_id']===$existingSession['id']&&count($mock->sessions)===$before,'Existing Stripe Session discovered and bound without duplicate creation');
+$mock->forceOriginalKeyConflict=false;
 echo "PASS $n Stripe test integration checks\n";
 }finally{if($f)retireMyTheatreFixture($db,$f);}
