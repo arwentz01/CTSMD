@@ -20,6 +20,28 @@ final class CommerceProductionExperience
             if(!$p['shows']&&$original)continue;
             if($p['past'])$past[]=$p;else$active[]=$p;
         }
+        // Show the next performance first, not the alphabetically first title.
+        // Unscheduled productions follow scheduled ones. Past shows run newest to oldest.
+        $nextShow=static function(array $production):?string {
+            $next=null;
+            foreach($production['shows'] as $show){
+                if(!in_array((string)($show['schedule_status']??''),['scheduled','draft'],true))continue;
+                $when=(string)($show['starts_at_utc']??'');
+                if($when===''||$when<=gmdate('Y-m-d H:i:s'))continue;
+                if($next===null||$when<$next)$next=$when;
+            }
+            return $next;
+        };
+        usort($active,static function(array $a,array $b)use($nextShow):int {
+            $aNext=$nextShow($a);$bNext=$nextShow($b);
+            return [$aNext===null,$aNext??'9999-12-31',mb_strtolower((string)$a['title']),(int)$a['id']]
+                 <=>[$bNext===null,$bNext??'9999-12-31',mb_strtolower((string)$b['title']),(int)$b['id']];
+        });
+        usort($past,static function(array $a,array $b):int {
+            $aLast=max(array_column($a['shows'],'starts_at')?:['']);
+            $bLast=max(array_column($b['shows'],'starts_at')?:['']);
+            return [$bLast,mb_strtolower((string)$a['title'])] <=> [$aLast,mb_strtolower((string)$b['title'])];
+        });
         return[$active,$past];
     }
     private static function search(bool $management):void
