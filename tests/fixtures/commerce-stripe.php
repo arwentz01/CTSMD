@@ -8,13 +8,27 @@ function commerceStripeConfig():void
 final class CommerceStripeFixture
 {
     public array $sessions=[],$returns=[],$keys=[],$requests=[];
-    public bool $unavailable=false,$loseCreationResponse=false,$refundPending=false,$refundFailed=false;
+    public bool $unavailable=false,$loseCreationResponse=false,$refundPending=false,$refundFailed=false,$forceOriginalKeyConflict=false;
     public function adapter():CommerceStripeProvider{return new CommerceStripeProvider(function($method,$path,$params,$key){return$this->request($method,$path,$params,$key);});}
     public function request(string $method,string $path,array $params,?string $key):array
     {
         if($this->unavailable)throw new RuntimeException('Synthetic provider outage');$this->requests[]=[$method,$path,$params,$key];if($path==='/v1/account')return['id'=>'acct_synthetic'];
+        if($path==='/v1/checkout/sessions'&&$method==='GET'){
+            $data=array_values($this->sessions);
+            $min=(int)($params['created']['gte']??0);
+            $data=array_values(array_filter($data,static fn(array $session):bool=>(int)($session['created']??0)>=$min));
+            usort($data,static fn(array $a,array $b):int=>$b['created']<=>$a['created']);
+            if(!empty($params['starting_after'])){
+                $index=array_search((string)$params['starting_after'],array_column($data,'id'),true);
+                if($index===false)throw new RuntimeException('Unknown Stripe list cursor');
+                $data=array_slice($data,$index+1);
+            }
+            $limit=(int)($params['limit']??10);
+            return ['object'=>'list','data'=>array_slice($data,0,$limit),'has_more'=>count($data)>$limit];
+        }
         if($path==='/v1/checkout/sessions'&&$method==='POST'){
-            if(isset($this->keys[$key]))return$this->sessions[$this->keys[$key]];$id='cs_test_'.bin2hex(random_bytes(10));$total=0;foreach($params['line_items'] as $l)$total+=$l['price_data']['unit_amount']*$l['quantity'];$session=['id'=>$id,'object'=>'checkout.session','livemode'=>false,'mode'=>'payment','status'=>'open','payment_status'=>'unpaid','amount_total'=>$total,'currency'=>'usd','metadata'=>$params['metadata'],'client_reference_id'=>$params['client_reference_id'],'payment_intent'=>null,'url'=>'https://checkout.stripe.com/c/pay/'.$id];$this->sessions[$id]=$session;$this->keys[$key]=$id;if($this->loseCreationResponse){$this->loseCreationResponse=false;throw new RuntimeException('Synthetic connection lost after creation');}return$session;
+            if($this->forceOriginalKeyConflict&&str_ends_with((string)$key,'-checkout'))throw new RuntimeException('stripe_idempotency_conflict');
+            if(isset($this->keys[$key]))return$this->sessions[$this->keys[$key]];$id='cs_test_'.bin2hex(random_bytes(10));$total=0;foreach($params['line_items'] as $l)$total+=$l['price_data']['unit_amount']*$l['quantity'];$session=['id'=>$id,'created'=>time(),'object'=>'checkout.session','livemode'=>false,'mode'=>'payment','status'=>'open','payment_status'=>'unpaid','amount_total'=>$total,'currency'=>'usd','metadata'=>$params['metadata'],'client_reference_id'=>$params['client_reference_id'],'payment_intent'=>null,'url'=>'https://checkout.stripe.com/c/pay/'.$id];$this->sessions[$id]=$session;$this->keys[$key]=$id;if($this->loseCreationResponse){$this->loseCreationResponse=false;throw new RuntimeException('Synthetic connection lost after creation');}return$session;
         }
         if(preg_match('~^/v1/checkout/sessions/(cs_test_[a-zA-Z0-9_]+)(/expire)?$~',$path,$m)){if(!empty($m[2]))$this->sessions[$m[1]]['status']='expired';return$this->sessions[$m[1]];}
         if($path==='/v1/refunds'&&$method==='GET')return['data'=>array_values($this->returns[$params['payment_intent']]??[]),'has_more'=>false];
