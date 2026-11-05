@@ -613,13 +613,17 @@ final class CommerceExperience
                 $code=(string)($attempt['last_error_code']??'');
                 $advice=match($code){
                     'stripe_authentication_failed','stripe_access_denied'=>'Stripe rejected the configured account credentials or permissions. An administrator should check Stripe test configuration.',
-                    'stripe_invalid_request'=>'Stripe rejected the checkout request. An administrator should inspect sanitized server logs before retrying.',
+                    'stripe_invalid_request'=>'Stripe rejected the checkout request. Check the Stripe API request log for the rejected parameter before retrying.',
                     'stripe_idempotency_conflict'=>'Stripe reported an idempotency conflict. Do not create another payment attempt; reconcile this order.',
                     'stripe_transport_failure','stripe_rate_limited','stripe_provider_unavailable','stripe_http_failure'=>'Stripe communication failed or was temporarily unavailable. Retry reconciliation on this order.',
                     'stripe_checkout_validation_failed'=>'Stripe responded, but the session did not pass CTSMD verification. An administrator must investigate before proceeding.',
                     'creation_retry_window_expired'=>'The safe creation retry window expired. Manual provider reconciliation is required.',
                     default=>null
                 };
+                if(str_starts_with($code,'stripe_invalid_request:')){
+                    $param=substr($code,strlen('stripe_invalid_request:'));
+                    $advice='Stripe rejected request parameter "'.$param.'". Check the Stripe API log and keep this order for reconciliation.';
+                }
                 if($advice!==null)echo '<p role="status"><strong>Checkout diagnostic:</strong> '.self::e($advice).' <small>('.self::e($code).')</small></p>';
             }
             self::form('refresh_payment',['id'=>$id]);echo '<button>Check authoritative payment confirmation</button></form>';if(CommerceStripeService::attempt(self::$db,self::$org,$id)&&$o['state']!=='refund_pending'){self::form('stripe_cancel',['id'=>$id]);echo '<button>Request safe cancellation at Stripe</button></form>';}
