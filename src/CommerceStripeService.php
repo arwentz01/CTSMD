@@ -50,7 +50,32 @@ final class CommerceStripeService
                 });
             }
             if(!empty($a['remote_session_id']))return;
-            $s=$provider->createCheckout(json_decode((string)$a['request_json'],true,64,JSON_THROW_ON_ERROR),self::key($org,$a,'checkout'));
+            $params=json_decode((string)$a['request_json'],true,64,JSON_THROW_ON_ERROR);
+            try{
+                $s=$provider->createCheckout($params,self::key($org,$a,'checkout'));
+            }catch(RuntimeException $error){
+                if($error->getMessage()!=='stripe_idempotency_conflict')throw $error;
+                // Stripe has associated the original key with different request
+                // parameters. Do not keep rewriting/retrying that key.
+                $matches=$provider->findCheckoutSessions((string)$o['public_reference'],strtotime($a['provider_created_at_utc'].' UTC'));
+                if(count($matches)>1)throw new RuntimeException('Multiple Stripe Sessions match the order; manual reconciliation is required.');
+                if(count($matches)===1){
+                    $sessionId=(string)($matches[0]['id']??'');
+                    CommerceStripeProvider::id($sessionId,'cs_test_');
+                    $s=$provider->checkout($sessionId);
+                    if(!self::baseValid($o,$a,$s))throw new RuntimeException('Discovered Stripe Session does not match the order; manual reconciliation is required.');
+                }else{
+                    if(array_key_exists('payment_method_types',$params))
+                        throw new RuntimeException('Saved Stripe request still contains unsupported payment method types.');
+                    if((int)($params['expires_at']??0)<=time()+120)
+                        throw new RuntimeException('Saved Stripe checkout has expired; manual reconciliation is required.');
+                    // After an exhaustive Stripe search finds no Session, use a
+                    // *stable* versioned key tied to this one existing order.
+                    // Retries of this recovery path use the exact same parameters
+                    // and recovery key; no replacement order is created.
+                    $s=$provider->createCheckout($params,self::key($org,$a,'checkout').'-compatible-v2');
+                }
+            }
             self::bind($db,$org,$o,$a,$s);
         }catch(Throwable $e){
             // Keep the original payment attempt and seats. Classify the failure for
