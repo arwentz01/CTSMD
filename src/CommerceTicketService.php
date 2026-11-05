@@ -9,6 +9,42 @@ final class CommerceTicketService
         CommerceAccess::demand($db,$u,$org,'checkin');CommerceStore::organization($db,$org,true);$token=self::token($scan);
         return CommerceStore::tx($db,function()use($db,$u,$org,$performance,$token){$p=CommerceStore::row($db,'performances',$org,$performance,true);ProductionLifecycleGuard::assertWritable($db,(int)$p['production_id'],true);if($p['schedule_status']!=='scheduled')throw new RuntimeException('This performance is not scheduled. No admission was recorded.');if(!$p['checkin_enabled'])throw new RuntimeException('Check-in is closed for this performance.');$q=$db->prepare('SELECT * FROM commerce_tickets WHERE organization_id=? AND token=? FOR UPDATE');$q->execute([$org,$token]);$t=$q->fetch();if(!$t)throw new RuntimeException('Ticket unavailable for this organization.');if((int)$t['performance_id']!==$performance)throw new RuntimeException('Wrong performance. This ticket was not admitted.');$o=CommerceStore::row($db,'orders',$org,(int)$t['order_id']);if($t['state']!=='valid'||$o['state']!=='paid')throw new RuntimeException('Ticket is revoked, refunded or unpaid. Do not admit.');if($t['checked_in_at'])throw new RuntimeException('Already checked in at '.$t['checked_in_at'].'. No second admission recorded.');$q=$db->prepare('UPDATE commerce_tickets SET checked_in_at=NOW(),checked_in_by=? WHERE organization_id=? AND id=? AND checked_in_at IS NULL AND state=\'valid\'');$q->execute([$u['id'],$org,$t['id']]);if($q->rowCount()!==1)throw new RuntimeException('Already admitted. No second admission recorded.');CommerceStore::audit($db,$org,(int)$u['id'],'commerce.ticket_checked_in','ticket',(int)$t['id'],['performance'=>$performance]);$line=$db->prepare('SELECT description,category FROM commerce_order_lines WHERE organization_id=? AND order_id=? AND seat_key=?');$line->execute([$org,$t['order_id'],$t['seat_key']]);return$line->fetch()+['ticket_id'=>(int)$t['id'],'status'=>'Admitted'];});
     }
+    /** Admit only the selected tickets in a paid order; unselected tickets remain valid for later arrivals. */
+    public static function checkinSelected(PDO $db,array $u,int $org,int $performance,string $reference,array $ticketIds):int
+    {
+        CommerceAccess::demand($db,$u,$org,'checkin');
+        CommerceStore::organization($db,$org,true);
+        if(!preg_match('/^[a-f0-9]{32}$/',$reference))throw new RuntimeException('Enter a valid order reference.');
+        if(!$ticketIds||count($ticketIds)>100)throw new RuntimeException('Select at least one ticket to admit (100 maximum).');
+        $ids=[];
+        foreach($ticketIds as $value){
+            if(!is_scalar($value)||!preg_match('/^[1-9][0-9]*$/',(string)$value))throw new RuntimeException('One selected ticket is invalid.');
+            $ids[]=(int)$value;
+        }
+        if(count(array_unique($ids))!==count($ids))throw new RuntimeException('A ticket was selected more than once.');
+        sort($ids,SORT_NUMERIC);
+        return CommerceStore::tx($db,function()use($db,$u,$org,$performance,$reference,$ids):int{
+            $p=CommerceStore::row($db,'performances',$org,$performance,true);
+            ProductionLifecycleGuard::assertWritable($db,(int)$p['production_id'],true);
+            if($p['schedule_status']!=='scheduled'||!$p['checkin_enabled'])
+                throw new RuntimeException('Check-in is not open for this performance.');
+            $order=$db->prepare("SELECT id,state FROM commerce_orders WHERE organization_id=? AND performance_id=? AND public_reference=? FOR UPDATE");
+            $order->execute([$org,$performance,$reference]);$o=$order->fetch();
+            if(!$o||$o['state']!=='paid')throw new RuntimeException('This order is not paid or is not valid for this performance.');
+            $read=$db->prepare('SELECT id,state,checked_in_at FROM commerce_tickets WHERE organization_id=? AND performance_id=? AND order_id=? AND id=? FOR UPDATE');
+            $write=$db->prepare("UPDATE commerce_tickets SET checked_in_at=NOW(),checked_in_by=? WHERE organization_id=? AND performance_id=? AND order_id=? AND id=? AND state='valid' AND checked_in_at IS NULL");
+            foreach($ids as $id){
+                $read->execute([$org,$performance,(int)$o['id'],$id]);$ticket=$read->fetch();
+                if(!$ticket||$ticket['state']!=='valid'||$ticket['checked_in_at'])
+                    throw new RuntimeException('One selected ticket is already admitted, invalid, or belongs to another order. Nothing was admitted. Refresh and try again.');
+                $write->execute([(int)$u['id'],$org,$performance,(int)$o['id'],$id]);
+                if($write->rowCount()!==1)throw new RuntimeException('Ticket check-in changed during admission. Nothing was admitted.');
+            }
+            CommerceStore::audit($db,$org,(int)$u['id'],'commerce.tickets_partially_checked_in','order',(int)$o['id'],['performance'=>$performance,'ticket_ids'=>$ids,'admitted'=>count($ids)]);
+            return count($ids);
+        });
+    }
+
     public static function reverse(PDO $db,array $u,int $org,int $ticket,string $reason):void
     {
         CommerceAccess::demand($db,$u,$org,'reverse');self::reason($reason);$t=CommerceStore::row($db,'tickets',$org,$ticket);
@@ -23,7 +59,7 @@ final class CommerceTicketService
     /** Door staff see admission information, not purchaser contacts or financial amounts. */
     public static function lookup(PDO $db,array $u,int $org,int $performance,string $reference):array
     {
-        CommerceAccess::demand($db,$u,$org,'checkin');CommerceStore::row($db,'performances',$org,$performance);if(!preg_match('/^[a-f0-9]{32}$/',$reference))throw new RuntimeException('Enter the full sandbox order reference.');$q=$db->prepare('SELECT t.id,t.token,t.state,t.checked_in_at,l.description,l.category FROM commerce_orders o JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.order_id=t.order_id AND l.seat_key=t.seat_key AND l.organization_id=t.organization_id WHERE o.organization_id=? AND o.performance_id=? AND o.public_reference=?');$q->execute([$org,$performance,$reference]);$rows=$q->fetchAll();CommerceStore::audit($db,$org,(int)$u['id'],'commerce.door_lookup','performance',$performance,['found'=>(bool)$rows]);return$rows;
+        CommerceAccess::demand($db,$u,$org,'checkin');CommerceStore::row($db,'performances',$org,$performance);if(!preg_match('/^[a-f0-9]{32}$/',$reference))throw new RuntimeException('Enter the full sandbox order reference.');$q=$db->prepare('SELECT t.id,t.token,t.state,t.checked_in_at,o.state order_state,l.description,l.category FROM commerce_orders o JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.order_id=t.order_id AND l.seat_key=t.seat_key AND l.organization_id=t.organization_id WHERE o.organization_id=? AND o.performance_id=? AND o.public_reference=?');$q->execute([$org,$performance,$reference]);$rows=$q->fetchAll();CommerceStore::audit($db,$org,(int)$u['id'],'commerce.door_lookup','performance',$performance,['found'=>(bool)$rows]);return$rows;
     }
     /** Door-only purchaser-name search; no emails, amounts or cross-performance results. */
     public static function searchDoorOrdersByName(PDO $db,array $u,int $org,int $performance,string $name):array
