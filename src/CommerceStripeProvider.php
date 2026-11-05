@@ -50,6 +50,30 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
         }
         try{$value=json_decode($body,true,64,JSON_THROW_ON_ERROR);}catch(JsonException){throw new RuntimeException('Stripe returned an unreadable result. Inventory remains protected.');}if(!is_array($value))throw new RuntimeException('Invalid Stripe response.');return$value;
     }
+    /** Discover existing Sessions for one durable attempt before recovering a conflicted key. */
+    public function findCheckoutSessions(string $orderReference,int $createdAt):array
+    {
+        if(!preg_match('/^[a-f0-9]{32}$/',$orderReference))throw new RuntimeException('Invalid order reference for Stripe recovery.');
+        if($createdAt<time()-82800||$createdAt>time()+60)throw new RuntimeException('Stripe recovery window requires manual review.');
+        $found=[];$after=null;
+        // An incomplete scan must fail closed. Never assume no session exists.
+        for($page=0;$page<30;$page++){
+            $params=['created'=>['gte'=>$createdAt-120],'limit'=>100];
+            if($after!==null)$params['starting_after']=$after;
+            $response=$this->request('GET','/v1/checkout/sessions',$params);
+            if(($response['object']??'')!=='list'||!is_array($response['data']??null)||!is_bool($response['has_more']??null))
+                throw new RuntimeException('Stripe session discovery was incomplete.');
+            foreach($response['data'] as $session){
+                if(!is_array($session)||!is_string($session['id']??null))throw new RuntimeException('Invalid Stripe session search result.');
+                if(($session['client_reference_id']??null)===$orderReference)$found[]=$session;
+            }
+            if(!$response['has_more'])return $found;
+            $last=end($response['data']);
+            if(!$last||!is_string($last['id']??null))throw new RuntimeException('Stripe session discovery could not continue.');
+            $after=$last['id'];
+        }
+        throw new RuntimeException('Too many Stripe sessions to verify safe checkout recovery.');
+    }
     public function createCheckout(array $parameters,string $key):array{return$this->request('POST','/v1/checkout/sessions',$parameters,$key);}
     public function checkout(string $id):array
     {self::id($id,'cs_test_');return$this->request('GET','/v1/checkout/sessions/'.$id,['expand'=>['payment_intent.latest_charge']]);}
