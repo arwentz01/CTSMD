@@ -41,3 +41,59 @@ body.public-registration{background:var(--ux-ground,#f7f4f1);color:var(--ux-ink,
 .public-registration .registration-page-footer a{color:inherit}
 @media(max-width:850px){.public-registration .registration-layout{grid-template-columns:1fr}.public-registration .registration-info{position:static}.public-registration .public-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.public-registration .stage-header{align-items:flex-start;gap:12px;flex-direction:column}.public-registration .stage-header nav{gap:10px 16px}.public-registration .field-pair{grid-template-columns:1fr}.public-registration .registration-form-card{padding:20px 16px}}
+
+
+/* Editorial registration layout v2: same stage-home shell, masthead and footer as
+   / and /productions. Only registration content is customized here. */
+.public-registration .registration-home{--stage-primary:var(--organization-primary,var(--ux-wine));--stage-accent:var(--organization-accent,var(--ux-gold));min-height:100dvh}
+.public-registration .registration-home .stage-header{min-height:100px;padding:24px 0;background:transparent;border-bottom:1px solid var(--ux-control)}
+.public-registration .registration-home .stage-brand{color:var(--ux-ink)}
+.public-registration .registration-home .stage-header nav a{font-weight:500;color:var(--ux-ink);min-height:44px}
+.public-registration .registration-home .stage-header nav a[aria-current="page"]{color:var(--stage-primary);text-decoration:underline;text-underline-offset:7px;font-weight:650}
+.public-registration .registration-home .stage-header nav .stage-signin{border:1px solid var(--ux-control);border-radius:4px}
+.public-registration #registration-content{min-width:0}
+.public-registration .registration-index{padding:0}
+.public-registration .registration-intro{padding:clamp(44px,7vw,90px) 0 clamp(40px,5vw,68px);max-width:940px}
+.public-registration .registration-intro .stage-eyebrow{margin-bottom:17px!important}
+.public-registration .registration-intro h1{max-width:15ch;margin:0 0 23px;font-family:var(--font-serif,Georgia,serif);font-weight:400;font-size:clamp(3.1rem,6vw,6.2rem);line-height:1.02;letter-spacing:-.055em;color:var(--ux-ink)}
+.public-registration .registration-intro h1 em{color:var(--stage-primary);font-weight:400}
+.public-registration .registration-intro-lead{font-size:clamp(1.1rem,2vw,1.5rem)!important;line-height:1.5!important;color:var(--ux-ink)!important;max-width:640px;margin:0 0 14px}
+.public-registration .registration-intro-note{font-size:.94rem!important;color:var(--ux-muted)!important;line-height:1.6!important;max-width:640px;margin:0}
+.public-registration .registration-opportunities{padding:38px 0 68px;border-top:1px solid var(--ux-line)}
+.public-registration .registration-opportunities .lobby-heading{margin-bottom:22px}
+.public-registration .registration-opportunities .lobby-heading h2{font:400 clamp(2rem,3.5vw,3rem)/1.12 var(--font-serif,Georgia,serif);letter-spacing:-.035em;margin:0}
+.public-registration .registration-open-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,285px),1fr));gap:18px}
+.public-registration .registration-listing{background:var(--ux-paper);border:1px solid var(--ux-line);border-radius:0;padding:26px;box-shadow:none}
+.public-registration .registration-listing-type{display:block;margin-bottom:14px;font-size:.7rem;letter-spacing:.13em;font-weight:800;color:var(--stage-primary)}
+.public-registration .registration-listing h3{font:400 clamp(1.45rem,2.3vw,1.8rem)/1.2 var(--font-serif,Georgia,serif);margin:0 0 14px;letter-spacing:-.02em}
+.public-registration .registration-listing h3 a{text-decoration:none}
+.public-registration .registration-listing h3 a:hover{text-decoration:underline}
+.public-registration .registration-listing p{min-height:0;margin:8px 0;font-size:.91rem;line-height:1.55;color:var(--ux-muted)}
+.public-registration .registration-listing .registration-listing-show{color:var(--ux-ink);font-weight:650}
+.public-registration .registration-listing .registration-listing-date{font-size:.8rem;color:var(--ux-muted)}
+.public-registration .registration-listing .registration-listing-action{display:inline-flex;align-items:center;gap:12px;margin-top:18px;font-weight:750;color:var(--stage-primary);text-decoration:underline;text-underline-offset:4px}
+.public-registration .registration-empty{background:var(--ux-paper);border:1px solid var(--ux-line);padding:30px}
+.public-registration .registration-empty h3{font:400 1.65rem/1.2 var(--font-serif,Georgia,serif);margin:0 0 10px}
+.public-registration .registration-empty p{max-width:580px;color:var(--ux-muted);line-height:1.6;margin:0}
+.public-registration .registration-layout{padding:clamp(32px,5vw,64px) 0 76px;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(28px,5vw,76px)}
+.public-registration .registration-info>small,.public-registration .registration-success>small,.public-registration .registration-form-card header small{font-size:.73rem;color:var(--stage-primary);letter-spacing:.14em;font-weight:800}
+.public-registration .registration-info h1,.public-registration .registration-success h1{font:400 clamp(2.6rem,4.5vw,4.8rem)/1.07 var(--font-serif,Georgia,serif);letter-spacing:-.045em;color:var(--ux-ink);margin:12px 0 20px}
+.public-registration .registration-info>p{font-size:1rem;line-height:1.7;color:var(--ux-muted)}
+.public-registration .registration-info dl{border-color:var(--ux-line);margin:25px 0}
+.public-registration .registration-details{line-height:1.7;color:var(--ux-ink)}
+.public-registration .registration-form-card{background:var(--ux-paper);border:1px solid var(--ux-line);border-radius:4px;box-shadow:none;padding:clamp(22px,3vw,34px)}
+.public-registration .registration-form-card>p:first-child{margin:0 0 16px;font-size:.8rem;color:var(--ux-muted);text-align:right}
+.public-registration .registration-form-card header h2{font:400 2rem/1.2 var(--font-serif,Georgia,serif);margin:7px 0 9px;letter-spacing:-.02em}
+.public-registration .registration-form-card header p{margin:0;color:var(--ux-muted);line-height:1.5}
+.public-registration .registration-form-card form{gap:17px;margin-top:25px}
+.public-registration .registration-form-card fieldset{border-radius:4px}
+.public-registration .registration-form-card label{font-size:.875rem}
+.public-registration .registration-form-card :is(input,select,textarea){border:1px solid var(--ux-control);border-radius:4px;background:var(--ux-paper);color:var(--ux-ink);font-size:16px}
+.public-registration .registration-form-card button{border:1px solid var(--stage-primary);border-radius:4px;background:var(--stage-primary);color:var(--organization-on-primary,#fff);padding:13px 18px;font-weight:750}
+.public-registration .registration-form-card button:hover{filter:brightness(.9)}
+.public-registration .registration-form-card :is(input,select,textarea,button):focus-visible,.public-registration .registration-home a:focus-visible{outline:3px solid var(--ux-focus);outline-offset:3px}
+.public-registration .registration-success{padding:clamp(70px,10vw,130px) 18px;max-width:760px}
+.public-registration .registration-success>a{color:var(--stage-primary)}
+.public-registration .registration-home .stage-footer{border-top:1px solid var(--ux-control);margin-top:auto;padding:28px 0 40px}
+@media(max-width:860px){.public-registration .registration-layout{grid-template-columns:1fr}.public-registration .registration-info{position:static}.public-registration .registration-info h1{max-width:22ch}}
+@media(max-width:680px){.public-registration .registration-home .stage-header{flex-wrap:wrap;gap:16px;padding:20px 0}.public-registration .registration-home .stage-header nav{width:100%;gap:8px 18px}.public-registration .registration-intro{padding:42px 0 36px}.public-registration .registration-intro h1{font-size:clamp(2.8rem,10vw,4.2rem)}.public-registration .registration-opportunities{padding:28px 0 50px}.public-registration .registration-form-card{padding:22px 18px}.public-registration .field-pair{grid-template-columns:1fr}}
