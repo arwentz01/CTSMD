@@ -93,7 +93,7 @@ final class RegistrationOperationsExperience
         if($productionId<1)return null;
         $stmt=$db->prepare("SELECT id,title,season,is_active,lifecycle_stage,participant_category,student_minimum_age,student_maximum_age,participant_eligibility_date,audition_starts_at,audition_ends_at FROM productions WHERE id=:id LIMIT 1");
         $stmt->execute(['id'=>$productionId]);$p=$stmt->fetch();
-        if(!$p||(int)$p['is_active']!==1||in_array((string)$p['lifecycle_stage'],['completed','archived'],true))return null;
+        if(!$p||in_array((string)$p['lifecycle_stage'],['completed','archived'],true))return null; // Planning/upcoming productions can have auditions before activation.
         $title=trim((string)$p['title']).' Auditions';
         $slug=trim(preg_replace('/[^a-z0-9]+/','-',strtolower((string)$p['title']))??'','-').'-auditions-'.$productionId;
         $starts=$p['audition_starts_at']?:null;$ends=$p['audition_ends_at']?:null;
