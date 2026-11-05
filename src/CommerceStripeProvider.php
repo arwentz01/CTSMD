@@ -43,7 +43,7 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
             // Do not retain request bodies, arbitrary messages or account identifiers.
             if($category==='stripe_invalid_request'){
                 $param=(string)($error['error']['param']??'');
-                if($param!==''&&strlen($param)<=80&&preg_match('/^[a-zA-Z0-9_.\\[\\]-]+$/D',$param))
+                if($param!==''&&strlen($param)<=50&&preg_match('/^[a-zA-Z0-9_.\\[\\]-]+$/D',$param))
                     $category.=':'.$param;
             }
             throw new RuntimeException($category);
