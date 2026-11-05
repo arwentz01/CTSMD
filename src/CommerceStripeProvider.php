@@ -39,6 +39,13 @@ final class CommerceStripeProvider implements CommerceHostedPaymentProvider
                 $status===400&&$type==='invalid_request_error'=>'stripe_invalid_request',
                 default=>'stripe_http_failure'
             };
+            // Preserve only Stripe's safe parameter name for actionable checkout diagnostics.
+            // Do not retain request bodies, arbitrary messages or account identifiers.
+            if($category==='stripe_invalid_request'){
+                $param=(string)($error['error']['param']??'');
+                if($param!==''&&strlen($param)<=80&&preg_match('/^[a-zA-Z0-9_.\\[\\]-]+$/D',$param))
+                    $category.=':'.$param;
+            }
             throw new RuntimeException($category);
         }
         try{$value=json_decode($body,true,64,JSON_THROW_ON_ERROR);}catch(JsonException){throw new RuntimeException('Stripe returned an unreadable result. Inventory remains protected.');}if(!is_array($value))throw new RuntimeException('Invalid Stripe response.');return$value;
