@@ -58,7 +58,7 @@ final class CommerceStripeService
             // the same opaque error. No keys, payloads or card data enter logs.
             $safeCodes=['stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_idempotency_conflict','stripe_http_failure'];
             $message=$e instanceof RuntimeException?$e->getMessage():'';
-            $validParameterError=preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,80}$/D',$message)===1;
+            $validParameterError=preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,50}$/D',$message)===1;
             $code=(in_array($message,$safeCodes,true)||$validParameterError)?$message:'stripe_checkout_validation_failed';
             error_log('[CTSMD Stripe] Checkout create '.$code.' (org='.(int)$org.', order='.(int)$o['id'].', attempt='.(int)$a['id'].')');
             self::uncertain($db,$org,$o,$a,$code);
@@ -105,7 +105,7 @@ final class CommerceStripeService
             // is known. The staff UI can identify configuration versus network issues.
             $safe=['stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_idempotency_conflict','stripe_http_failure','stripe_checkout_validation_failed','creation_retry_window_expired'];
             $previous=(string)($latest['last_error_code']??'');
-            $code=(in_array($previous,$safe,true)||preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,80}$/D',$previous)===1)?$previous:'inquiry_unresolved';
+            $code=(in_array($previous,$safe,true)||preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,50}$/D',$previous)===1)?$previous:'inquiry_unresolved';
             if($code!=='creation_retry_window_expired')self::uncertain($db,$org,$o,$a,$code);
             error_log('[CTSMD Stripe] Reconcile pending: '.$code.' (org='.(int)$org.', order='.(int)$order.')');
             return CommerceStore::row($db,'orders',$org,$order);}
