@@ -23,7 +23,7 @@ body.public-registration{background:var(--ux-ground,#f7f4f1);color:var(--ux-ink,
 .public-registration .registration-info dt{color:var(--ux-muted);font-weight:650;letter-spacing:.055em}
 .public-registration .registration-info dd{color:var(--ux-ink);font-weight:600}
 .public-registration .registration-form-card{padding:clamp(20px,3vw,32px)}
-.public-registration .registration-form-card header h2{font:700 26px/1.25 inherit;letter-spacing:-.02em}
+.public-registration .registration-form-card header h2{font-family:inherit;font-size:26px;font-weight:700;line-height:1.25;letter-spacing:-.02em}
 .public-registration .registration-form-card header p{font-size:14px;color:var(--ux-muted)}
 .public-registration .registration-form-card form{gap:16px;margin-top:22px}
 .public-registration .registration-form-card label{font-size:13px;font-weight:650;gap:7px;color:var(--ux-ink)}
