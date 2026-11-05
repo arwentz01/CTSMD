@@ -12,11 +12,20 @@ final class RegistrationService
 {
     private const CONNECT_PUBLIC_TYPES = ['audition','event','interest'];
 
+    private static function linkedAuditionDates(array &$row):void
+    {
+        if(($row['opportunity_type']??'')!=='audition'||empty($row['production_id']))return;
+        // The production timeline is the sole source of audition dates, including
+        // after the show dates are edited. Standalone registrations are unchanged.
+        $row['starts_at']=$row['production_audition_starts_at']??null;
+        $row['ends_at']=$row['production_audition_ends_at']??null;
+    }
+
     public static function publicOpportunities(PDO $db): array
     {
-        $stmt=$db->query("SELECT ro.*,p.title production_title,p.season FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.status='published' AND ro.opportunity_type IN ('audition','event','interest') AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW()) ORDER BY ro.starts_at IS NULL,ro.starts_at,ro.title");
+        $stmt=$db->query("SELECT ro.*,p.title production_title,p.season,p.audition_starts_at production_audition_starts_at,p.audition_ends_at production_audition_ends_at FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.status='published' AND ro.opportunity_type IN ('audition','event','interest') AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW()) ORDER BY ro.starts_at IS NULL,ro.starts_at,ro.title");
         $rows=$stmt->fetchAll();
-        foreach($rows as &$row){$row['registration_count']=self::activeCount($db,(int)$row['id']);$row['is_full']=$row['capacity']!==null && $row['registration_count'] >= (int)$row['capacity'];}
+        foreach($rows as &$row){self::linkedAuditionDates($row);$row['registration_count']=self::activeCount($db,(int)$row['id']);$row['is_full']=$row['capacity']!==null && $row['registration_count'] >= (int)$row['capacity'];}
         unset($row);
         return $rows;
     }
@@ -24,9 +33,10 @@ final class RegistrationService
     public static function opportunityBySlug(PDO $db,string $slug,bool $publicOnly=true): ?array
     {
         $slug=trim(strtolower($slug));if($slug==='')return null;
-        $sql="SELECT ro.*,p.title production_title,p.season FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.slug=:slug";
+        $sql="SELECT ro.*,p.title production_title,p.season,p.audition_starts_at production_audition_starts_at,p.audition_ends_at production_audition_ends_at FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id WHERE ro.slug=:slug";
         if($publicOnly)$sql.=" AND ro.status='published' AND ro.opportunity_type IN ('audition','event','interest') AND (ro.registration_opens_at IS NULL OR ro.registration_opens_at<=NOW()) AND (ro.registration_closes_at IS NULL OR ro.registration_closes_at>=NOW())";
         $sql.=' LIMIT 1';$stmt=$db->prepare($sql);$stmt->execute(['slug'=>$slug]);$row=$stmt->fetch();if(!$row)return null;
+        self::linkedAuditionDates($row);
         $row['registration_count']=self::activeCount($db,(int)$row['id']);$row['is_full']=$row['capacity']!==null && $row['registration_count'] >= (int)$row['capacity'];return $row;
     }
 
@@ -131,7 +141,10 @@ final class RegistrationService
 
     public static function allOpportunities(PDO $db): array
     {
-        return $db->query("SELECT ro.*,p.title production_title,(SELECT COUNT(*) FROM registration_submissions rs WHERE rs.opportunity_id=ro.id AND rs.status IN ('submitted','accepted')) active_registrations,(SELECT COUNT(*) FROM registration_submissions rs WHERE rs.opportunity_id=ro.id AND rs.status='waitlisted') waitlisted_registrations FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id ORDER BY FIELD(ro.status,'published','draft','closed','archived'),ro.starts_at IS NULL,ro.starts_at,ro.title")->fetchAll();
+        $rows=$db->query("SELECT ro.*,p.title production_title,p.audition_starts_at production_audition_starts_at,p.audition_ends_at production_audition_ends_at,(SELECT COUNT(*) FROM registration_submissions rs WHERE rs.opportunity_id=ro.id AND rs.status IN ('submitted','accepted')) active_registrations,(SELECT COUNT(*) FROM registration_submissions rs WHERE rs.opportunity_id=ro.id AND rs.status='waitlisted') waitlisted_registrations FROM registration_opportunities ro LEFT JOIN productions p ON p.id=ro.production_id ORDER BY FIELD(ro.status,'published','draft','closed','archived'),ro.starts_at IS NULL,ro.starts_at,ro.title")->fetchAll();
+        foreach($rows as &$row)self::linkedAuditionDates($row);
+        unset($row);
+        return $rows;
     }
 
     public static function submissions(PDO $db,int $opportunityId): array
