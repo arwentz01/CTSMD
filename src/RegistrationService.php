@@ -43,7 +43,7 @@ final class RegistrationService
     public static function submit(PDO $db,array $opportunity,array $input,string $basePath): array
     {
         if(!in_array((string)($opportunity['opportunity_type']??''),self::CONNECT_PUBLIC_TYPES,true))throw new RuntimeException('This opportunity is not registered through CTSMD Connect.');
-        $first=trim((string)($input['participant_first_name']??''));$last=trim((string)($input['participant_last_name']??''));$age=(string)($input['participant_age_group']??'');$email=strtolower(trim((string)($input['registrant_email']??'')));$phone=trim((string)($input['registrant_phone']??''));$guardianName=trim((string)($input['guardian_name']??''));$guardianEmail=strtolower(trim((string)($input['guardian_email']??'')));$guardianPhone=trim((string)($input['guardian_phone']??''));$notes=trim((string)($input['notes']??''));$allergies=trim((string)($input['allergy_information']??''));$accommodations=trim((string)($input['accommodation_information']??''));
+        $first=trim((string)($input['participant_first_name']??''));$last=trim((string)($input['participant_last_name']??''));$age=(string)($input['participant_age_group']??'');$email=strtolower(trim((string)($input['registrant_email']??'')));$phone=trim((string)($input['registrant_phone']??''));$guardianName=trim((string)($input['guardian_name']??''));$guardianEmail=strtolower(trim((string)($input['guardian_email']??'')));$guardianPhone=trim((string)($input['guardian_phone']??''));$notes=trim((string)($input['notes']??''));$allergies=trim((string)($input['allergy_information']??''));$accommodations=trim((string)($input['accommodation_information']??''));$auditionVideoUrl=trim((string)($input['audition_video_url']??''));
         $declaredAge=null;$ageEvidence='guest_declared';$linkedDob=null;
         $linkedStudentId=0;$guardianId=Auth::userId()?:0;
         $adultSelfId=0;
@@ -85,6 +85,16 @@ final class RegistrationService
         if(mb_strlen($phone)>40||mb_strlen($guardianPhone)>40)throw new RuntimeException('Keep phone numbers under 40 characters.');
         if(mb_strlen($notes)>2000)throw new RuntimeException('Keep notes under 2,000 characters.');
         if(mb_strlen($allergies)>2000||mb_strlen($accommodations)>2000)throw new RuntimeException('Limit allergy and accommodation responses to 2,000 characters each.');
+        // Accept links only when explicitly enabled on the audition.
+        // No server fetch, preview generation, or embedding of user-supplied URLs.
+        if($auditionVideoUrl!==''){
+            if(($opportunity['opportunity_type']??'')!=='audition'||empty($opportunity['allow_audition_video_links']))
+                throw new RuntimeException('This audition is not accepting video links.');
+            if(mb_strlen($auditionVideoUrl)>2048||!filter_var($auditionVideoUrl,FILTER_VALIDATE_URL)||strtolower((string)parse_url($auditionVideoUrl,PHP_URL_SCHEME))!=='https'||!parse_url($auditionVideoUrl,PHP_URL_HOST)||preg_match('/[\x00-\x1f\x7f]/',$auditionVideoUrl))
+                throw new RuntimeException('Enter a valid HTTPS link to your audition video (2,048 characters maximum).');
+            if(parse_url($auditionVideoUrl,PHP_URL_USER)!==null||parse_url($auditionVideoUrl,PHP_URL_PASS)!==null)
+                throw new RuntimeException('Please use a direct HTTPS video link without login details in the URL.');
+        }
         if($age!=='adult'){
             if($guardianName===''||mb_strlen($guardianName)>190)throw new RuntimeException('A parent or guardian name is required for participants under 18.');
             if(!filter_var($guardianEmail,FILTER_VALIDATE_EMAIL))throw new RuntimeException('A valid parent or guardian email is required for participants under 18.');
@@ -93,6 +103,8 @@ final class RegistrationService
         $db->beginTransaction();
         try{
             $lock=$db->prepare("SELECT * FROM registration_opportunities WHERE id=:id AND status='published' AND opportunity_type IN ('audition','event','interest') AND (registration_opens_at IS NULL OR registration_opens_at<=NOW()) AND (registration_closes_at IS NULL OR registration_closes_at>=NOW()) FOR UPDATE");$lock->execute(['id'=>(int)$opportunity['id']]);$current=$lock->fetch();if(!$current)throw new RuntimeException('Registration for this opportunity is no longer open in CTSMD Connect.');
+            if($auditionVideoUrl!==''&&($current['opportunity_type']!=='audition'||empty($current['allow_audition_video_links'])))
+                throw new RuntimeException('Audition video links are no longer being accepted for this opportunity.');
             // Recheck limits and date while the opportunity row is locked, preventing stale-form bypass.
             if(!empty($current['production_id'])){
                 $subject=$adultSelfId?:$linkedStudentId;
@@ -110,8 +122,8 @@ final class RegistrationService
             if($assessment['status']==='needs_review')throw new RuntimeException('A birth date is required to confirm eligibility for this Student account.');
             if($linkedStudentId>0&&$linkedDob)$age=PersonEligibility::group($linkedDob,PersonEligibility::cutoff($current)?:date('Y-m-d'));
             $count=self::activeCount($db,(int)$current['id']);$status=$current['capacity']!==null&&$count>=(int)$current['capacity']?'waitlisted':'submitted';
-            $stmt=$db->prepare("INSERT INTO registration_submissions (opportunity_id,participant_first_name,participant_last_name,participant_age_group,participant_declared_age,age_evidence,registrant_email,registrant_phone,guardian_name,guardian_email,guardian_phone,notes,allergy_information,accommodation_information,status,manage_token_hash) VALUES (:opportunity,:first,:last,:age,:declared_age,:age_evidence,:email,:phone,:guardian_name,:guardian_email,:guardian_phone,:notes,:allergies,:accommodations,:status,:token)");
-            $stmt->execute(['opportunity'=>(int)$current['id'],'first'=>$first,'last'=>$last,'age'=>$age,'declared_age'=>$declaredAge,'age_evidence'=>$ageEvidence,'email'=>$email,'phone'=>$phone!==''?$phone:null,'guardian_name'=>$guardianName,'guardian_email'=>$guardianEmail,'guardian_phone'=>$guardianPhone!==''?$guardianPhone:null,'notes'=>$notes!==''?$notes:null,'allergies'=>$allergies!==''?$allergies:null,'accommodations'=>$accommodations!==''?$accommodations:null,'status'=>$status,'token'=>$hash]);$id=(int)$db->lastInsertId();
+            $stmt=$db->prepare("INSERT INTO registration_submissions (opportunity_id,participant_first_name,participant_last_name,participant_age_group,participant_declared_age,age_evidence,registrant_email,registrant_phone,guardian_name,guardian_email,guardian_phone,notes,allergy_information,accommodation_information,audition_video_url,status,manage_token_hash) VALUES (:opportunity,:first,:last,:age,:declared_age,:age_evidence,:email,:phone,:guardian_name,:guardian_email,:guardian_phone,:notes,:allergies,:accommodations,:audition_video_url,:status,:token)");
+            $stmt->execute(['opportunity'=>(int)$current['id'],'first'=>$first,'last'=>$last,'age'=>$age,'declared_age'=>$declaredAge,'age_evidence'=>$ageEvidence,'email'=>$email,'phone'=>$phone!==''?$phone:null,'guardian_name'=>$guardianName,'guardian_email'=>$guardianEmail,'guardian_phone'=>$guardianPhone!==''?$guardianPhone:null,'notes'=>$notes!==''?$notes:null,'allergies'=>$allergies!==''?$allergies:null,'accommodations'=>$accommodations!==''?$accommodations:null,'audition_video_url'=>$auditionVideoUrl!==''?$auditionVideoUrl:null,'status'=>$status,'token'=>$hash]);$id=(int)$db->lastInsertId();
             if($adultSelfId>0)$db->prepare("INSERT INTO registration_submission_links(submission_id,participant_user_id,guardian_user_id,linked_by_user_id,link_method) VALUES(?,?,NULL,?,'existing')")->execute([$id,$adultSelfId,$adultSelfId]);
             $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (NULL,'registration.submitted','registration_submission',:id,:summary,:meta)");$audit->execute(['id'=>$id,'summary'=>'Received a public registration.','meta'=>json_encode(['opportunity_id'=>(int)$current['id'],'status'=>$status],JSON_THROW_ON_ERROR)]);
             if($linkedStudentId>0&&$current['opportunity_type']!=='audition'){
