@@ -20,7 +20,7 @@ final class CommerceStripeService
     {
         CommerceAccess::demand($db,$u,$org,'test');self::merchant($db,$org);if(getenv('COMMERCE_STRIPE_CHECKOUT_ENABLED')!=='1')throw new RuntimeException('New Stripe test checkouts are paused.');if(!CommerceAccess::local()&&!Auth::hasRole($u,'administrator'))throw new RuntimeException('Hosted Stripe test checkout is restricted to application administrators.');$o=CommerceInventoryService::own($db,$u,$org,$order,$token);CommerceInventoryService::availability($db,$u,$org,(int)$o['performance_id']);
         $a=CommerceStore::tx($db,function()use($db,$u,$org,$order,$token,$o){$p=CommerceStore::row($db,'performances',$org,(int)$o['performance_id'],true);$o=CommerceInventoryService::own($db,$u,$org,$order,$token);$q=$db->prepare('SELECT * FROM commerce_payment_attempts WHERE organization_id=? AND order_id=? FOR UPDATE');$q->execute([$org,$order]);if($a=$q->fetch()){if($a['provider']!=='stripe_test')throw new RuntimeException('This checkout already uses another provider.');return$a;}if($o['state']!=='held')throw new RuntimeException('This reservation cannot start payment.');CommercePerformancePolicy::demand($db,$org,$p);$q=$db->prepare('SELECT expires_at>NOW() FROM commerce_orders WHERE id=?');$q->execute([$order]);if(!$q->fetchColumn())throw new RuntimeException('This reservation expired.');if((int)$o['total_minor']<1)throw new RuntimeException('Zero-value orders do not require Stripe.');
-            $ref=bin2hex(random_bytes(16));$a=['provider_reference'=>$ref];$meta=self::metadata($o,$a);$origin=self::origin();$base=(string)(getenv('APP_BASE_PATH')?:'');if($base!==''&&!preg_match('~^/[a-zA-Z0-9/_-]+$~',$base))throw new RuntimeException('Invalid application base path.');$return=$origin.$base.'/tickets/checkout?'.http_build_query(['id'=>$order]);$items=[];foreach([[(int)$o['subtotal_minor']-(int)$o['discount_minor'],'Tickets after discount'],[(int)$o['tax_minor'],'Tax'],[(int)$o['fee_minor'],'Order fee']] as [$amount,$label])if($amount>0)$items[]=['price_data'=>['currency'=>strtolower($o['currency']),'unit_amount'=>$amount,'product_data'=>['name'=>$label]],'quantity'=>1];$params=['mode'=>'payment','payment_method_types'=>['card'],'line_items'=>$items,'client_reference_id'=>$o['public_reference'],'metadata'=>$meta,'payment_intent_data'=>['metadata'=>$meta,'capture_method'=>'automatic'],'customer_email'=>$o['customer_email'],'success_url'=>$return.'&stripe_return=success','cancel_url'=>$return.'&stripe_return=canceled','expires_at'=>time()+1860];
+            $ref=bin2hex(random_bytes(16));$a=['provider_reference'=>$ref];$meta=self::metadata($o,$a);$origin=self::origin();$base=(string)(getenv('APP_BASE_PATH')?:'');if($base!==''&&!preg_match('~^/[a-zA-Z0-9/_-]+$~',$base))throw new RuntimeException('Invalid application base path.');$return=$origin.$base.'/tickets/checkout?'.http_build_query(['id'=>$order]);$items=[];foreach([[(int)$o['subtotal_minor']-(int)$o['discount_minor'],'Tickets after discount'],[(int)$o['tax_minor'],'Tax'],[(int)$o['fee_minor'],'Order fee']] as [$amount,$label])if($amount>0)$items[]=['price_data'=>['currency'=>strtolower($o['currency']),'unit_amount'=>$amount,'product_data'=>['name'=>$label]],'quantity'=>1];$params=['mode'=>'payment','line_items'=>$items,'client_reference_id'=>$o['public_reference'],'metadata'=>$meta,'payment_intent_data'=>['metadata'=>$meta,'capture_method'=>'automatic'],'customer_email'=>$o['customer_email'],'success_url'=>$return.'&stripe_return=success','cancel_url'=>$return.'&stripe_return=canceled','expires_at'=>time()+1860];
             $db->prepare("INSERT INTO commerce_payment_attempts(organization_id,order_id,provider,provider_reference,scenario,ready_at,expected_minor,currency,request_json,provider_created_at_utc) VALUES(?,?,'stripe_test',?,NULL,NOW(),?,?,?,UTC_TIMESTAMP())")->execute([$org,$order,$ref,$o['total_minor'],$o['currency'],json_encode($params)]);$id=(int)$db->lastInsertId();$db->prepare("UPDATE commerce_orders SET state='payment_pending' WHERE organization_id=? AND id=?")->execute([$org,$order]);CommerceStore::audit($db,$org,(int)$u['id'],'commerce.stripe_test_started','order',$order,['attempt'=>$id,'amount_minor'=>(int)$o['total_minor'],'currency'=>$o['currency']]);return CommerceStore::row($db,'payment_attempts',$org,$id);
         });
         $provider??=new CommerceStripeProvider();if(!$a['remote_session_id'])self::createRemote($db,$org,$o,$a,$provider);return self::attempt($db,$org,$order)??throw new RuntimeException('Stripe attempt unavailable.');
@@ -28,7 +28,31 @@ final class CommerceStripeService
     private static function createRemote(PDO $db,int $org,array $o,array $a,CommerceHostedPaymentProvider $provider):void
     {
         if(strtotime($a['provider_created_at_utc'].' UTC')<time()-82800){self::uncertain($db,$org,$o,$a,'creation_retry_window_expired');throw new RuntimeException('Provider creation requires manual reconciliation; the safe idempotency retry window elapsed.');}
-        try{$s=$provider->createCheckout(json_decode($a['request_json'],true),self::key($org,$a,'checkout'));self::bind($db,$org,$o,$a,$s);}catch(Throwable $e){
+        try{
+            // An earlier Stripe API version rejected payment_method_types at
+            // validation time. Stripe does not cache idempotency results for
+            // parameter-validation failures, so the original order/attempt/key
+            // may safely be retried with the corrected Checkout parameters.
+            if(($a['last_error_code']??'')==='stripe_invalid_request'){
+                $a=CommerceStore::tx($db,function()use($db,$org,$o,$a){
+                    CommerceStore::row($db,'performances',$org,(int)$o['performance_id'],true);
+                    $current=CommerceStore::row($db,'payment_attempts',$org,(int)$a['id'],true);
+                    if($current['remote_session_id']||$current['last_error_code']!=='stripe_invalid_request')return $current;
+                    $params=json_decode((string)$current['request_json'],true,64,JSON_THROW_ON_ERROR);
+                    if(!is_array($params)||!array_key_exists('payment_method_types',$params))return $current;
+                    unset($params['payment_method_types']);
+                    if((int)($params['expires_at']??0)<time()+180)$params['expires_at']=time()+1860;
+                    $json=json_encode($params,JSON_THROW_ON_ERROR);
+                    $db->prepare('UPDATE commerce_payment_attempts SET request_json=? WHERE organization_id=? AND id=?')->execute([$json,$org,$a['id']]);
+                    CommerceStore::audit($db,$org,(int)$o['tester_user_id'],'commerce.stripe_checkout_request_corrected','order',(int)$o['id'],['attempt'=>(int)$a['id'],'reason'=>'unsupported_payment_method_types']);
+                    $current['request_json']=$json;
+                    return $current;
+                });
+            }
+            if(!empty($a['remote_session_id']))return;
+            $s=$provider->createCheckout(json_decode((string)$a['request_json'],true,64,JSON_THROW_ON_ERROR),self::key($org,$a,'checkout'));
+            self::bind($db,$org,$o,$a,$s);
+        }catch(Throwable $e){
             // Keep the original payment attempt and seats. Classify the failure for
             // support instead of collapsing a Stripe rejection and a timeout into
             // the same opaque error. No keys, payloads or card data enter logs.
