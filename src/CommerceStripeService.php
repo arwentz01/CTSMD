@@ -28,7 +28,16 @@ final class CommerceStripeService
     private static function createRemote(PDO $db,int $org,array $o,array $a,CommerceHostedPaymentProvider $provider):void
     {
         if(strtotime($a['provider_created_at_utc'].' UTC')<time()-82800){self::uncertain($db,$org,$o,$a,'creation_retry_window_expired');throw new RuntimeException('Provider creation requires manual reconciliation; the safe idempotency retry window elapsed.');}
-        try{$s=$provider->createCheckout(json_decode($a['request_json'],true),self::key($org,$a,'checkout'));self::bind($db,$org,$o,$a,$s);}catch(Throwable $e){self::uncertain($db,$org,$o,$a,'creation_unresolved');throw new RuntimeException('Stripe session creation is unresolved. Seats remain protected. Retry reconciliation; do not create a replacement order.');}
+        try{$s=$provider->createCheckout(json_decode($a['request_json'],true),self::key($org,$a,'checkout'));self::bind($db,$org,$o,$a,$s);}catch(Throwable $e){
+            // Keep the original payment attempt and seats. Classify the failure for
+            // support instead of collapsing a Stripe rejection and a timeout into
+            // the same opaque error. No keys, payloads or card data enter logs.
+            $safeCodes=['stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_idempotency_conflict','stripe_http_failure'];
+            $code=$e instanceof RuntimeException&&in_array($e->getMessage(),$safeCodes,true)?$e->getMessage():'stripe_checkout_validation_failed';
+            error_log('[CTSMD Stripe] Checkout create '.$code.' (org='.(int)$org.', order='.(int)$o['id'].', attempt='.(int)$a['id'].')');
+            self::uncertain($db,$org,$o,$a,$code);
+            throw new RuntimeException('Stripe checkout could not be confirmed ('.$code.'). Seats remain protected. Use Check authoritative payment confirmation on this order; do not start a replacement order.');
+        }
     }
     private static function key(int $org,array $a,string $operation):string{return'commerce-'.$org.'-'.$a['provider_reference'].'-'.$operation;}
     private static function baseValid(array $o,array $a,array $s):bool
