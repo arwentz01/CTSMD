@@ -33,11 +33,11 @@ final class CommerceStripeService
             // validation time. Stripe does not cache idempotency results for
             // parameter-validation failures, so the original order/attempt/key
             // may safely be retried with the corrected Checkout parameters.
-            if(($a['last_error_code']??'')==='stripe_invalid_request'){
+            if(in_array((string)($a['last_error_code']??''),['stripe_invalid_request','stripe_invalid_request:payment_method_types'],true)){
                 $a=CommerceStore::tx($db,function()use($db,$org,$o,$a){
                     CommerceStore::row($db,'performances',$org,(int)$o['performance_id'],true);
                     $current=CommerceStore::row($db,'payment_attempts',$org,(int)$a['id'],true);
-                    if($current['remote_session_id']||$current['last_error_code']!=='stripe_invalid_request')return $current;
+                    if($current['remote_session_id']||!in_array((string)$current['last_error_code'],['stripe_invalid_request','stripe_invalid_request:payment_method_types'],true))return $current;
                     $params=json_decode((string)$current['request_json'],true,64,JSON_THROW_ON_ERROR);
                     if(!is_array($params)||!array_key_exists('payment_method_types',$params))return $current;
                     unset($params['payment_method_types']);
@@ -57,7 +57,9 @@ final class CommerceStripeService
             // support instead of collapsing a Stripe rejection and a timeout into
             // the same opaque error. No keys, payloads or card data enter logs.
             $safeCodes=['stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_idempotency_conflict','stripe_http_failure'];
-            $code=$e instanceof RuntimeException&&in_array($e->getMessage(),$safeCodes,true)?$e->getMessage():'stripe_checkout_validation_failed';
+            $message=$e instanceof RuntimeException?$e->getMessage():'';
+            $validParameterError=preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,80}$/D',$message)===1;
+            $code=(in_array($message,$safeCodes,true)||$validParameterError)?$message:'stripe_checkout_validation_failed';
             error_log('[CTSMD Stripe] Checkout create '.$code.' (org='.(int)$org.', order='.(int)$o['id'].', attempt='.(int)$a['id'].')');
             self::uncertain($db,$org,$o,$a,$code);
             throw new RuntimeException('Stripe checkout could not be confirmed ('.$code.'). Seats remain protected. Use Check authoritative payment confirmation on this order; do not start a replacement order.');
@@ -103,7 +105,7 @@ final class CommerceStripeService
             // is known. The staff UI can identify configuration versus network issues.
             $safe=['stripe_transport_failure','stripe_authentication_failed','stripe_access_denied','stripe_rate_limited','stripe_provider_unavailable','stripe_invalid_request','stripe_idempotency_conflict','stripe_http_failure','stripe_checkout_validation_failed','creation_retry_window_expired'];
             $previous=(string)($latest['last_error_code']??'');
-            $code=in_array($previous,$safe,true)?$previous:'inquiry_unresolved';
+            $code=(in_array($previous,$safe,true)||preg_match('/^stripe_invalid_request:[a-zA-Z0-9_.\\[\\]-]{1,80}$/D',$previous)===1)?$previous:'inquiry_unresolved';
             if($code!=='creation_retry_window_expired')self::uncertain($db,$org,$o,$a,$code);
             error_log('[CTSMD Stripe] Reconcile pending: '.$code.' (org='.(int)$org.', order='.(int)$order.')');
             return CommerceStore::row($db,'orders',$org,$order);}
