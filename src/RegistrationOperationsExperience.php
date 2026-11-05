@@ -46,15 +46,26 @@ final class RegistrationOperationsExperience
 
     private static function handlePost(PDO $db,array $user,string $basePath,string $route):never
     {
-        if(!hash_equals((string)($_SESSION['registration_ops_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session expired.');self::redirect($basePath.'/admin/registrations');}
+        if(!hash_equals((string)($_SESSION['registration_ops_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session expired. Please reopen the form and try again.');self::redirect($basePath.self::opportunityFormReturnPath($_POST));}
         try{
             $action=(string)($_POST['action']??'');
-            if($action==='save_opportunity'){$id=self::saveOpportunity($db,$user,$_POST);$saved=self::opportunity($db,$id);$audition=$saved&&$saved['opportunity_type']==='audition';self::flash('success',$audition?'Audition saved.':'Signup saved.');self::redirect($basePath.'/admin/registrations/edit?id='.$id);}
+            if($action==='save_opportunity'){$id=self::saveOpportunity($db,$user,$_POST);$saved=self::opportunity($db,$id);$audition=$saved&&$saved['opportunity_type']==='audition';self::flash('success',$audition?'Audition saved.':'Signup saved.');if($audition&&$saved['production_id'])self::redirect($basePath.'/admin/productions/view?id='.(int)$saved['production_id'].'#production-auditions');self::redirect($basePath.'/admin/registrations/edit?id='.$id);}
             if($action==='submission_status'){$opportunityId=(int)($_POST['opportunity_id']??0);self::updateSubmission($db,$user,$_POST);self::flash('success','Registration status updated and the family notification was queued when the status changed.');self::redirect($basePath.'/admin/registrations/view?id='.$opportunityId);}
             if($action==='link_existing'){$submissionId=(int)($_POST['submission_id']??0);$participantId=(int)($_POST['participant_user_id']??0);$guardianId=(int)($_POST['guardian_user_id']??0);RegistrationIntakeService::linkExisting($db,$user,$submissionId,$participantId,$guardianId?:null);AuditionIntakeBridge::syncAccepted($db,$submissionId,(int)$user['id']);self::flash('success','Registration linked to existing CTSMD records.');self::redirect($basePath.'/admin/registrations/intake?submission='.$submissionId);}
             if($action==='create_records'){$submissionId=(int)($_POST['submission_id']??0);RegistrationIntakeService::createFromRegistration($db,$user,$submissionId);AuditionIntakeBridge::syncAccepted($db,$submissionId,(int)$user['id']);self::flash('success','CTSMD person/household records linked. Accepted student auditions enter the casting board as Under Review; production roster access remains separate.');self::redirect($basePath.'/admin/registrations/intake?submission='.$submissionId);}
             throw new RuntimeException('Choose a valid registration action.');
-        }catch(RuntimeException $e){self::flash('error',$e->getMessage());$submissionId=(int)($_POST['submission_id']??0);if($submissionId)self::redirect($basePath.'/admin/registrations/intake?submission='.$submissionId);$id=(int)($_POST['opportunity_id']??$_POST['id']??0);self::redirect($basePath.($id?'/admin/registrations/edit?id='.$id:'/admin/registrations'));}
+        }catch(RuntimeException $e){self::flash('error',$e->getMessage());$submissionId=(int)($_POST['submission_id']??0);if($submissionId)self::redirect($basePath.'/admin/registrations/intake?submission='.$submissionId);self::redirect($basePath.self::opportunityFormReturnPath($_POST));}
+    }
+
+    /** Return failed creates to their original form, not a listing that hides auditions. */
+    private static function opportunityFormReturnPath(array $input):string
+    {
+        $id=(int)($input['id']??$input['opportunity_id']??0);
+        if($id>0)return '/admin/registrations/edit?id='.$id;
+        $productionId=filter_var($input['production_id']??null,FILTER_VALIDATE_INT)?:0;
+        if(($input['opportunity_type']??'')==='audition'&&$productionId>0)
+            return '/admin/registrations/edit?production_id='.$productionId;
+        return '/admin/registrations/edit';
     }
 
     private static function saveOpportunity(PDO $db,array $user,array $input):int
@@ -94,7 +105,7 @@ final class RegistrationOperationsExperience
         try{
             if($id){$stmt=$db->prepare('UPDATE registration_opportunities SET production_id=:production,title=:title,slug=:slug,opportunity_type=:type,summary=:summary,details=:details,location=:location,starts_at=:starts,ends_at=:ends,registration_opens_at=:opens,registration_closes_at=:closes,capacity=:capacity,status=:status,confirmation_message=:confirmation,allow_audition_video_links=:allow_video,minimum_age=:minimum_age,maximum_age=:maximum_age,age_eligibility_date=:cutoff WHERE id=:id');$stmt->execute(['production'=>$productionId,'title'=>$title,'slug'=>$slug,'type'=>$type,'summary'=>$summary?:null,'details'=>$details?:null,'location'=>$location?:null,'starts'=>$starts,'ends'=>$ends,'opens'=>$opens,'closes'=>$closes,'capacity'=>$capacity,'status'=>$status,'confirmation'=>$confirmation?:null,'allow_video'=>$allowVideo,'minimum_age'=>$min,'maximum_age'=>$max,'cutoff'=>$cutoff?:null,'id'=>$id]);$event='registration.opportunity_updated';}
             else{$stmt=$db->prepare('INSERT INTO registration_opportunities (production_id,title,slug,opportunity_type,summary,details,location,starts_at,ends_at,registration_opens_at,registration_closes_at,capacity,status,confirmation_message,allow_audition_video_links,created_by_user_id,minimum_age,maximum_age,age_eligibility_date) VALUES (:production,:title,:slug,:type,:summary,:details,:location,:starts,:ends,:opens,:closes,:capacity, :status,:confirmation,:allow_video,:creator,:minimum_age,:maximum_age,:cutoff)');$stmt->execute(['production'=>$productionId,'title'=>$title,'slug'=>$slug,'type'=>$type,'summary'=>$summary?:null,'details'=>$details?:null,'location'=>$location?:null,'starts'=>$starts,'ends'=>$ends,'opens'=>$opens,'closes'=>$closes,'capacity'=>$capacity,'status'=>$status,'confirmation'=>$confirmation?:null,'allow_video'=>$allowVideo,'minimum_age'=>$min,'maximum_age'=>$max,'cutoff'=>$cutoff?:null,'creator'=>(int)$user['id']]);$id=(int)$db->lastInsertId();$event='registration.opportunity_created';}
-        }catch(PDOException $e){if((string)$e->getCode()==='23000')throw new RuntimeException('That public slug is already in use.');throw new RuntimeException('The registration signup could not be saved.');}
+        }catch(PDOException $e){if((string)$e->getCode()==='23000')throw new RuntimeException('That public slug is already in use.');if((string)$e->getCode()==='42S22')throw new RuntimeException('The audition settings database update is missing. Apply migration 124_audition_video_links.sql before saving.');error_log('[Registration Operations] Save failed: '.$e->getMessage());throw new RuntimeException('The registration signup could not be saved. Please contact an administrator.');}
         self::audit($db,(int)$user['id'],$event,'registration_opportunity',$id,'Saved public registration signup.',['status'=>$status,'production_id'=>$productionId]);return $id;
     }
 
