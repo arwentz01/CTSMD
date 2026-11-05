@@ -359,7 +359,7 @@ final class ProductionLifecycleExperience
         <dialog class="pl-manage-drawer" id="pl-participation-dialog" aria-labelledby="pl-participation-title"><div class="pl-drawer-head"><div><small>PRODUCTION</small><h2 id="pl-participation-title">Manage participation</h2></div><button type="button" class="pl-drawer-close" data-pl-close aria-label="Close participation settings">×</button></div><div class="pl-drawer-body"><div class="pl-participation-editor pl-management-anchor"><?php ParticipantControls::settings($db,$selected,(string)$_SESSION['production_lifecycle_csrf']); ?></div>
 </div></dialog>
         <?php if($canManageAuditions):?><section class="pl-panel ops-panel pl-management-panel" id="production-auditions">
-          <div class="pl-summary-head"><div><small>PRODUCTION AUDITIONS</small><h3>Auditions &amp; registration</h3><p>Audition dates are linked to the Stage &amp; dates timeline above. Registration opening and closing dates are managed separately.</p></div>
+          <div class="pl-summary-head"><div><small>PRODUCTION AUDITIONS</small><h3>Auditions</h3><p>Audition dates follow the production timeline. Set registration opening and closing dates in the audition editor.</p></div>
           <a class="pl-manage-button" href="<?= $url('/admin/registrations/edit?production_id='.(int)$selected['id']) ?>">Create audition</a></div>
           <dl class="pl-summary-facts">
             <div><dt>Auditions begin</dt><dd><?= !empty($selected['audition_starts_at'])?$esc(date('M j, Y',strtotime((string)$selected['audition_starts_at']))):'Not scheduled' ?></dd></div>
