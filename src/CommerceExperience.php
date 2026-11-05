@@ -251,6 +251,10 @@ final class CommerceExperience
                 else CommercePaymentService::cancelHeld($db,$u,$o,$id,$token);
                 return self::url('checkout',['id'=>$id]);
             case 'checkin':$result=CommerceTicketService::checkin($db,$u,$o,$id,(string)($_POST['scan']??''));$_SESSION['commerce_notice']='Admitted: '.$result['description'].' · '.$result['category'];return self::url('checkin',['id'=>$id]);
+            case 'checkin_selected':
+                $count=CommerceTicketService::checkinSelected($db,$u,$o,$id,(string)($_POST['reference']??''),is_array($_POST['ticket_ids']??null)?$_POST['ticket_ids']:[]);
+                $_SESSION['commerce_notice']='Admitted '.$count.' '.($count===1?'guest':'guests').'. Remaining tickets are still valid for later arrivals.';
+                return self::url('checkin',['id'=>$id,'reference'=>(string)$_POST['reference']]);
             case 'door_lookup':CommerceTicketService::lookup($db,$u,$o,$id,(string)($_POST['reference']??''));return self::url('checkin',['id'=>$id,'reference'=>(string)$_POST['reference']]);
             case 'reverse':CommerceTicketService::reverse($db,$u,$o,(int)($_POST['ticket']??0),(string)($_POST['reason']??''));return self::url('checkin',['id'=>$id,'reference'=>(string)($_POST['reference']??'')]);
             case 'staff_refresh':CommercePaymentService::refresh($db,$u,$o,$id);return self::url('orders',['reference'=>(string)($_POST['reference']??'')]);
@@ -631,7 +635,33 @@ final class CommerceExperience
                 echo '</section>';
             }catch(RuntimeException $e){echo '<p role="alert">'.self::e($e->getMessage()).'</p>';}
         }
-        $reference=(string)($_GET['reference']??'');if($reference==='')return;$tickets=CommerceTicketService::lookup(self::$db,self::$user,self::$org,$id,$reference);if(!$tickets)echo '<p>No admission tickets found for this reference and performance.</p>';foreach($tickets as $t){echo '<section class="commerce-record"><h3>'.self::e($t['description']).'</h3><p>'.self::e($t['category'].' · '.self::staffStatus($t['state'])).' · '.($t['checked_in_at']?'Admitted '.self::e($t['checked_in_at']):'Not admitted').'</p>';if($p['schedule_status']==='scheduled'&&$p['checkin_enabled']&&$t['state']==='valid'&&!$t['checked_in_at']){self::form('checkin',['id'=>$id,'scan'=>'CC1:'.$t['token']]);echo '<button>Admit '.self::e($t['description']).'</button></form>';}if(self::can('reverse')&&$t['checked_in_at']){self::form('reverse',['id'=>$id,'ticket'=>$t['id'],'reference'=>$reference]);self::input('reason','Reversal reason','text','','required maxlength="500"');echo '<button>Reverse admission</button></form>';}echo '</section>';}
+        $reference=(string)($_GET['reference']??'');if($reference==='')return;
+        $tickets=CommerceTicketService::lookup(self::$db,self::$user,self::$org,$id,$reference);
+        if(!$tickets){echo '<p>No admission tickets found for this reference and performance.</p>';return;}
+        $admitted=0;$eligible=0;
+        foreach($tickets as $ticket){
+            if($ticket['checked_in_at'])$admitted++;
+            if($ticket['state']==='valid'&&$ticket['order_state']==='paid'&&!$ticket['checked_in_at'])$eligible++;
+        }
+        echo '<section class="commerce-door-party"><h3>Party check-in</h3><p>'.count($tickets).' tickets on this order · '.$admitted.' admitted · '.$eligible.' available for later arrival.</p>';
+        if($eligible>0&&$p['schedule_status']==='scheduled'&&$p['checkin_enabled']){
+            self::form('checkin_selected',['id'=>$id,'reference'=>$reference]);
+            echo '<fieldset><legend>Select guests arriving now</legend><p>Only selected tickets will be admitted. Leave the other tickets unchecked so late arrivals can use them later.</p>';
+            foreach($tickets as $t){
+                $available=$t['state']==='valid'&&$t['order_state']==='paid'&&!$t['checked_in_at'];
+                echo '<label class="commerce-door-ticket-choice" style="display:flex;align-items:center;gap:10px;margin:9px 0"><input type="checkbox" name="ticket_ids[]" value="'.(int)$t['id'].'" '.(!$available?'disabled':'').' style="width:auto"> <span><strong>'.self::e($t['description']).'</strong> · '.self::e($t['category']).' · '.($t['checked_in_at']?'Already admitted':($available?'Ready to admit':'Not valid for admission')).'</span></label>';
+            }
+            echo '</fieldset><button type="submit">Admit selected guests</button></form>';
+        }elseif($eligible===0)echo '<p>There are no unclaimed valid tickets on this order.</p>';
+        foreach($tickets as $t){
+            if(self::can('reverse')&&$t['checked_in_at']){
+                echo '<details class="commerce-record"><summary>Reverse admission: '.self::e($t['description']).'</summary>';
+                self::form('reverse',['id'=>$id,'ticket'=>$t['id'],'reference'=>$reference]);
+                self::input('reason','Reversal reason','text','','required maxlength="500"');
+                echo '<button>Reverse admission</button></form></details>';
+            }
+        }
+        echo '</section>';
     }
     private static function complimentary():void
     {
