@@ -96,7 +96,7 @@ final class CommerceExperience
             self::csrf();try{if(self::$storefront){if(!in_array($_POST['action']??'',['hold','stripe_payment','stripe_cancel','payment','refresh_payment','cancel_hold','expire_simulation','order_link','delivery_resend','cart_add','cart_remove','shopping_add','shopping_remove','shopping_checkout','shopping_free_checkout','shopping_free_recover','shopping_cancel','shopping_replace','shopping_promo'],true))throw new RuntimeException('This action is not available in the storefront.');if(in_array($_POST['action']??'',['cart_add','cart_remove'],true)&&!self::cartEnabled())throw new RuntimeException('Cart preview is not enabled.');if(in_array($_POST['action']??'',['shopping_add','shopping_remove','shopping_checkout','shopping_cancel','shopping_replace'],true)&&!self::rebuiltCart())throw new RuntimeException('Shopping cart is unavailable.');if(($_POST['action']??'')==='hold')CommerceStorefrontService::demandPerformance(self::$db,self::$user,self::$org,(int)($_POST['id']??0));}$next=self::command((string)($_POST['action']??''));$_SESSION['commerce_notice']??='Saved successfully.';self::redirect($next);}catch(PDOException $e){error_log('Commerce command failed: '.$e->getCode());$error='The change could not be saved. Reload and try again; no partial change was applied.';}catch(RuntimeException|JsonException|InvalidArgumentException $e){$error=self::staffMessage($e->getMessage());}
         }
         $notice=$_SESSION['commerce_notice']??'';unset($_SESSION['commerce_notice']);
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=self::$storefront?'CTSMD Connect Tickets':'Commerce sandbox'?> · <?=self::e($owner['name'])?></title><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/app.css"><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/unified-navigation.css"><?php WorkspaceUI::operationsStyles($basePath);?><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/commerce.css?v=20261102-promo-codes"></head><body class="app-body ux-workspace ux-operations <?=self::$storefront?'commerce-storefront':''?>"><div class="unified-shell"><?php if(!self::$storefront)AppNavigation::renderSidebar('/admin/commerce',$basePath,self::$user);?><main class="unified-main"><?php if(!self::$storefront)AppNavigation::renderHeader('Commerce','Sandbox',$basePath);else{$brand=OrganizationBranding::fromEnvironment();$brandName=self::e($brand['name']);$brandMark=$brand['logo']!==''?'<img src="'.self::e($brand['logo']).'" alt="" width="40" height="40">':'<span class="commerce-brand-monogram" aria-hidden="true">'.self::e(mb_strtoupper(mb_substr($brand['name'],0,1))).'</span>';$cartCount=0;if(self::rebuiltCart()){$summary=self::shoppingSummary();$cartCount=count(array_filter($summary['items'],fn($i)=>$i['state']==='held'&&(bool)$summary['cart']['active']));}
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=self::$storefront?'CTSMD Connect Tickets':'Commerce sandbox'?> · <?=self::e($owner['name'])?></title><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/app.css"><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/unified-navigation.css"><?php WorkspaceUI::operationsStyles($basePath);?><link rel="stylesheet" href="<?=self::e($basePath)?>/assets/css/commerce.css?v=20261105-door-workspace"></head><body class="app-body ux-workspace ux-operations <?=self::$storefront?'commerce-storefront':''?>"><div class="unified-shell"><?php if(!self::$storefront)AppNavigation::renderSidebar('/admin/commerce',$basePath,self::$user);?><main class="unified-main"><?php if(!self::$storefront)AppNavigation::renderHeader('Commerce','Sandbox',$basePath);else{$brand=OrganizationBranding::fromEnvironment();$brandName=self::e($brand['name']);$brandMark=$brand['logo']!==''?'<img src="'.self::e($brand['logo']).'" alt="" width="40" height="40">':'<span class="commerce-brand-monogram" aria-hidden="true">'.self::e(mb_strtoupper(mb_substr($brand['name'],0,1))).'</span>';$cartCount=0;if(self::rebuiltCart()){$summary=self::shoppingSummary();$cartCount=count(array_filter($summary['items'],fn($i)=>$i['state']==='held'&&(bool)$summary['cart']['active']));}
             echo '<header class="commerce-customer-header" style="'.self::e(OrganizationBranding::css($brand)).'"><a class="commerce-customer-brand" href="'.self::e(self::$base.'/').'">'.$brandMark.'<span class="commerce-brand-wordmark"><strong>'.$brandName.'</strong><span>CONNECT</span></span></a><nav class="commerce-customer-nav" aria-label="Ticket storefront navigation"><a href="'.self::e(self::$base.'/').'">Home</a><a href="'.self::e(self::$base.'/productions').'">Productions</a><a href="'.self::e(self::url()).'"'.($route==='/tickets'?' aria-current="page"':'').'>Tickets</a><a href="'.self::e(self::$base.'/app').'">My account</a>';if(self::rebuiltCart())echo '<a class="commerce-customer-cart" href="'.self::e(self::url('cart')).'"'.($route==='/tickets/cart'?' aria-current="page"':'').'>Cart <span class="commerce-cart-count">('.$cartCount.')</span></a>';echo '</nav></header>';}?><div class="commerce-page"><header><?php if(self::$storefront):?><p class="commerce-preview-title">Sandbox preview · Test transactions only</p><?php else:?><h2>Commerce sandbox</h2><?php endif;?><p class="commerce-banner">Sandbox · Test payments only · Email captured unless approved pilot delivery is configured</p></header><?php if(!self::$storefront):?><?php self::workspaceNavigation($tab);?><?php else: echo '<section class="commerce-content">'; if(!in_array($tab,['storefront','cart','shopping_checkout','shopping_confirmation'],true))self::purchaseSteps($tab); endif;?><?php if($error):?><div role="alert" tabindex="-1" data-commerce-error class="commerce-error"><?=self::e($error)?></div><?php endif;?><?php if($notice):?><p role="status"><?=self::e($notice)?></p><?php endif;?><?php
         try{match($tab){'promotions'=>self::promotions(),'schedule'=>CommercePlanningExperience::schedule(self::$db,self::$user,self::$org),'blocks'=>CommercePlanningExperience::blocks(self::$db,self::$user,self::$org),'storefront'=>self::storefront(),'shopping_checkout'=>self::shoppingCheckout(),'shopping_confirmation'=>self::shoppingConfirmation(),'cart'=>self::cart(),'order'=>self::retrievedOrder(),'venues'=>self::venues(),'layout'=>self::layout(),'configure'=>self::configuration(),'performances'=>CommerceProductionExperience::productions(self::$db,self::$user,self::$org,self::$base),'add_performance'=>CommerceProductionExperience::add(self::$db,self::$user,self::$org),'pricing'=>CommerceProductionExperience::pricing(self::$db,self::$user,self::$org),'performance_details'=>CommerceProductionExperience::performanceDetails(self::$db,self::$user,self::$org,(int)($_GET['id']??0)),'performance'=>CommerceProductionExperience::management(self::$db,self::$user,self::$org,(int)($_GET['id']??0)),'tickets'=>self::printTickets(),'sales'=>self::sales(),'select'=>self::selection(),'checkout'=>self::checkout(),'orders'=>self::orders(),'checkin'=>self::checkin(),'complimentary'=>self::complimentary(),default=>CommerceProductionExperience::overview(self::$db,self::$user,self::$org)};}catch(RuntimeException $e){echo '<p role="alert">'.self::e($e->getMessage()).'</p>';}
         ?></section><?php if(!self::$storefront)echo '</div>';?></div></main></div><script src="<?=self::e($basePath)?>/assets/js/unified-navigation.js"></script><script src="<?=self::e($basePath)?>/assets/js/commerce-geometry.js?v=20261031-phase3" defer></script><script src="<?=self::e($basePath)?>/assets/js/commerce.js?v=20261101-change-seat" defer></script><script src="<?=self::e($basePath)?>/assets/js/commerce-planning.js?v=20261102-calendar-workspace-v2" defer></script><script src="<?=self::e($basePath)?>/assets/js/commerce-workspace.js?v=20261101-staff-language" defer></script><script src="<?=self::e($basePath)?>/assets/js/commerce-productions.js?v=20261102-refresh-on-close" defer></script></body></html><?php exit;
@@ -639,47 +639,67 @@ final class CommerceExperience
     }
     private static function checkin():void
     {
-        CommerceAccess::demand(self::$db,self::$user,self::$org,'checkin');echo '<h2>Door check-in</h2><p>Choose the performance, then scan a ticket. Keyboard scanners submit with Enter. Online verification is required.</p>';$id=self::performancePicker('checkin');if(!$id)return;$p=self::performanceContext($id);$a=CommerceTicketService::attendance(self::$db,self::$user,self::$org,$id);echo '<h3>'.self::e($p['title']).'</h3><p>'.self::e(self::staffDate($p).' · '.$p['venue']).' · Check-in '.($p['checkin_enabled']?'enabled':'closed').'</p><p role="status">Admitted '.(int)$a['admitted'].' of '.(int)$a['valid_count'].' valid tickets · '.(int)$a['issued'].' issued including revoked/refunded.</p>';self::form('checkin',['id'=>$id]);self::input('scan','Scan or paste admission code','text','','required autocomplete="off" autocapitalize="off" spellcheck="false" data-scan');echo '<button>Verify & admit ticket</button><div data-camera><button type="button" data-camera-start>Start QR camera</button><button type="button" data-camera-stop hidden>Stop camera</button><p data-camera-status role="status">Camera is off. Manual and keyboard scanners work without camera permission.</p><video data-camera-video playsinline muted hidden></video></div></form><details class="commerce-checkin-lookup"'.(isset($_GET['reference'])||isset($_GET['door_name'])?' open':'').'><summary>Find tickets by name or order reference</summary><p>Search by the purchaser’s name if a ticket cannot be scanned. Results are limited to this performance.</p>';echo '<form method="get"><input type="hidden" name="tab" value="checkin"><input type="hidden" name="id" value="'.(int)$id.'">';self::input('door_name','Purchaser name','search',mb_substr((string)($_GET['door_name']??''),0,100),'required minlength="2" maxlength="100" autocomplete="off"');echo '<button>Search names</button></form>';self::form('door_lookup',['id'=>$id]);self::input('reference','Full order reference','text','','required pattern="[a-f0-9]{32}" autocomplete="off"');echo '<button>Find by reference</button></form></details>';
-        $nameQuery=trim((string)($_GET['door_name']??''));if($nameQuery!==''){
+        CommerceAccess::demand(self::$db,self::$user,self::$org,'checkin');
+        echo '<div class="commerce-door" data-door-workspace><header class="commerce-door-title"><div><p class="commerce-door-kicker">BOX OFFICE / ADMISSIONS</p><h2>Door check-in</h2><p>Scan tickets or find a guest by name.</p></div></header>';
+        $id=self::performancePicker('checkin');
+        if(!$id){echo '</div>';return;}
+        $p=self::performanceContext($id);
+        $a=CommerceTicketService::attendance(self::$db,self::$user,self::$org,$id);
+        $admitted=(int)$a['admitted'];$valid=(int)$a['valid_count'];
+        echo '<div class="commerce-door-overview"><div class="commerce-door-show"><strong>'.self::e($p['title']).'</strong><span>'.self::e(self::staffDate($p).' · '.$p['venue']).'</span></div><div class="commerce-door-tally"><strong>'.$admitted.' <span>/ '.$valid.'</span></strong><small>Checked in</small></div><span class="commerce-door-state'.($p['checkin_enabled']?' is-open':'').'">'.($p['checkin_enabled']?'Check-in open':'Check-in closed').'</span></div>';
+        echo '<section class="commerce-door-primary" aria-label="Admission actions"><div class="commerce-door-section-head"><h3>Scan a ticket</h3><span>QR scanner or manual code</span></div>';
+        self::form('checkin',['id'=>$id]);
+        echo '<div class="commerce-door-scan-row"><label>Admission code<input name="scan" type="text" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan QR or paste ticket code" data-scan></label><button type="submit">Admit ticket</button></div>';
+        echo '<div data-camera class="commerce-door-camera"><button type="button" class="commerce-door-camera-start" data-camera-start>Use QR camera</button><button type="button" data-camera-stop hidden>Stop camera</button><span data-camera-status role="status">Camera off</span><video data-camera-video playsinline muted hidden></video></div></form></section>';
+        $reference=(string)($_GET['reference']??'');$nameQuery=trim((string)($_GET['door_name']??''));
+        echo '<section class="commerce-door-find" aria-label="Find an order"><div class="commerce-door-section-head"><h3>Find a guest</h3><span>For tickets that cannot be scanned</span></div>';
+        echo '<form method="get" class="commerce-door-search"><input type="hidden" name="tab" value="checkin"><input type="hidden" name="id" value="'.(int)$id.'"><label>Purchaser name<input type="search" name="door_name" value="'.self::e(mb_substr($nameQuery,0,100)).'" placeholder="Enter first or last name" minlength="2" maxlength="100" autocomplete="off" required></label><button type="submit">Find orders</button></form>';
+        echo '<details class="commerce-door-reference"'.($reference!==''?' open':'').'><summary>Search by order reference instead</summary>';
+        self::form('door_lookup',['id'=>$id]);echo '<div class="commerce-door-search"><label>Order reference<input name="reference" type="text" placeholder="Full 32-character reference" required pattern="[a-f0-9]{32}" autocomplete="off"></label><button type="submit">Find order</button></div></form></details></section>';
+        if($nameQuery!==''){
+            echo '<section class="commerce-door-results" aria-label="Matching orders"><div class="commerce-door-section-head"><h3>Matching orders</h3><a href="'.self::e(self::url('checkin',['id'=>$id])).'">Clear search</a></div>';
             try{
                 $matches=CommerceTicketService::searchDoorOrdersByName(self::$db,self::$user,self::$org,$id,$nameQuery);
-                echo '<section class="commerce-door-name-results" aria-label="Order name search results"><h3>Matching orders</h3>';
-                if(!$matches)echo '<p>No paid ticket orders found for that name and performance.</p>';
+                if(!$matches)echo '<p class="commerce-door-empty">No paid orders matched that name for this performance.</p>';
                 foreach($matches as $match){
                     $href=self::url('checkin',['id'=>$id,'reference'=>$match['public_reference']]);
-                    echo '<div class="commerce-record"><div><strong>'.self::e((string)$match['customer_name']).'</strong><small> · '.(int)$match['ticket_count'].' tickets · '.(int)$match['admitted_count'].' admitted</small></div><a class="button" href="'.self::e($href).'">View tickets</a></div>';
+                    echo '<a class="commerce-door-result" href="'.self::e($href).'"><span><strong>'.self::e((string)$match['customer_name']).'</strong><small>'.(int)$match['ticket_count'].' tickets · '.(int)$match['admitted_count'].' admitted</small></span><span>Open tickets →</span></a>';
                 }
-                if(count($matches)===30)echo '<p>Showing up to 30 matches. Refine the name to narrow results.</p>';
-                echo '</section>';
+                if(count($matches)===30)echo '<p>Showing 30 matches. Try a more specific name.</p>';
             }catch(RuntimeException $e){echo '<p role="alert">'.self::e($e->getMessage()).'</p>';}
+            echo '</section>';
         }
-        $reference=(string)($_GET['reference']??'');if($reference==='')return;
-        $tickets=CommerceTicketService::lookup(self::$db,self::$user,self::$org,$id,$reference);
-        if(!$tickets){echo '<p>No admission tickets found for this reference and performance.</p>';return;}
-        $admitted=0;$eligible=0;
-        foreach($tickets as $ticket){
-            if($ticket['checked_in_at'])$admitted++;
-            if($ticket['state']==='valid'&&$ticket['order_state']==='paid'&&!$ticket['checked_in_at'])$eligible++;
-        }
-        echo '<section class="commerce-door-party"><h3>Party check-in</h3><p>'.count($tickets).' tickets on this order · '.$admitted.' admitted · '.$eligible.' available for later arrival.</p>';
-        if($eligible>0&&$p['schedule_status']==='scheduled'&&$p['checkin_enabled']){
-            self::form('checkin_selected',['id'=>$id,'reference'=>$reference]);
-            echo '<fieldset><legend>Select guests arriving now</legend><p>Only selected tickets will be admitted. Leave the other tickets unchecked so late arrivals can use them later.</p>';
-            foreach($tickets as $t){
-                $available=$t['state']==='valid'&&$t['order_state']==='paid'&&!$t['checked_in_at'];
-                echo '<label class="commerce-door-ticket-choice" style="display:flex;align-items:center;gap:10px;margin:9px 0"><input type="checkbox" name="ticket_ids[]" value="'.(int)$t['id'].'" '.(!$available?'disabled':'').' style="width:auto"> <span><strong>'.self::e($t['description']).'</strong> · '.self::e($t['category']).' · '.($t['checked_in_at']?'Already admitted':($available?'Ready to admit':'Not valid for admission')).'</span></label>';
+        if($reference!==''){
+            $tickets=CommerceTicketService::lookup(self::$db,self::$user,self::$org,$id,$reference);
+            if(!$tickets){echo '<p class="commerce-door-empty">No tickets found for this order and performance.</p></div>';return;}
+            $used=0;$available=0;
+            foreach($tickets as $t){if($t['checked_in_at'])$used++;if($t['state']==='valid'&&$t['order_state']==='paid'&&!$t['checked_in_at'])$available++;}
+            echo '<section class="commerce-door-party" aria-labelledby="commerce-door-party-title"><div class="commerce-door-party-heading"><div><p class="commerce-door-kicker">SELECTED ORDER</p><h3 id="commerce-door-party-title">Admit guests</h3><p>'.$used.' admitted · '.$available.' remaining of '.count($tickets).' tickets</p></div><a href="'.self::e(self::url('checkin',['id'=>$id])).'">Close order</a></div>';
+            if($available>0&&$p['schedule_status']==='scheduled'&&$p['checkin_enabled']){
+                self::form('checkin_selected',['id'=>$id,'reference'=>$reference]);
+                echo '<fieldset class="commerce-door-tickets"><legend class="commerce-door-visually-hidden">Choose tickets to admit</legend>';
+                foreach($tickets as $t){
+                    $ready=$t['state']==='valid'&&$t['order_state']==='paid'&&!$t['checked_in_at'];
+                    $status=$t['checked_in_at']?'Admitted':($ready?'Available':'Unavailable');
+                    echo '<label class="commerce-door-ticket'.(!$ready?' is-unavailable':'').'"><input type="checkbox" name="ticket_ids[]" value="'.(int)$t['id'].'" '.(!$ready?'disabled':'').'><span class="commerce-door-ticket-main"><strong>'.self::e($t['description']).'</strong><small>'.self::e($t['category']).'</small></span><span class="commerce-door-ticket-state">'.self::e($status).'</span></label>';
+                }
+                echo '</fieldset><div class="commerce-door-party-bottom"><p>Select only guests who are here. Unselected tickets stay valid for later arrivals.</p><button type="submit">Admit selected guests</button></div></form>';
+            }else{
+                echo '<div class="commerce-door-tickets">';
+                foreach($tickets as $t)echo '<div class="commerce-door-ticket is-unavailable"><span class="commerce-door-ticket-main"><strong>'.self::e($t['description']).'</strong><small>'.self::e($t['category']).'</small></span><span class="commerce-door-ticket-state">'.($t['checked_in_at']?'Admitted':'Unavailable').'</span></div>';
+                echo '</div><p class="commerce-door-empty">'.($available===0?'All usable tickets have been admitted or are unavailable.':'Check-in is closed for this performance.').'</p>';
             }
-            echo '</fieldset><button type="submit">Admit selected guests</button></form>';
-        }elseif($eligible===0)echo '<p>There are no unclaimed valid tickets on this order.</p>';
-        foreach($tickets as $t){
-            if(self::can('reverse')&&$t['checked_in_at']){
-                echo '<details class="commerce-record"><summary>Reverse admission: '.self::e($t['description']).'</summary>';
-                self::form('reverse',['id'=>$id,'ticket'=>$t['id'],'reference'=>$reference]);
-                self::input('reason','Reversal reason','text','','required maxlength="500"');
-                echo '<button>Reverse admission</button></form></details>';
+            if(self::can('reverse')){
+                $reversible=array_values(array_filter($tickets,static fn(array $t):bool=>!empty($t['checked_in_at'])));
+                if($reversible){
+                    echo '<details class="commerce-door-reversals"><summary>Correct an admission</summary><p>For staff corrections only. A reason is required.</p>';
+                    foreach($reversible as $t){echo '<div class="commerce-door-reversal"><strong>'.self::e($t['description']).'</strong>';self::form('reverse',['id'=>$id,'ticket'=>$t['id'],'reference'=>$reference]);self::input('reason','Reason','text','','required maxlength="500"');echo '<button type="submit">Reverse</button></form></div>';}
+                    echo '</details>';
+                }
             }
+            echo '</section>';
         }
-        echo '</section>';
+        echo '</div>';
     }
     private static function complimentary():void
     {
