@@ -25,6 +25,28 @@ final class CommerceTicketService
     {
         CommerceAccess::demand($db,$u,$org,'checkin');CommerceStore::row($db,'performances',$org,$performance);if(!preg_match('/^[a-f0-9]{32}$/',$reference))throw new RuntimeException('Enter the full sandbox order reference.');$q=$db->prepare('SELECT t.id,t.token,t.state,t.checked_in_at,l.description,l.category FROM commerce_orders o JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.order_id=t.order_id AND l.seat_key=t.seat_key AND l.organization_id=t.organization_id WHERE o.organization_id=? AND o.performance_id=? AND o.public_reference=?');$q->execute([$org,$performance,$reference]);$rows=$q->fetchAll();CommerceStore::audit($db,$org,(int)$u['id'],'commerce.door_lookup','performance',$performance,['found'=>(bool)$rows]);return$rows;
     }
+    /** Door-only purchaser-name search; no emails, amounts or cross-performance results. */
+    public static function searchDoorOrdersByName(PDO $db,array $u,int $org,int $performance,string $name):array
+    {
+        CommerceAccess::demand($db,$u,$org,'checkin');
+        CommerceStore::row($db,'performances',$org,$performance);
+        $name=trim($name);
+        if(mb_strlen($name)<2||mb_strlen($name)>100)throw new RuntimeException('Enter at least 2 characters of a purchaser name (100 maximum).');
+        $like='%'.str_replace(['!','%','_'],['!!','!%','!_'],$name).'%';
+        $q=$db->prepare("SELECT o.public_reference,o.customer_name,COUNT(t.id) ticket_count,
+                       SUM(t.state='valid' AND t.checked_in_at IS NOT NULL) admitted_count
+                       FROM commerce_orders o
+                       JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id AND t.performance_id=o.performance_id
+                       WHERE o.organization_id=? AND o.performance_id=? AND o.state='paid'
+                         AND o.customer_name LIKE ? ESCAPE '!'
+                       GROUP BY o.id,o.public_reference,o.customer_name
+                       ORDER BY o.customer_name,o.id DESC LIMIT 30");
+        $q->execute([$org,$performance,$like]);
+        $rows=$q->fetchAll();
+        CommerceStore::audit($db,$org,(int)$u['id'],'commerce.door_name_search','performance',$performance,['found_count'=>count($rows)]);
+        return $rows;
+    }
+
     public static function attendance(PDO $db,array $u,int $org,int $performance):array
     {
         CommerceAccess::demand($db,$u,$org,'checkin');CommerceStore::row($db,'performances',$org,$performance);$q=$db->prepare("SELECT COUNT(*) issued,SUM(t.state='valid' AND o.state='paid') valid_count,SUM(t.state='valid' AND o.state='paid' AND t.checked_in_at IS NOT NULL) admitted FROM commerce_tickets t JOIN commerce_orders o ON o.id=t.order_id AND o.organization_id=t.organization_id WHERE t.organization_id=? AND t.performance_id=?");$q->execute([$org,$performance]);return$q->fetch();
