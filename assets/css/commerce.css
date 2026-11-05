@@ -528,3 +528,27 @@
 .commerce-door>form:first-of-type select{min-height:40px;margin-top:4px}
 .commerce-door>form:first-of-type>button{white-space:nowrap;min-height:40px}
 @media(max-width:700px){.commerce-door>form:first-of-type{flex-wrap:wrap}.commerce-door>form:first-of-type>button{width:100%}}
+
+/* Walk-in Box Office: admit guests without leaving the paid checkout. */
+.commerce-pos-admit-choice{display:flex!important;align-items:flex-start;gap:10px;padding:12px 13px;margin:12px 0!important;background:#f4f6f2;border:1px solid #d7e2d8;border-radius:8px}
+.commerce-pos-admit-choice input[type=checkbox]{width:18px!important;height:18px!important;flex:0 0 18px;margin:2px 0 0!important}
+.commerce-pos-admit-choice span{display:flex;flex-direction:column;gap:4px}
+.commerce-pos-admit-choice strong{font-size:13px}
+.commerce-pos-admit-choice small{font-size:12px;line-height:1.45;color:#5d6960;font-weight:400}
+.commerce-pos-admission{border:1px solid #d9e2da;border-radius:10px;padding:16px;margin:18px 0;background:#fbfcfa}
+.commerce-pos-admission-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+.commerce-pos-admission-head h3{font-size:18px;margin:0 0 3px}
+.commerce-pos-admission-head p{margin:0;font-size:12px;color:#5b695e}
+.commerce-pos-admission-head a{font-size:12px;font-weight:750}
+.commerce-pos-admission>form>p{font-size:12px;color:#5d6960;margin:8px 0}
+.commerce-pos-admission-list{border:1px solid #e2e7e0;border-radius:7px;overflow:hidden;margin:9px 0 12px}
+.commerce-pos-admission-ticket{display:flex!important;align-items:center;gap:11px;border-bottom:1px solid #e2e7e0;padding:10px 12px;margin:0!important;min-height:48px;background:#fff;cursor:pointer}
+.commerce-pos-admission-ticket:last-child{border-bottom:0}
+.commerce-pos-admission-ticket:has(input:checked){background:#e8f4eb}
+.commerce-pos-admission-ticket input[type=checkbox]{width:17px!important;height:17px!important;flex:0 0 17px;margin:0!important}
+.commerce-pos-admission-ticket>span{display:flex;flex-direction:column;gap:3px;flex:1}
+.commerce-pos-admission-ticket strong{font-size:13px}
+.commerce-pos-admission-ticket small{font-size:11px;color:#626a62}
+.commerce-pos-admission-ticket em{font-style:normal;font-size:11px;color:#36684a}
+.commerce-pos-admission-ticket:has(input:disabled){background:#f7f8f6;opacity:.72;cursor:default}
+.commerce-pos-admission>form>button{min-height:40px}
