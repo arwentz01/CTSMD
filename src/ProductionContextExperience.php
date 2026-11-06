@@ -22,7 +22,7 @@ final class ProductionContextExperience
         $db = Database::connect(dirname(__DIR__));
         $user = Auth::currentUser($db);
         if (!$user) self::redirect(($basePath ?: '') . '/login');
-        if (!AccessPolicy::isStaff($user)) { http_response_code(403); exit('The working production selector is only available to production staff.'); }
+        if (!AccessPolicy::isStaff($user)) { http_response_code(403); exit('Only production staff can change the selected production.'); }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             self::redirect($basePath . '/production');
@@ -30,7 +30,7 @@ final class ProductionContextExperience
 
         $token = (string)($_POST['csrf_token'] ?? '');
         if (!hash_equals((string)($_SESSION['production_context_csrf'] ?? ''), $token)) {
-            $_SESSION['production_context_flash'] = ['type' => 'error', 'message' => 'Your production selector expired. Please try again.'];
+            $_SESSION['production_context_flash'] = ['type' => 'error', 'message' => 'That selection expired. Please choose the production again.'];
             self::redirect($basePath . '/production');
         }
 
@@ -41,7 +41,7 @@ final class ProductionContextExperience
             $production = ProductionContext::select($db, $user, (int)$productionId);
             $_SESSION['production_context_flash'] = [
                 'type' => 'success',
-                'message' => 'Working production changed to ' . $production['title'] . '.',
+                'message' => 'Current production changed to ' . $production['title'] . '.',
             ];
         } catch (RuntimeException $e) {
             $_SESSION['production_context_flash'] = ['type' => 'error', 'message' => $e->getMessage()];
