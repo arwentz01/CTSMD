@@ -91,3 +91,14 @@ Changes committed to a feature branch only. Source-level review and file readbac
 - Form library links directly to Edit questions; condition source picker only offers earlier eligible single-choice questions.
 - Member form conditional script tag issue corrected. Builder preview is now an interactive, non-submitting sandbox with a reset button, so staff can try conditional questions without saving answers.
 - **Not yet verified:** authenticated browser interactions for builder and family forms, accessibility and keyboard behavior, actual review flow after a conditional submission, deployment migration against hosted schema, native-app parity. No hosted migration or deployment has occurred.
+
+## Follow-on builder usability and data verification
+
+- Added activation validation to reject missing, future or invalid conditional source questions.
+- Updated condition configuration so staff choose an existing controlling answer rather than typing an exact value. When editing, only earlier eligible controllers are offered.
+- Upgraded the builder preview to a non-submitting interactive sandbox with conditional show/hide behavior and a Reset preview button.
+- Added a direct Edit questions link in the form library.
+- New questions now receive collision-safe generated keys when labels repeat (e.g., `email`, then `email_2`) instead of requiring manual technical key editing.
+- Expanded isolated MySQL checks to cover duplicated labels and actual persisted submission answers and definition snapshots; synthetic records remain inside a transaction and are rolled back.
+- The core migrated MySQL suite including duplicate-key handling **passed** in [RC1 run 42266089895](https://github.com/arwentz01/CTSMD/actions/runs/42266089895), while the newly added saved-submission snapshot assertions await their run.
+- Continue to treat the overall RC1 and pilot safety workflows as **not fully green**. Their outstanding operations/Commerce failures are separate from the passing Form Builder validation checks.
