@@ -45,7 +45,7 @@ final class CommerceDeliveryService
         $lines[]='Secure tickets (expires in 24 hours): '.$url;
         $lines[]='Open the secure ticket page for one QR per ticket and printable/PDF tickets. Preview access requires an authorized tester account. Email failure does not change ticket validity.';
         $html.=CommerceEmailTemplate::finish($brand,'View tickets & QR codes',$url,'This secure link expires in 24 hours. Sign in with your authorized tester account to access and print your tickets.','Sandbox tickets are for testing only and do not authorize real-world admission. Ticket validity is checked at the door.');
-        return['subject'=>$subject,'text'=>implode("\\n",$lines),'html'=>$html];
+        return['subject'=>$subject,'text'=>implode("\n",$lines),'html'=>$html];
     }
     public static function prepare(PDO $db,array $u,int $org,int $order,string $ownership,string $basePath):array
     {
