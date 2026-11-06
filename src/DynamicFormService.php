@@ -5,7 +5,7 @@ require_once __DIR__.'/FormWriteGuard.php';
 
 final class DynamicFormService
 {
-    public const FIELD_TYPES = ['short_text','long_text','single_choice','multiple_choice','date','acknowledgment','signature','resource_link','section_heading'];
+    public const FIELD_TYPES = ['short_text','long_text','single_choice','multiple_choice','date','acknowledgment','signature','resource_link','section_heading','email','phone','number'];
 
     public static function fields(PDO $db,int $formId,bool $activeOnly=true):array
     {
@@ -145,6 +145,7 @@ final class DynamicFormService
             }elseif($type==='acknowledgment'){
                 $value=$raw==='1';if($required&&!$value)throw new RuntimeException('Confirm the required acknowledgment: '.$field['label'].'.');
             }else{
+                if(is_array($raw))throw new RuntimeException('Enter a valid answer for '.$field['label'].'.');
                 $value=trim((string)($raw??''));
                 if($required&&$value==='')throw new RuntimeException('Complete the required field: '.$field['label'].'.');
                 if(in_array($type,['short_text','signature'],true)&&mb_strlen($value)>500)throw new RuntimeException($field['label'].' is too long.');
@@ -154,6 +155,12 @@ final class DynamicFormService
                     if(!$date||$date->format('Y-m-d')!==$value)throw new RuntimeException('Enter a valid date for '.$field['label'].'.');
                 }
                 if($type==='single_choice'&&$value!==''&&!in_array($value,array_map('strval',$field['options']??[]),true))throw new RuntimeException('Choose a valid option for '.$field['label'].'.');
+                if($type==='email'&&$value!==''&&(mb_strlen($value)>254||!filter_var($value,FILTER_VALIDATE_EMAIL)))throw new RuntimeException('Enter a valid email address for '.$field['label'].'.');
+                if($type==='phone'&&$value!==''){
+                    $digits=preg_replace('/\\D/','',$value);
+                    if(mb_strlen($value)>40||!preg_match('/^\\+?[0-9().\\-\\s]+$/D',$value)||strlen((string)$digits)<7||strlen((string)$digits)>15)throw new RuntimeException('Enter a valid phone number for '.$field['label'].'.');
+                }
+                if($type==='number'&&$value!==''&&(strlen($value)>50||!preg_match('/^-?[0-9]+(?:\\.[0-9]+)?$/D',$value)))throw new RuntimeException('Enter a valid number for '.$field['label'].'.');
             }
             $answers[$key]=['field_id'=>(int)$field['id'],'label'=>(string)$field['label'],'type'=>$type,'answer'=>$value];
         }
