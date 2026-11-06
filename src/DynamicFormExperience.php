@@ -132,24 +132,50 @@ final class DynamicFormExperience
         $active=array_values(array_filter($fields,static fn(array $f):bool=>(bool)$f['active']));
         ?>
         <section class="df-preview" aria-labelledby="df-preview-title">
-            <header><div><small>MEMBER VIEW</small><h3 id="df-preview-title">Form preview</h3><p>Review every question here. Conditional follow-ups are shown so you can check them; families will see them only when their answers match. Preview answers aren't saved.</p></div></header>
+            <header><div><small>MEMBER VIEW</small><h3 id="df-preview-title">Form preview</h3><p>Try the form as a family would. Choose answers to reveal conditional questions. Nothing you enter here is saved.</p></div></header>
             <?php if(!$active):?><p>Add a question to see a preview here.</p><?php else:?>
-            <fieldset disabled class="df-preview-disabled"><legend class="ux-visually-hidden">Form preview, read only</legend>
+            <fieldset class="df-preview-sandbox"><legend class="ux-visually-hidden">Interactive form preview; no answers are saved</legend>
                 <?php foreach($active as $field):$type=(string)$field['field_type'];$options=(array)($field['options']??[]);?>
-                <div class="df-preview-field"><div class="df-preview-label"><?=$e((string)$field['label'])?><?=!empty($field['required'])?' *':''?></div>
+                <div class="df-preview-field" <?php if(!empty($field['condition'])):?>data-preview-condition-source="<?=$e((string)$field['condition']['source_key'])?>" data-preview-condition-value="<?=$e((string)$field['condition']['equals'])?>" hidden<?php endif;?>><div class="df-preview-label"><?=$e((string)$field['label'])?><?=!empty($field['required'])?' *':''?></div>
                     <?php if(!empty($field['help_text'])):?><p><?=$e((string)$field['help_text'])?></p><?php endif;?>
                     <?php if($type==='section_heading'):?><p class="df-preview-section">Section heading: No answer needed</p>
                     <?php elseif($type==='long_text'):?><textarea rows="3" aria-label="<?=$e((string)$field['label'])?>"></textarea>
                     <?php elseif($type==='single_choice'||$type==='multiple_choice'):?>
-                        <?php foreach($options as $option):?><label class="df-preview-option"><input type="<?=$type==='single_choice'?'radio':'checkbox'?>" name="preview_<?=$field['id']?>" value="<?=$e((string)$option)?>"><?=$e((string)$option)?></label><?php endforeach;?>
+                        <?php foreach($options as $option):?><label class="df-preview-option"><input type="<?=$type==='single_choice'?'radio':'checkbox'?>" name="preview_<?=$e((string)$field['field_key'])?>" value="<?=$e((string)$option)?>"><?=$e((string)$option)?></label><?php endforeach;?>
                     <?php elseif($type==='acknowledgment'):?><label class="df-preview-option"><input type="checkbox">I acknowledge this statement.</label>
                     <?php elseif($type==='resource_link'):?><p class="df-preview-resource">Linked resource: <?=$e((string)($field['resource_title']??'Resource unavailable'))?><?=!empty($field['required'])?' · Must open before submitting':''?></p>
                     <?php else:?><input type="<?=['date'=>'date','email'=>'email','phone'=>'tel','number'=>'number'][$type]??'text'?>" aria-label="<?=$e((string)$field['label'])?>" placeholder="<?=$type==='signature'?'Type your full name':''?>">
                     <?php endif;?>
                 </div>
                 <?php endforeach;?>
-            </fieldset><?php endif;?>
+            </fieldset><button type="button" class="df-preview-reset">Reset preview</button><?php endif;?>
         </section>
+        <script>
+        (function(){
+          const preview=document.querySelector('.df-preview');
+          if(!preview)return;
+          const conditional=Array.from(preview.querySelectorAll('[data-preview-condition-source]'));
+          const update=function(){
+            conditional.forEach(function(section){
+              const key=section.dataset.previewConditionSource;
+              const expected=section.dataset.previewConditionValue;
+              const answers=Array.from(preview.querySelectorAll('input[type="radio"]'));
+              const selected=answers.find(function(input){return input.name==='preview_'+key&&input.checked});
+              section.hidden=!(selected&&selected.value===expected);
+            });
+          };
+          preview.addEventListener('change',update);
+          const reset=preview.querySelector('.df-preview-reset');
+          if(reset)reset.addEventListener('click',function(){
+            preview.querySelectorAll('input,textarea').forEach(function(control){
+              if(control.type==='radio'||control.type==='checkbox')control.checked=false;
+              else control.value='';
+            });
+            update();
+          });
+          update();
+        })();
+        </script>
         <?php
     }
 
