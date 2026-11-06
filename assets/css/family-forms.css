@@ -6,3 +6,6 @@
 .ff-section-field legend{font-size:19px;color:#5f1d36;padding:0 4px}
 .ff-section-field p{line-height:1.5;color:#51444b}
 .ff-section-rule{display:block;width:44px;height:3px;background:#a32849;border-radius:9px;margin-top:6px}
+
+/* Keep conditional questions hidden even where fieldset layout uses display:grid. */
+.ff-form fieldset[hidden]{display:none!important}
