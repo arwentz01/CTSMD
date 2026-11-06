@@ -59,4 +59,16 @@ catch(RuntimeException $e){$checks++;}
 $yes=DynamicFormService::validateAnswers($conditional,['field'=>['allergies'=>'Yes','allergy_details'=>'Peanuts']]);
 if(($yes['allergy_details']['answer']??null)!=='Peanuts')throw new RuntimeException('Visible conditional answer not saved.');
 $checks++;
+
+// Activation must reject orphaned and forward dependencies before assignments begin.
+$publishing=[
+ ['id'=>10,'field_key'=>'allergies','field_type'=>'single_choice','required'=>true,'label'=>'Any allergies?','options'=>['Yes','No'],'condition'=>null,'active'=>1],
+ ['id'=>11,'field_key'=>'allergy_details','field_type'=>'long_text','required'=>true,'label'=>'Allergy details','options'=>[],'condition'=>['source_key'=>'allergies','equals'=>'Yes'],'condition_json'=>'{"source_key":"allergies","equals":"Yes"}','active'=>1]
+];
+DynamicFormService::assertPublishable($publishing);$checks++;
+try{DynamicFormService::assertPublishable(array_reverse($publishing));throw new LogicException('Forward condition was published.');}
+catch(RuntimeException $e){$checks++;}
+$orphan=$publishing;$orphan[1]['condition']=['source_key'=>'missing','equals'=>'Yes'];
+try{DynamicFormService::assertPublishable($orphan);throw new LogicException('Orphaned condition was published.');}
+catch(RuntimeException $e){$checks++;}
 echo 'PASS: '.$checks." structured form answer validation checks.\n";
