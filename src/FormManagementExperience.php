@@ -51,6 +51,12 @@ final class FormManagementExperience
                 self::flash('success', $id ? 'Form settings updated.' : 'Form created.');
                 self::redirect($basePath . '/admin/forms/manage/edit?id=' . $saved);
             }
+            if ($action === 'copy_form') {
+                $id = filter_input(INPUT_POST, 'form_id', FILTER_VALIDATE_INT) ?: 0;
+                $copyId = self::copyForm($db, $user, (int)$id);
+                self::flash('success', 'Unpublished copy created. Review its questions before making it available.');
+                self::redirect($basePath . '/admin/forms/builder?id=' . $copyId);
+            }
             if ($action === 'toggle_active') {
                 $id = filter_input(INPUT_POST, 'form_id', FILTER_VALIDATE_INT) ?: 0;
                 self::toggleActive($db, $user, (int)$id);
@@ -123,6 +129,36 @@ final class FormManagementExperience
             if ($db->inTransaction()) $db->rollBack();
             if ($e instanceof RuntimeException) throw $e;
             throw new RuntimeException('The form could not be saved.');
+        }
+    }
+
+    /**
+     * Prepare an independent, unpublished copy. The original form, its
+     * assignments, submissions and review history are never modified.
+     */
+    private static function copyForm(PDO $db, array $actor, int $formId): int
+    {
+        if ($formId < 1) throw new RuntimeException('Choose a form to copy.');
+        $db->beginTransaction();
+        try {
+            FormWriteGuard::form($db,$formId);
+            $select=$db->prepare('SELECT production_id,title,form_type,instructions,completion_mode,review_required FROM forms WHERE id=:id FOR UPDATE');
+            $select->execute(['id'=>$formId]);
+            $source=$select->fetch();
+            if(!$source)throw new RuntimeException('The original form no longer exists.');
+            $suffix=' (Copy)';
+            $title=mb_substr((string)$source['title'],0,190-mb_strlen($suffix)).$suffix;
+            $insert=$db->prepare('INSERT INTO forms (production_id,title,form_type,instructions,completion_mode,review_required,active,created_by_user_id) VALUES (:production,:title,:type,:instructions,:mode,:review,0,:creator)');
+            $insert->execute(['production'=>$source['production_id'],'title'=>$title,'type'=>$source['form_type'],'instructions'=>$source['instructions'],'mode'=>$source['completion_mode'],'review'=>$source['review_required'],'creator'=>(int)$actor['id']]);
+            $copyId=(int)$db->lastInsertId();
+            $copyFields=$db->prepare('INSERT INTO form_fields (form_id,field_key,label,help_text,field_type,required,options_json,sort_order,active) SELECT :new_form,field_key,label,help_text,field_type,required,options_json,sort_order,active FROM form_fields WHERE form_id=:source_form ORDER BY sort_order,id');
+            $copyFields->execute(['new_form'=>$copyId,'source_form'=>$formId]);
+            self::audit($db,(int)$actor['id'],'form.definition_copied','form',$copyId,'Created an unpublished copy of a form.',['source_form_id'=>$formId]);
+            $db->commit();
+            return $copyId;
+        } catch(Throwable $e) {
+            if($db->inTransaction())$db->rollBack();
+            throw $e instanceof RuntimeException?$e:new RuntimeException('The form could not be copied. Please try again.');
         }
     }
 
@@ -309,7 +345,7 @@ final class FormManagementExperience
         <?php if($flash):?><div class="fm-flash <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif; ?>
         <?php if($route==='/admin/forms/manage'):?>
         <section class="fm-hero"><div><small>FORM LIBRARY</small><h2>Create once. Assign with context.</h2><p>Reusable organization forms can be assigned globally or inside a working production. Production-specific forms stay permanently attached to one show.</p></div><a class="button" href="<?= $url('/admin/forms/manage/edit') ?>">Create form</a></section>
-        <div class="fm-grid"><?php if(!$forms):?><div class="fm-empty"><b>No forms yet.</b></div><?php endif; ?><?php foreach($forms as $row):$rowReadOnly=WorkspaceUI::productionReadOnly($db,$row['production_id']?(int)$row['production_id']:null);?><article class="fm-card<?= !$row['active']?' inactive':'' ?>"><header><div><small><?= $row['production_title']?$esc($row['production_title']):'REUSABLE / ORGANIZATION' ?></small><h3><?= $esc($row['title']) ?></h3></div><span><?= $row['active']?'ACTIVE':'INACTIVE' ?></span></header><p><?= $esc(ucfirst($row['completion_mode'])) ?> · <?= $row['review_required']?'Staff review':'Automatic completion' ?></p><div><b><?= (int)$row['assignment_count'] ?></b><small>assigned</small><b><?= (int)$row['completed_count'] ?></b><small>complete</small><b><?= (int)$row['review_count'] ?></b><small>review</small></div><footer><a href="<?= $url('/admin/forms/manage/edit?id='.(int)$row['id']) ?>">Settings</a><a href="<?= $url('/admin/forms/manage/assign?id='.(int)$row['id']) ?>">Assign</a><?php if((int)$row['review_count']>0):?><a href="<?= $url('/admin/forms?form_id='.(int)$row['id']) ?>">Review <?= (int)$row['review_count'] ?> →</a><?php endif; ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['form_manage_csrf']) ?>"><input type="hidden" name="action" value="toggle_active"><input type="hidden" name="form_id" value="<?= (int)$row['id'] ?>"><button type="submit" <?=$rowReadOnly?'disabled':''?>><?= $row['active']?'Deactivate':'Activate' ?></button></form></footer></article><?php endforeach; ?></div>
+        <div class="fm-grid"><?php if(!$forms):?><div class="fm-empty"><b>No forms yet.</b></div><?php endif; ?><?php foreach($forms as $row):$rowReadOnly=WorkspaceUI::productionReadOnly($db,$row['production_id']?(int)$row['production_id']:null);?><article class="fm-card<?= !$row['active']?' inactive':'' ?>"><header><div><small><?= $row['production_title']?$esc($row['production_title']):'REUSABLE / ORGANIZATION' ?></small><h3><?= $esc($row['title']) ?></h3></div><span><?= $row['active']?'ACTIVE':'INACTIVE' ?></span></header><p><?= $esc(ucfirst($row['completion_mode'])) ?> · <?= $row['review_required']?'Staff review':'Automatic completion' ?></p><div><b><?= (int)$row['assignment_count'] ?></b><small>assigned</small><b><?= (int)$row['completed_count'] ?></b><small>complete</small><b><?= (int)$row['review_count'] ?></b><small>review</small></div><footer><a href="<?= $url('/admin/forms/manage/edit?id='.(int)$row['id']) ?>">Settings</a><a href="<?= $url('/admin/forms/manage/assign?id='.(int)$row['id']) ?>">Assign</a><?php if((int)$row['review_count']>0):?><a href="<?= $url('/admin/forms?form_id='.(int)$row['id']) ?>">Review <?= (int)$row['review_count'] ?> →</a><?php endif; ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['form_manage_csrf']) ?>"><input type="hidden" name="action" value="copy_form"><input type="hidden" name="form_id" value="<?= (int)$row['id'] ?>"><button type="submit" <?=$rowReadOnly?'disabled':''?>>Make a copy</button></form><form method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['form_manage_csrf']) ?>"><input type="hidden" name="action" value="toggle_active"><input type="hidden" name="form_id" value="<?= (int)$row['id'] ?>"><button type="submit" <?=$rowReadOnly?'disabled':''?>><?= $row['active']?'Deactivate':'Activate' ?></button></form></footer></article><?php endforeach; ?></div>
         <?php elseif($editing): ?>
         <?php $f=$form??['id'=>0,'production_id'=>null,'title'=>'','form_type'=>'acknowledgment','instructions'=>'','completion_mode'=>'acknowledgment','review_required'=>0,'active'=>1]; ?>
         <section class="fm-head"><div><small><?= $form?'FORM SETTINGS':'NEW FORM' ?></small><h2><?= $form?$esc($form['title']):'Create a form' ?></h2><p>Production scope uses your current working production. Reusable organization forms can later be assigned into any active production without duplicating the definition.</p></div><a href="<?= $url('/admin/forms/manage') ?>">← Form library</a></section>
