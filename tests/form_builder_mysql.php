@@ -63,7 +63,7 @@ try{
 
     $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,active,account_status,organization_membership_status) VALUES('Form','Fixture',?,'FF','member',1,'active','approved')")->execute(['form-'.bin2hex(random_bytes(7)).'@example.invalid']);
     $person=(int)$db->lastInsertId();
-    $db->prepare("INSERT INTO form_assignments(form_id,user_id,subject_user_id,status) VALUES(:form,:user,:user,'missing')")->execute(['form'=>$formId,'user'=>$person]);
+    $db->prepare("INSERT INTO form_assignments(form_id,user_id,subject_user_id,status) VALUES(:form,:user,:subject,'missing')")->execute(['form'=>$formId,'user'=>$person,'subject'=>$person]);
     $denied(static fn()=>DynamicFormService::saveField($db,$formId,0,['label'=>'Late question','field_key'=>'late','field_type'=>'short_text']),'Assigned form definition locked');
 
     echo 'PASS: '.$checks." migrated Form Builder/MySQL checks. All fixtures rolled back.\n";
