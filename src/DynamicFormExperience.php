@@ -84,6 +84,14 @@ final class DynamicFormExperience
         $editId=filter_input(INPUT_GET,'field',FILTER_VALIDATE_INT)?:0;
         $editing=null;
         foreach($fields as $field)if((int)$field['id']===(int)$editId)$editing=$field;
+        if($editing){
+            $earlier=[];
+            foreach($fields as $candidate){
+                if((int)$candidate['id']===(int)$editing['id'])break;
+                $earlier[]=(int)$candidate['id'];
+            }
+            $conditionSources=array_values(array_filter($conditionSources,static fn(array $f):bool=>in_array((int)$f['id'],$earlier,true)));
+        }
         $conditionSources=array_values(array_filter($fields,static fn(array $f):bool=>(bool)$f['active']&&$f['field_type']==='single_choice'&&empty($f['condition'])));
         $selectedResource='';
         if($editing&&($editing['field_type']??'')==='resource_link'){
