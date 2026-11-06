@@ -22,4 +22,27 @@ foreach($cases as $values){
 }
 try{DynamicFormService::validateAnswers($fields,['field'=>['date'=>'2026-11-06','days'=>'Monday']]);throw new LogicException('Scalar multiple choice accepted.');}
 catch(RuntimeException $e){$checks++;}
+
+// Informational sections do not submit answers or require a response.
+$section=[['id'=>3,'field_key'=>'about','field_type'=>'section_heading','required'=>false,'label'=>'Contact details','options'=>[]]];
+if(DynamicFormService::validateAnswers($section,['field'=>[]])!==[])throw new RuntimeException('Section heading must not save an answer.');
+$checks++;
+
+$contacts=[
+ ['id'=>4,'field_key'=>'email','field_type'=>'email','required'=>true,'label'=>'Email','options'=>[]],
+ ['id'=>5,'field_key'=>'phone','field_type'=>'phone','required'=>true,'label'=>'Phone','options'=>[]],
+ ['id'=>6,'field_key'=>'quantity','field_type'=>'number','required'=>true,'label'=>'Quantity','options'=>[]]
+];
+$validContacts=DynamicFormService::validateAnswers($contacts,['field'=>['email'=>'person@example.org','phone'=>'(301) 555-0102','quantity'=>'12.5']]);
+if($validContacts['email']['answer']!=='person@example.org'||$validContacts['quantity']['answer']!=='12.5')throw new RuntimeException('Valid contact and numeric answers not preserved.');
+$checks++;
+foreach([
+ ['email'=>'bad address','phone'=>'(301) 555-0102','quantity'=>'12'],
+ ['email'=>'person@example.org','phone'=>'hello','quantity'=>'12'],
+ ['email'=>'person@example.org','phone'=>'(301) 555-0102','quantity'=>'twelve'],
+ ['email'=>['person@example.org'],'phone'=>'3015550102','quantity'=>'12']
+] as $invalid){
+    try{DynamicFormService::validateAnswers($contacts,['field'=>$invalid]);throw new LogicException('Invalid contact/number value accepted.');}
+    catch(RuntimeException $e){$checks++;}
+}
 echo 'PASS: '.$checks." structured form answer validation checks.\n";
