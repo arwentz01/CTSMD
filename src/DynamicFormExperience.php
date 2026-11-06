@@ -116,7 +116,7 @@ final class DynamicFormExperience
                         <?php foreach($options as $option):?><label class="df-preview-option"><input type="<?=$type==='single_choice'?'radio':'checkbox'?>" name="preview_<?=$field['id']?>" value="<?=$e((string)$option)?>"><?=$e((string)$option)?></label><?php endforeach;?>
                     <?php elseif($type==='acknowledgment'):?><label class="df-preview-option"><input type="checkbox">I acknowledge this statement.</label>
                     <?php elseif($type==='resource_link'):?><p class="df-preview-resource">Linked resource: <?=$e((string)($field['resource_title']??'Resource unavailable'))?><?=!empty($field['required'])?' · Must open before submitting':''?></p>
-                    <?php else:?><input type="<?=$type==='date'?'date':'text'?>" aria-label="<?=$e((string)$field['label'])?>" placeholder="<?=$type==='signature'?'Type your full name':''?>">
+                    <?php else:?><input type="<?=['date'=>'date','email'=>'email','phone'=>'tel','number'=>'number'][$type]??'text'?>" aria-label="<?=$e((string)$field['label'])?>" placeholder="<?=$type==='signature'?'Type your full name':''?>">
                     <?php endif;?>
                 </div>
                 <?php endforeach;?>
