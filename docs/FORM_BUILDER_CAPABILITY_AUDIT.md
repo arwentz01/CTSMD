@@ -51,3 +51,11 @@ Changes committed to a feature branch only. Source-level review and file readbac
 - Structured answer validation now rejects impossible calendar dates and unrecognized multiple-choice values, rather than accepting malformed dates or silently filtering answers.
 - Added `tests/form_builder_answers.php` for valid/invalid structured answer cases. Test execution remains outstanding in the current environment.
 - **Next major build decision:** draft and published versions, with per-assignment frozen definitions rather than mutable shared live questions. This requires coordinated schema, submission/API, family UI and historical review changes; it is not implemented by the current preview.
+
+## Copy-to-edit workflow (2026-11-06 follow-up)
+
+- Form library now has a **Make a copy** action for forms whose production is still editable. It performs a transactional copy of form settings and all question rows, preserving order, choices and linked resource identifiers. The new form starts inactive and has new form/question IDs. Assignments and submissions are not copied.
+- Builder displays an explicit inactive-state explanation. Staff can edit and preview the copy before activating it from Manage Forms.
+- This is **not** draft/published revision isolation. Existing form assignments still resolve the current mutable question rows, so the next phase must freeze each assignment against the published definition before permitting safe edits to an in-use form.
+- Read-only or completed/archived production forms cannot be duplicated using this action, because the current lifecycle guard protects writes. Future reusable template extraction needs its own reviewed permissions and scope rules.
+- Database-backed transaction tests, PHP lint and browser acceptance are still outstanding.
