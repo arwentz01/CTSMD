@@ -59,3 +59,14 @@ Changes committed to a feature branch only. Source-level review and file readbac
 - This is **not** draft/published revision isolation. Existing form assignments still resolve the current mutable question rows, so the next phase must freeze each assignment against the published definition before permitting safe edits to an in-use form.
 - Read-only or completed/archived production forms cannot be duplicated using this action, because the current lifecycle guard protects writes. Future reusable template extraction needs its own reviewed permissions and scope rules.
 - Database-backed transaction tests, PHP lint and browser acceptance are still outstanding.
+
+## Latest batch: assigned-form protection and expanded question types (November 6, 2026)
+
+- Added `FormWriteGuard::definitionEditable`, invoked inside transactions for question creation, edits, activation and reordering, and form setting edits. Assigned forms must be copied for further changes. Existing submissions and assignments remain attached to the original form.
+- Builder displays a clear assigned-form warning and disables question editing controls; the server independently rejects writes. Activation/deactivation of an existing form remains a separate availability operation and has not been redefined as version publishing.
+- Added `section_heading`: an informational heading with optional supporting description, never required and never stored as an answer. Supported in editor, disabled preview, family view and validation.
+- Added `email`, `phone` and `number`: purpose-specific browser inputs with server validation. Phone format accepts common international and US formatting, requiring 7–15 digits; numbers are plain signed decimals rather than monetary or calculated fields.
+- Database migration `121_form_section_heading.sql` extends the `form_fields.field_type` ENUM with all four types. It is **not applied**; review live enum and migration prerequisites before applying to populated schemas.
+- Added validation regression cases for the new types and unsupported answers. Tests remain unexecuted in this environment.
+
+**Important remaining limitation:** Assignments still point to a mutable form ID. Freezing edits after first assignment protects current definitions, but does not implement a publishable revision linked to each assignment. A future true draft/publish system needs a distinct persisted revision model and backfill/migration plan, not merely relabeling active/inactive.
