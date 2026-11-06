@@ -51,7 +51,7 @@ export default function More(){
  const staff=!!user?.roles?.some(role=>role==='production_staff'||role==='administrator');
  const admin=!!user?.roles?.includes('administrator');
  const member:LinkItem[]=[
-  {title:'My family',description:'Students and guardian relationships',icon:'people-outline',native:'/family'},
+  {title:'My family',description:'Children, parents and guardians',icon:'people-outline',native:'/family'},
   {title:'Forms',description:'Assigned forms and acknowledgements',icon:'document-text-outline',native:'/(tabs)/forms'},
   {title:'Volunteer',description:'Signups and commitments',icon:'hand-left-outline',native:'/(tabs)/volunteer'},
   {title:'Video Library',description:'Rehearsal recordings and shared videos',icon:'play-circle-outline',native:'/videos'},
