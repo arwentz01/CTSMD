@@ -10,10 +10,12 @@ final class DynamicFormService
     public static function fields(PDO $db,int $formId,bool $activeOnly=true):array
     {
         if($formId<1)return [];
-        $sql="SELECT id,form_id,field_key,label,help_text,field_type,required,options_json,sort_order,active FROM form_fields WHERE form_id=:form".($activeOnly?" AND active=1":"")." ORDER BY active DESC,sort_order,id";
+        $sql="SELECT id,form_id,field_key,label,help_text,field_type,required,options_json,condition_json,sort_order,active FROM form_fields WHERE form_id=:form".($activeOnly?" AND active=1":"")." ORDER BY active DESC,sort_order,id";
         $stmt=$db->prepare($sql);$stmt->execute(['form'=>$formId]);$rows=$stmt->fetchAll();
         foreach($rows as &$row){
             $decoded=json_decode((string)($row['options_json']??''),true);
+            $condition=json_decode((string)($row['condition_json']??''),true);
+            $row['condition']=is_array($condition)?$condition:null;
             if($row['field_type']==='resource_link'){
                 $row['resource']=is_array($decoded)?$decoded:[];
                 $row['options']=[];
@@ -59,6 +61,23 @@ final class DynamicFormService
             $required=isset($input['required'])?1:0;
             $json=json_encode(['scope'=>$scope,'resource_id'=>$resourceId,'require_open'=>(bool)$required],JSON_THROW_ON_ERROR);
         }
+        $conditionJson=null;
+        $sourceId=(int)($input['condition_source_id']??0);
+        $match=(string)($input['condition_value']??'');
+        if($sourceId>0){
+            if(in_array($type,['resource_link','section_heading'],true))throw new RuntimeException('Conditions only apply to questions.');
+            $stmt=$db->prepare('SELECT id,field_key,field_type,options_json,active,condition_json FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');
+            $stmt->execute(['id'=>$sourceId,'form'=>$formId]);$source=$stmt->fetch();
+            if(!$source||(int)$source['active']!==1||$source['field_type']!=='single_choice'||$source['condition_json']!==null)throw new RuntimeException('Choose an unconditional single-choice question.');
+            $previous=$db->prepare('SELECT id FROM form_fields WHERE form_id=:form AND active=1 ORDER BY sort_order,id');
+            $previous->execute(['form'=>$formId]);$order=array_map('intval',$previous->fetchAll(PDO::FETCH_COLUMN));
+            $sourcePosition=array_search($sourceId,$order,true);
+            $targetPosition=$fieldId>0?array_search($fieldId,$order,true):count($order);
+            if($sourcePosition===false||$targetPosition===false||$sourcePosition>=$targetPosition)throw new RuntimeException('The controlling question must appear earlier in the form.');
+            $choices=json_decode((string)$source['options_json'],true);
+            if(!is_array($choices)||!in_array($match,$choices,true))throw new RuntimeException('Choose one of the controlling question’s options.');
+            $conditionJson=json_encode(['source_key'=>(string)$source['field_key'],'equals'=>$match],JSON_THROW_ON_ERROR);
+        }
         $key=trim((string)($input['field_key']??''));
         if($key==='')$key=self::slug($label);
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
@@ -68,12 +87,12 @@ final class DynamicFormService
                 $used=$db->prepare('SELECT 1 FROM form_submission_answers WHERE field_id=:id LIMIT 1');$used->execute(['id'=>$fieldId]);
                 if($used->fetchColumn())throw new RuntimeException('This question already has submitted answers. Keep its question type and key, or add a new question instead.');
             }
-            $update=$db->prepare('UPDATE form_fields SET field_key=:field_key,label=:label,help_text=:help,field_type=:type,required=:required,options_json=:options,sort_order=:sort WHERE id=:id AND form_id=:form');
-            $update->execute(['field_key'=>$key,'label'=>$label,'help'=>$help!==''?$help:null,'type'=>$type,'required'=>$required,'options'=>$json,'sort'=>$sort,'id'=>$fieldId,'form'=>$formId]);
+            $update=$db->prepare('UPDATE form_fields SET field_key=:field_key,label=:label,help_text=:help,field_type=:type,required=:required,options_json=:options,condition_json=:condition,sort_order=:sort WHERE id=:id AND form_id=:form');
+            $update->execute(['field_key'=>$key,'label'=>$label,'help'=>$help!==''?$help:null,'type'=>$type,'required'=>$required,'options'=>$json,'condition'=>$conditionJson,'sort'=>$sort,'id'=>$fieldId,'form'=>$formId]);
             return $fieldId;
         }
-        $insert=$db->prepare('INSERT INTO form_fields (form_id,field_key,label,help_text,field_type,required,options_json,sort_order,active) VALUES (:form,:field_key,:label,:help,:type,:required,:options,:sort,1)');
-        $insert->execute(['form'=>$formId,'field_key'=>$key,'label'=>$label,'help'=>$help!==''?$help:null,'type'=>$type,'required'=>$required,'options'=>$json,'sort'=>$sort]);
+        $insert=$db->prepare('INSERT INTO form_fields (form_id,field_key,label,help_text,field_type,required,options_json,condition_json,sort_order,active) VALUES (:form,:field_key,:label,:help,:type,:required,:options,:condition,:sort,1)');
+        $insert->execute(['form'=>$formId,'field_key'=>$key,'label'=>$label,'help'=>$help!==''?$help:null,'type'=>$type,'required'=>$required,'options'=>$json,'condition'=>$conditionJson,'sort'=>$sort]);
         return (int)$db->lastInsertId();
     }
 
@@ -130,12 +149,23 @@ final class DynamicFormService
         $stmt=$db->prepare('SELECT definition_version FROM forms WHERE id=:id');$stmt->execute(['id'=>$formId]);return (int)$stmt->fetchColumn();
     }
 
+    public static function isVisible(array $field,array $input):bool
+    {
+        $condition=$field['condition']??null;
+        if(!is_array($condition))return true;
+        $source=(string)($condition['source_key']??'');
+        $expected=(string)($condition['equals']??'');
+        $value=$input['field'][$source]??null;
+        return $source!==''&&is_string($value)&&$value===$expected;
+    }
+
     public static function validateAnswers(array $fields,array $input):array
     {
         $answers=[];
         foreach($fields as $field){
             $key=(string)$field['field_key'];$type=(string)$field['field_type'];$required=(bool)$field['required'];
             if(in_array($type,['resource_link','section_heading'],true))continue;
+            if(!self::isVisible($field,$input))continue;
             $raw=$input['field'][$key]??null;$value=null;
             if($type==='multiple_choice'){
                 if($raw!==null&&!is_array($raw))throw new RuntimeException('Choose valid options for '.$field['label'].'.');
@@ -169,7 +199,7 @@ final class DynamicFormService
 
     public static function snapshot(int $version,array $fields):array
     {
-        return ['definition_version'=>$version,'fields'=>array_map(static fn(array $f):array=>['id'=>(int)$f['id'],'key'=>(string)$f['field_key'],'label'=>(string)$f['label'],'help_text'=>$f['help_text']??null,'type'=>(string)$f['field_type'],'required'=>(bool)$f['required'],'options'=>$f['field_type']==='resource_link'?($f['resource']??[]):($f['options']??[]),'sort_order'=>(int)$f['sort_order']],$fields)];
+        return ['definition_version'=>$version,'fields'=>array_map(static fn(array $f):array=>['id'=>(int)$f['id'],'key'=>(string)$f['field_key'],'label'=>(string)$f['label'],'help_text'=>$f['help_text']??null,'type'=>(string)$f['field_type'],'required'=>(bool)$f['required'],'condition'=>$f['condition']??null,'options'=>$f['field_type']==='resource_link'?($f['resource']??[]):($f['options']??[]),'sort_order'=>(int)$f['sort_order']],$fields)];
     }
 
     public static function writeAnswers(PDO $db,int $submissionId,array $answers):void
