@@ -55,8 +55,8 @@ export default function More(){
   {title:'Forms',description:'Assigned forms and acknowledgements',icon:'document-text-outline',native:'/(tabs)/forms'},
   {title:'Volunteer',description:'Signups and commitments',icon:'hand-left-outline',native:'/(tabs)/volunteer'},
   {title:'Video Library',description:'Rehearsal recordings and shared videos',icon:'play-circle-outline',native:'/videos'},
-  {title:'Performer profile',description:'Profile and publication consent · website',icon:'person-circle-outline',website:'performerProfile'},
-  {title:'Theatre history',description:'Past credits and shows · website',icon:'time-outline',website:'theatreHistory'},
+  {title:'Performer profile',description:'Manage your performer details and consent · opens in browser',icon:'person-circle-outline',website:'performerProfile'},
+  {title:'Theatre history',description:'Past roles and shows · opens in browser',icon:'time-outline',website:'theatreHistory'},
   {title:'Auditions & registration',description:'Applications and audition forms · website',icon:'clipboard-outline',website:'registration'},
   {title:'Family & pickup management',description:'Authorized guardians and pickup people · website',icon:'shield-checkmark-outline',website:'familyManagement'}
  ];
@@ -65,8 +65,8 @@ export default function More(){
   {title:'Caregiver schedule',description:'Upcoming calls authorized for your care',icon:'calendar-outline',native:'/caregiver-schedule'}
  ];
  const staffItems:LinkItem[]=[
-  {title:'Production workspace',description:'Production operations and preparation · website',icon:'film-outline',website:'productionWorkspace'},
-  {title:'Production day & attendance',description:'Check-in, calls and attendance · website',icon:'calendar-outline',website:'productionDay'},
+  {title:'Production workspace',description:'Manage production details · opens in browser',icon:'film-outline',website:'productionWorkspace'},
+  {title:'Production day & attendance',description:'Today's schedule and attendance · opens in browser',icon:'calendar-outline',website:'productionDay'},
   {title:'Production people',description:'Cast, crew and assignments · website',icon:'people-circle-outline',website:'productionPeople'},
   {title:'Production tasks',description:'Create, delegate and track work · website',icon:'checkmark-done-outline',website:'productionTasks'},
   {title:'Readiness & notices',description:'Pre-show status and communications · website',icon:'list-outline',website:'productionReadiness'},
