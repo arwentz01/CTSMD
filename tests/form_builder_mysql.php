@@ -68,6 +68,19 @@ try{
     $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,active,account_status,organization_membership_status) VALUES('Form','Fixture',?,'FF','member',1,'active','approved')")->execute(['form-'.bin2hex(random_bytes(7)).'@example.invalid']);
     $person=(int)$db->lastInsertId();
     $db->prepare("INSERT INTO form_assignments(form_id,user_id,subject_user_id,status) VALUES(:form,:user,:subject,'missing')")->execute(['form'=>$formId,'user'=>$person,'subject'=>$person]);
+    // Store a real synthetic submission and confirm the saved answer/snapshot boundary.
+    $assignmentId=(int)$db->lastInsertId();
+    $snapshot=DynamicFormService::snapshot(1,$fields);
+    $db->prepare("INSERT INTO form_submissions(assignment_id,form_id,submitted_by_user_id,submitted_for_user_id,acknowledgment,definition_version,definition_snapshot_json,status) VALUES (:assignment,:form,:actor,:subject,1,1,:snapshot,'submitted')")
+        ->execute(['assignment'=>$assignmentId,'form'=>$formId,'actor'=>$person,'subject'=>$person,'snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR)]);
+    $submissionId=(int)$db->lastInsertId();
+    DynamicFormService::writeAnswers($db,$submissionId,$no);
+    $saved=DynamicFormService::answers($db,$submissionId);
+    $ok(count($saved)===4,'Only visible answers persisted to submission records');
+    $ok(!in_array('reaction',array_column($saved,'field_key'),true),'Hidden conditional answer absent from saved response');
+    $storedSnapshot=json_decode((string)$db->query('SELECT definition_snapshot_json FROM form_submissions WHERE id='.(int)$submissionId)->fetchColumn(),true);
+    $snapCondition=array_values(array_filter((array)($storedSnapshot['fields']??[]),static fn(array $row):bool=>($row['key']??'')==='reaction'))[0]['condition']??null;
+    $ok(($snapCondition['source_key']??null)==='allergies','Historical form snapshot retains conditional rule');
     $denied(static fn()=>DynamicFormService::saveField($db,$formId,0,['label'=>'Late question','field_key'=>'late','field_type'=>'short_text']),'Assigned form definition locked');
 
     echo 'PASS: '.$checks." migrated Form Builder/MySQL checks. All fixtures rolled back.\n";
