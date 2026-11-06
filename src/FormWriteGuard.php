@@ -23,6 +23,19 @@ final class FormWriteGuard
         self::production($db,$id===null?null:(int)$id);
     }
 
+    /**
+     * Published definitions cannot be changed after assignment.
+     * Copy the form to create a new independent version instead.
+     * Call within the same transaction as the definition mutation.
+     */
+    public static function definitionEditable(PDO $db,int $formId):void
+    {
+        self::form($db,$formId);
+        $q=$db->prepare('SELECT id FROM form_assignments WHERE form_id=:id LIMIT 1');
+        $q->execute(['id'=>$formId]);
+        if($q->fetchColumn())throw new RuntimeException('This form has already been assigned. Make a copy to change its questions or settings without affecting existing responses.');
+    }
+
     public static function assignment(PDO $db,int $assignmentId): void
     {
         $q=$db->prepare('SELECT form_id,production_id FROM form_assignments WHERE id=:id FOR UPDATE');
