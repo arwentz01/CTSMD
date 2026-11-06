@@ -77,7 +77,7 @@ final class OperationsHubExperience
         }
         if($route==='/admin/operations/resources'){
             if(!AccessPolicy::canManageResources($user))return ['Resource Operations','RESOURCE TOOLS','',[]];
-            return ['Resource Operations','RESOURCE TOOLS','Choose what you'd like to manage. Organization resources are separate from those for the selected production.',[
+            return ['Resource Operations','RESOURCE TOOLS','Choose the library to manage. Organization resources are separate from those for the selected production.',[
                 ['icon'=>'◇','eyebrow'=>'CTSMD-WIDE','label'=>'Member resources','detail'=>'Policies, handbooks, facility information, links, notes, and files for approved members.','href'=>'/admin/member-resources'],
                 ['icon'=>'▤','eyebrow'=>'SELECTED PRODUCTION','label'=>'Production resources','detail'=>'Links and notes published for the selected production.','href'=>'/admin/resources'],
                 ['icon'=>'▣','eyebrow'=>'SELECTED PRODUCTION','label'=>'Production files','detail'=>'Upload files, organize them, and choose who can download them.','href'=>'/admin/files'],
