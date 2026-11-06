@@ -105,7 +105,7 @@ final class DynamicFormExperience
         $active=array_values(array_filter($fields,static fn(array $f):bool=>(bool)$f['active']));
         ?>
         <section class="df-preview" aria-labelledby="df-preview-title">
-            <header><div><small>MEMBER VIEW</small><h3 id="df-preview-title">Form preview</h3><p>This is how your questions will appear. Preview answers aren't saved.</p></div></header>
+            <header><div><small>MEMBER VIEW</small><h3 id="df-preview-title">Form preview</h3><p>Review every question here. Conditional follow-ups are shown so you can check them; families will see them only when their answers match. Preview answers aren't saved.</p></div></header>
             <?php if(!$active):?><p>Add a question to see a preview here.</p><?php else:?>
             <fieldset disabled class="df-preview-disabled"><legend class="ux-visually-hidden">Form preview, read only</legend>
                 <?php foreach($active as $field):$type=(string)$field['field_type'];$options=(array)($field['options']??[]);?>
