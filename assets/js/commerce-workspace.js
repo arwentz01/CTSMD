@@ -186,3 +186,39 @@
     if(terms?.classList.contains('commerce-pricing-terms'))purchase.prepend(terms);
   }
 })();
+
+/* Door lookup drawers: searching and ticket selection remain in the drawer after redirects.
+   Native dialog retains Escape, backdrop and focus management. */
+(() => {
+  const dialog=document.querySelector('[data-door-lookup-dialog]');
+  if(!dialog)return;
+  const openerButtons=[...document.querySelectorAll('[data-door-open]')];
+  const title=dialog.querySelector('[data-door-drawer-title]');
+  const panels=[...dialog.querySelectorAll('[data-door-panel]')];
+  let lastTrigger=null;
+  const show=(mode,focus=true)=>{
+    const chosen=mode==='reference'?'reference':'name';
+    for(const panel of panels)panel.hidden=panel.dataset.doorPanel!==chosen;
+    title.textContent=chosen==='reference'?'Find by order number':'Find by name';
+    if(!dialog.open)dialog.showModal();
+    if(focus)dialog.querySelector('[data-door-panel="'+chosen+'"] input:not([type=hidden])')?.focus();
+  };
+  openerButtons.forEach(button=>button.addEventListener('click',()=>{
+    lastTrigger=button;
+    show(button.dataset.doorOpen);
+  }));
+  dialog.querySelector('[data-door-close]')?.addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('click',event=>{
+    if(event.target===dialog)dialog.close();
+  });
+  dialog.addEventListener('close',()=>lastTrigger?.focus({preventScroll:true}));
+  const params=new URLSearchParams(location.search);
+  const mode=params.get('door_mode')||(params.has('door_name')?'name':params.has('reference')?'reference':'');
+  if(mode==='name'||mode==='reference'){
+    show(mode,false);
+    // Keep results immediately visible when returning from a search or admission.
+    if(params.has('reference'))dialog.querySelector('.commerce-door-party')?.scrollIntoView({block:'nearest'});
+    else if(params.has('door_name'))dialog.querySelector('.commerce-door-results')?.scrollIntoView({block:'nearest'});
+    dialog.querySelector('[data-door-close]')?.focus({preventScroll:true});
+  }
+})();
