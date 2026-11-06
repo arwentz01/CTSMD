@@ -62,7 +62,11 @@ final class DynamicFormService
         if($key==='')$key=self::slug($label);
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
         if($fieldId>0){
-            $stmt=$db->prepare('SELECT id FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);if(!$stmt->fetchColumn())throw new RuntimeException('That field no longer exists.');
+            $stmt=$db->prepare('SELECT field_key,field_type FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$existing=$stmt->fetch();if(!$existing)throw new RuntimeException('That field no longer exists.');
+            if($key!==(string)$existing['field_key']||$type!==(string)$existing['field_type']){
+                $used=$db->prepare('SELECT 1 FROM form_submission_answers WHERE field_id=:id LIMIT 1');$used->execute(['id'=>$fieldId]);
+                if($used->fetchColumn())throw new RuntimeException('This question already has submitted answers. Keep its question type and key, or add a new question instead.');
+            }
             $update=$db->prepare('UPDATE form_fields SET field_key=:field_key,label=:label,help_text=:help,field_type=:type,required=:required,options_json=:options,sort_order=:sort WHERE id=:id AND form_id=:form');
             $update->execute(['field_key'=>$key,'label'=>$label,'help'=>$help!==''?$help:null,'type'=>$type,'required'=>$required,'options'=>$json,'sort'=>$sort,'id'=>$fieldId,'form'=>$formId]);
             return $fieldId;
@@ -133,7 +137,9 @@ final class DynamicFormService
             if($type==='resource_link')continue;
             $raw=$input['field'][$key]??null;$value=null;
             if($type==='multiple_choice'){
-                $vals=is_array($raw)?array_values(array_unique(array_map('strval',$raw))):[];$allowed=array_map('strval',$field['options']??[]);$vals=array_values(array_filter($vals,static fn(string $v):bool=>in_array($v,$allowed,true)));
+                if($raw!==null&&!is_array($raw))throw new RuntimeException('Choose valid options for '.$field['label'].'.');
+                $vals=is_array($raw)?array_values(array_unique(array_map('strval',$raw))):[];$allowed=array_map('strval',$field['options']??[]);
+                foreach($vals as $selected)if(!in_array($selected,$allowed,true))throw new RuntimeException('Choose valid options for '.$field['label'].'.');
                 if($required&&!$vals)throw new RuntimeException('Complete the required field: '.$field['label'].'.');$value=$vals;
             }elseif($type==='acknowledgment'){
                 $value=$raw==='1';if($required&&!$value)throw new RuntimeException('Confirm the required acknowledgment: '.$field['label'].'.');
@@ -142,7 +148,10 @@ final class DynamicFormService
                 if($required&&$value==='')throw new RuntimeException('Complete the required field: '.$field['label'].'.');
                 if(in_array($type,['short_text','signature'],true)&&mb_strlen($value)>500)throw new RuntimeException($field['label'].' is too long.');
                 if($type==='long_text'&&mb_strlen($value)>10000)throw new RuntimeException($field['label'].' is too long.');
-                if($type==='date'&&$value!==''&&!preg_match('/^\d{4}-\d{2}-\d{2}$/',$value))throw new RuntimeException('Enter a valid date for '.$field['label'].'.');
+                if($type==='date'&&$value!==''){
+                    $date=DateTimeImmutable::createFromFormat('!Y-m-d',$value);
+                    if(!$date||$date->format('Y-m-d')!==$value)throw new RuntimeException('Enter a valid date for '.$field['label'].'.');
+                }
                 if($type==='single_choice'&&$value!==''&&!in_array($value,array_map('strval',$field['options']??[]),true))throw new RuntimeException('Choose a valid option for '.$field['label'].'.');
             }
             $answers[$key]=['field_id'=>(int)$field['id'],'label'=>(string)$field['label'],'type'=>$type,'answer'=>$value];
