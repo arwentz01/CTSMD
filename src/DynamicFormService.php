@@ -91,6 +91,33 @@ final class DynamicFormService
         $db->prepare('UPDATE form_fields SET active=:active WHERE id=:id')->execute(['active'=>(int)$active?0:1,'id'=>$fieldId]);
     }
 
+    /**
+     * Move a question one position within the builder's visible order.
+     * Question IDs and keys stay unchanged, preserving saved answer references.
+     * Caller owns the transaction and increments the definition version.
+     */
+    public static function moveField(PDO $db,int $formId,int $fieldId,string $direction):bool
+    {
+        FormWriteGuard::form($db,$formId);
+        if(!in_array($direction,['up','down'],true))throw new RuntimeException('Choose a direction to move the question.');
+        $stmt=$db->prepare('SELECT id FROM form_fields WHERE form_id=:form ORDER BY active DESC,sort_order,id FOR UPDATE');
+        $stmt->execute(['form'=>$formId]);
+        $ids=array_map('intval',$stmt->fetchAll(PDO::FETCH_COLUMN));
+        $index=array_search($fieldId,$ids,true);
+        if($index===false)throw new RuntimeException('That question no longer exists.');
+        $other=$index+($direction==='up'?-1:1);
+        if($other<0||$other>=count($ids))return false;
+        // Do not move questions between active and inactive groups.
+        $status=$db->prepare('SELECT active FROM form_fields WHERE id=:id');
+        $status->execute(['id'=>$ids[$index]]);$current=(int)$status->fetchColumn();
+        $status->execute(['id'=>$ids[$other]]);$neighbor=(int)$status->fetchColumn();
+        if($current!==$neighbor)return false;
+        [$ids[$index],$ids[$other]]=[$ids[$other],$ids[$index]];
+        $update=$db->prepare('UPDATE form_fields SET sort_order=:position WHERE id=:id AND form_id=:form');
+        foreach($ids as $position=>$id)$update->execute(['position'=>$position+1,'id'=>$id,'form'=>$formId]);
+        return true;
+    }
+
     public static function bumpVersion(PDO $db,int $formId):int
     {
         FormWriteGuard::form($db,$formId);
