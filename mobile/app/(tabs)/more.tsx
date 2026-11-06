@@ -36,15 +36,15 @@ export default function More(){
  return <Screen title="More">
   <Pressable accessibilityRole="button" accessibilityLabel="View My Account" onPress={()=>router.push("/account")} style={s.profile}><StageBackdrop/><View style={s.avatar}><Text style={s.initials}>{user?.initials||'?'}</Text></View><View style={{flex:1,gap:5}}><Text style={s.name}>{user?.name||'My CTSMD'}</Text><Text style={s.profileEmail}>{user?.email||''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>My CTSMD</Text>
-  <Local title="My Family" detail="Active student and guardian relationships" icon="people-outline" path="/family"/>
-  <Local title="Assigned Forms" detail="Complete and review your paperwork" icon="document-text-outline" path="/(tabs)/forms"/>
-  <Local title="Volunteer" detail="Shifts, signups and approvals" icon="hand-left-outline" path="/(tabs)/volunteer"/>
-  <External title="Performer profile & publication consent · website" url={participantWebsite('/student-profile')}/>
+  <Local title="My Family" detail="Children, parents and guardians" icon="people-outline" path="/family"/>
+  <Local title="Assigned Forms" detail="Forms to fill out or review" icon="document-text-outline" path="/(tabs)/forms"/>
+  <Local title="Volunteer" detail="Find shifts and manage signups" icon="hand-left-outline" path="/(tabs)/volunteer"/>
+  <External title="Performer profile & photo permission · website" url={participantWebsite('/student-profile')}/>
   <External title="My Theatre History · website" url={participantWebsite('/theatre-history')}/>
   <External title="Auditions & registration · website" url={participantWebsite('/register')}/>
-  {user?.roles?.some(role=>role==='production_staff'||role==='administrator')&&<External title="Participation settings & staff tools · website" url={participantWebsite('/admin/productions')}/>}
-  {user?.roles?.includes('administrator')&&<External title="Account authorization roles · website" url={participantWebsite('/admin/accounts')}/>}
-  <Text style={s.muted}>These workflows open the CTSMD website and may require a separate sign-in. Casting offer responses remain in Action Center.</Text>
+  {user?.roles?.some(role=>role==='production_staff'||role==='administrator')&&<External title="Production and staff tools · website" url={participantWebsite('/admin/productions')}/>}
+  {user?.roles?.includes('administrator')&&<External title="Manage account access · website" url={participantWebsite('/admin/accounts')}/>}
+  <Text style={s.muted}>Some options open the CTSMD website and may ask you to sign in again. You can respond to casting offers in Action Center.</Text>
   <Pressable accessibilityRole="button" onPress={()=>router.push('/videos')} style={s.item}><Ionicons name="play-circle-outline" size={23} color={colors.primary}/><View style={{flex:1,gap:4}}><Text style={s.itemText}>Video Library</Text><Text style={s.muted}>Rehearsals and CTSMD-wide videos</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
   <Text style={s.heading}>Tickets & resources</Text>
   <External title="Tickets" url={resources[0][1]}/>
