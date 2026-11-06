@@ -23,3 +23,8 @@
 .df-preview-option{display:flex;align-items:center;gap:9px;margin-top:10px}
 .df-preview-resource{border:1px solid #e4d4da;border-radius:9px;padding:11px;background:#fcf6f8}
 @media(max-width:620px){.df-preview{padding:17px}.df-field footer{flex-wrap:wrap}}
+
+
+.df-preview-section{display:inline-block;font-size:12px;font-weight:650;background:#f6edf0;color:#71334b;border-radius:8px;padding:7px 10px}
+.df-assigned-lock{border:0;padding:0;min-width:0;margin:0}
+.df-assigned-lock .df-layout{opacity:.75}
