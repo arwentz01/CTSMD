@@ -104,7 +104,7 @@ final class FormManagementExperience
         try {
             FormWriteGuard::production($db,$productionId);
             if ($formId > 0) {
-                FormWriteGuard::form($db,$formId);
+                FormWriteGuard::definitionEditable($db,$formId);
                 $beforeStmt = $db->prepare('SELECT id,production_id,title,form_type,instructions,completion_mode,review_required,active FROM forms WHERE id=:id FOR UPDATE');
                 $beforeStmt->execute(['id'=>$formId]);
                 $before = $beforeStmt->fetch();
