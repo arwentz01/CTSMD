@@ -151,7 +151,7 @@ final class FormManagementExperience
             $insert=$db->prepare('INSERT INTO forms (production_id,title,form_type,instructions,completion_mode,review_required,active,created_by_user_id) VALUES (:production,:title,:type,:instructions,:mode,:review,0,:creator)');
             $insert->execute(['production'=>$source['production_id'],'title'=>$title,'type'=>$source['form_type'],'instructions'=>$source['instructions'],'mode'=>$source['completion_mode'],'review'=>$source['review_required'],'creator'=>(int)$actor['id']]);
             $copyId=(int)$db->lastInsertId();
-            $copyFields=$db->prepare('INSERT INTO form_fields (form_id,field_key,label,help_text,field_type,required,options_json,sort_order,active) SELECT :new_form,field_key,label,help_text,field_type,required,options_json,sort_order,active FROM form_fields WHERE form_id=:source_form ORDER BY sort_order,id');
+            $copyFields=$db->prepare('INSERT INTO form_fields (form_id,field_key,label,help_text,field_type,required,options_json,condition_json,sort_order,active) SELECT :new_form,field_key,label,help_text,field_type,required,options_json,condition_json,sort_order,active FROM form_fields WHERE form_id=:source_form ORDER BY sort_order,id');
             $copyFields->execute(['new_form'=>$copyId,'source_form'=>$formId]);
             self::audit($db,(int)$actor['id'],'form.definition_copied','form',$copyId,'Created an unpublished copy of a form.',['source_form_id'=>$formId]);
             $db->commit();
