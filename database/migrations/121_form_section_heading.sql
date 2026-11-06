@@ -1,4 +1,4 @@
--- CTSMD non-Commerce forms: informational section headings.
+-- CTSMD non-Commerce forms: informational sections and validated contact/number questions.
 -- This migration extends the existing field type list without changing stored questions.
 -- Review the live enum against information_schema before applying to a populated database.
 SET NAMES utf8mb4;
@@ -13,5 +13,8 @@ ALTER TABLE form_fields
         'acknowledgment',
         'signature',
         'resource_link',
-        'section_heading'
+        'section_heading',
+        'email',
+        'phone',
+        'number'
     ) NOT NULL;
