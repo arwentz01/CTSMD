@@ -45,4 +45,18 @@ foreach([
     try{DynamicFormService::validateAnswers($contacts,['field'=>$invalid]);throw new LogicException('Invalid contact/number value accepted.');}
     catch(RuntimeException $e){$checks++;}
 }
+
+// Conditional questions are only required when the controlling answer matches.
+$conditional=[
+ ['id'=>10,'field_key'=>'allergies','field_type'=>'single_choice','required'=>true,'label'=>'Any allergies?','options'=>['Yes','No'],'condition'=>null],
+ ['id'=>11,'field_key'=>'allergy_details','field_type'=>'long_text','required'=>true,'label'=>'Allergy details','options'=>[],'condition'=>['source_key'=>'allergies','equals'=>'Yes']]
+];
+$no=DynamicFormService::validateAnswers($conditional,['field'=>['allergies'=>'No','allergy_details'=>'Should not be saved']]);
+if(isset($no['allergy_details']))throw new RuntimeException('Hidden conditional answer was saved.');
+$checks++;
+try{DynamicFormService::validateAnswers($conditional,['field'=>['allergies'=>'Yes']]);throw new LogicException('Visible required conditional question was skipped.');}
+catch(RuntimeException $e){$checks++;}
+$yes=DynamicFormService::validateAnswers($conditional,['field'=>['allergies'=>'Yes','allergy_details'=>'Peanuts']]);
+if(($yes['allergy_details']['answer']??null)!=='Peanuts')throw new RuntimeException('Visible conditional answer not saved.');
+$checks++;
 echo 'PASS: '.$checks." structured form answer validation checks.\n";
