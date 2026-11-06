@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/CommerceEmailTemplate.php';
 require_once __DIR__.'/OrganizationBranding.php';
+require_once __DIR__.'/AccountEmailTemplate.php';
 
 /**
  * Branded HTML alternative for general CTSMD transactional mail.
@@ -49,6 +50,8 @@ final class GeneralEmailTemplate
 
     public static function render(string $category,string $subject,string $text):string
     {
+        if($category==='account_security'&&AccountEmailTemplate::supports($subject))
+            return AccountEmailTemplate::render($subject,$text);
         $brand=OrganizationBranding::fromEnvironment();
         $eyebrow=match($category){
             'account_security'=>'ACCOUNT & SECURITY',
