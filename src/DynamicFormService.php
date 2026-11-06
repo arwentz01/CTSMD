@@ -37,6 +37,10 @@ final class DynamicFormService
         if($label===''||mb_strlen($label)>255)throw new RuntimeException('Enter a field label no longer than 255 characters.');
         if(!in_array($type,self::FIELD_TYPES,true))throw new RuntimeException('Choose a valid field type.');
         if(mb_strlen($help)>1000)throw new RuntimeException('Field help text must be 1,000 characters or fewer.');
+        if($fieldId===0&&$sort===0){
+            $last=$db->prepare('SELECT COALESCE(MAX(sort_order),0)+1 FROM form_fields WHERE form_id=:form');
+            $last->execute(['form'=>$formId]);$sort=(int)$last->fetchColumn();
+        }
         $options=[];
         $json=null;
         if($type==='section_heading')$required=0;
@@ -83,6 +87,7 @@ final class DynamicFormService
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
         if($fieldId>0){
             $stmt=$db->prepare('SELECT field_key,field_type FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$existing=$stmt->fetch();if(!$existing)throw new RuntimeException('That field no longer exists.');
+            if(self::hasDependents($db,$formId,(string)$existing['field_key']))throw new RuntimeException('This question controls other questions. Remove their conditions before editing it.');
             if($key!==(string)$existing['field_key']||$type!==(string)$existing['field_type']){
                 $used=$db->prepare('SELECT 1 FROM form_submission_answers WHERE field_id=:id LIMIT 1');$used->execute(['id'=>$fieldId]);
                 if($used->fetchColumn())throw new RuntimeException('This question already has submitted answers. Keep its question type and key, or add a new question instead.');
@@ -112,6 +117,9 @@ final class DynamicFormService
     {
         FormWriteGuard::definitionEditable($db,$formId);
         $stmt=$db->prepare('SELECT active FROM form_fields WHERE id=:id AND form_id=:form FOR UPDATE');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$active=$stmt->fetchColumn();if($active===false)throw new RuntimeException('That field no longer exists.');
+        $source=$db->prepare('SELECT field_key FROM form_fields WHERE id=:id AND form_id=:form');
+        $source->execute(['id'=>$fieldId,'form'=>$formId]);
+        if(self::hasDependents($db,$formId,(string)$source->fetchColumn()))throw new RuntimeException('Remove the dependent question rules before deactivating this question.');
         $db->prepare('UPDATE form_fields SET active=:active WHERE id=:id')->execute(['active'=>(int)$active?0:1,'id'=>$fieldId]);
     }
 
@@ -137,6 +145,17 @@ final class DynamicFormService
         $status->execute(['id'=>$ids[$other]]);$neighbor=(int)$status->fetchColumn();
         if($current!==$neighbor)return false;
         [$ids[$index],$ids[$other]]=[$ids[$other],$ids[$index]];
+        $q=$db->prepare('SELECT id,field_key,condition_json FROM form_fields WHERE form_id=:form AND active=1');
+        $q->execute(['form'=>$formId]);
+        $positions=array_flip($ids);$keys=[];
+        $rows=$q->fetchAll();
+        foreach($rows as $row)$keys[(string)$row['field_key']]=(int)$row['id'];
+        foreach($rows as $row){
+            $condition=json_decode((string)($row['condition_json']??''),true);
+            if(!is_array($condition))continue;
+            $sourceId=$keys[(string)($condition['source_key']??'')]??null;
+            if($sourceId===null||$positions[$sourceId]>=$positions[(int)$row['id']])throw new RuntimeException('That move would put a question before the answer it depends on.');
+        }
         $update=$db->prepare('UPDATE form_fields SET sort_order=:position WHERE id=:id AND form_id=:form');
         foreach($ids as $position=>$id)$update->execute(['position'=>$position+1,'id'=>$id,'form'=>$formId]);
         return true;
@@ -147,6 +166,13 @@ final class DynamicFormService
         FormWriteGuard::form($db,$formId);
         $db->prepare('UPDATE forms SET definition_version=definition_version+1 WHERE id=:id')->execute(['id'=>$formId]);
         $stmt=$db->prepare('SELECT definition_version FROM forms WHERE id=:id');$stmt->execute(['id'=>$formId]);return (int)$stmt->fetchColumn();
+    }
+
+    private static function hasDependents(PDO $db,int $formId,string $key):bool
+    {
+        $stmt=$db->prepare("SELECT 1 FROM form_fields WHERE form_id=:form AND JSON_UNQUOTE(JSON_EXTRACT(condition_json,'$.source_key'))=:source LIMIT 1");
+        $stmt->execute(['form'=>$formId,'source'=>$key]);
+        return (bool)$stmt->fetchColumn();
     }
 
     public static function isVisible(array $field,array $input):bool
