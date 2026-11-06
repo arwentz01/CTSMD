@@ -120,15 +120,15 @@ final class DynamicFormService
                 $key=(string)($lookup->fetchColumn()?:'');
             }else{
                 $stem=self::slug($label);
-                $key=$stem;
                 $exists=$db->prepare('SELECT 1 FROM form_fields WHERE form_id=:form AND field_key=:key LIMIT 1');
-                for($suffix=2;$suffix<=9999;$suffix++){
-                    $exists->execute(['form'=>$formId,'key'=>$key]);
-                    if(!$exists->fetchColumn())break;
-                    $tail='_'.$suffix;
+                $unique=false;
+                for($suffix=1;$suffix<=9999;$suffix++){
+                    $tail=$suffix===1?'':'_'.$suffix;
                     $key=substr($stem,0,100-strlen($tail)).$tail;
+                    $exists->execute(['form'=>$formId,'key'=>$key]);
+                    if(!$exists->fetchColumn()){$unique=true;break;}
                 }
-                if($exists->fetchColumn())throw new RuntimeException('Unable to create a unique question key.');
+                if(!$unique)throw new RuntimeException('Unable to create a unique question key.');
             }
         }
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
