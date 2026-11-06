@@ -5,7 +5,7 @@ require_once __DIR__.'/FormWriteGuard.php';
 
 final class DynamicFormService
 {
-    public const FIELD_TYPES = ['short_text','long_text','single_choice','multiple_choice','date','acknowledgment','signature','resource_link'];
+    public const FIELD_TYPES = ['short_text','long_text','single_choice','multiple_choice','date','acknowledgment','signature','resource_link','section_heading'];
 
     public static function fields(PDO $db,int $formId,bool $activeOnly=true):array
     {
@@ -37,6 +37,7 @@ final class DynamicFormService
         if(mb_strlen($help)>1000)throw new RuntimeException('Field help text must be 1,000 characters or fewer.');
         $options=[];
         $json=null;
+        if($type==='section_heading')$required=0;
         if(in_array($type,['single_choice','multiple_choice'],true)){
             $raw=preg_split('/\R/',trim((string)($input['options_text']??'')))?:[];
             foreach($raw as $option){$option=trim($option);if($option!==''&&!in_array($option,$options,true))$options[]=$option;}
@@ -134,7 +135,7 @@ final class DynamicFormService
         $answers=[];
         foreach($fields as $field){
             $key=(string)$field['field_key'];$type=(string)$field['field_type'];$required=(bool)$field['required'];
-            if($type==='resource_link')continue;
+            if(in_array($type,['resource_link','section_heading'],true))continue;
             $raw=$input['field'][$key]??null;$value=null;
             if($type==='multiple_choice'){
                 if($raw!==null&&!is_array($raw))throw new RuntimeException('Choose valid options for '.$field['label'].'.');
