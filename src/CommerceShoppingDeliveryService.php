@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/CommerceShoppingCheckoutService.php';
 require_once __DIR__.'/MailService.php';
+require_once __DIR__.'/CommerceEmailTemplate.php';
 
 /** Consolidated purchase receipt on the Commerce mail queue. */
 final class CommerceShoppingDeliveryService
@@ -12,17 +13,56 @@ final class CommerceShoppingDeliveryService
     }
     private static function body(PDO $db,int $org,array $purchase,string $url):array
     {
-        $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');$q=$db->prepare("SELECT t.state,l.description,l.category,l.unit_minor,c.starts_at,c.schedule_status,pr.title,CONCAT(v.name,' / ',s.name) venue FROM commerce_shopping_purchase_orders x JOIN commerce_orders o ON o.id=x.order_id AND o.organization_id=x.organization_id JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.organization_id=t.organization_id AND l.order_id=t.order_id AND l.seat_key=t.seat_key JOIN commerce_performances c ON c.id=o.performance_id AND c.organization_id=o.organization_id JOIN productions pr ON pr.id=c.production_id JOIN commerce_layouts lay ON lay.id=c.layout_id AND lay.organization_id=c.organization_id JOIN commerce_spaces s ON s.id=lay.space_id AND s.organization_id=lay.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE x.organization_id=? AND x.purchase_id=? ORDER BY c.starts_at,t.id");$q->execute([$org,$purchase['id']]);$tickets=$q->fetchAll();if(!$tickets)throw new RuntimeException('Purchase has no tickets.');
-        $groups=json_decode($purchase['snapshot_json'],true,flags:JSON_THROW_ON_ERROR);$expected=0;$subtotal=0;$discount=0;$tax=0;$fee=0;foreach($groups as $group){$expected+=count($group['items']);$subtotal+=(int)$group['subtotal'];$discount+=(int)$group['discount'];$tax+=(int)$group['tax'];$fee+=(int)$group['fee'];}if(count($tickets)!==$expected||$subtotal-$discount+$tax+$fee!==(int)$purchase['total_minor'])throw new RuntimeException('Purchase receipt requires review.');
-        $brand=OrganizationBranding::fromEnvironment();$subject=mb_substr(preg_replace('/[\\r\\n]+/',' ',$brand['name'].' · Your ticket receipt'),0,250);$lines=[$brand['name'].' · Ticket receipt'];$html='<html><body><h1>'.$e($brand['name']).'</h1><h2>Your tickets</h2>';$previous='';
-        foreach($tickets as $ticket){if($ticket['state']!=='valid'||$ticket['schedule_status']!=='scheduled')throw new RuntimeException('Purchase tickets are not available for delivery.');$date=(new DateTimeImmutable($ticket['starts_at'],new DateTimeZone('UTC')))->format('l, F j, Y · g:i A');$heading=$ticket['title'].' · '.$date.' · '.$ticket['venue'];if($heading!==$previous){if($previous!=='')$html.='</ul>';$lines[]=$heading;$html.='<h3>'.$e($ticket['title']).'</h3><p>'.$e($date.' · '.$ticket['venue']).'</p><ul>';}$price=$purchase['currency'].' '.number_format((int)$ticket['unit_minor']/100,2);$lines[]=$ticket['description'].' · '.$ticket['category'].' · '.$price;$html.='<li>'.$e($ticket['description'].' · '.$ticket['category'].' · '.$price).'</li>';$previous=$heading;}
-        $html.='</ul>';
+        $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
+        $q=$db->prepare("SELECT t.state,l.description,l.category,l.unit_minor,c.starts_at,c.schedule_status,pr.title,CONCAT(v.name,' / ',s.name) venue FROM commerce_shopping_purchase_orders x JOIN commerce_orders o ON o.id=x.order_id AND o.organization_id=x.organization_id JOIN commerce_tickets t ON t.order_id=o.id AND t.organization_id=o.organization_id JOIN commerce_order_lines l ON l.organization_id=t.organization_id AND l.order_id=t.order_id AND l.seat_key=t.seat_key JOIN commerce_performances c ON c.id=o.performance_id AND c.organization_id=o.organization_id JOIN productions pr ON pr.id=c.production_id JOIN commerce_layouts lay ON lay.id=c.layout_id AND lay.organization_id=c.organization_id JOIN commerce_spaces s ON s.id=lay.space_id AND s.organization_id=lay.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE x.organization_id=? AND x.purchase_id=? ORDER BY c.starts_at,t.id");
+        $q->execute([$org,$purchase['id']]);$tickets=$q->fetchAll();
+        if(!$tickets)throw new RuntimeException('Purchase has no tickets.');
+        $groups=json_decode($purchase['snapshot_json'],true,flags:JSON_THROW_ON_ERROR);
+        $expected=0;$subtotal=0;$discount=0;$tax=0;$fee=0;
+        foreach($groups as $group){$expected+=count($group['items']);$subtotal+=(int)$group['subtotal'];$discount+=(int)$group['discount'];$tax+=(int)$group['tax'];$fee+=(int)$group['fee'];}
+        if(count($tickets)!==$expected||$subtotal-$discount+$tax+$fee!==(int)$purchase['total_minor'])throw new RuntimeException('Purchase receipt requires review.');
+        $brand=OrganizationBranding::fromEnvironment();
+        $subject=mb_substr(preg_replace('/[\r\n]+/',' ',$brand['name'].' · Your ticket receipt'),0,250);
+        $lines=[$brand['name'].' · Ticket receipt'];
+        $html=CommerceEmailTemplate::start($brand,'ORDER CONFIRMATION','Your tickets are ready','Your order is confirmed. Find your performance details, tickets, and order summary below.');
+        $previous='';$ticketRows='';
+        foreach($tickets as $ticket){
+            if($ticket['state']!=='valid'||$ticket['schedule_status']!=='scheduled')throw new RuntimeException('Purchase tickets are not available for delivery.');
+            $date=(new DateTimeImmutable($ticket['starts_at'],new DateTimeZone('UTC')))->format('l, F j, Y · g:i A');
+            $heading=$ticket['title'].' · '.$date.' · '.$ticket['venue'];
+            if($heading!==$previous){
+                if($previous!=='')$html.=CommerceEmailTemplate::ticketTable($ticketRows);
+                $ticketRows='';
+                $lines[]=$heading;
+                $html.=CommerceEmailTemplate::section((string)$ticket['title'],'<p style="font-size:13px;line-height:1.6;color:#6b605c;margin:0 0 9px">'.$e($date.' · '.$ticket['venue']).'</p>');
+            }
+            $price=$purchase['currency'].' '.number_format((int)$ticket['unit_minor']/100,2);
+            $lines[]=$ticket['description'].' · '.$ticket['category'].' · '.$price;
+            $ticketRows.=CommerceEmailTemplate::ticketRow((string)$ticket['description'],(string)$ticket['category'],$price);
+            $previous=$heading;
+        }
+        $html.=CommerceEmailTemplate::ticketTable($ticketRows);
         if(CommercePromoService::available($db)){
             $promo=$db->prepare("SELECT p.code,c.discount_minor FROM commerce_promo_claims c JOIN commerce_promo_codes p ON p.id=c.promo_id AND p.organization_id=c.organization_id WHERE c.organization_id=? AND c.purchase_id=? AND c.state='redeemed'");
             $promo->execute([$org,$purchase['id']]);$used=$promo->fetch();
-            if($used){$lines[]='Promo code: '.$used['code'].' (saved '.$purchase['currency'].' '.number_format((int)$used['discount_minor']/100,2).')';$html.='<p>Promo code: <strong>'.$e($used['code']).'</strong> (saved '.$e($purchase['currency'].' '.number_format((int)$used['discount_minor']/100,2)).')</p>';}
+            if($used){
+                $saving=$purchase['currency'].' '.number_format((int)$used['discount_minor']/100,2);
+                $lines[]='Promo code: '.$used['code'].' (saved '.$saving.')';
+                $html.='<p style="margin:18px 0 0;background:#f8f3e8;padding:11px 13px;border-radius:5px;font-size:13px;color:#59492b">Promo code <strong>'.$e($used['code']).'</strong> · Saved '.$e($saving).'</p>';
+            }
         }
-        $html.='<dl>';foreach(['Tickets'=>$subtotal,'Discount'=>$discount,'Tax'=>$tax,'Fees'=>$fee,'Total'=>(int)$purchase['total_minor']] as $label=>$amount){$value=($label==='Discount'?'−':'').$purchase['currency'].' '.number_format($amount/100,2);$lines[]=$label.': '.$value;$html.='<dt>'.$e($label).'</dt><dd>'.$e($value).'</dd>';}$html.='</dl><p><a href="'.$e($url).'">View all tickets</a></p><p>Sign in to your account to view or print your tickets.</p></body></html>';$lines[]='View all tickets: '.$url;$lines[]='Sign in to your account to view or print your tickets.';return['subject'=>$subject,'text'=>implode("\n",$lines),'html'=>$html];
+        $html.=CommerceEmailTemplate::section('Order summary','');
+        $html.='<table role="table" width="100%" cellpadding="0" cellspacing="0">';
+        foreach(['Tickets'=>$subtotal,'Discount'=>$discount,'Tax'=>$tax,'Fees'=>$fee,'Total'=>(int)$purchase['total_minor']] as $label=>$amount){
+            $value=($label==='Discount'?'−':'').$purchase['currency'].' '.number_format($amount/100,2);
+            $lines[]=$label.': '.$value;
+            $html.=CommerceEmailTemplate::amountRow($label,$value,$label==='Total');
+        }
+        $html.='</table>';
+        $html.=CommerceEmailTemplate::finish($brand,'View all tickets',$url,'Sign in with your CTSMD Connect account to view and print your tickets.','Keep this email for your records. Admission is verified using each individual ticket.');
+        $lines[]='View all tickets: '.$url;
+        $lines[]='Sign in to your account to view or print your tickets.';
+        return['subject'=>$subject,'text'=>implode("\n",$lines),'html'=>$html];
     }
     public static function enqueueLocked(PDO $db,int $org,int $purchase,int $actor):void
     {
