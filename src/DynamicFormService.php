@@ -30,6 +30,36 @@ final class DynamicFormService
         return $rows;
     }
 
+    /**
+     * Validate all active questions before an unpublished form is activated.
+     * Conditions may refer only to an earlier unconditional single-choice field.
+     */
+    public static function assertPublishable(array $fields):void
+    {
+        $seen=[];
+        foreach($fields as $field){
+            if(empty($field['active']))continue;
+            $key=(string)$field['field_key'];
+            $type=(string)$field['field_type'];
+            if(!in_array($type,self::FIELD_TYPES,true))throw new RuntimeException('The form contains an unsupported question type.');
+            if(in_array($type,['single_choice','multiple_choice'],true)&&count((array)($field['options']??[]))<2)
+                throw new RuntimeException('Question "'.$field['label'].'" needs at least two answer choices.');
+            $condition=$field['condition']??null;
+            if(!empty($field['condition_json'])&&!is_array($condition))
+                throw new RuntimeException('Question "'.$field['label'].'" has a condition that could not be read.');
+            if(is_array($condition)){
+                if(in_array($type,['resource_link','section_heading'],true))
+                    throw new RuntimeException('Question "'.$field['label'].'" cannot have a visibility rule.');
+                $sourceKey=(string)($condition['source_key']??'');
+                $choice=(string)($condition['equals']??'');
+                $source=$seen[$sourceKey]??null;
+                if(!$source||$source['field_type']!=='single_choice'||!empty($source['condition'])||!in_array($choice,(array)($source['options']??[]),true))
+                    throw new RuntimeException('Question "'.$field['label'].'" depends on an invalid or later question. Review its visibility rule.');
+            }
+            $seen[$key]=$field;
+        }
+    }
+
     public static function saveField(PDO $db,int $formId,int $fieldId,array $input):int
     {
         FormWriteGuard::definitionEditable($db,$formId);
