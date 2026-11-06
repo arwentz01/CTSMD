@@ -61,6 +61,10 @@ try{
     $denied(static fn()=>DynamicFormService::toggleField($db,$formId,$parent),'Controller cannot deactivate with dependents');
     $denied(static fn()=>DynamicFormService::saveField($db,$formId,$parent,['label'=>'Edited controller','field_key'=>'allergies','field_type'=>'single_choice','options_text'=>"Yes\nNo"]),'Controller cannot be edited while dependents exist');
 
+    $duplicate=DynamicFormService::saveField($db,$formId,0,['label'=>'Email','field_type'=>'short_text']);
+    $savedKey=$db->query('SELECT field_key FROM form_fields WHERE id='.(int)$duplicate)->fetchColumn();
+    $ok($savedKey==='email_2','Duplicate question label receives a unique generated key');
+
     $db->prepare("INSERT INTO users(first_name,last_name,email,initials,display_role,active,account_status,organization_membership_status) VALUES('Form','Fixture',?,'FF','member',1,'active','approved')")->execute(['form-'.bin2hex(random_bytes(7)).'@example.invalid']);
     $person=(int)$db->lastInsertId();
     $db->prepare("INSERT INTO form_assignments(form_id,user_id,subject_user_id,status) VALUES(:form,:user,:subject,'missing')")->execute(['form'=>$formId,'user'=>$person,'subject'=>$person]);
