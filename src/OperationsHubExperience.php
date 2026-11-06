@@ -34,8 +34,8 @@ final class OperationsHubExperience
         if($route==='/admin/operations'){
             $items=[];
             if(AccessPolicy::isStaff($user)){
-                $items[]=['icon'=>'◎','eyebrow'=>'TRIAGE','label'=>'Staff Overview','detail'=>'Cross-production attention queues, upcoming calls, intake, staffing gaps and operational signals.','href'=>'/staff'];
-                $items[]=['icon'=>'★','eyebrow'=>'SHOWS','label'=>'Production workspace','detail'=>'Choose the Working Production and open casting, schedule, attendance, readiness, Playbill and show operations.','href'=>'/production'];
+                $items[]=['icon'=>'◎','eyebrow'=>'TRIAGE','label'=>'Staff Overview','detail'=>'Upcoming calls, new requests, staffing needs and items requiring attention across productions.','href'=>'/staff'];
+                $items[]=['icon'=>'★','eyebrow'=>'SHOWS','label'=>'Production workspace','detail'=>'Choose a production to manage casting, schedules, attendance, tasks, the Playbill and other show details.','href'=>'/production'];
             }
             if(AccessPolicy::canManageAccounts($user)){
                 $items[]=['icon'=>'⚿','eyebrow'=>'PEOPLE & ACCESS','label'=>'Account & Access','detail'=>'Membership approvals, accounts, roles, families, readiness and access administration.','href'=>'/admin/accounts'];
@@ -46,7 +46,7 @@ final class OperationsHubExperience
                 $items[]=['icon'=>'#','eyebrow'=>'COMMUNITY','label'=>'Community Operations','detail'=>'Channels, teams, private rooms, posting rules and moderation tools.','href'=>'/admin/operations/community'];
             }
             if(AccessPolicy::canManageResources($user)){
-                $items[]=['icon'=>'▤','eyebrow'=>'LIBRARIES','label'=>'Resource Operations','detail'=>'Manage CTSMD-wide resources plus Working Production links, files and versions.','href'=>'/admin/operations/resources'];
+                $items[]=['icon'=>'▤','eyebrow'=>'LIBRARIES','label'=>'Resource Operations','detail'=>'Manage organization resources and files for the selected production.','href'=>'/admin/operations/resources'];
             }
             if(AccessPolicy::canManageVolunteers($user)){
                 $items[]=['icon'=>'♡','eyebrow'=>'VOLUNTEERS','label'=>'Volunteer Operations','detail'=>'Create shifts, review approvals, manage requirements, training and verification.','href'=>'/admin/volunteer-shifts'];
@@ -77,15 +77,15 @@ final class OperationsHubExperience
         }
         if($route==='/admin/operations/resources'){
             if(!AccessPolicy::canManageResources($user))return ['Resource Operations','RESOURCE TOOLS','',[]];
-            return ['Resource Operations','RESOURCE TOOLS','Choose the library you need. CTSMD-wide material stays separate from the current Working Production.',[
+            return ['Resource Operations','RESOURCE TOOLS','Choose what you'd like to manage. Organization resources are separate from those for the selected production.',[
                 ['icon'=>'◇','eyebrow'=>'CTSMD-WIDE','label'=>'Member resources','detail'=>'Policies, handbooks, facility information, links, notes, and files for approved members.','href'=>'/admin/member-resources'],
-                ['icon'=>'▤','eyebrow'=>'WORKING PRODUCTION','label'=>'Production resources','detail'=>'Links and notes published for the selected production.','href'=>'/admin/resources'],
-                ['icon'=>'▣','eyebrow'=>'WORKING PRODUCTION','label'=>'Production files','detail'=>'Uploads, immutable versions, categories, audiences, and download access.','href'=>'/admin/files'],
+                ['icon'=>'▤','eyebrow'=>'SELECTED PRODUCTION','label'=>'Production resources','detail'=>'Links and notes published for the selected production.','href'=>'/admin/resources'],
+                ['icon'=>'▣','eyebrow'=>'SELECTED PRODUCTION','label'=>'Production files','detail'=>'Upload files, organize them, and choose who can download them.','href'=>'/admin/files'],
             ]];
         }
         if(!AccessPolicy::canManageForms($user))return ['Forms & Registration','FORM TOOLS','',[]];
         return ['Forms & Registration','FORM TOOLS','Build reusable forms, assign them in context, review submissions, and move registrations into production membership.',[
-            ['icon'=>'✓','eyebrow'=>'REVIEW','label'=>'Submission review','detail'=>'Review forms that require staff approval and complete the workflow.','href'=>'/admin/forms'],
+            ['icon'=>'✓','eyebrow'=>'REVIEW','label'=>'Submission review','detail'=>'Review submitted forms and approve or return them as needed.','href'=>'/admin/forms'],
             ['icon'=>'▤','eyebrow'=>'LIBRARY','label'=>'Forms management','detail'=>'Create form definitions, set scope, assign audiences, and monitor completion.','href'=>'/admin/forms/manage'],
             ['icon'=>'＋','eyebrow'=>'BUILDER','label'=>'Form builder','detail'=>'Add structured questions and fields to existing form definitions.','href'=>'/admin/forms/build'],
             ['icon'=>'↗','eyebrow'=>'AUDITIONS & SIGNUPS','label'=>'Auditions & Signups','detail'=>'Create public audition and event opportunities, review submissions, and process participant intake.','href'=>'/admin/registrations'],
