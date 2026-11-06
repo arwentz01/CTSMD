@@ -86,7 +86,8 @@ final class DynamicFormService
         if($key==='')$key=self::slug($label);
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
         if($fieldId>0){
-            $stmt=$db->prepare('SELECT field_key,field_type FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$existing=$stmt->fetch();if(!$existing)throw new RuntimeException('That field no longer exists.');
+            $stmt=$db->prepare('SELECT field_key,field_type,sort_order FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$existing=$stmt->fetch();if(!$existing)throw new RuntimeException('That field no longer exists.');
+            $sort=(int)$existing['sort_order']; // Reordering is performed only by moveField, which checks dependencies.
             if(self::hasDependents($db,$formId,(string)$existing['field_key']))throw new RuntimeException('This question controls other questions. Remove their conditions before editing it.');
             if($key!==(string)$existing['field_key']||$type!==(string)$existing['field_type']){
                 $used=$db->prepare('SELECT 1 FROM form_submission_answers WHERE field_id=:id LIMIT 1');$used->execute(['id'=>$fieldId]);
