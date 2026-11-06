@@ -52,7 +52,7 @@ final class OperationsHubExperience
                 $items[]=['icon'=>'♡','eyebrow'=>'VOLUNTEERS','label'=>'Volunteer Operations','detail'=>'Create shifts, review approvals, manage requirements, training and verification.','href'=>'/admin/volunteer-shifts'];
             }
             if(AccessPolicy::canManageForms($user)){
-                $items[]=['icon'=>'✓','eyebrow'=>'FORMS','label'=>'Forms Management','detail'=>'Build forms, assign requirements, and review form submissions.','href'=>'/admin/operations/forms'];
+                $items[]=['icon'=>'✓','eyebrow'=>'FORMS','label'=>'Forms & Registration','detail'=>'Create and assign forms, review responses, or manage event signups.','href'=>'/admin/operations/forms'];
                 $items[]=['icon'=>'↗','eyebrow'=>'REGISTRATION','label'=>'Signups','detail'=>'Create event signups and interest forms, manage registrations, and review participant intake.','href'=>'/admin/registrations'];
             }
             if(AccessPolicy::canManageSafeguarding($user)){
@@ -84,11 +84,10 @@ final class OperationsHubExperience
             ]];
         }
         if(!AccessPolicy::canManageForms($user))return ['Forms & Registration','FORM TOOLS','',[]];
-        return ['Forms & Registration','FORM TOOLS','Build reusable forms, assign them in context, review submissions, and move registrations into production membership.',[
-            ['icon'=>'✓','eyebrow'=>'REVIEW','label'=>'Submission review','detail'=>'Review submitted forms and approve or return them as needed.','href'=>'/admin/forms'],
-            ['icon'=>'▤','eyebrow'=>'LIBRARY','label'=>'Forms management','detail'=>'Create form definitions, set scope, assign audiences, and monitor completion.','href'=>'/admin/forms/manage'],
-            ['icon'=>'＋','eyebrow'=>'BUILDER','label'=>'Form builder','detail'=>'Add structured questions and fields to existing form definitions.','href'=>'/admin/forms/build'],
-            ['icon'=>'↗','eyebrow'=>'SIGNUPS','label'=>'Signups','detail'=>'Create public event signups and interest forms, review submissions, and process participant intake.','href'=>'/admin/registrations'],
+        return ['Forms & Registration','CHOOSE A WORKSPACE','Forms are for member paperwork and approvals. Registration signups are managed separately.',[
+            ['icon'=>'▤','eyebrow'=>'CREATE & ASSIGN','label'=>'Form library','detail'=>'Create a form, build its questions, assign it to members, and manage existing forms.','href'=>'/admin/forms/manage'],
+            ['icon'=>'✓','eyebrow'=>'RESPONSES','label'=>'Form submissions','detail'=>'Review submitted forms, approve responses, or return them for corrections.','href'=>'/admin/forms'],
+            ['icon'=>'↗','eyebrow'=>'EVENT SIGNUPS','label'=>'Registration & signups','detail'=>'Manage event registrations, interest forms and participant intake separately from member paperwork.','href'=>'/admin/registrations'],
         ]];
     }
 
