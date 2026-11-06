@@ -52,7 +52,7 @@ try{
 
     $base=['email'=>'parent@example.org','phone'=>'301-555-0112','quantity'=>'2.5'];
     $no=DynamicFormService::validateAnswers($fields,['field'=>$base+['allergies'=>'No','reaction'=>'Do not retain this']]);
-    $ok(!isset($no['reaction'])&&count($no)===5,'Hidden question ignored in validated answers');
+    $ok(!isset($no['reaction'])&&count($no)===4,'Hidden question ignored in validated answers');
     $denied(static fn()=>DynamicFormService::validateAnswers($fields,['field'=>$base+['allergies'=>'Yes']]),'Visible required follow-up cannot be omitted');
     $yes=DynamicFormService::validateAnswers($fields,['field'=>$base+['allergies'=>'Yes','reaction'=>'Anaphylaxis']]);
     $ok(($yes['reaction']['answer']??null)==='Anaphylaxis','Visible follow-up validated');
