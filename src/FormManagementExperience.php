@@ -14,6 +14,17 @@ require_once __DIR__ . '/ProductionContext.php';
 final class FormManagementExperience
 {
     private const ROUTES = ['/admin/forms/manage', '/admin/forms/manage/edit', '/admin/forms/manage/assign'];
+    private const FORM_TYPES = [
+        'acknowledgment'=>'Acknowledgment or policy',
+        'agreement'=>'Agreement or consent',
+        'permission'=>'Permission slip',
+        'medical'=>'Medical or emergency information',
+        'volunteer'=>'Volunteer information',
+        'survey'=>'Survey or questionnaire',
+        'information'=>'General information',
+        'release'=>'Release or waiver',
+        'other'=>'Other',
+    ];
 
     public static function handles(string $route): bool
     {
@@ -93,7 +104,16 @@ final class FormManagementExperience
         $scope = (string)($input['scope'] ?? 'organization');
 
         if ($title === '' || mb_strlen($title) > 190) throw new RuntimeException('Enter a form title no longer than 190 characters.');
-        if ($type === '' || mb_strlen($type) > 80) throw new RuntimeException('Enter a form type no longer than 80 characters.');
+        if ($type === '' || mb_strlen($type) > 80) throw new RuntimeException('Choose a valid form type.');
+        if (!array_key_exists($type,self::FORM_TYPES)) {
+            $legacyAllowed=false;
+            if($formId>0){
+                $legacy=$db->prepare('SELECT form_type FROM forms WHERE id=:id LIMIT 1');
+                $legacy->execute(['id'=>$formId]);
+                $legacyAllowed=$legacy->fetchColumn()===$type;
+            }
+            if(!$legacyAllowed)throw new RuntimeException('Choose a form type from the list.');
+        }
         if ($instructions === '' || mb_strlen($instructions) > 10000) throw new RuntimeException('Enter instructions up to 10,000 characters.');
         if (!in_array($completionMode, ['acknowledgment','signature','submission'], true)) throw new RuntimeException('Choose a valid completion mode.');
         if ($scope !== 'organization' && $scope !== 'production' && !preg_match('/^production:[1-9][0-9]*$/D',$scope)) throw new RuntimeException('Choose where this form will be used.');
@@ -345,7 +365,7 @@ final class FormManagementExperience
         $flash=$_SESSION['form_manage_flash']??null;unset($_SESSION['form_manage_flash']);
         $forms=self::forms($db);
         $productions=$db->query("SELECT id,title,season,lifecycle_stage FROM productions ORDER BY CASE WHEN lifecycle_stage IN ('in_production','performing') THEN 0 WHEN lifecycle_stage IN ('planning','upcoming') THEN 1 ELSE 2 END,title,id")->fetchAll();
-        $types=['acknowledgment'=>'Acknowledgment or policy','agreement'=>'Agreement or consent','permission'=>'Permission slip','medical'=>'Medical or emergency information','volunteer'=>'Volunteer information','survey'=>'Survey or questionnaire','information'=>'General information','release'=>'Release or waiver','other'=>'Other'];
+        $types=self::FORM_TYPES;
         $assignments=$form?self::assignments($db,(int)$form['id']):[];
         $people=$form?self::people($db):[];
         $editing=$route==='/admin/forms/manage/edit';
