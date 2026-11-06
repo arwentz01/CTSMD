@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__.'/CommerceStorefrontService.php';require_once __DIR__.'/MailService.php';require_once __DIR__.'/CommerceReceiptService.php';
+require_once __DIR__.'/CommerceStorefrontService.php';require_once __DIR__.'/MailService.php';require_once __DIR__.'/CommerceReceiptService.php';require_once __DIR__.'/CommerceEmailTemplate.php';
 /** Commerce outbox metadata on the existing mail queue; capture is the only default transport. */
 final class CommerceDeliveryService
 {
@@ -14,8 +14,38 @@ final class CommerceDeliveryService
     }
     private static function body(PDO $db,int $org,array $o,string $url):array
     {
-        $q=$db->prepare('SELECT c.*,p.title,s.name auditorium,v.name venue FROM commerce_performances c JOIN productions p ON p.id=c.production_id JOIN commerce_layouts l ON l.id=c.layout_id AND l.organization_id=c.organization_id JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE c.organization_id=? AND c.id=?');$q->execute([$org,$o['performance_id']]);$p=$q->fetch();if(!$p)throw new RuntimeException('Performance unavailable.');$brand=OrganizationBranding::fromEnvironment();$e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');$subject=mb_substr(preg_replace('/[\r\n]+/',' ',$brand['name'].' · Your sandbox tickets'),0,250);$lines=[$brand['name'].' · Sandbox confirmation','Order '.$o['public_reference'],$p['title'],CommercePerformancePolicy::label($p),$p['venue'].' / '.$p['auditorium']];$html='<html><body style="background:#faf7f1;color:#30282a;font-family:Arial,sans-serif;padding:24px"><h1 style="color:#702a3f;font-family:Georgia,serif">'.$e($brand['name']).'</h1><p>Sandbox tickets · no real-world admission</p><h2>'.$e($p['title']).'</h2><p>'.$e(CommercePerformancePolicy::label($p)).'<br>'.$e($p['venue'].' / '.$p['auditorium']).'</p><table><caption>Your tickets</caption><tr><th>Seat / admission</th><th>Type</th></tr>';
-        $q=$db->prepare("SELECT l.description,l.category FROM commerce_tickets t JOIN commerce_order_lines l ON l.organization_id=t.organization_id AND l.order_id=t.order_id AND l.seat_key=t.seat_key WHERE t.organization_id=? AND t.order_id=? AND t.state='valid' ORDER BY t.id");$q->execute([$org,$o['id']]);foreach($q->fetchAll() as $ticket){$lines[]=$ticket['description'].' · '.$ticket['category'];$html.='<tr><td>'.$e($ticket['description']).'</td><td>'.$e($ticket['category']).'</td></tr>';}$html.='</table><dl>';foreach(['subtotal'=>'Tickets','discount'=>'Discount','tax'=>'Tax','fee'=>'Order fee','total'=>'Total'] as $key=>$label){$amount=$o['currency'].' '.number_format((int)$o[$key.'_minor']/100,2);$lines[]=$label.': '.$amount;$html.='<dt>'.$label.'</dt><dd>'.$e($amount).'</dd>';}$lines[]='Secure tickets (expires in 24 hours): '.$url;$lines[]='Open the secure ticket page for one QR per ticket and printable/PDF tickets. Preview access requires an authorized tester account. Email failure does not change ticket validity.';$html.='</dl><p><a style="display:inline-block;background:#702a3f;color:white;padding:14px 20px;border-radius:8px" href="'.$e($url).'">View secure tickets & QR codes</a></p><p>This link expires in 24 hours. Preview access requires an authorized test account. Ticket validity is checked when presented at the door.</p></body></html>';return['subject'=>$subject,'text'=>implode("\n",$lines),'html'=>$html];
+        $q=$db->prepare('SELECT c.*,p.title,s.name auditorium,v.name venue FROM commerce_performances c JOIN productions p ON p.id=c.production_id JOIN commerce_layouts l ON l.id=c.layout_id AND l.organization_id=c.organization_id JOIN commerce_spaces s ON s.id=l.space_id AND s.organization_id=l.organization_id JOIN commerce_venues v ON v.id=s.venue_id AND v.organization_id=s.organization_id WHERE c.organization_id=? AND c.id=?');
+        $q->execute([$org,$o['performance_id']]);$p=$q->fetch();
+        if(!$p)throw new RuntimeException('Performance unavailable.');
+        $brand=OrganizationBranding::fromEnvironment();
+        $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
+        $subject=mb_substr(preg_replace('/[\\r\\n]+/',' ',$brand['name'].' · Your sandbox tickets'),0,250);
+        $date=CommercePerformancePolicy::label($p);
+        $venue=$p['venue'].' / '.$p['auditorium'];
+        $lines=[$brand['name'].' · Sandbox confirmation','Order '.$o['public_reference'],$p['title'],$date,$venue];
+        $html=CommerceEmailTemplate::start($brand,'TICKET CONFIRMATION','Your tickets are ready','Your tickets for '.$p['title'].' are confirmed. Below are your performance details and order summary.');
+        $html.=CommerceEmailTemplate::section((string)$p['title'],'<p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#30282a">'.$e($date).'</p><p style="margin:0;color:#706560;font-size:13px;line-height:1.6">'.$e($venue).'</p>');
+        $html.=CommerceEmailTemplate::section('Your tickets','');
+        $ticketRows='';
+        $q=$db->prepare("SELECT l.description,l.category FROM commerce_tickets t JOIN commerce_order_lines l ON l.organization_id=t.organization_id AND l.order_id=t.order_id AND l.seat_key=t.seat_key WHERE t.organization_id=? AND t.order_id=? AND t.state='valid' ORDER BY t.id");
+        $q->execute([$org,$o['id']]);
+        foreach($q->fetchAll() as $ticket){
+            $lines[]=$ticket['description'].' · '.$ticket['category'];
+            $ticketRows.=CommerceEmailTemplate::ticketRow((string)$ticket['description'],(string)$ticket['category']);
+        }
+        $html.=CommerceEmailTemplate::ticketTable($ticketRows);
+        $html.=CommerceEmailTemplate::section('Order summary','<p style="margin:0 0 10px;font-size:12px;color:#7a6f6a">Order '.$e($o['public_reference']).'</p>');
+        $html.='<table role="table" width="100%" cellpadding="0" cellspacing="0">';
+        foreach(['subtotal'=>'Tickets','discount'=>'Discount','tax'=>'Tax','fee'=>'Order fee','total'=>'Total'] as $key=>$label){
+            $amount=$o['currency'].' '.number_format((int)$o[$key.'_minor']/100,2);
+            $lines[]=$label.': '.$amount;
+            $html.=CommerceEmailTemplate::amountRow($label,($key==='discount'?'−':'').$amount,$key==='total');
+        }
+        $html.='</table>';
+        $lines[]='Secure tickets (expires in 24 hours): '.$url;
+        $lines[]='Open the secure ticket page for one QR per ticket and printable/PDF tickets. Preview access requires an authorized tester account. Email failure does not change ticket validity.';
+        $html.=CommerceEmailTemplate::finish($brand,'View tickets & QR codes',$url,'This secure link expires in 24 hours. Sign in with your authorized tester account to access and print your tickets.','Sandbox tickets are for testing only and do not authorize real-world admission. Ticket validity is checked at the door.');
+        return['subject'=>$subject,'text'=>implode("\\n",$lines),'html'=>$html];
     }
     public static function prepare(PDO $db,array $u,int $org,int $order,string $ownership,string $basePath):array
     {
