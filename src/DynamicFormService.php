@@ -157,10 +157,10 @@ final class DynamicFormService
                 if($type==='single_choice'&&$value!==''&&!in_array($value,array_map('strval',$field['options']??[]),true))throw new RuntimeException('Choose a valid option for '.$field['label'].'.');
                 if($type==='email'&&$value!==''&&(mb_strlen($value)>254||!filter_var($value,FILTER_VALIDATE_EMAIL)))throw new RuntimeException('Enter a valid email address for '.$field['label'].'.');
                 if($type==='phone'&&$value!==''){
-                    $digits=preg_replace('/\\D/','',$value);
-                    if(mb_strlen($value)>40||!preg_match('/^\\+?[0-9().\\-\\s]+$/D',$value)||strlen((string)$digits)<7||strlen((string)$digits)>15)throw new RuntimeException('Enter a valid phone number for '.$field['label'].'.');
+                    $digits=preg_replace('/\D/','',$value);
+                    if(mb_strlen($value)>40||!preg_match('/^\+?[0-9().\-\s]+$/D',$value)||strlen((string)$digits)<7||strlen((string)$digits)>15)throw new RuntimeException('Enter a valid phone number for '.$field['label'].'.');
                 }
-                if($type==='number'&&$value!==''&&(strlen($value)>50||!preg_match('/^-?[0-9]+(?:\\.[0-9]+)?$/D',$value)))throw new RuntimeException('Enter a valid number for '.$field['label'].'.');
+                if($type==='number'&&$value!==''&&(strlen($value)>50||!preg_match('/^-?[0-9]+(?:\.[0-9]+)?$/D',$value)))throw new RuntimeException('Enter a valid number for '.$field['label'].'.');
             }
             $answers[$key]=['field_id'=>(int)$field['id'],'label'=>(string)$field['label'],'type'=>$type,'answer'=>$value];
         }
