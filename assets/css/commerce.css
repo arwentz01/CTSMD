@@ -552,3 +552,25 @@
 .commerce-pos-admission-ticket em{font-style:normal;font-size:11px;color:#36684a}
 .commerce-pos-admission-ticket:has(input:disabled){background:#f7f8f6;opacity:.72;cursor:default}
 .commerce-pos-admission>form>button{min-height:40px}
+
+/* Door check-in: lookup actions open a single focused drawer rather than page-wide forms. */
+.commerce-door-lookup-actions{display:flex;gap:10px;flex-wrap:wrap;padding:12px 0 6px;border-top:1px solid #e6dcd5}
+.commerce-door-lookup-actions button{min-height:42px;padding:9px 16px;background:#fff;border:1px solid #d8c3ca;border-radius:7px;color:#76243b;font-size:13px;font-weight:750}
+.commerce-door-lookup-actions button:first-child{background:#f7edf0}
+.commerce-door-lookup-actions button:hover{background:#efe2e7}
+.commerce-door-lookup-drawer{position:fixed;inset:0 0 0 auto;box-sizing:border-box;width:min(620px,100vw);height:100dvh;max-height:100dvh;max-width:100vw;margin:0 0 0 auto;padding:0;border:0;border-left:1px solid #d9c9c4;background:#fff;color:#292323;overflow:auto;box-shadow:-10px 0 30px #221a1b29}
+.commerce-door-lookup-drawer:not([open]){display:none}
+.commerce-door-lookup-drawer::backdrop{background:rgba(24,18,22,.48)}
+.commerce-door-drawer-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 24px;border-bottom:1px solid #e4d9d4;position:sticky;top:0;background:#fff;z-index:2}
+.commerce-door-drawer-header h2{font-size:21px;line-height:1.3;margin:4px 0 0;padding:0}
+.commerce-door-drawer-close{background:#fff!important;color:#623242!important;border:1px solid #d7c8c6!important;border-radius:6px!important;padding:8px 12px!important;white-space:nowrap;min-height:36px;font-size:12px!important}
+.commerce-door-drawer-body{padding:22px 24px 36px}
+.commerce-door-drawer-body [hidden]{display:none!important}
+.commerce-door-drawer-body .commerce-door-search{margin:0 0 16px}
+.commerce-door-drawer-body .commerce-door-search input{font-size:15px}
+.commerce-door-drawer-body .commerce-door-results,.commerce-door-drawer-body .commerce-door-party{margin-top:12px}
+.commerce-door-drawer-body .commerce-door-party{border-top:1px solid #e6dcd5;padding-top:18px}
+.commerce-door-drawer-body .commerce-door-party-bottom{align-items:stretch;flex-direction:column}
+.commerce-door-drawer-body .commerce-door-party-bottom button{align-self:flex-end}
+.commerce-door-lookup-actions button:focus-visible,.commerce-door-lookup-drawer button:focus-visible,.commerce-door-lookup-drawer a:focus-visible,.commerce-door-lookup-drawer input:focus-visible{outline:3px solid #b65b78;outline-offset:2px}
+@media(max-width:620px){.commerce-door-lookup-drawer{width:100vw;border-left:0}.commerce-door-drawer-header{padding:16px}.commerce-door-drawer-body{padding:16px}.commerce-door-lookup-actions{display:grid;grid-template-columns:1fr 1fr}.commerce-door-lookup-actions button{padding:9px 8px}.commerce-door-drawer-body .commerce-door-party-bottom button{align-self:stretch}}
