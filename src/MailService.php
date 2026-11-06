@@ -12,6 +12,13 @@ final class MailService
         if ($textBody === '') throw new RuntimeException('Email body is required.');
         $allowed = ['account_security','schedule','forms','volunteer','community','digest','system','commerce'];
         if (!in_array($category, $allowed, true)) $category = 'system';
+        // Share the Commerce visual identity across general notifications. The
+        // original plain-text message, subject, recipients and queue policy stay
+        // authoritative; only the optional HTML representation is themed.
+        if ($category !== 'commerce') {
+            require_once __DIR__.'/GeneralEmailTemplate.php';
+            $htmlBody = GeneralEmailTemplate::render($category,$subject,$textBody);
+        }
         if ($userId && !self::preferenceAllows($db, $userId, $category)) return 0;
         $stmt = $db->prepare("INSERT INTO email_queue (user_id,recipient_email,recipient_name,category,subject,text_body,html_body,status,available_at,dedupe_key) VALUES (:user,:email,:name,:category,:subject,:text,:html,'queued',:available,:dedupe)");
         try {
