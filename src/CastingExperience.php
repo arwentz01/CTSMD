@@ -195,11 +195,11 @@ document.addEventListener('submit',async function(event){
   const response=await fetch(endpoint,{method:'POST',body:data,credentials:'same-origin',headers:{'Accept':'application/json'}});
   const contentType=response.headers.get('content-type')||'';
   if(!contentType.includes('application/json')){
-   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'The save endpoint returned HTTP '+response.status+'. If it persists, check your host request/security logs.';
+   feedback.textContent=response.redirected?'The session or page changed. Refresh the casting board and try again.':'We couldn’t save your changes. Try again. If this continues, contact a CTSMD administrator.';
    feedback.dataset.error='1';return;
   }
   const result=await response.json();
-  feedback.textContent=result.message||('The server returned HTTP '+response.status+'.');feedback.dataset.error=response.ok&&result.ok?'0':'1';
+  feedback.textContent=result.message||'We couldn’t complete that request. Please try again.';feedback.dataset.error=response.ok&&result.ok?'0':'1';
   if(!response.ok||!result.ok)return;
   if(result.ok&&data.get('action')==='update'){
    const summary=drawer.previousElementSibling?.querySelector('small');
