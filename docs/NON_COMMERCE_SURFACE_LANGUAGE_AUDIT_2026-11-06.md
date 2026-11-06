@@ -10,8 +10,8 @@ Remove implementation/developer vocabulary from member-, family-, volunteer-, ca
 | Surface | Problem | Improvement |
 |---|---|---|
 | Casting decisions | HTTP status and host-log guidance exposed to casting staff | Actionable “couldn’t save” instructions, with no endpoint internals |
-| Volunteer requirement setup | “Stable code”, “current definitions” without an explanation | “Requirement identifier”, “Volunteer requirements”, plus purpose |
-| Signup administration | “Public slug” | “Web address name” |
+| Volunteer requirement setup | “Stable code”, “current definitions” without an explanation | “Requirement identifier”, “Volunteer requirements”, plus purpose and accepted-character help |
+| Signup administration | “Public slug” | “Web address name” and a short URL example |
 | Form editor | “Definition scope”, “Completion mode” | “Where this form can be used”, “How members complete this form” |
 | Form designer | “Canonical” resource explanation | Explains that one Resource Library update is reflected wherever linked |
 | Mobile notifications | Service worker/subscription diagnostics always visible | Collapsed “Having trouble with notifications?” help with clearer descriptions |
@@ -33,7 +33,7 @@ Remove implementation/developer vocabulary from member-, family-, volunteer-, ca
 1. **Route-by-route visual walkthrough:** Validate actual menus, action hierarchy, errors, labels, and empty states in administrator, staff, guardian, student, volunteer, and caregiver sessions. Static search cannot verify what is rendered for every permission state.
 2. **Backend exception messages:** Trace user-visible `getMessage()` and fetch-error paths to their service origins; map internal failures to understandable guidance while preserving permission checks and audit logging.
 3. **Notification troubleshooting:** Check the native `details` open/close behavior, keyboard access, touch layout, and service diagnostic scripts.
-4. **Volunteer identifier and registration address name:** Confirm the existing validation text clearly tells staff which characters are accepted.
+4. **Volunteer identifier and registration address name:** Inline examples and accepted-character guidance have been added. Verify that the guidance renders clearly and still matches server-side validation.
 5. **Native links:** Validate pages that open a browser and return to Expo correctly, including accessibility labels.
 6. **Content beyond page source:** Review organization-managed help text, database-stored labels/form instructions, notification templates, and existing production-specific content, which may include staff-authored terminology.
 
