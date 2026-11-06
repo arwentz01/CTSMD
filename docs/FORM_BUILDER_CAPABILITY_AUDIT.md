@@ -70,3 +70,14 @@ Changes committed to a feature branch only. Source-level review and file readbac
 - Added validation regression cases for the new types and unsupported answers. Tests remain unexecuted in this environment.
 
 **Important remaining limitation:** Assignments still point to a mutable form ID. Freezing edits after first assignment protects current definitions, but does not implement a publishable revision linked to each assignment. A future true draft/publish system needs a distinct persisted revision model and backfill/migration plan, not merely relabeling active/inactive.
+
+## Conditional questions (first implementation, Nov 6, 2026)
+
+- A question can be shown only when **one earlier, active, unconditional single-choice question** equals an exact configured option.
+- No nested condition dependencies, conditional resource links, conditional section headings, AND/OR chains, or branching across pages yet.
+- Conditions persist in `form_fields.condition_json`; add migration `122_form_field_conditions.sql` after the field type migration. **Neither migration has been applied.**
+- Builder has a Show this question only when disclosure. Member web form toggles conditional fieldsets and disables hidden inputs. The server uses the same conditions to require only visible answers and never stores hidden submitted answers.
+- Builder constraints keep controlling questions earlier than their dependents, reject a controller's deactivation or edits while dependents remain, and prevent reorder operations that would invert the dependency.
+- Form duplication preserves condition JSON; submitted form-definition snapshots include the condition.
+- Added regression checks for hidden required questions, visible required questions and preservation of visible answers. **Tests have not run in this environment.**
+- **Before merging:** test against a migrated non-production database, including field types, JSON conditions, valid/invalid submits, guardian submissions, controlled-source edits/deactivation, reordering, historical responses, form duplication, JS disabled behavior, and small-screen accessibility. Do not deploy before migrations and tests are coordinated.
