@@ -113,7 +113,24 @@ final class DynamicFormService
             $conditionJson=json_encode(['source_key'=>(string)$source['field_key'],'equals'=>$match],JSON_THROW_ON_ERROR);
         }
         $key=trim((string)($input['field_key']??''));
-        if($key==='')$key=self::slug($label);
+        if($key===''){
+            if($fieldId>0){
+                $lookup=$db->prepare('SELECT field_key FROM form_fields WHERE id=:id AND form_id=:form');
+                $lookup->execute(['id'=>$fieldId,'form'=>$formId]);
+                $key=(string)($lookup->fetchColumn()?:'');
+            }else{
+                $stem=self::slug($label);
+                $key=$stem;
+                $exists=$db->prepare('SELECT 1 FROM form_fields WHERE form_id=:form AND field_key=:key LIMIT 1');
+                for($suffix=2;$suffix<=9999;$suffix++){
+                    $exists->execute(['form'=>$formId,'key'=>$key]);
+                    if(!$exists->fetchColumn())break;
+                    $tail='_'.$suffix;
+                    $key=substr($stem,0,100-strlen($tail)).$tail;
+                }
+                if($exists->fetchColumn())throw new RuntimeException('Unable to create a unique question key.');
+            }
+        }
         if(!preg_match('/^[a-z0-9_]{1,100}$/',$key))throw new RuntimeException('Field key may contain lowercase letters, numbers, and underscores only.');
         if($fieldId>0){
             $stmt=$db->prepare('SELECT field_key,field_type,sort_order FROM form_fields WHERE id=:id AND form_id=:form LIMIT 1');$stmt->execute(['id'=>$fieldId,'form'=>$formId]);$existing=$stmt->fetch();if(!$existing)throw new RuntimeException('That field no longer exists.');
