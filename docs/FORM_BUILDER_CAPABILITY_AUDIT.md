@@ -81,3 +81,13 @@ Changes committed to a feature branch only. Source-level review and file readbac
 - Form duplication preserves condition JSON; submitted form-definition snapshots include the condition.
 - Added regression checks for hidden required questions, visible required questions and preservation of visible answers. **Tests have not run in this environment.**
 - **Before merging:** test against a migrated non-production database, including field types, JSON conditions, valid/invalid submits, guardian submissions, controlled-source edits/deactivation, reordering, historical responses, form duplication, JS disabled behavior, and small-screen accessibility. Do not deploy before migrations and tests are coordinated.
+
+## Verification and refinement (November 6, 2026)
+
+- Added `tests/form_builder_mysql.php` and wired it into the RC1 disposable MySQL workflow after all schema migrations and before acceptance/preflight. It refuses non-loopback/non-rc1-test targets and wraps every test record in a rolled-back transaction.
+- Isolated MySQL migration and Form Builder test step **passed** in [RC1 run 42265512305](https://github.com/arwentz01/CTSMD/actions/runs/42265512305). This includes verifying migrations 121/122, all new field types, conditional rule persistence, visible/hidden answer validation, dependency-safe question editing, and assigned-form locking. The full workflow still failed later in unrelated Commerce integration.
+- PHP lint and the pure-PHP dynamic form validation step **passed** in [pilot safety run 42265820713](https://github.com/arwentz01/CTSMD/actions/runs/42265820713). The full safety workflow failed later in the unrelated RegistrationOperationsExperience source-contract assertion.
+- Form activation now validates active question dependencies, preventing invalid or out-of-order conditions from being made available. Added unit regressions for valid, forward and orphaned conditions.
+- Form library links directly to Edit questions; condition source picker only offers earlier eligible single-choice questions.
+- Member form conditional script tag issue corrected. Builder preview is now an interactive, non-submitting sandbox with a reset button, so staff can try conditional questions without saving answers.
+- **Not yet verified:** authenticated browser interactions for builder and family forms, accessibility and keyboard behavior, actual review flow after a conditional submission, deployment migration against hosted schema, native-app parity. No hosted migration or deployment has occurred.
