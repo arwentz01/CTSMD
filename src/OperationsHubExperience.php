@@ -53,7 +53,6 @@ final class OperationsHubExperience
             }
             if(AccessPolicy::canManageForms($user)){
                 $items[]=['icon'=>'✓','eyebrow'=>'FORMS','label'=>'Forms & Registration','detail'=>'Create and assign forms, review responses, or manage event signups.','href'=>'/admin/operations/forms'];
-                $items[]=['icon'=>'↗','eyebrow'=>'REGISTRATION','label'=>'Signups','detail'=>'Create event signups and interest forms, manage registrations, and review participant intake.','href'=>'/admin/registrations'];
             }
             if(AccessPolicy::canManageSafeguarding($user)){
                 $items[]=['icon'=>'●','eyebrow'=>'RESTRICTED','label'=>'Safeguarding','detail'=>'Review safeguarded messaging, relationship concerns and restricted cases.','href'=>'/safeguarding'];
