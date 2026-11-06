@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/CommerceEmailTemplate.php';
+require_once __DIR__.'/OrganizationBranding.php';
 
 /**
  * Branded HTML alternative for general CTSMD transactional mail.
