@@ -44,3 +44,10 @@ Scope: non-Commerce forms only. Source inspection of active FormBuilderIndexExpe
 
 ## Verification boundaries
 Changes committed to a feature branch only. Source-level review and file readback do not establish PHP syntax, browser acceptance, migrated database behavior, or mobile-device parity. No migration, deployment or production data changes are part of this first expansion. Complete those checks before merging.
+
+## Follow-up safety batch (same draft PR)
+
+- Editing a question with saved submission answers now blocks changes to its field key or type; staff can add a new question instead. This protects interpretation of prior response records while still allowing non-structural edits. A more complete published-definition freezing model remains needed.
+- Structured answer validation now rejects impossible calendar dates and unrecognized multiple-choice values, rather than accepting malformed dates or silently filtering answers.
+- Added `tests/form_builder_answers.php` for valid/invalid structured answer cases. Test execution remains outstanding in the current environment.
+- **Next major build decision:** draft and published versions, with per-assignment frozen definitions rather than mutable shared live questions. This requires coordinated schema, submission/API, family UI and historical review changes; it is not implemented by the current preview.
