@@ -49,6 +49,8 @@ jobs:
         run: php bin/rc1-manifest.php > "$RUNNER_TEMP/rc1-manifest.json"
       - name: Bootstrap new isolated schema only, no demo reset
         run: php tests/rc1_bootstrap.php
+      - name: Form Builder migrated schema and conditional MySQL regressions
+        run: php tests/form_builder_mysql.php
       - name: Read-only candidate schema and file preflight
         run: php bin/rc1-preflight.php --target=local --manifest="$RUNNER_TEMP/rc1-manifest.json" > "$RUNNER_TEMP/rc1-schema.json"
       - name: Seven-persona two-production real HTTP acceptance
