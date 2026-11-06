@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 require_once __DIR__.'/FormWriteGuard.php';
+require_once __DIR__.'/DynamicFormService.php';
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
@@ -173,6 +174,7 @@ final class FormManagementExperience
             $form = $stmt->fetch();
             if (!$form) throw new RuntimeException('That form no longer exists.');
             $next = (int)$form['active'] ? 0 : 1;
+            if($next===1)DynamicFormService::assertPublishable(DynamicFormService::fields($db,$formId));
             $db->prepare('UPDATE forms SET active=:active WHERE id=:id')->execute(['active'=>$next,'id'=>$formId]);
             self::audit($db,(int)$actor['id'],$next ? 'form.definition_activated' : 'form.definition_deactivated','form',$formId,$next ? 'Activated form definition.' : 'Deactivated form definition.',['title'=>$form['title']]);
             $db->commit();
