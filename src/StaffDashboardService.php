@@ -19,6 +19,7 @@ final class StaffDashboardService
         $cards=[];
 
         if(AccessPolicy::canManageSafeguarding($user)){
+            $cards[]=['key'=>'message_reports','label'=>'Private message reports','count'=>(int)$db->query("SELECT COUNT(*) FROM moderation_message_reports WHERE acknowledged_at IS NULL")->fetchColumn(),'detail'=>'Restricted reports awaiting safeguarding acknowledgement','href'=>'/admin/moderation/queue','tone'=>'attention'];
             $cards[]=['key'=>'safeguarding','label'=>'Safeguarding reviews','count'=>SafeguardingCaseService::openCount($db),'detail'=>'Restricted cases requiring safeguarding follow-through','href'=>'/safeguarding/cases','tone'=>'attention'];
         }
         if(AccessPolicy::canManageAccounts($user)){
