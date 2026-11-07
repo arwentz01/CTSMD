@@ -12,7 +12,7 @@ require_once __DIR__ . '/ModerationService.php';
 
 final class ModerationExperience
 {
-    private const ROUTES = ['/admin/moderation/terms','/admin/moderation/terms/edit','/admin/moderation/queue'];
+    private const ROUTES = ['/admin/moderation/terms','/admin/moderation/terms/edit','/admin/moderation/queue','/admin/moderation/history'];
 
     public static function handles(string $route): bool { return in_array($route,self::ROUTES,true); }
 
@@ -60,6 +60,16 @@ final class ModerationExperience
                 $_SESSION['moderation_test']=['hit'=>$hit,'sample'=>$sample];
                 self::redirect($basePath.'/admin/moderation/terms/edit'.(!empty($_POST['term_id'])?'?id='.(int)$_POST['term_id']:''));
             }
+            if($action==='acknowledge_post'){
+                $postId=filter_input(INPUT_POST,'post_id',FILTER_VALIDATE_INT)?:0;
+                if($postId<1)throw new RuntimeException('Choose a valid moderation item.');
+                $s=$db->prepare("UPDATE channel_posts SET moderation_acknowledged_at=CURRENT_TIMESTAMP,moderation_acknowledged_by_user_id=:actor WHERE id=:id AND moderation_status IN ('pending','rejected') AND moderation_acknowledged_at IS NULL");
+                $s->execute(['actor'=>(int)$user['id'],'id'=>$postId]);
+                if($s->rowCount()!==1)throw new RuntimeException('This concern was already acknowledged or is no longer flagged.');
+                self::audit($db,(int)$user['id'],'moderation.post_acknowledged','channel_post',$postId,'Acknowledged Community moderation concern.',[]);
+                self::flash('success','Concern acknowledged. It remains in moderation history.');
+                self::redirect($basePath.'/admin/moderation/queue');
+            }
             if(in_array($action,['approve_post','reject_post'],true)){
                 $postId=filter_input(INPUT_POST,'post_id',FILTER_VALIDATE_INT)?:0;
                 self::reviewPost($db,$user,(int)$postId,$action==='approve_post');
@@ -68,7 +78,7 @@ final class ModerationExperience
             }
             throw new RuntimeException('Choose a valid moderation action.');
         }catch(RuntimeException $e){self::flash('error',$e->getMessage());}
-        self::redirect($basePath.($route==='/admin/moderation/queue'?'/admin/moderation/queue':'/admin/moderation/terms'));
+        self::redirect($basePath.(in_array($route,['/admin/moderation/queue','/admin/moderation/history'],true)?$route:'/admin/moderation/terms'));
     }
 
     private static function saveTerm(PDO $db,array $user,int $id,array $input): int
@@ -155,7 +165,21 @@ final class ModerationExperience
 
     private static function queue(PDO $db): array
     {
-        return $db->query("SELECT cp.id,cp.body,cp.moderation_status,cp.moderation_reason,cp.created_at,cp.moderated_at,c.name channel_name,p.title production_title,CONCAT(a.first_name,' ',a.last_name) author,a.display_role author_role,mt.term matched_term,mt.category,mt.action rule_action,mt.severity,CONCAT(m.first_name,' ',m.last_name) moderator FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users a ON a.id=cp.author_user_id LEFT JOIN moderation_terms mt ON mt.id=cp.moderation_term_id LEFT JOIN users m ON m.id=cp.moderated_by_user_id WHERE cp.moderation_status IN ('pending','rejected') AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.moderation_status='pending' DESC,cp.created_at DESC LIMIT 150")->fetchAll();
+        return $db->query("SELECT cp.id,cp.body,cp.moderation_status,cp.moderation_reason,cp.created_at,cp.moderated_at,cp.moderation_acknowledged_at,cp.moderation_acknowledged_by_user_id,c.name channel_name,p.title production_title,CONCAT(a.first_name,' ',a.last_name) author,a.display_role author_role,mt.term matched_term,mt.category,mt.action rule_action,mt.severity,CONCAT(m.first_name,' ',m.last_name) moderator FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id JOIN users a ON a.id=cp.author_user_id LEFT JOIN moderation_terms mt ON mt.id=cp.moderation_term_id LEFT JOIN users m ON m.id=cp.moderated_by_user_id WHERE cp.moderation_status IN ('pending','rejected') AND cp.moderation_acknowledged_at IS NULL AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.moderation_status='pending' DESC,cp.created_at DESC LIMIT 150")->fetchAll();
+    }
+
+    private static function history(PDO $db,int $months,string $search):array
+    {
+        $months=in_array($months,[1,3,6,12],true)?$months:3;
+        $sql="SELECT cp.id,cp.author_user_id,cp.body,cp.moderation_status,cp.moderation_reason,cp.created_at,cp.moderation_acknowledged_at,cp.moderated_at,mt.category,mt.severity,c.name channel_name,p.title production_title,CONCAT(a.first_name,' ',a.last_name) author,CONCAT(m.first_name,' ',m.last_name) acknowledger,
+            (SELECT COUNT(*) FROM channel_posts other WHERE other.author_user_id=cp.author_user_id AND other.moderation_term_id IS NOT NULL AND other.created_at>=DATE_SUB(NOW(),INTERVAL ".$months." MONTH)) user_flag_count
+            FROM channel_posts cp JOIN users a ON a.id=cp.author_user_id JOIN channels c ON c.id=cp.channel_id LEFT JOIN productions p ON p.id=c.production_id
+            LEFT JOIN moderation_terms mt ON mt.id=cp.moderation_term_id LEFT JOIN users m ON m.id=cp.moderation_acknowledged_by_user_id
+            WHERE cp.moderation_term_id IS NOT NULL AND cp.created_at>=DATE_SUB(NOW(),INTERVAL ".$months." MONTH)";
+        $params=[];
+        if($search!==''){$sql.=" AND (CONCAT(a.first_name,' ',a.last_name) LIKE :search OR c.name LIKE :search2 OR cp.body LIKE :search3)";$params=['search'=>'%'.$search.'%','search2'=>'%'.$search.'%','search3'=>'%'.$search.'%'];}
+        $sql.=" ORDER BY user_flag_count DESC,cp.created_at DESC LIMIT 200";
+        $s=$db->prepare($sql);$s->execute($params);return $s->fetchAll();
     }
 
     private static function aliases(string $value): array
@@ -205,15 +229,28 @@ final class ModerationExperience
         $test=$_SESSION['moderation_test']??null;unset($_SESSION['moderation_test']);
         $editing=$route==='/admin/moderation/terms/edit';
         $queue=$route==='/admin/moderation/queue';
-        $title=$editing?($edit?'Edit moderation rule':'New moderation rule'):($queue?'Moderation queue':'Moderation terms');
+        $history=$route==='/admin/moderation/history';
+        $title=$editing?($edit?'Edit moderation rule':'New moderation rule'):($queue?'Moderation queue':($history?'Moderation history':'Moderation terms'));
         header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/moderation.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$title,$basePath,[['label'=>'Term library','href'=>'/admin/moderation/terms','active'=>!$queue],['label'=>'Review queue','href'=>'/admin/moderation/queue','active'=>$queue]]);?><div class="mod-page ops-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/moderation.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$title,$basePath,[['label'=>'Review queue','href'=>'/admin/moderation/queue','active'=>$queue],['label'=>'History','href'=>'/admin/moderation/history','active'=>$history],['label'=>'Term library','href'=>'/admin/moderation/terms','active'=>!$queue&&!$history]]);?><div class="mod-page ops-page">
         <?php if($flash):?><div class="mod-flash alert <?= $flash['type']==='success'?'alert-success':'alert-danger' ?> alert-compact <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?>
-        <?php if($queue):
+        <?php if($history):
+            $months=(int)($_GET['months']??3);if(!in_array($months,[1,3,6,12],true))$months=3;
+            $search=mb_substr(trim((string)($_GET['search']??'')),0,100);
+            $items=self::history($db,$months,$search);
+        ?>
+            <section class="mod-hero ops-heading page-header page-header-compact surface"><div class="page-header-main"><small class="page-header-eyebrow">MODERATION HISTORY</small><h2 class="page-header-title">Look for patterns, not just isolated flags.</h2><p class="page-header-description">Every matched post remains here after acknowledgement. Repeat counts represent distinct flagged posts, not a determination of misconduct.</p></div></section>
+            <form method="get" class="mod-form surface" style="padding:1rem;display:flex;align-items:end;gap:1rem;flex-wrap:wrap">
+                <label class="form-field">Review period<select name="months" class="form-select"><?php foreach([1,3,6,12] as $option):?><option value="<?=$option?>"<?=$months===$option?' selected':''?>><?=$option?> month<?=$option===1?'':'s'?></option><?php endforeach;?></select></label>
+                <label class="form-field">Search individual, channel or content<input class="form-input" name="search" value="<?=$esc($search)?>" maxlength="100"></label>
+                <button class="button" type="submit">Filter history</button>
+            </form>
+            <div class="mod-queue"><?php foreach($items as $item):?><article class="mod-review surface"><header><div><small><span class="badge badge-compact badge-neutral"><?=$esc(strtoupper((string)$item['moderation_status']))?></span> · <?=$esc((string)$item['category'])?></small><h3><?=$esc((string)$item['author'])?> · <?=(int)$item['user_flag_count']?> flag<?= (int)$item['user_flag_count']===1?'':'s'?> in selected period</h3><p>#<?=$esc((string)$item['channel_name'])?><?=$item['production_title']?' · '.$esc((string)$item['production_title']):''?> · <?=$esc((string)$item['created_at'])?></p></div></header><blockquote><?=nl2br($esc((string)$item['body']))?></blockquote><footer class="mod-decided"><?=$item['moderation_acknowledged_at']?'Acknowledged by '.$esc((string)$item['acknowledger']).' · '.$esc((string)$item['moderation_acknowledged_at']):'Not yet acknowledged'?></footer></article><?php endforeach;?><?php if(!$items):?><div class="mod-empty empty-state"><b>No moderation matches for this period.</b></div><?php endif;?></div>
+        <?php elseif($queue):
             $items=self::queue($db);$pending=array_values(array_filter($items,fn($p)=>$p['moderation_status']==='pending'));
         ?>
-            <section class="mod-hero ops-heading page-header page-header-compact surface"><div class="page-header-main"><small class="page-header-eyebrow">EXCEPTION-BASED MODERATION</small><h2 class="page-header-title"><?= count($pending) ?> post<?= count($pending)===1?'':'s' ?> waiting for review.</h2><p class="page-header-description">Clean posts publish immediately. Only rule matches appear here. Approving publishes the original text unchanged; rejecting keeps it private.</p></div></section>
-            <div class="mod-queue"><?php foreach($items as $item):?><article class="mod-review surface <?= $esc($item['moderation_status']) ?>"><header><div><small><span class="badge badge-compact <?= $item['moderation_status']==='pending'?'badge-warning':'badge-neutral' ?>"><?= $esc(strtoupper($item['moderation_status'])) ?></span> <span class="badge badge-compact <?= $item['severity']==='critical'?'badge-danger':($item['severity']==='low'?'badge-neutral':'badge-warning') ?>"><?= $esc(strtoupper((string)$item['severity'])) ?></span></small><h3>#<?= $esc($item['channel_name']) ?><?= $item['production_title']?' · '.$esc($item['production_title']):'' ?></h3><p><?= $esc($item['author']) ?> · <?= $esc($item['author_role']) ?> · <?= $esc(date('M j · g:i A',strtotime($item['created_at']))) ?></p></div><span class="badge badge-compact badge-info"><?= $esc((string)$item['category']) ?></span></header><blockquote><?= nl2br($esc($item['body'])) ?></blockquote><div class="mod-match"><b>Matched rule</b><code><?= $esc((string)$item['matched_term']) ?></code><span><?= $esc((string)$item['moderation_reason']) ?></span></div><?php if($item['moderation_status']==='pending'):?><footer><form class="toolbar-actions" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['moderation_csrf']) ?>"><input type="hidden" name="post_id" value="<?= (int)$item['id'] ?>"><button name="action" value="reject_post" class="btn btn-danger">Reject</button><button name="action" value="approve_post" class="button">Approve & publish</button></form></footer><?php else:?><footer class="mod-decided">Automatically blocked or rejected<?= $item['moderator']?' by '.$esc($item['moderator']):'' ?><?= $item['moderated_at']?' · '.$esc(date('M j · g:i A',strtotime($item['moderated_at']))):'' ?></footer><?php endif;?></article><?php endforeach;?><?php if(!$items):?><div class="mod-empty empty-state"><b>Nothing in moderation.</b><p>No Community posts have been held or blocked.</p></div><?php endif;?></div>
+            <section class="mod-hero ops-heading page-header page-header-compact surface"><div class="page-header-main"><small class="page-header-eyebrow">EXCEPTION-BASED MODERATION</small><h2 class="page-header-title"><?= count($pending) ?> post<?= count($pending)===1?'':'s' ?> needing attention.</h2><p class="page-header-description">Acknowledge to clear the shared alert while keeping its history. Posts held for review still need approval or rejection to change publishing status.</p></div></section>
+            <div class="mod-queue"><?php foreach($items as $item):?><article class="mod-review surface <?= $esc($item['moderation_status']) ?>"><header><div><small><span class="badge badge-compact <?= $item['moderation_status']==='pending'?'badge-warning':'badge-neutral' ?>"><?= $esc(strtoupper($item['moderation_status'])) ?></span> <span class="badge badge-compact <?= $item['severity']==='critical'?'badge-danger':($item['severity']==='low'?'badge-neutral':'badge-warning') ?>"><?= $esc(strtoupper((string)$item['severity'])) ?></span></small><h3>#<?= $esc($item['channel_name']) ?><?= $item['production_title']?' · '.$esc($item['production_title']):'' ?></h3><p><?= $esc($item['author']) ?> · <?= $esc($item['author_role']) ?> · <?= $esc(date('M j · g:i A',strtotime($item['created_at']))) ?></p></div><span class="badge badge-compact badge-info"><?= $esc((string)$item['category']) ?></span></header><blockquote><?= nl2br($esc($item['body'])) ?></blockquote><div class="mod-match"><b>Matched rule</b><code><?= $esc((string)$item['matched_term']) ?></code><span><?= $esc((string)$item['moderation_reason']) ?></span></div><?php if($item['moderation_status']==='pending'):?><footer><form class="toolbar-actions" method="post"><input type="hidden" name="csrf_token" value="<?= $esc((string)$_SESSION['moderation_csrf']) ?>"><input type="hidden" name="post_id" value="<?= (int)$item['id'] ?>"><button name="action" value="reject_post" class="btn btn-danger">Reject</button><button name="action" value="approve_post" class="button">Approve & publish</button></form><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['moderation_csrf'])?>"><input type="hidden" name="post_id" value="<?=(int)$item['id']?>"><button class="btn btn-tertiary" name="action" value="acknowledge_post">Acknowledge</button></form></footer><?php else:?><footer class="mod-decided">Automatically blocked or rejected<?= $item['moderator']?' by '.$esc($item['moderator']):'' ?><?= $item['moderated_at']?' · '.$esc(date('M j · g:i A',strtotime($item['moderated_at']))):'' ?></footer><?php endif;?><?php if($item['moderation_status']!=='pending'):?><form method="post"><input type="hidden" name="csrf_token" value="<?=$esc((string)$_SESSION['moderation_csrf'])?>"><input type="hidden" name="post_id" value="<?=(int)$item['id']?>"><button class="btn btn-tertiary" name="action" value="acknowledge_post">Acknowledge</button></form><?php endif;?></article><?php endforeach;?><?php if(!$items):?><div class="mod-empty empty-state"><b>Nothing in moderation.</b><p>No Community posts have been held or blocked.</p></div><?php endif;?></div>
         <?php elseif($editing):
             $t=$edit??['id'=>0,'term'=>'','category'=>'profanity','action'=>'review','match_mode'=>'normalized','severity'=>'medium','aliases_json'=>null,'notes'=>'','active'=>1];
             $aliases=$t['aliases_json']?json_decode((string)$t['aliases_json'],true):[];
