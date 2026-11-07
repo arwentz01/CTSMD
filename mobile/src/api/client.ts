@@ -24,10 +24,11 @@ export type FamilyMember={id?:number;name?:string;first_name?:string;is_primary?
 export const myFamily=()=>api<{students:FamilyMember[];guardians:FamilyMember[]}>('my-family');
 export type CaregiverCall={student_first_name:string;production_title:string;title:string;starts_at:string;ends_at:string|null;location:string|null};
 export const caregiverSchedule=()=>api<{calls:CaregiverCall[]}>('caregiver-schedule');
-export const conversations=(options:{q?:string;archived?:boolean}={})=>{
+export const conversations=(options:{q?:string;archived?:boolean;scope?:'inbox'|'archived'|'all'}={})=>{
  const params=new URLSearchParams();
  if(options.q?.trim())params.set('q',options.q.trim());
- if(options.archived)params.set('archived','1');
+ if(options.scope)params.set('scope',options.scope);
+ else if(options.archived)params.set('scope','archived');
  const query=params.toString();
  return api<MessagesResult>('messages'+(query?'?'+query:''));
 };
