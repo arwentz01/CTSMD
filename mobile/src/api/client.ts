@@ -57,6 +57,7 @@ export async function createChannelPost(channel_id:number,body:string,photo?:Nat
  return result as {ok:boolean;post_id:number;status:string};
 }
 export const sendMessage=(id:number,body:string)=>api<unknown>('message-send',{method:'POST',body:{conversation_id:id,body}});
+export const reportMessage=(message_id:number,reason:'harassment'|'inappropriate'|'unwanted_contact'|'safeguarding'|'other')=>api<{ok:boolean}>('message-report',{method:'POST',body:{message_id,reason}});
 export type FormDetail={id:number;status:string;due_at:string|null;title:string;instructions:string|null;completion_mode:string;review_required:number;submission_status:string|null;reviewer_note:string|null;read_only:boolean;requires_web:boolean};
 export const formDetail=(id:number)=>api<{form:FormDetail}>('form-detail?id='+encodeURIComponent(String(id)));
 export const submitForm=(input:{assignment_id:number;acknowledgment:boolean;typed_signature?:string;response_text?:string})=>api<{ok:boolean}>('form-submit',{method:'POST',body:input});
