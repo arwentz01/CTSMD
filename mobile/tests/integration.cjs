@@ -285,3 +285,24 @@ test('both conversation screens share one keyboard viewport and Android resize c
   assert.doesNotMatch(source,/<KeyboardAvoidingView/);
  }
 });
+
+test('native messaging presents live recipient filtering, keyboard safe composer, and compact message actions',()=>{
+ const newMessage=fs.readFileSync(path.join(__dirname,'../app/messages/new.tsx'),'utf8');
+ const inbox=fs.readFileSync(path.join(__dirname,'../app/(tabs)/messages.tsx'),'utf8');
+ const thread=fs.readFileSync(path.join(__dirname,'../app/messages/[id].tsx'),'utf8');
+ const client=fs.readFileSync(path.join(__dirname,'../src/api/client.ts'),'utf8');
+ assert.match(newMessage,/ConversationViewport/);
+ assert.match(newMessage,/onChangeText=\{setQuery\}/);
+ assert.match(newMessage,/person\.name\.toLocaleLowerCase\(\)\.includes/);
+ assert.match(newMessage,/<View style=\{styles\.composer\}>/);
+ assert.match(inbox,/onLongPress=\{\(\)=>changeArchive/);
+ assert.doesNotMatch(inbox,/archiveAction/);
+ assert.match(thread,/onLongPress=\{\(\)=>\{if\(!reportSelecting\)setDeleteTarget/);
+ assert.match(thread,/accessibilityLabel="Conversation options"/);
+ assert.doesNotMatch(thread,/accessibilityLabel="Delete message options"/);
+ assert.doesNotMatch(thread,/accessibilityLabel="Report this message"/);
+ assert.match(thread,/mineContent:\{alignItems:'flex-end'\}/);
+ assert.match(thread,/mineRow:\{justifyContent:'flex-end'\}/);
+ assert.match(thread,/maxLength=\{1000\}/);
+ assert.match(client,/body:\{message_id,reason,detail\}/);
+});
