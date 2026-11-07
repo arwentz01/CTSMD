@@ -92,7 +92,7 @@ test('Whats New is linked from Settings & support and release entries have publi
  assert.match(page,/releaseStatusLabel/);
  const {releaseNotes}=load('src/content/releaseNotes.ts');
  assert.equal(releaseNotes[0].version,'0.2.0');
- assert.equal(releaseNotes[0].status,'upcoming','Do not label version 0.2.0 as published until the store release exists');
+ assert.equal(releaseNotes[0].status,'closed_testing','Version 0.2.0 is intended for the closed testing audience');
  assert.equal(releaseNotes[1].version,'0.1.0');
  assert.equal(releaseNotes[1].status,'published','The user confirmed 0.1.0 was the first published release');
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Messages'));
