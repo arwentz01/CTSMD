@@ -40,7 +40,7 @@ export default function WhatsNew(){
     </View>}
    </View>;
   })}
-  <Text style={s.footer}>Release notes describe app updates. Features marked “Preparing for release” may not be available in the version installed on your device yet.</Text>
+  <Text style={s.footer}>Release 2 is for our closed-testing group. Features appear when that version is installed; older versions may not include them.</Text>
  </Screen>;
 }
 const s=StyleSheet.create({
