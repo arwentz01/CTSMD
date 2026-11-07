@@ -13,11 +13,11 @@ final class ReleaseNotesExperience
             'number'=>2,
             'name'=>'A simpler way to stay connected',
             'status'=>'Closed testing',
-            'intro'=>'A refreshed experience for conversations, community updates, and everything happening around your theatre.',
+            'intro'=>'A cleaner app with easier navigation, clearer unread activity, and more room for the conversations and theatre updates that matter.',
             'sections'=>[
                 [
                     'title'=>'Messages',
-                    'summary'=>'Less clutter and more control over your conversations.',
+                    'summary'=>'A compact inbox, live search, and unread message counts at a glance.',
                     'details'=>[
                         'A cleaner inbox with compact conversation rows and a simple button to start a new message.',
                         'Search conversations as you type, including message text and people.',
@@ -30,12 +30,20 @@ final class ReleaseNotesExperience
                 ],
                 [
                     'title'=>'Community',
-                    'summary'=>'Easier-to-scan posts, with new activity standing out.',
+                    'summary'=>'Less scrolling, clearer posts, and burgundy highlights for unread activity.',
                     'details'=>[
                         'Community posts use a tighter, more readable feed with less empty space.',
                         'Unread posts are highlighted in burgundy; posts you have already read return to the normal appearance.',
                         'Opening a channel updates its read status, so you can see what is new when you return.',
                         'Browse Feed or Channels and open the original post to see its conversation.'
+                    ]
+                ],
+                [
+                    'title'=>'Easier navigation',
+                    'summary'=>'Cleaner screens with less clutter and more room for what you need.',
+                    'details'=>[
+                        'Tighter layouts make conversations and Community posts easier to scan.',
+                        'Common actions are easier to find, while less frequently used options stay out of the way.'
                     ]
                 ],
                 [
@@ -58,11 +66,11 @@ final class ReleaseNotesExperience
                 ],
                 [
                     'title'=>'Notifications and updates',
-                    'summary'=>'More helpful alerts and clearer information about releases.',
+                    'summary'=>'Device alerts and up-to-date release notes without another app rebuild.',
                     'details'=>[
                         'The app offers an option to enable device notifications and manage them later in Settings.',
                         'Eligible Android test builds can show an update icon when a newer closed-testing release is available.',
-                        'Release notes can now be updated on this website without requiring another app build.'
+                        'Open What’s New from the app to read the latest release information on CTSMD.me, even when the wording changes between app builds.'
                     ]
                 ]
             ]
