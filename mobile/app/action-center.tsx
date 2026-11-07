@@ -44,6 +44,10 @@ export default function ActionCenter(){
   <Text style={s.intro}>Production tasks, casting offers, family notices, and moderation concerns assigned to your permissions.</Text>
   {!!error&&<View style={s.card}><Text style={s.error}>{error}</Text><Pressable onPress={()=>void refresh()}><Text style={s.link}>Try again</Text></Pressable></View>}
   {!data&&!error&&<Text style={s.muted}>Loading your assignments…</Text>}
+  {!!moderationError&&<View style={s.card}>
+    <Text accessibilityRole="alert" style={s.error}>Moderation alerts couldn't load: {moderationError}</Text>
+    <Pressable accessibilityRole="button" onPress={()=>void refresh()}><Text style={s.link}>Retry moderation alerts</Text></Pressable>
+  </View>}
   {moderation?.allowed&&<View style={s.moderationSection}>
     <View style={s.heading}><Ionicons name="shield-checkmark-outline" size={22} color={colors.primary}/><Text style={s.title}>Community Moderation</Text>{moderation.pending_count>0&&<Text style={s.count}>{moderation.pending_count}</Text>}</View>
     {moderation.pending_count===0&&<Text style={s.muted}>No moderation alerts need acknowledgement.</Text>}
@@ -62,7 +66,6 @@ export default function ActionCenter(){
       {!!item.detail&&<Text style={s.muted}>{item.detail}</Text>}
       <Pressable disabled={busy!==null} accessibilityRole="button" accessibilityLabel={'Acknowledge restricted message report'} style={[s.button,busy!==null&&s.disabled]} onPress={()=>void acknowledge('message',item.id)}><Text style={s.buttonText}>Acknowledge</Text></Pressable>
     </View>)}
-    {!!moderationError&&<Text style={s.error}>{moderationError}</Text>}
   </View>}
   {data&&<>
    <View style={s.heading}><Ionicons name="checkbox-outline" size={22} color={colors.primary}/><Text style={s.title}>Production To-Dos</Text></View>
