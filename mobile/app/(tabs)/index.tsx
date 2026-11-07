@@ -7,7 +7,8 @@ import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
-import {theatre,tasks,conversations} from '../../src/api/client';
+import {theatre,tasks,conversations,moderationAlerts} from '../../src/api/client';
+import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 import type {TheatreEvent} from '../../src/types/ctsmd';
 
@@ -51,24 +52,60 @@ export default function Home(){
 }
 function MemberHome(){
  const {user}=useAuth();
- const load=useCallback(async()=>{const [t,a,m]=await Promise.all([theatre(),tasks(),conversations()]);return {t,a,m}},[]);
+ const load=useCallback(async()=>{
+    const [t,a,m,mod]=await Promise.all([theatre(),tasks(),conversations(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof Error?e.message:'Moderation alerts unavailable.'}))]);
+    return {t,a,m,mod};
+  },[]);
   const {data,error,loading,retry}=useScreenData(load);
   const now=Date.now();
   const events=(data?.t.events||[]).filter(e=>Number.isFinite(toTime(e.starts_at))&&toTime(e.starts_at)>=now).sort((a,b)=>toTime(a.starts_at)-toTime(b.starts_at)).slice(0,3);
   const openForms=(data?.a.forms||[]).filter(f=>f.status!=='completed'&&f.submission_status!=='approved');
   const unread=(data?.m.conversations||[]).reduce((total,c)=>total+Math.max(0,c.unread_count||0),0);
+  const moderationCount=data?.mod.value?.pending_count??0;
+  const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount;
+  const moderationAccess=!!user?.roles?.some(role=>role==='administrator'||role==='production_staff')||false;
+  const moderationError=data?.mod.error;
   return <Screen compact title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
     <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
       <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/calendar')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
-      {openForms.length>0&&<View style={styles.panel}><Text style={styles.sectionTitle}>Needs Your Attention</Text>{openForms.slice(0,3).map(f=><Pressable key={f.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/forms/[id]',params:{id:String(f.id)}})} style={styles.task}><Ionicons name="document-text-outline" color={colors.primary} size={21}/><View style={{flex:1}}><Text style={styles.rowTitle}>{f.title}</Text><Text style={styles.sub}>Assigned form · Action required</Text></View><Ionicons name="chevron-forward" color={colors.muted}/></Pressable>)}{openForms.length>3&&<Pressable onPress={()=>router.push('/(tabs)/forms')} accessibilityRole="button"><Text style={styles.link}>View all {openForms.length} forms →</Text></Pressable>}</View>}
-      {!!data.a.casting_offers.length&&<View style={styles.panel}>
-        <View style={styles.heading}><Text style={styles.sectionTitle}>Casting offers awaiting your response</Text><Text style={styles.offerCount}>{data.a.casting_offers.length}</Text></View>
-        {data.a.casting_offers.map(offer=><Pressable key={offer.id} accessibilityRole="button" accessibilityLabel={'Review offer of '+offer.role_snapshot+' in '+offer.production_title} onPress={()=>router.push('/action-center')} style={styles.offerRow}><Ionicons name="star" color={colors.primary} size={24}/><View style={{flex:1}}><Text style={styles.offerProduction}>{offer.production_title}</Text><Text style={styles.offerRole}>Role offered: {offer.role_snapshot}</Text><Text style={styles.sub}>For {offer.first_name} {offer.last_name}</Text></View><Ionicons name="chevron-forward" size={21} color={colors.primary}/></Pressable>)}
-      </View>}
-      <Pressable accessibilityRole="button" accessibilityLabel="Open Action Center" onPress={()=>router.push('/action-center')} style={styles.panel}><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><View style={{flex:1}}><Text style={styles.sectionTitle}>Action Center</Text><Text style={styles.sub}>Production tasks, casting offers, and family notices</Text></View><Ionicons name="chevron-forward" size={23} color={colors.primary}/></View></Pressable>
+      <View style={styles.panel}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open Action Center and review items needing attention" onPress={()=>router.push('/action-center')} style={styles.heading}>
+          <View style={{flex:1,flexDirection:'row',alignItems:'center',gap:8}}>
+            <Text style={styles.sectionTitle}>Needs Your Attention</Text>
+            {actionCount>0&&<View style={styles.attentionBadge}><Text style={styles.attentionBadgeText}>{actionCount}</Text></View>}
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={colors.primary}/>
+        </Pressable>
+        {moderationCount>0&&<Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.task}>
+          <Ionicons name="shield-checkmark-outline" color={colors.primary} size={23}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>Moderation concerns</Text><Text style={styles.sub}>{moderationCount} awaiting acknowledgement · Open Action Center</Text></View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+        </Pressable>}
+        {openForms.slice(0,3).map(f=><Pressable key={f.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/forms/[id]',params:{id:String(f.id)}})} style={styles.task}>
+          <Ionicons name="document-text-outline" color={colors.primary} size={21}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>{f.title}</Text><Text style={styles.sub}>Assigned form · Action required</Text></View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+        </Pressable>)}
+        {data.a.casting_offers.length>0&&<Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.task}>
+          <Ionicons name="star-outline" color={colors.primary} size={21}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>Casting offers</Text><Text style={styles.sub}>{data.a.casting_offers.length} awaiting your response</Text></View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+        </Pressable>}
+        {data.a.production_todos.length>0&&<Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.task}>
+          <Ionicons name="checkbox-outline" color={colors.primary} size={21}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>Production tasks</Text><Text style={styles.sub}>{data.a.production_todos.length} outstanding</Text></View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+        </Pressable>}
+        {!!moderationError&&moderationAccess&&<View style={styles.issueRow}>
+          <Ionicons name="alert-circle-outline" size={20} color={colors.danger}/>
+          <Text style={styles.issueText}>Moderation alerts couldn't load: {moderationError}. Open Action Center to retry.</Text>
+        </View>}
+        {actionCount===0&&!(moderationError&&moderationAccess)&&<Text style={styles.sub}>You're all caught up.</Text>}
+        <Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.actionFooter}><Text style={styles.link}>Open Action Center</Text><Ionicons name="arrow-forward" size={17} color={colors.primary}/></Pressable>
+      </View>
       <Pressable accessibilityRole="button" accessibilityLabel="View unread notifications and notification history" onPress={()=>router.push('/notifications')} style={styles.panel}><View style={{flexDirection:'row',alignItems:'center',gap:12}}><Ionicons name="notifications-outline" size={24} color={colors.primary}/><View style={{flex:1}}><Text style={styles.sectionTitle}>Recent updates</Text><Text style={styles.sub}>Unread notifications and collapsible history</Text></View><Ionicons name="chevron-forward" size={23} color={colors.primary}/></View></Pressable>
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.shortcuts}>
@@ -81,6 +118,7 @@ function MemberHome(){
   </Screen>;
 }
 const styles=StyleSheet.create({
+ attentionBadge:{backgroundColor:colors.primary,borderRadius:12,minWidth:24,height:24,alignItems:'center',justifyContent:'center',paddingHorizontal:6},attentionBadgeText:{color:'#fff',fontWeight:'800',fontSize:12},issueRow:{flexDirection:'row',gap:8,paddingVertical:8,alignItems:'center'},issueText:{color:colors.danger,fontSize:13,flex:1},actionFooter:{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:8,marginTop:4},
  offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
   intro:{fontSize:13,color:colors.muted,marginTop:-2,marginBottom:6},
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
