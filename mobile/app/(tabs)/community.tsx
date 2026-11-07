@@ -6,7 +6,6 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen,Item} from '../../src/components/Screen';
 import {CommunityPhotos} from '../../src/components/CommunityPhotos';
-import {CommunityHeart} from '../../src/components/CommunityHeart';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {channels,communityFeed,type CommunityFeedPost} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
@@ -36,27 +35,34 @@ export default function Community(){
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
  const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button"><Item title={c.name} subtitle={(c.description||'Community channel')+(c.unread_count>0?' · '+c.unread_count+' unread':'')}/></Pressable>;
+ const openPost=(post:CommunityFeedPost)=>{
+  // Channel entry marks that channel read on the server. Also clear paged
+  // items immediately so older locally cached pages don't retain red accents.
+  setMore(previous=>previous.map(item=>item.channel_id===post.channel_id?{...item,unread:false}:item));
+  router.push({pathname:'/community/[id]',params:{id:String(post.channel_id),post_id:String(post.id)}});
+ };
  return <Screen title="Community" compact>
   {filtered&&view==='Channels'&&<View style={s.filterHeader}><Text style={s.muted}>Production community</Text><Pressable accessibilityRole="button" onPress={()=>router.setParams({production_id:undefined})}><Text style={s.link}>View all</Text></Pressable></View>}
-  <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="button" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
+  <View style={s.switch}>{(['Feed','Channels'] as const).map(tab=><Pressable accessibilityRole="tab" accessibilityState={{selected:view===tab}} key={tab} onPress={()=>setView(tab)} style={[s.tab,view===tab&&s.selected]}><Text style={[s.tabText,view===tab&&s.selectedText]}>{tab}</Text></Pressable>)}</View>
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&view==='Feed'&&<>
     {posts.length===0&&<Text style={s.muted}>No community posts available yet.</Text>}
-    {posts.map(p=><View key={p.id} style={s.post}>
-      <Pressable accessibilityRole="button" accessibilityLabel={'Open post by '+p.author+' in '+p.channel_name} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(p.channel_id),post_id:String(p.id)}})} style={s.postOpen}>
+    <View style={s.feedList}>
+    {posts.map(p=><View key={p.id} style={[s.post,p.unread&&s.unreadPost]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={(p.unread?'New post. ':'')+'Open post by '+p.author+' in '+p.channel_name} onPress={()=>openPost(p)} style={s.postOpen}>
         <View style={s.authorRow}>
           <View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View>
           <View style={s.authorDetails}>
-            <Text numberOfLines={1} style={s.author}>{p.author}</Text>
+            <View style={s.authorNameRow}><Text numberOfLines={1} style={s.author}>{p.author}</Text>{p.unread&&<View style={s.newDot} accessibilityLabel="Unread post"/>}</View>
             <Text numberOfLines={1} style={s.channel}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text>
           </View>
-          <Ionicons name="chevron-forward" color={colors.muted} size={17}/>
+          <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
         </View>
-        <CommunityBody body={p.body} numberOfLines={4}/>
+        <View style={s.postBody}><CommunityBody body={p.body} numberOfLines={3}/></View>
       </Pressable>
-      <CommunityPhotos attachments={p.attachments}/>
-      <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
+      {p.attachments.length>0&&<View style={s.attachments}><CommunityPhotos attachments={p.attachments}/></View>}
     </View>)}
+    </View>
     {(started?hasMore:data.feed.has_more)&&<Pressable accessibilityRole="button" onPress={()=>void nextPage()}><Text style={s.link}>{paging?'Loading…':'Load more posts'}</Text></Pressable>}
   </>}
   {data&&view==='Channels'&&<>
@@ -68,22 +74,23 @@ export default function Community(){
 }
 const s=StyleSheet.create({
  filterHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
- muted:{color:colors.muted,fontSize:12},preview:{fontSize:14,lineHeight:20,color:colors.text},
- link:{color:colors.primary,fontWeight:'700'},
- switch:{flexDirection:'row',borderRadius:11,backgroundColor:colors.ivory,borderWidth:1,borderColor:colors.border,padding:3},
- tab:{flex:1,minHeight:42,alignItems:'center',justifyContent:'center',borderRadius:8},
+ muted:{color:colors.muted,fontSize:13},link:{color:colors.primary,fontWeight:'700'},
+ switch:{flexDirection:'row',alignSelf:'flex-start',borderRadius:10,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,padding:3},
+ tab:{minWidth:92,minHeight:37,alignItems:'center',justifyContent:'center',borderRadius:8,paddingHorizontal:16},
  selected:{backgroundColor:colors.burgundy},
- tabText:{fontSize:14,fontWeight:'700',color:colors.muted},
- selectedText:{color:colors.ivory},
- section:{fontSize:18,fontWeight:'700',color:colors.navy},
- post:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderLeftWidth:3,borderLeftColor:colors.primary,borderRadius:12,paddingHorizontal:10,paddingVertical:8,gap:2},
- postOpen:{gap:5,minHeight:48,justifyContent:'center'},
+ tabText:{fontSize:13,fontWeight:'700',color:colors.muted},selectedText:{color:colors.ivory},
+ section:{fontSize:17,fontWeight:'700',color:colors.navy},
+ feedList:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:13,overflow:'hidden'},
+ post:{backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:StyleSheet.hairlineWidth},
+ unreadPost:{backgroundColor:'#fff7f7',borderLeftColor:colors.primary,borderLeftWidth:3},
+ postOpen:{paddingHorizontal:12,paddingVertical:10,gap:6,minHeight:74},
  authorRow:{flexDirection:'row',gap:9,alignItems:'center'},
- avatar:{height:30,width:30,borderRadius:15,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:1},
+ avatar:{height:34,width:34,borderRadius:17,alignItems:'center',justifyContent:'center',backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:1},
  avatarText:{fontSize:12,fontWeight:'700',color:colors.ivory},
- authorDetails:{flex:1,gap:1},
- author:{color:colors.text,fontWeight:'700',fontSize:15},
+ authorDetails:{flex:1,gap:2},authorNameRow:{flexDirection:'row',alignItems:'center',gap:7},
+ author:{color:colors.text,fontWeight:'700',fontSize:15,flexShrink:1},newDot:{height:8,width:8,borderRadius:4,backgroundColor:colors.primary},
  channel:{color:colors.muted,fontSize:12},
- postFooter:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12,minHeight:36},
- postDate:{fontSize:11,color:colors.muted,textAlign:'right',flexShrink:1},
+ postBody:{paddingLeft:43},
+ attachments:{paddingLeft:55,paddingRight:12,paddingBottom:8},
+ postDate:{fontSize:11,color:colors.muted,flexShrink:0},
 });
