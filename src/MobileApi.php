@@ -82,6 +82,8 @@ final class MobileApi
                 '/api/mobile/form-detail' => self::formDetail($db, $user),
                 '/api/mobile/form-submit' => self::formSubmit($db, $user),
                 '/api/mobile/notifications' => self::notifications($db, $user),
+                '/api/mobile/moderation-alerts' => self::moderationAlerts($db, $user),
+                '/api/mobile/moderation-acknowledge' => self::moderationAcknowledge($db, $user),
                 '/api/mobile/notification-read' => self::notificationRead($db, $user),
                 '/api/mobile/messages' => self::messages($db, $user),
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
@@ -424,6 +426,58 @@ final class MobileApi
         self::requireMethod('POST');
         $input=self::input();
         ProductionChecklistAssignmentService::complete($db,(int)$user['id'],(int)($input['assignment_id']??0));
+        self::json(['ok'=>true]);
+    }
+
+    private static function moderationAlerts(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        $canCommunity=AccessPolicy::canModerateCommunity($user);
+        $canSafeguarding=AccessPolicy::canManageSafeguarding($user);
+        if(!$canCommunity&&!$canSafeguarding)self::json(['allowed'=>false,'community'=>[],'messages'=>[],'pending_count'=>0]);
+        $posts=[];$reports=[];
+        if($canCommunity||$canSafeguarding){
+            $s=$db->query("SELECT cp.id,cp.moderation_status,cp.moderation_reason,cp.body,cp.created_at,c.name channel_name,
+                CONCAT(u.first_name,' ',u.last_name) author_name,mt.category,mt.severity
+                FROM channel_posts cp JOIN channels c ON c.id=cp.channel_id JOIN users u ON u.id=cp.author_user_id
+                LEFT JOIN moderation_terms mt ON mt.id=cp.moderation_term_id
+                WHERE cp.moderation_status IN ('pending','rejected') AND cp.moderation_acknowledged_at IS NULL
+                AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at DESC LIMIT 50");
+            $posts=$s->fetchAll();
+        }
+        if($canSafeguarding){
+            $s=$db->query("SELECT r.id,r.reason,r.detail,r.message_snapshot,r.reported_at,
+                CONCAT(subject.first_name,' ',subject.last_name) subject_name
+                FROM moderation_message_reports r JOIN users subject ON subject.id=r.reported_user_id
+                WHERE r.acknowledged_at IS NULL ORDER BY r.reported_at DESC LIMIT 50");
+            $reports=$s->fetchAll();
+        }
+        self::json(['allowed'=>true,'community'=>$posts,'messages'=>$reports,
+            'pending_count'=>count($posts)+count($reports)]);
+    }
+
+    private static function moderationAcknowledge(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();$type=(string)($input['type']??'');$id=(int)($input['id']??0);
+        if($id<1||!in_array($type,['community','message'],true))throw new RuntimeException('Choose a valid moderation concern.');
+        if($type==='community'&&!AccessPolicy::canModerateCommunity($user)&&!AccessPolicy::canManageSafeguarding($user))self::json(['error'=>'Moderation permission required.'],403);
+        if($type==='message'&&!AccessPolicy::canManageSafeguarding($user))self::json(['error'=>'Safeguarding permission required.'],403);
+        $sql=$type==='community'?
+            "UPDATE channel_posts SET moderation_acknowledged_at=CURRENT_TIMESTAMP,moderation_acknowledged_by_user_id=:actor WHERE id=:id AND moderation_status IN ('pending','rejected') AND moderation_acknowledged_at IS NULL":
+            "UPDATE moderation_message_reports SET acknowledged_at=CURRENT_TIMESTAMP,acknowledged_by_user_id=:actor WHERE id=:id AND acknowledged_at IS NULL";
+        $db->beginTransaction();
+        try{
+            $stmt=$db->prepare($sql);$stmt->execute(['actor'=>(int)$user['id'],'id'=>$id]);
+            if($stmt->rowCount()!==1)throw new RuntimeException('This concern has already been acknowledged or is no longer available.');
+            $audit=$db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,:event,:subject,:id,:summary,'{}')");
+            $audit->execute(['actor'=>(int)$user['id'],'event'=>$type==='community'?'moderation.post_acknowledged':'moderation.message_report_acknowledged',
+                'subject'=>$type==='community'?'channel_post':'moderation_message_report','id'=>$id,'summary'=>'Acknowledged a moderation concern from the mobile Action Center.']);
+            $db->commit();
+        }catch(Throwable $e){
+            if($db->inTransaction())$db->rollBack();
+            throw $e;
+        }
         self::json(['ok'=>true]);
     }
 
