@@ -259,10 +259,10 @@ test('Community cards use compact layout with accessible posts and reactions',()
  const heart=fs.readFileSync(path.join(__dirname,'../src/components/CommunityHeart.tsx'),'utf8');
  assert.match(feed,/<Screen title="Community" compact>/);
  assert.match(feed,/shortDate\(p\.created_at\)/);
- assert.match(feed,/postFooter:/);
- assert.match(feed,/minHeight:42/);
- assert.match(feed,/<CommunityBody body=\{p\.body\} numberOfLines=\{4\}\/>/);
- assert.match(feed,/accessibilityLabel=\{'Open post by '/);
+ assert.match(feed,/feedList:\{backgroundColor/);
+ assert.match(feed,/minHeight:37/);
+ assert.match(feed,/<CommunityBody body=\{p\.body\} numberOfLines=\{3\}\/>/);
+ assert.match(feed,/accessibilityLabel=\{\(p\.unread\?'New post\. ':' '\)\+'Open post by '/);
  assert.match(screen,/compactContent:\{paddingTop:12,gap:9\}/);
  assert.match(heart,/minHeight:44,minWidth:52/);
 });
@@ -270,7 +270,7 @@ test('Community cards use compact layout with accessible posts and reactions',()
 test('Community feed preserves originating post and is not narrowed by a production channel filter',()=>{
  const feed=fs.readFileSync(path.join(__dirname,'../app/(tabs)/community.tsx'),'utf8');
  const channel=fs.readFileSync(path.join(__dirname,'../app/community/[id].tsx'),'utf8');
- assert.match(feed,/id:String\(p\.channel_id\),post_id:String\(p\.id\)/);
+ assert.match(feed,/id:String\(post\.channel_id\),post_id:String\(post\.id\)/);
  assert.doesNotMatch(feed,/\.filter\(p=>!filtered\|\|p\.production_id===id\)/);
  assert.match(channel,/posts\.findIndex\(p=>String\(p\.id\)===String\(post_id\)\)/);
  assert.match(channel,/scrollToIndex\(\{index,animated:false,viewPosition:\.5\}\)/);
