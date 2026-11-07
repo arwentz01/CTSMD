@@ -16,7 +16,7 @@
       }
     },
     "android": {
-      "package": "com.ctsmd_connect_v01",
+      "package": "org.ctsmd.connect",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#590816"
