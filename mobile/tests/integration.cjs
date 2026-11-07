@@ -108,6 +108,7 @@ test('Whats New is linked from Settings & support and release entries have publi
  const appConfig=JSON.parse(fs.readFileSync(path.join(__dirname,'../app.json'),'utf8')).expo;
  assert.equal(appConfig.version,'0.2.0');
  assert.equal(appConfig.android.versionCode,2);
+ assert.equal(appConfig.android.package,'org.ctsmd.connect','Android must match the existing Google Play application ID');
  assert.equal(appConfig.ios.buildNumber,'2');
 });
 
