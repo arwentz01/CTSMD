@@ -84,12 +84,15 @@ test('native website handoffs keep the CTSMD pilot storefront out of live ticket
 });
 test('Whats New is linked from Settings & support and release entries have publication status',()=>{
  const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
- const layout=fs.readFileSync(path.join(__dirname,'../app/_layout.tsx'),'utf8');
- const page=fs.readFileSync(path.join(__dirname,'../app/whats-new.tsx'),'utf8');
+ const layout=fs.readFileSync(path.join(__dirname,'../app/(tabs)/_layout.tsx'),'utf8');
+ const page=fs.readFileSync(path.join(__dirname,'../app/(tabs)/whats-new.tsx'),'utf8');
  assert.match(more,/title:"What's New"/);
- assert.match(more,/native:'\/whats-new'/);
- assert.match(layout,/name="whats-new"/);
+ assert.match(more,/native:'\/\(tabs\)\/whats-new'/);
+ assert.match(layout,/name="whats-new" options=\{\{href:null\}\}/);
  assert.match(page,/releaseStatusLabel/);
+ assert.match(page,/section\.summary/);
+ assert.match(page,/toggleSection\(sectionKey\)/);
+ assert.match(page,/sectionOpen&&/);
  const {releaseNotes}=load('src/content/releaseNotes.ts');
  assert.equal(releaseNotes[0].version,'0.2.0');
  assert.equal(releaseNotes[0].status,'closed_testing','Version 0.2.0 is intended for the closed testing audience');
@@ -98,6 +101,7 @@ test('Whats New is linked from Settings & support and release entries have publi
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Messages'));
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Notifications'));
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Your home and Action Center'));
+ assert.ok(releaseNotes.every(note=>note.sections.every(section=>section.summary.trim().length>0)));
  const appConfig=JSON.parse(fs.readFileSync(path.join(__dirname,'../app.json'),'utf8')).expo;
  assert.equal(appConfig.version,'0.2.0');
  assert.equal(appConfig.android.versionCode,2);
