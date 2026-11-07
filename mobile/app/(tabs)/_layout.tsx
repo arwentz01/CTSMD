@@ -6,5 +6,5 @@ export default function Layout(){const {bottom}=useSafeAreaInsets();const {user}
 <Tabs.Screen name="community" options={{title:'Community',href:caregiver?null:undefined,tabBarIcon:({color,size})=><Ionicons name="people-outline" color={typeof color==="string"?color:colors.primary} size={size}/>}}/>
 <Tabs.Screen name="messages" options={{title:'Messages',tabBarIcon:({color,size})=><Ionicons name="chatbubble-outline" color={typeof color==="string"?color:colors.primary} size={size}/>}}/>
 <Tabs.Screen name="more" options={{title:'More',tabBarIcon:({color,size})=><Ionicons name="ellipsis-horizontal" color={typeof color==="string"?color:colors.primary} size={size}/>}}/>
-<Tabs.Screen name="whats-new" options={{href:null}}/><Tabs.Screen name="forms" options={{href:null}}/><Tabs.Screen name="volunteer" options={{href:null}}/>
+<Tabs.Screen name="forms" options={{href:null}}/><Tabs.Screen name="volunteer" options={{href:null}}/>
 </Tabs>}
