@@ -91,11 +91,17 @@ test('Whats New is linked from Settings & support and release entries have publi
  assert.match(layout,/name="whats-new"/);
  assert.match(page,/releaseStatusLabel/);
  const {releaseNotes}=load('src/content/releaseNotes.ts');
- assert.equal(releaseNotes[0].version,'0.1.0');
- assert.equal(releaseNotes[0].status,'upcoming','Do not label work as published until a store release exists');
+ assert.equal(releaseNotes[0].version,'0.2.0');
+ assert.equal(releaseNotes[0].status,'upcoming','Do not label version 0.2.0 as published until the store release exists');
+ assert.equal(releaseNotes[1].version,'0.1.0');
+ assert.equal(releaseNotes[1].status,'published','The user confirmed 0.1.0 was the first published release');
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Messages'));
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Notifications'));
  assert.ok(releaseNotes[0].sections.some(s=>s.title==='Your home and Action Center'));
+ const appConfig=JSON.parse(fs.readFileSync(path.join(__dirname,'../app.json'),'utf8')).expo;
+ assert.equal(appConfig.version,'0.2.0');
+ assert.equal(appConfig.android.versionCode,2);
+ assert.equal(appConfig.ios.buildNumber,'2');
 });
 
 test('mobile navigation exposes member, staff and authorized admin workflows without a duplicate checkout',()=>{
