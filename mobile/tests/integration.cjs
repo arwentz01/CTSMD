@@ -306,3 +306,17 @@ test('native messaging presents live recipient filtering, keyboard safe composer
  assert.match(thread,/maxLength=\{1000\}/);
  assert.match(client,/body:\{message_id,reason,detail\}/);
 });
+
+test('messages inbox uses compact grouped rows and unobtrusive archive navigation',()=>{
+ const inbox=fs.readFileSync(path.join(__dirname,'../app/(tabs)/messages.tsx'),'utf8');
+ const screen=fs.readFileSync(path.join(__dirname,'../src/components/Screen.tsx'),'utf8');
+ assert.match(inbox,/headerAction=\{/);
+ assert.match(inbox,/accessibilityLabel="New conversation"/);
+ assert.match(inbox,/onChangeText=\{setSearch\}/);
+ assert.match(inbox,/setTimeout\(\(\)=>setAppliedSearch\(search\.trim\(\)\),280\)/);
+ assert.match(inbox,/accessibilityLabel=\{archived\?'Return to inbox':'View archived conversations'\}/);
+ assert.match(inbox,/scope:archived\?'archived':'inbox'/);
+ assert.doesNotMatch(inbox,/scope==='all'|StageBackdrop|New conversation<\/Text>|s\.tabs|s\.searchButton/);
+ assert.match(inbox,/borderBottomWidth:StyleSheet\.hairlineWidth/);
+ assert.match(screen,/headerAction\?:React\.ReactNode/);
+});
