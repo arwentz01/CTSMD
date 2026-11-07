@@ -6,7 +6,7 @@ import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
 import {useAuth} from '../src/auth/AuthProvider';
-import {tasks,completeProductionTodo,respondCastingOffer,moderationAlerts,acknowledgeModeration} from '../src/api/client';
+import {tasks,completeProductionTodo,respondCastingOffer,moderationAlerts,acknowledgeModeration,ApiError} from '../src/api/client';
 import type {ModerationAlerts} from '../src/api/client';
 import type {TasksResult} from '../src/types/ctsmd';
 import {colors} from '../src/theme/colors';
@@ -26,7 +26,7 @@ export default function ActionCenter(){
   if(assignmentResult.status==='fulfilled'){setData(assignmentResult.value);setError('');}
   else setError(assignmentResult.reason instanceof Error?assignmentResult.reason.message:'Unable to load your Action Center.');
   if(moderationResult.status==='fulfilled'){setModeration(moderationResult.value);setModerationError('');}
-  else{setModeration(null);setModerationError(moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
+  else{setModeration(null);setModerationError(moderationResult.reason instanceof ApiError&&moderationResult.reason.status===404?'The moderation service has not been deployed to CTSMD.me yet.':moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
  },[canModerate]);
  useFocusEffect(useCallback(()=>{void refresh();},[refresh]));
  const complete=async(id:number)=>{setBusy('task-'+id);try{await completeProductionTodo(id);await refresh();}catch(e){Alert.alert('Unable to complete task',e instanceof Error?e.message:'Please try again.');}finally{setBusy(null);}};
