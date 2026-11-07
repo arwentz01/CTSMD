@@ -4,19 +4,34 @@ import React,{useCallback,useEffect,useState} from 'react';
 import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
-import {tasks,completeProductionTodo,respondCastingOffer} from '../src/api/client';
+import {tasks,completeProductionTodo,respondCastingOffer,moderationAlerts,acknowledgeModeration} from '../src/api/client';
+import type {ModerationAlerts} from '../src/api/client';
 import type {TasksResult} from '../src/types/ctsmd';
 import {colors} from '../src/theme/colors';
 
 export default function ActionCenter(){
  const [data,setData]=useState<TasksResult|null>(null);
+ const [moderation,setModeration]=useState<ModerationAlerts|null>(null);
+ const [moderationError,setModerationError]=useState('');
  const [busy,setBusy]=useState<string|null>(null);
  const [error,setError]=useState('');
  const [notes,setNotes]=useState<Record<number,string>>({});
  const [declining,setDeclining]=useState<number|null>(null);
- const refresh=useCallback(async()=>{try{setError('');setData(await tasks());}catch(e){setError(e instanceof Error?e.message:'Unable to load your Action Center.');}},[]);
+ const refresh=useCallback(async()=>{
+  const [assignmentResult,moderationResult]=await Promise.allSettled([tasks(),moderationAlerts()]);
+  if(assignmentResult.status==='fulfilled'){setData(assignmentResult.value);setError('');}
+  else setError(assignmentResult.reason instanceof Error?assignmentResult.reason.message:'Unable to load your Action Center.');
+  if(moderationResult.status==='fulfilled'){setModeration(moderationResult.value);setModerationError('');}
+  else{setModeration(null);setModerationError(moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
+ },[]);
  useEffect(()=>{void refresh();},[refresh]);
  const complete=async(id:number)=>{setBusy('task-'+id);try{await completeProductionTodo(id);await refresh();}catch(e){Alert.alert('Unable to complete task',e instanceof Error?e.message:'Please try again.');}finally{setBusy(null);}};
+ const acknowledge=async(type:'community'|'message',id:number)=>{
+  setBusy('moderation-'+type+'-'+id);
+  try{await acknowledgeModeration(type,id);await refresh();}
+  catch(e){Alert.alert('Unable to acknowledge',e instanceof Error?e.message:'Please try again.');}
+  finally{setBusy(null);}
+ };
  const respond=async(id:number,decision:'accepted'|'declined')=>{
   const note=(notes[id]||'').trim();
   if(decision==='declined'&&!note){Alert.alert('Reason required','Please enter a brief explanation before declining the role.');return;}
@@ -26,9 +41,29 @@ export default function ActionCenter(){
   finally{setBusy(null);}
  };
  return <Screen title="Action Center">
-  <Text style={s.intro}>Production tasks, casting offers, and approved family notices.</Text>
+  <Text style={s.intro}>Production tasks, casting offers, family notices, and moderation concerns assigned to your permissions.</Text>
   {!!error&&<View style={s.card}><Text style={s.error}>{error}</Text><Pressable onPress={()=>void refresh()}><Text style={s.link}>Try again</Text></Pressable></View>}
   {!data&&!error&&<Text style={s.muted}>Loading your assignments…</Text>}
+  {moderation?.allowed&&<View style={s.moderationSection}>
+    <View style={s.heading}><Ionicons name="shield-checkmark-outline" size={22} color={colors.primary}/><Text style={s.title}>Community Moderation</Text>{moderation.pending_count>0&&<Text style={s.count}>{moderation.pending_count}</Text>}</View>
+    {moderation.pending_count===0&&<Text style={s.muted}>No moderation alerts need acknowledgement.</Text>}
+    {moderation.community.map(item=><View key={'community-'+item.id} style={s.card}>
+      <Text style={s.name}>{item.author_name} · #{item.channel_name}</Text>
+      <Text style={s.muted}>Community post · {item.moderation_status==='pending'?'Held for review':'Rejected'}{item.category?' · '+item.category:''}</Text>
+      <Text style={s.body} numberOfLines={4}>{item.body}</Text>
+      {!!item.moderation_reason&&<Text style={s.muted}>{item.moderation_reason}</Text>}
+      <Pressable disabled={busy!==null} accessibilityRole="button" accessibilityLabel={'Acknowledge Community concern from '+item.author_name} style={[s.button,busy!==null&&s.disabled]} onPress={()=>void acknowledge('community',item.id)}><Text style={s.buttonText}>Acknowledge</Text></Pressable>
+      {item.moderation_status==='pending'&&<Text style={s.muted}>This only clears the alert. Publishing still requires a separate moderation decision.</Text>}
+    </View>)}
+    {moderation.messages.map(item=><View key={'message-'+item.id} style={s.card}>
+      <Text style={s.name}>Private message report · {item.subject_name}</Text>
+      <Text style={s.muted}>Safeguarding only · {item.reason.replace(/_/g,' ')}</Text>
+      <Text style={s.body} numberOfLines={4}>{item.message_snapshot}</Text>
+      {!!item.detail&&<Text style={s.muted}>{item.detail}</Text>}
+      <Pressable disabled={busy!==null} accessibilityRole="button" accessibilityLabel={'Acknowledge restricted message report'} style={[s.button,busy!==null&&s.disabled]} onPress={()=>void acknowledge('message',item.id)}><Text style={s.buttonText}>Acknowledge</Text></Pressable>
+    </View>)}
+    {!!moderationError&&<Text style={s.error}>{moderationError}</Text>}
+  </View>}
   {data&&<>
    <View style={s.heading}><Ionicons name="checkbox-outline" size={22} color={colors.primary}/><Text style={s.title}>Production To-Dos</Text></View>
    {!data.production_todos.length&&<Text style={s.muted}>No outstanding production tasks.</Text>}
@@ -76,6 +111,7 @@ export default function ActionCenter(){
 }
 const s=StyleSheet.create({
  offerCard:{padding:20,borderWidth:1,borderColor:'#e6c8cf',backgroundColor:'#fffafa',borderRadius:18,marginBottom:14,gap:8},offerEyebrow:{fontSize:12,fontWeight:'800',letterSpacing:1.5,color:colors.primary},offerProduction:{fontSize:27,fontWeight:'700',lineHeight:33,color:colors.navy,marginTop:5,marginBottom:8},offerRoleLabel:{fontSize:12,fontWeight:'800',letterSpacing:1.2,color:colors.muted},offerRole:{fontSize:34,fontWeight:'700',color:colors.primary},offerStudent:{color:colors.navy,fontSize:13,fontWeight:'700'},offerInstruction:{fontSize:14,color:colors.muted,lineHeight:21,marginTop:8},declinePanel:{borderWidth:1,borderColor:'#e7d6da',borderRadius:12,padding:14,backgroundColor:'#fff',marginTop:9,gap:8},declineLabel:{color:colors.navy,fontSize:13,fontWeight:'700'},
+ moderationSection:{marginBottom:12},count:{color:colors.primary,fontWeight:'800',fontSize:15,marginLeft:4},
  intro:{color:colors.muted,marginBottom:18,fontSize:14},heading:{flexDirection:'row',alignItems:'center',gap:9,marginTop:16,marginBottom:10},title:{fontWeight:'800',fontSize:20,color:colors.navy},
  card:{padding:16,borderWidth:1,borderColor:'#e4dadd',backgroundColor:'#fff',borderRadius:14,marginBottom:11,gap:7},
  name:{fontSize:17,fontWeight:'800',color:colors.navy},body:{fontSize:14,color:colors.navy},muted:{fontSize:13,color:colors.muted},error:{color:'#a22035'},
