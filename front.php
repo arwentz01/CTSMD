@@ -100,7 +100,7 @@ $experienceRoutes=[
     ['VolunteerApprovalExperience',['/volunteer/approvals','/admin/volunteer-approvals','/admin/volunteer-approvals/review'],'route'],
     ['VolunteerExperience',['/volunteer-readiness','/volunteer-shifts','/volunteer/shift'],'route'],
     ['TeamExperience',['/admin/teams','/admin/teams/view','/admin/private-channel'],'route'],
-    ['ModerationExperience',['/admin/moderation/terms','/admin/moderation/terms/edit','/admin/moderation/queue'],'route'],
+    ['ModerationExperience',['/admin/moderation/terms','/admin/moderation/terms/edit','/admin/moderation/queue','/admin/moderation/history'],'route'],
     ['CommunityManagementExperience',['/admin/channels','/admin/channels/edit'],'route'],
     ['CommunityExperience',['/channels','/channels/view','/channels/attachment'],'route'],
     ['ProductionLifecycleExperience',['/admin/productions','/admin/productions/view','/admin/productions/artwork-image'],'route'],
