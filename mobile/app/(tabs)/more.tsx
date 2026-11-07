@@ -96,6 +96,7 @@ export default function More(){
   </View>
   <Section title="Settings & support" items={[
    {title:'Settings',description:'Notifications and device preferences',icon:'settings-outline',native:'/settings'},
+   {title:"What's New",description:'See what changed in each app version',icon:'sparkles-outline',native:'/whats-new'},
    {title:'Help & support',description:'Find guidance and contact CTSMD',icon:'help-circle-outline',native:'/help'}
   ]}/>
   <TouchTarget accessibilityRole="button" onPress={()=>Alert.alert('Sign out','Sign out of CTSMD Connect on this device?',[{text:'Cancel',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])} style={s.signOut}><Ionicons name="log-out-outline" color={colors.primary} size={20}/><Text style={s.destinationTitle}>Sign out</Text></TouchTarget>
