@@ -7,7 +7,7 @@ import {Platform} from 'react-native';
  * identify development clients as storeClient on some Expo SDK versions.
  */
 export function isExpoGo():boolean {
- return Constants.appOwnership==='expo'||(Constants.executionEnvironment==='storeClient'&&Constants.expoGoConfig!=null);
+ return Constants.appOwnership==='expo'||Constants.expoGoConfig!=null;
 }
 export function supportsNativePush():boolean {
  return (Platform.OS==='ios'||Platform.OS==='android')&&!isExpoGo();
