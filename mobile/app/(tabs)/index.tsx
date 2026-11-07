@@ -7,7 +7,7 @@ import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
-import {theatre,tasks,conversations,moderationAlerts} from '../../src/api/client';
+import {theatre,tasks,conversations,moderationAlerts,ApiError} from '../../src/api/client';
 import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 import type {TheatreEvent} from '../../src/types/ctsmd';
@@ -53,7 +53,7 @@ export default function Home(){
 function MemberHome(){
  const {user}=useAuth();
  const load=useCallback(async()=>{
-    const [t,a,m,mod]=await Promise.all([theatre(),tasks(),conversations(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof Error?e.message:'Moderation alerts unavailable.'}))]);
+    const [t,a,m,mod]=await Promise.all([theatre(),tasks(),conversations(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'}))]);
     return {t,a,m,mod};
   },[]);
   const {data,error,loading,retry}=useScreenData(load);
