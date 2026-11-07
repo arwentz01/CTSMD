@@ -52,7 +52,7 @@ final class MobileApi
             $roleCheck->execute(['id'=>(int)$user['id']]);$familyTypes=$roleCheck->fetchAll(PDO::FETCH_COLUMN);
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
             $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
-            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create'];
+            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report'];
             if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
@@ -88,6 +88,7 @@ final class MobileApi
                 '/api/mobile/message-send' => self::messageSend($db, $user),
                 '/api/mobile/message-recipients' => self::messageRecipients($db, $user),
                 '/api/mobile/message-create' => self::messageCreate($db, $user),
+                '/api/mobile/message-report' => self::messageReport($db, $user),
                 '/api/mobile/channels' => self::channels($db, $user),
                 '/api/mobile/community-feed' => self::communityFeed($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
@@ -481,6 +482,35 @@ final class MobileApi
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
         $conversation['send_allowed']=true;$conversation['safety_issue']=null;try{SafeguardedConversationPolicy::enforceForSend($db,$id,(int)$user['id']);}catch(RuntimeException $error){$conversation['send_allowed']=false;$conversation['safety_issue']=$error->getMessage();}
         $people=$p->fetchAll();$visible=array_values(array_map(static fn(array $person):string=>(string)$person['name'],array_filter($people,static fn(array $person):bool=>(int)$person['user_id']!==(int)$user['id']&&$person['participant_role']!=='guardian')));$conversation['display_name']=$conversation['conversation_type']==='group'?($conversation['subject']?:'Group conversation'):(implode(', ',$visible)?:$conversation['subject']);self::json(['conversation'=>$conversation,'participants'=>$people,'messages'=>$m->fetchAll()]);
+    }
+
+    private static function messageReport(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        $input=self::input();$messageId=(int)($input['message_id']??0);
+        $reason=trim((string)($input['reason']??''));$detail=trim((string)($input['detail']??''));
+        if($messageId<1||!in_array($reason,['harassment','inappropriate','unwanted_contact','safeguarding','other'],true)||mb_strlen($detail)>1000){
+            throw new RuntimeException('Select a message and a valid report reason (up to 1,000 characters of detail).');
+        }
+        $s=$db->prepare("SELECT m.id,m.conversation_id,m.sender_user_id,m.body,cp.history_through_message_id,cp.access_revoked_at
+            FROM messages m JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:viewer
+            WHERE m.id=:message AND m.hidden_at IS NULL LIMIT 1");
+        $s->execute(['viewer'=>(int)$user['id'],'message'=>$messageId]);$message=$s->fetch();
+        if(!$message||($message['history_through_message_id']!==null&&(int)$message['id']>(int)$message['history_through_message_id'])){
+            self::json(['error'=>'This message is not available to your account.'],404);
+        }
+        // A person can report a visible message only once. The stored snapshot protects evidence
+        // without granting Community moderators general conversation access.
+        try{
+            $insert=$db->prepare("INSERT INTO moderation_message_reports (message_id,conversation_id,reported_user_id,reported_by_user_id,reason,detail,message_snapshot)
+                VALUES (:message,:conversation,:subject,:reporter,:reason,:detail,:snapshot)");
+            $insert->execute(['message'=>$messageId,'conversation'=>(int)$message['conversation_id'],'subject'=>(int)$message['sender_user_id'],
+                'reporter'=>(int)$user['id'],'reason'=>$reason,'detail'=>$detail?:null,'snapshot'=>(string)$message['body']]);
+        }catch(PDOException $e){
+            if(($e->errorInfo[1]??null)===1062)throw new RuntimeException('You have already reported this message.');
+            throw $e;
+        }
+        self::json(['ok'=>true]);
     }
 
     private static function messageRecipients(PDO $db,array $user):never
