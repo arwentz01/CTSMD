@@ -655,9 +655,29 @@ final class MobileApi
     private static function communityFeed(PDO $db,array $user): never
     {
         self::requireMethod('GET');
+        // Establish the same per-user channel baseline used for unread badges.
+        // Feed requests must not mark posts as read merely by loading them.
+        CommunicationReadStateService::communityUnread($db,$user);
         try {$result=CommunityExperience::activityFeed($db,$user,0,isset($_GET['cursor'])?(string)$_GET['cursor']:null);} catch (InvalidArgumentException $e) {self::json(['error'=>'Invalid feed cursor.'],400);}
         self::addHeartCounts($db,$result['posts'],(int)$user['id']);
+        self::addFeedUnreadFlags($db,$result['posts'],(int)$user['id']);
         self::json($result);
+    }
+
+    private static function addFeedUnreadFlags(PDO $db,array &$posts,int $viewerId): void
+    {
+        if(!$posts)return;
+        $channelIds=array_values(array_unique(array_map(static fn(array $p):int=>(int)$p['channel_id'],$posts)));
+        $placeholders=implode(',',array_fill(0,count($channelIds),'?'));
+        $stmt=$db->prepare("SELECT channel_id,last_read_post_id FROM channel_read_states WHERE user_id=? AND channel_id IN ($placeholders)");
+        $stmt->execute(array_merge([$viewerId],$channelIds));
+        $lastRead=[];
+        foreach($stmt->fetchAll() as $row)$lastRead[(int)$row['channel_id']]=(int)$row['last_read_post_id'];
+        foreach($posts as &$post){
+            $post['unread']=(int)$post['author_user_id']!==$viewerId
+                &&(int)$post['id']>($lastRead[(int)$post['channel_id']]??0);
+        }
+        unset($post);
     }
 
     private static function addHeartCounts(PDO $db,array &$posts,int $viewerId): void
