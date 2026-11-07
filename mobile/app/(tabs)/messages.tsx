@@ -11,9 +11,10 @@ import {colors} from '../../src/theme/colors';
 
 export default function Messages(){
  const [search,setSearch]=useState(''),[appliedSearch,setAppliedSearch]=useState('');
- const [archived,setArchived]=useState(false);
+ const [scope,setScope]=useState<'inbox'|'archived'|'all'>('inbox');
+ const archived=scope==='archived';
  const [busy,setBusy]=useState<number|null>(null);
- const load=useCallback(()=>conversations({q:appliedSearch,archived}),[appliedSearch,archived]);
+ const load=useCallback(()=>conversations({q:appliedSearch,scope}),[appliedSearch,scope]);
  const {data,error,loading,retry}=useScreenData(load);
  const changeArchive=(id:number,shouldArchive:boolean)=>{
   Alert.alert(shouldArchive?'Archive conversation?':'Restore conversation?',
@@ -34,8 +35,9 @@ export default function Messages(){
    <Pressable accessibilityRole="button" accessibilityLabel="Search messages" onPress={()=>setAppliedSearch(search.trim())} style={s.searchButton}><Ionicons name="arrow-forward" color="#fff" size={20}/></Pressable>
   </View>
   <View style={s.tabs}>
-   <Pressable accessibilityRole="tab" accessibilityState={{selected:!archived}} style={[s.tab,!archived&&s.tabActive]} onPress={()=>setArchived(false)}><Text style={[s.tabText,!archived&&s.tabTextActive]}>Inbox</Text></Pressable>
-   <Pressable accessibilityRole="tab" accessibilityState={{selected:archived}} style={[s.tab,archived&&s.tabActive]} onPress={()=>setArchived(true)}><Text style={[s.tabText,archived&&s.tabTextActive]}>Archived</Text></Pressable>
+   <Pressable accessibilityRole="tab" accessibilityState={{selected:scope==='inbox'}} style={[s.tab,scope==='inbox'&&s.tabActive]} onPress={()=>setScope('inbox')}><Text style={[s.tabText,scope==='inbox'&&s.tabTextActive]}>Inbox</Text></Pressable>
+   <Pressable accessibilityRole="tab" accessibilityState={{selected:archived}} style={[s.tab,archived&&s.tabActive]} onPress={()=>setScope('archived')}><Text style={[s.tabText,archived&&s.tabTextActive]}>Archived</Text></Pressable>
+   <Pressable accessibilityRole="tab" accessibilityState={{selected:scope==='all'}} style={[s.tab,scope==='all'&&s.tabActive]} onPress={()=>setScope('all')}><Text style={[s.tabText,scope==='all'&&s.tabTextActive]}>All</Text></Pressable>
   </View>
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data?.conversations.map(c=><View key={c.id} style={s.card}>
@@ -45,9 +47,9 @@ export default function Messages(){
     {c.unread_count>0&&<View style={s.unread}><Text style={s.unreadText}>{c.unread_count}</Text></View>}
     <Ionicons name="chevron-forward" color={colors.gold} size={21}/>
    </Pressable>
-   <Pressable accessibilityRole="button" accessibilityLabel={(archived?'Restore':'Archive')+' conversation with '+c.display_name} disabled={busy!==null} onPress={()=>changeArchive(c.id,!archived)} style={s.archiveAction}>
-    <Ionicons name={archived?'arrow-undo-outline':'archive-outline'} color={colors.primary} size={17}/>
-    <Text style={s.archiveText}>{archived?'Restore to inbox':'Archive conversation'}</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel={(c.archived_at?'Restore':'Archive')+' conversation with '+c.display_name} disabled={busy!==null} onPress={()=>changeArchive(c.id,!c.archived_at)} style={s.archiveAction}>
+    <Ionicons name={c.archived_at?'arrow-undo-outline':'archive-outline'} color={colors.primary} size={17}/>
+    <Text style={s.archiveText}>{c.archived_at?'Restore to inbox':'Archive conversation'}</Text>
    </Pressable>
   </View>)}
   {data?.conversations.length===0&&<Text style={s.preview}>{appliedSearch?'No messages or conversations match that search.':archived?'No archived conversations.':'No conversations yet. Start one to connect with your community.'}</Text>}
