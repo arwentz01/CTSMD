@@ -23,6 +23,7 @@ final class ModerationExperience
         $user=Auth::currentUser($db);
         if(!$user) self::redirect(($basePath?:'').'/login');
         if(!AccessPolicy::canModerateCommunity($user)&&!AccessPolicy::canManageSafeguarding($user)) self::forbidden();
+        if(in_array($route,['/admin/moderation/terms','/admin/moderation/terms/edit'],true)&&!AccessPolicy::canModerateCommunity($user))self::forbidden();
         $_SESSION['moderation_csrf']??=bin2hex(random_bytes(24));
         if($_SERVER['REQUEST_METHOD']==='POST') self::handlePost($db,$user,$route,$basePath);
 
@@ -38,6 +39,7 @@ final class ModerationExperience
     {
         if(!hash_equals((string)($_SESSION['moderation_csrf']??''),(string)($_POST['csrf_token']??''))){self::flash('error','Your session token expired.');self::redirect($basePath.'/admin/moderation/terms');}
         $action=(string)($_POST['action']??'');
+        if($action!=='acknowledge_message'&&!AccessPolicy::canModerateCommunity($user))self::forbidden();
         try{
             if($action==='save_term'){
                 $id=filter_input(INPUT_POST,'term_id',FILTER_VALIDATE_INT)?:0;
@@ -258,7 +260,7 @@ final class ModerationExperience
         $history=$route==='/admin/moderation/history';
         $title=$editing?($edit?'Edit moderation rule':'New moderation rule'):($queue?'Moderation queue':($history?'Moderation history':'Moderation terms'));
         header('Content-Type: text/html; charset=utf-8');
-        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/moderation.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$title,$basePath,[['label'=>'Review queue','href'=>'/admin/moderation/queue','active'=>$queue],['label'=>'History','href'=>'/admin/moderation/history','active'=>$history],['label'=>'Term library','href'=>'/admin/moderation/terms','active'=>!$queue&&!$history]]);?><div class="mod-page ops-page">
+        ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $esc($title) ?> · CTSMD Connect</title><link rel="stylesheet" href="<?= $url('/assets/css/app.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/unified-navigation.css') ?>"><link rel="stylesheet" href="<?= $url('/assets/css/moderation.css') ?>"><?php WorkspaceUI::operationsStyles($basePath); ?></head><body class="app-body ux-operations ux-workspace"><div class="unified-shell"><?php AppNavigation::renderSidebar($route,$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('Operations',$title,$basePath,[['label'=>'Review queue','href'=>'/admin/moderation/queue','active'=>$queue],['label'=>'History','href'=>'/admin/moderation/history','active'=>$history],...(AccessPolicy::canModerateCommunity($user)?[['label'=>'Term library','href'=>'/admin/moderation/terms','active'=>!$queue&&!$history]]:[])]);?><div class="mod-page ops-page">
         <?php if($flash):?><div class="mod-flash alert <?= $flash['type']==='success'?'alert-success':'alert-danger' ?> alert-compact <?= $esc($flash['type']) ?>"><?= $esc($flash['message']) ?></div><?php endif;?>
         <?php if($history):
             $months=(int)($_GET['months']??3);if(!in_array($months,[1,3,6,12],true))$months=3;
