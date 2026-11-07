@@ -3,7 +3,7 @@ import {router,type Href} from 'expo-router';
 import {supportsNativePush} from './runtime';
 import type * as Notifications from 'expo-notifications';
 import {useAuth} from '../auth/AuthProvider';
-import {storedPushIdentity,storeDeviceToken} from './device';
+import {storedPushIdentity,storeDeviceToken,offerNotificationsOnFirstSignIn} from './device';
 import {notificationDestination} from './destination';
 
 /** Expo Go lacks the native push implementation. Never import it while rendering the app. */
@@ -12,6 +12,11 @@ export function NotificationIntegration(){
  useEffect(()=>{
   if(!user||!supportsNativePush())return;
   let active=true;
+  // Native permission is requested only after the user has an authenticated account.
+  // Expo Go is excluded by supportsNativePush() above.
+  void offerNotificationsOnFirstSignIn().catch(error=>{
+   if(active&&__DEV__)console.warn('Unable to offer notification permission.',error);
+  });
   let responseListener:{remove:()=>void}|undefined;
   let tokenListener:{remove:()=>void}|undefined;
   void import('expo-notifications').then(Notifications=>{
