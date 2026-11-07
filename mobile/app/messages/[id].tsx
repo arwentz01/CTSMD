@@ -4,7 +4,7 @@ import {Alert,FlatList,Modal,ScrollView,StyleSheet,Text,TextInput,View} from 're
 import {ConversationViewport} from '../../src/components/ConversationViewport';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {thread,sendMessage,reportMessage} from '../../src/api/client';
+import {thread,sendMessage,reportMessage,deleteMessage,archiveConversation} from '../../src/api/client';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
 import {colors} from '../../src/theme/colors';
@@ -15,6 +15,8 @@ export default function ThreadScreen(){
  const threadId=Number(id);
  const [participantsOpen,setParticipantsOpen]=useState(false);
  const [reportTarget,setReportTarget]=useState<number|null>(null);
+ const [deleteTarget,setDeleteTarget]=useState<{id:number;mine:boolean;canRecall:boolean}|null>(null);
+ const [deleteBusy,setDeleteBusy]=useState(false);
  const [reportBusy,setReportBusy]=useState(false);
  useEffect(()=>setParticipantsOpen(false),[threadId]);
  const [version,setVersion]=useState(0),[draft,setDraft]=useState(''),[busy,setBusy]=useState(false);
@@ -28,11 +30,28 @@ export default function ThreadScreen(){
    catch(e){Alert.alert('Report not sent',e instanceof Error?e.message:'Please try again.');}
    finally{setReportBusy(false);}
  };
+ const removeMessage=async(scope:'self'|'everyone')=>{
+   if(!deleteTarget||deleteBusy)return;
+   setDeleteBusy(true);
+   try{await deleteMessage(deleteTarget.id,scope);setDeleteTarget(null);setVersion(v=>v+1);}
+   catch(e){Alert.alert('Unable to delete message',e instanceof Error?e.message:'Please try again.');}
+   finally{setDeleteBusy(false);}
+ };
+ const changeArchive=()=>{
+   const shouldArchive=!data?.conversation.archived_at;
+   Alert.alert(shouldArchive?'Archive conversation?':'Restore conversation?',
+    shouldArchive?'This only removes the conversation from your inbox. Other participants can still see it.':'Return this conversation to your inbox?',
+    [{text:'Cancel',style:'cancel'},{text:shouldArchive?'Archive':'Restore',onPress:()=>void (async()=>{
+      try{await archiveConversation(threadId,shouldArchive);router.replace('/(tabs)/messages');}
+      catch(e){Alert.alert('Unable to update conversation',e instanceof Error?e.message:'Please try again.');}
+    })()}]);
+ };
  const send=async()=>{const content=draft.trim();if(!content||busy)return;setBusy(true);try{await sendMessage(threadId,content);setDraft('');setVersion(v=>v+1)}catch(e){Alert.alert('Message not sent',e instanceof Error?e.message:'Please try again.')}finally{setBusy(false)}};
  return <ConversationViewport>
    <View style={styles.header}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>router.back()} hitSlop={12}><Ionicons name="chevron-back" size={26} color={colors.navy}/></Pressable>
     <View style={styles.flex}><Text style={styles.name} numberOfLines={1}>{data?.conversation.display_name||'Conversation'}</Text></View>
+    {!!data&&<Pressable accessibilityRole="button" accessibilityLabel={data.conversation.archived_at?'Restore conversation':'Archive conversation'} onPress={changeArchive} style={styles.shield}><Ionicons name={data.conversation.archived_at?'arrow-undo-outline':'archive-outline'} size={22} color={colors.primary}/></Pressable>}
     {safeguarded&&<Pressable accessibilityRole="button" accessibilityLabel="Safeguarding and participants" accessibilityHint="Shows who can see this conversation" accessibilityState={{expanded:participantsOpen}} onPress={()=>setParticipantsOpen(value=>!value)} style={styles.shield}><Ionicons name={participantsOpen?'shield-checkmark':'shield-checkmark-outline'} size={23} color={colors.primary}/></Pressable>}
    </View>
    <LoadState loading={loading} error={error} onRetry={retry}/>
@@ -57,7 +76,9 @@ export default function ThreadScreen(){
        <Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>
       </View>
       <View style={[styles.messageMeta,mine&&styles.mineMeta]}>
-       <Text style={styles.timestamp}>{formatTime(m.created_at)}</Text><Pressable accessibilityRole="button" accessibilityLabel="Report this message" onPress={()=>setReportTarget(m.id)} style={{paddingHorizontal:8,minHeight:36,justifyContent:'center'}}><Ionicons name="flag-outline" size={16} color={colors.muted}/></Pressable>
+       <Text style={styles.timestamp}>{formatTime(m.created_at)}</Text>
+       <Pressable accessibilityRole="button" accessibilityLabel="Delete message options" onPress={()=>setDeleteTarget({id:m.id,mine,canRecall:!!m.can_recall})} style={styles.messageAction}><Ionicons name="trash-outline" size={16} color={colors.muted}/></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Report this message" onPress={()=>setReportTarget(m.id)} style={{paddingHorizontal:8,minHeight:36,justifyContent:'center'}}><Ionicons name="flag-outline" size={16} color={colors.muted}/></Pressable>
        {mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color={colors.muted}/>}
       </View>
      </View>
@@ -67,6 +88,15 @@ export default function ThreadScreen(){
     <TextInput accessibilityLabel="Message" placeholder="Message" multiline maxLength={4000} value={draft} onChangeText={setDraft} style={styles.input}/>
     <Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={busy||!draft.trim()} onPress={()=>void send()} style={[styles.send,(busy||!draft.trim())&&styles.disabled]}><Ionicons name="arrow-up" color="#fff" size={22}/></Pressable>
    </View>}
+   <Modal visible={deleteTarget!==null} animationType="fade" transparent onRequestClose={()=>{if(!deleteBusy)setDeleteTarget(null)}}>
+    <View style={styles.reportBackdrop}><View style={styles.reportCard}>
+     <Text style={styles.panelTitle}>Delete message</Text>
+     <Text style={styles.panelDescription}>Messages remain securely stored for safeguarding and recordkeeping.</Text>
+     <Pressable accessibilityRole="button" disabled={deleteBusy} onPress={()=>void removeMessage('self')} style={styles.reportChoice}><Text style={styles.deleteChoice}>Delete for me</Text></Pressable>
+     {!!deleteTarget?.mine&&!!deleteTarget?.canRecall&&<Pressable accessibilityRole="button" disabled={deleteBusy} onPress={()=>Alert.alert('Delete for everyone?','This unread message will disappear from participants’ views but remain on CTSMD servers.',[{text:'Cancel',style:'cancel'},{text:'Delete for everyone',style:'destructive',onPress:()=>void removeMessage('everyone')}])} style={styles.reportChoice}><Text style={styles.deleteChoice}>Delete for everyone</Text></Pressable>}
+     <Pressable accessibilityRole="button" disabled={deleteBusy} onPress={()=>setDeleteTarget(null)} style={styles.reportChoice}><Text style={{color:colors.primary,fontWeight:'700'}}>Cancel</Text></Pressable>
+    </View></View>
+   </Modal>
    <Modal visible={reportTarget!==null} animationType="fade" transparent onRequestClose={()=>{if(!reportBusy)setReportTarget(null)}}>
      <View style={styles.reportBackdrop}><View style={styles.reportCard}>
        <Text style={styles.panelTitle}>Report message</Text>
@@ -84,6 +114,7 @@ export default function ThreadScreen(){
  </ConversationViewport>;
 }
 const styles=StyleSheet.create({
+ messageAction:{minWidth:36,minHeight:36,justifyContent:'center',alignItems:'center'},deleteChoice:{color:colors.danger,fontWeight:'700'},
  reportBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'center',padding:22},reportCard:{backgroundColor:colors.card,borderRadius:16,padding:18,gap:8},reportChoice:{minHeight:48,justifyContent:'center',paddingHorizontal:8,borderBottomWidth:1,borderBottomColor:colors.border},
  screen:{flex:1,backgroundColor:colors.background},flex:{flex:1},header:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:1},name:{fontSize:18,fontWeight:'700',color:colors.navy},shield:{alignItems:'center',justifyContent:'center'},safetyPanel:{marginHorizontal:12,marginTop:8,padding:12,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.card,gap:6},panelTitle:{fontSize:15,fontWeight:'700',color:colors.navy},panelDescription:{fontSize:12,lineHeight:17,color:colors.muted},participantList:{maxHeight:150},participant:{flexDirection:'row',alignItems:'center',gap:9,paddingVertical:5},participantAvatar:{width:32,height:32,borderRadius:16,backgroundColor:colors.ivory,alignItems:'center',justifyContent:'center'},participantInitials:{fontSize:11,fontWeight:'700',color:colors.primary},participantName:{fontSize:14,fontWeight:'600',color:colors.text},participantRole:{fontSize:12,color:colors.muted},
  messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:12,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,alignItems:'flex-start',gap:3},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:12,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
