@@ -71,7 +71,7 @@ test('native registration rotates the prior identity but explicitly reports deli
 });
 
 test('native website handoffs keep the CTSMD pilot storefront out of live ticket sales',()=>{
- const source=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ const source=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/index.tsx'),'utf8');
  assert.match(source,/https:\/\/ctsmd\.ludus\.com\/index\.php/);
  assert.match(source,/Ticket purchases currently use Ludus/);
  assert.doesNotMatch(source,/https:\/\/ctsmd\.me\/tickets/);
@@ -83,12 +83,14 @@ test('native website handoffs keep the CTSMD pilot storefront out of live ticket
  assert.equal(typeof openWebsite,'function');
 });
 test('Whats New is linked from Settings & support and release entries have publication status',()=>{
- const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/index.tsx'),'utf8');
  const layout=fs.readFileSync(path.join(__dirname,'../app/(tabs)/_layout.tsx'),'utf8');
- const page=fs.readFileSync(path.join(__dirname,'../app/(tabs)/whats-new.tsx'),'utf8');
+ const page=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/whats-new.tsx'),'utf8');
  assert.match(more,/title:"What's New"/);
- assert.match(more,/native:'\/\(tabs\)\/whats-new'/);
- assert.match(layout,/name="whats-new" options=\{\{href:null\}\}/);
+ assert.match(more,/native:'\/\(tabs\)\/more\/whats-new'/);
+ assert.match(layout,/name="more"/);
+ const moreStack=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/_layout.tsx'),'utf8');
+ assert.match(moreStack,/Stack.Screen name="whats-new"/);
  assert.match(page,/releaseStatusLabel/);
  assert.match(page,/section\.summary/);
  assert.match(page,/toggleSection\(sectionKey\)/);
@@ -109,7 +111,7 @@ test('Whats New is linked from Settings & support and release entries have publi
 });
 
 test('mobile navigation exposes member, staff and authorized admin workflows without a duplicate checkout',()=>{
- const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/index.tsx'),'utf8');
  for(const destination of ['My family','Forms','Volunteer','Video Library','Production workspace','Production people','Production tasks','Administration','Commerce & Box Office','Settings'])assert.ok(more.includes(destination),'Missing mobile navigation: '+destination);
  assert.match(more,/staff&&<Section title="Production tools"/);
  assert.match(more,/admin&&<Section title="Administration"/);
@@ -127,7 +129,7 @@ test('caregiver-only mobile route uses minimum logistics API and hides inaccessi
  const home=fs.readFileSync(path.join(__dirname,'../app/(tabs)/index.tsx'),'utf8');
  assert.match(home,/if\(user\?\.caregiver_only\)/);
  assert.match(home,/\/caregiver-schedule/);
- const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/index.tsx'),'utf8');
  assert.match(more,/caregiver\?caregiverItems:member/);
  const family=fs.readFileSync(path.join(__dirname,'../app/family.tsx'),'utf8');
  assert.match(family,/user\?\.caregiver_only/);
