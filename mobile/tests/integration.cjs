@@ -355,3 +355,14 @@ test('public release notes are editable without another native binary and iOS in
  assert.equal(eas.cli.appVersionSource,'local');
  assert.equal(eas.build.production.ios.autoIncrement,true);
 });
+
+test('Android Play build pins local credentials without changing production iOS signing',()=>{
+ const eas=JSON.parse(fs.readFileSync(path.join(__dirname,'../eas.json'),'utf8'));
+ const ignore=fs.readFileSync(path.join(__dirname,'../.gitignore'),'utf8');
+ assert.equal(eas.build['android-play'].extends,'production');
+ assert.equal(eas.build['android-play'].credentialsSource,'local');
+ assert.equal(eas.build['android-play'].android.buildType,'app-bundle');
+ assert.equal(eas.build.production.ios.autoIncrement,true);
+ assert.match(ignore,/credentials\.json/);
+ assert.match(ignore,/\/android/);
+});
