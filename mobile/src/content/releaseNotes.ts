@@ -14,8 +14,8 @@ export type ReleaseNote={
 
 export const releaseNotes:ReleaseNote[]=[
  {
-  version:'0.1.0',
-  title:'A more connected theatre experience',
+  version:'0.2.0',
+  title:'More control, clearer updates',
   status:'upcoming',
   introduction:'Here is what we have been working on to make CTSMD Connect easier to use and help our theatre community stay connected.',
   sections:[
@@ -49,6 +49,19 @@ export const releaseNotes:ReleaseNote[]=[
     'Improved reliability and navigation across the app.',
     'Better safeguards for private conversations and moderation records.',
     'Clearer information when a feature is temporarily unavailable.'
+   ]}
+  ]
+ },
+ {
+  version:'0.1.0',
+  title:'Welcome to CTSMD Connect',
+  status:'published',
+  introduction:'Our first app release brought your CTSMD theatre community together in one place.',
+  sections:[
+   {title:'Getting started',items:[
+    'Sign in to stay connected with your CTSMD account.',
+    'Find your theatre activities, conversations and important updates in one app.',
+    'Explore your productions, schedules, Community and Messages from the main navigation.'
    ]}
   ]
  }
