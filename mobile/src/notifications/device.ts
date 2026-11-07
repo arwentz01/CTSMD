@@ -25,7 +25,7 @@ export async function offerNotificationsOnFirstSignIn():Promise<void>{
   if(permission.granted){
    await SecureStore.setItemAsync(FIRST_RUN_KEY,'completed');
    try{await enableDeviceNotifications();}
-   catch(error){if(__DEV__)console.warn('Automatic notification registration failed.',error);}
+   catch(error){if(typeof __DEV__!=='undefined'&&__DEV__)console.warn('Automatic notification registration failed.',error);}
    return;
   }
   if(!permission.canAskAgain){
@@ -56,7 +56,7 @@ export async function enableDeviceNotifications(){
   try{
    await Notifications.setNotificationChannelAsync('default',{name:'CTSMD updates',importance:Notifications.AndroidImportance.DEFAULT});
   }catch(error){
-   if(__DEV__)console.warn('Unable to configure Android notification channel.',error);
+   if(typeof __DEV__!=='undefined'&&__DEV__)console.warn('Unable to configure Android notification channel.',error);
    throw new Error('This app build cannot configure Android notifications. Your CTSMD updates are still available in the app. Install a current CTSMD development or production build to enable device alerts.');
   }
  }
@@ -70,7 +70,7 @@ export async function enableDeviceNotifications(){
  let token:Notifications.DevicePushToken;
  try{token=await Notifications.getDevicePushTokenAsync();}
  catch(error){
-  if(__DEV__)console.warn('Native device push token unavailable.',error);
+  if(typeof __DEV__!=='undefined'&&__DEV__)console.warn('Native device push token unavailable.',error);
   throw new Error('Notifications are allowed, but this app build cannot register for device alerts yet. Please use an updated CTSMD app build.');
  }
  return storeDeviceToken(token);
