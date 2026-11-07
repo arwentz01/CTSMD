@@ -63,7 +63,7 @@ function MemberHome(){
   const unread=(data?.m.conversations||[]).reduce((total,c)=>total+Math.max(0,c.unread_count||0),0);
   const moderationCount=data?.mod.value?.pending_count??0;
   const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount;
-  const moderationAccess=!!user?.roles?.some(role=>role==='administrator'||role==='production_staff')||false;
+  const moderationAccess=!!user?.permissions?.some(permission=>permission==='community.moderate'||permission==='safeguarding.manage')||!!user?.roles?.includes('administrator');
   const moderationError=data?.mod.error;
   return <Screen compact title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
