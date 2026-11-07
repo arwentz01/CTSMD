@@ -35,7 +35,7 @@ export const conversations=(options:{q?:string;archived?:boolean;scope?:'inbox'|
 export const archiveConversation=(conversation_id:number,archived:boolean)=>api<{ok:boolean}>('conversation-archive',{method:'POST',body:{conversation_id,archived}});
 export const deleteMessage=(message_id:number,scope:'self'|'everyone')=>api<{ok:boolean}>('message-delete',{method:'POST',body:{message_id,scope}});
 export const channels=()=>api<ChannelsResult>('channels');
-export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean};
+export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean;unread:boolean};
 export const toggleCommunityHeart=(post_id:number)=>api<{ok:boolean;hearted:boolean}>('channel-reaction',{method:'POST',body:{post_id}});
 export const communityFeed=(cursor?:string)=>api<{posts:CommunityFeedPost[];has_more:boolean;next_cursor:string|null}>('community-feed'+(cursor?'?cursor='+encodeURIComponent(cursor):''));
 export const theatre=()=>api<TheatreResult>('theatre');
