@@ -66,7 +66,7 @@ export default function More(){
  ];
  const staffItems:LinkItem[]=[
   {title:'Production workspace',description:'Manage production details · opens in browser',icon:'film-outline',website:'productionWorkspace'},
-  {title:'Production day & attendance',description:'Today's schedule and attendance · opens in browser',icon:'calendar-outline',website:'productionDay'},
+  {title:'Production day & attendance',description:"Today's schedule and attendance · opens in browser",icon:'calendar-outline',website:'productionDay'},
   {title:'Production people',description:'Cast, crew and assignments · website',icon:'people-circle-outline',website:'productionPeople'},
   {title:'Production tasks',description:'Create, delegate and track work · website',icon:'checkmark-done-outline',website:'productionTasks'},
   {title:'Readiness & notices',description:'Pre-show status and communications · website',icon:'list-outline',website:'productionReadiness'},
