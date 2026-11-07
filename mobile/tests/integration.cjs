@@ -168,12 +168,33 @@ test('first authenticated native launch offers notification opt-in once, and Exp
  assert.match(integration,/offerNotificationsOnFirstSignIn\(\)/);
 });
 
+test('broken Android notification channel fails safely before token or OS permission request',async()=>{
+ let permissionRequests=0,tokenRequests=0;
+ const device=load('src/notifications/device.ts',{},null,{
+  'expo-secure-store':{getItemAsync:async()=>null},
+  'expo-notifications':{
+   AndroidImportance:{DEFAULT:3},
+   setNotificationChannelAsync:async()=>{throw Error('java.lang.NullPointerException')},
+   getPermissionsAsync:async()=>({granted:false}),
+   requestPermissionsAsync:async()=>{permissionRequests++;return {granted:true}},
+   getDevicePushTokenAsync:async()=>{tokenRequests++;return {type:'android',data:'token'}}
+  },
+  './runtime':{supportsNativePush:()=>true},
+  'react-native':{Platform:{OS:'android'},Alert:{alert:()=>{}}},
+  '../api/client':{registerPush:async()=>{throw Error('Should not register')}}
+ });
+ await assert.rejects(device.enableDeviceNotifications(),/app build cannot configure Android notifications/);
+ assert.equal(permissionRequests,0);
+ assert.equal(tokenRequests,0);
+});
+
 test('Expo Go detection does not disable real development builds',()=>{
  const runtime=(constants)=>load('src/notifications/runtime.ts',{},null,{'expo-constants':{__esModule:true,default:constants},'react-native':{Platform:{OS:'android'}}});
  assert.equal(runtime({appOwnership:'expo',executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),false);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'storeClient',expoGoConfig:{}}).supportsNativePush(),false);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),true);
  assert.equal(runtime({appOwnership:null,executionEnvironment:'standalone',expoGoConfig:null}).supportsNativePush(),true);
+ assert.equal(runtime({appOwnership:null,executionEnvironment:'standalone',expoGoConfig:{}}).supportsNativePush(),false);
 });
 
 test('Community cards use compact layout with accessible posts and reactions',()=>{
