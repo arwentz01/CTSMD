@@ -17,6 +17,9 @@ export default function ThreadScreen(){
  const [threadSearch,setThreadSearch]=useState('');
  const [searchOpen,setSearchOpen]=useState(false);
  const [reportTarget,setReportTarget]=useState<number|null>(null);
+ const [reportSelecting,setReportSelecting]=useState(false);
+ const [reportReason,setReportReason]=useState<'harassment'|'inappropriate'|'unwanted_contact'|'safeguarding'|'other'>('other');
+ const [reportDetail,setReportDetail]=useState('');
  const [deleteTarget,setDeleteTarget]=useState<{id:number;mine:boolean;canRecall:boolean}|null>(null);
  const [deleteBusy,setDeleteBusy]=useState(false);
  const [reportBusy,setReportBusy]=useState(false);
@@ -26,10 +29,10 @@ export default function ThreadScreen(){
  const {data,error,loading,retry}=useScreenData(load);
  const safeguarded=data?.conversation.id===threadId&&data.conversation.conversation_type==='safeguarded';
  const visibleMessages=(data?.messages||[]).filter(message=>!threadSearch.trim()||message.body.toLocaleLowerCase().includes(threadSearch.trim().toLocaleLowerCase())||message.sender.toLocaleLowerCase().includes(threadSearch.trim().toLocaleLowerCase()));
- const submitReport=async(reason:'harassment'|'inappropriate'|'unwanted_contact'|'safeguarding'|'other')=>{
+ const submitReport=async()=>{
    if(reportTarget===null||reportBusy)return;
    setReportBusy(true);
-   try{await reportMessage(reportTarget,reason);setReportTarget(null);Alert.alert('Report submitted','CTSMD safeguarding staff can review this report.');}
+   try{await reportMessage(reportTarget,reportReason,reportDetail.trim());setReportTarget(null);setReportDetail('');setReportSelecting(false);Alert.alert('Report submitted','CTSMD safeguarding staff can review this report.');}
    catch(e){Alert.alert('Report not sent',e instanceof Error?e.message:'Please try again.');}
    finally{setReportBusy(false);}
  };
@@ -55,10 +58,15 @@ export default function ThreadScreen(){
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>router.back()} hitSlop={12}><Ionicons name="chevron-back" size={26} color={colors.navy}/></Pressable>
     <View style={styles.flex}><Text style={styles.name} numberOfLines={1}>{data?.conversation.display_name||'Conversation'}</Text></View>
     <Pressable accessibilityRole="button" accessibilityLabel={searchOpen?'Close conversation search':'Search in conversation'} onPress={()=>{setSearchOpen(v=>!v);setThreadSearch('')}} style={styles.shield}><Ionicons name={searchOpen?'close-outline':'search-outline'} size={23} color={colors.primary}/></Pressable>
-    {!!data&&<Pressable accessibilityRole="button" accessibilityLabel={data.conversation.archived_at?'Restore conversation':'Archive conversation'} onPress={changeArchive} style={styles.shield}><Ionicons name={data.conversation.archived_at?'arrow-undo-outline':'archive-outline'} size={22} color={colors.primary}/></Pressable>}
+    {!!data&&<Pressable accessibilityRole="button" accessibilityLabel="Conversation options" onPress={()=>Alert.alert('Conversation options','Choose an action for this conversation.',[
+      {text:data.conversation.archived_at?'Restore conversation':'Archive conversation',onPress:changeArchive},
+      {text:'Report a message',onPress:()=>{setReportSelecting(true);setSearchOpen(false);setThreadSearch('')}},
+      {text:'Cancel',style:'cancel'}
+    ])} style={styles.shield}><Ionicons name="ellipsis-vertical" size={23} color={colors.primary}/></Pressable>}
     {safeguarded&&<Pressable accessibilityRole="button" accessibilityLabel="Safeguarding and participants" accessibilityHint="Shows who can see this conversation" accessibilityState={{expanded:participantsOpen}} onPress={()=>setParticipantsOpen(value=>!value)} style={styles.shield}><Ionicons name={participantsOpen?'shield-checkmark':'shield-checkmark-outline'} size={23} color={colors.primary}/></Pressable>}
    </View>
    <LoadState loading={loading} error={error} onRetry={retry}/>
+   {reportSelecting&&<View style={styles.reportNotice}><Text style={styles.panelDescription}>Tap the message you want to report.</Text><Pressable accessibilityLabel="Cancel reporting" onPress={()=>setReportSelecting(false)}><Text style={{color:colors.primary,fontWeight:'700'}}>Cancel</Text></Pressable></View>}
    {safeguarded&&participantsOpen&&<View style={styles.safetyPanel}>
     <Text accessibilityRole="header" style={styles.panelTitle}>Safeguarding and participants</Text>
     <Text style={styles.panelDescription}>Conversation participants are listed below. CTSMD monitors messages for safeguarding.</Text>
@@ -76,14 +84,12 @@ export default function ThreadScreen(){
     const read=mine&&intended.length>0&&intended.every(p=>Number(p.last_read_message_id)>=m.id);
     return <View style={[styles.messageRow,mine&&styles.mineRow]}>
      {!mine&&<View style={styles.initials}><Text style={styles.initialText}>{m.initials||'?'}</Text></View>}
-     <View style={styles.messageContent}>
-      <View style={[styles.bubble,mine&&styles.mineBubble]}>
+     <View style={[styles.messageContent,mine&&styles.mineContent]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={reportSelecting?'Select message to report':'Message options'} accessibilityHint={reportSelecting?'Tap to report this message':'Press and hold for message deletion options'} onPress={()=>{if(reportSelecting){setReportTarget(m.id);setReportReason('other');setReportDetail('');setReportSelecting(false)}}} onLongPress={()=>{if(!reportSelecting)setDeleteTarget({id:m.id,mine,canRecall:!!m.can_recall})}} style={[styles.bubble,mine&&styles.mineBubble]}>
        <Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>
-      </View>
+      </Pressable>
       <View style={[styles.messageMeta,mine&&styles.mineMeta]}>
        <Text style={styles.timestamp}>{formatTime(m.created_at)}</Text>
-       <Pressable accessibilityRole="button" accessibilityLabel="Delete message options" onPress={()=>setDeleteTarget({id:m.id,mine,canRecall:!!m.can_recall})} style={styles.messageAction}><Ionicons name="trash-outline" size={16} color={colors.muted}/></Pressable>
-       <Pressable accessibilityRole="button" accessibilityLabel="Report this message" onPress={()=>setReportTarget(m.id)} style={{paddingHorizontal:8,minHeight:36,justifyContent:'center'}}><Ionicons name="flag-outline" size={16} color={colors.muted}/></Pressable>
        {mine&&read&&<Ionicons accessibilityLabel="Read by intended recipient" name="checkmark-done" size={13} color={colors.muted}/>}
       </View>
      </View>
@@ -105,15 +111,19 @@ export default function ThreadScreen(){
    <Modal visible={reportTarget!==null} animationType="fade" transparent onRequestClose={()=>{if(!reportBusy)setReportTarget(null)}}>
      <View style={styles.reportBackdrop}><View style={styles.reportCard}>
        <Text style={styles.panelTitle}>Report message</Text>
-       <Text style={styles.panelDescription}>Choose why you're reporting this message. Only authorized safeguarding staff can review your report.</Text>
+       <Text style={styles.panelDescription}>Choose a reason and add details if helpful. Only authorized safeguarding staff can review your report.</Text>
+       <ScrollView style={{maxHeight:270}} keyboardShouldPersistTaps="handled">
        {([
          ['inappropriate','Inappropriate language or content'],
          ['harassment','Bullying or harassment'],
          ['unwanted_contact','Unwanted contact'],
          ['safeguarding','Safeguarding concern'],
          ['other','Other concern'],
-       ] as const).map(([reason,label])=><Pressable key={reason} disabled={reportBusy} accessibilityRole="button" onPress={()=>void submitReport(reason)} style={styles.reportChoice}><Text style={{color:colors.text,fontWeight:'600'}}>{label}</Text></Pressable>)}
-       <Pressable disabled={reportBusy} accessibilityRole="button" onPress={()=>setReportTarget(null)} style={styles.reportChoice}><Text style={{color:colors.primary,fontWeight:'700'}}>Cancel</Text></Pressable>
+       ] as const).map(([reason,label])=><Pressable key={reason} disabled={reportBusy} accessibilityRole="radio" accessibilityState={{checked:reportReason===reason}} onPress={()=>setReportReason(reason)} style={styles.reportChoice}><Text style={{color:colors.text,fontWeight:reportReason===reason?'800':'600'}}>{reportReason===reason?'◉ ':'○ '}{label}</Text></Pressable>)}
+       </ScrollView>
+       <TextInput accessibilityLabel="Additional report details" placeholder="What happened? (optional)" multiline maxLength={1000} value={reportDetail} onChangeText={setReportDetail} style={styles.reportDetail}/>
+       <Pressable disabled={reportBusy} accessibilityRole="button" onPress={()=>void submitReport()} style={styles.reportChoice}><Text style={{color:colors.primary,fontWeight:'800'}}>Submit report</Text></Pressable>
+       <Pressable disabled={reportBusy} accessibilityRole="button" onPress={()=>setReportTarget(null)} style={styles.reportChoice}><Text style={{color:colors.muted,fontWeight:'700'}}>Cancel</Text></Pressable>
      </View></View>
    </Modal>
  </ConversationViewport>;
@@ -121,8 +131,9 @@ export default function ThreadScreen(){
 const styles=StyleSheet.create({
  searchRow:{flexDirection:'row',alignItems:'center',paddingHorizontal:14,backgroundColor:colors.card,borderBottomWidth:1,borderBottomColor:colors.border,gap:8},searchInput:{flex:1,minHeight:48,fontSize:15,color:colors.text},
  messageAction:{minWidth:36,minHeight:36,justifyContent:'center',alignItems:'center'},deleteChoice:{color:colors.danger,fontWeight:'700'},
+ reportNotice:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:10,backgroundColor:colors.ivory},reportDetail:{minHeight:72,maxHeight:115,textAlignVertical:'top',borderWidth:1,borderColor:colors.border,borderRadius:10,padding:10,color:colors.text},
  reportBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'center',padding:22},reportCard:{backgroundColor:colors.card,borderRadius:16,padding:18,gap:8},reportChoice:{minHeight:48,justifyContent:'center',paddingHorizontal:8,borderBottomWidth:1,borderBottomColor:colors.border},
  screen:{flex:1,backgroundColor:colors.background},flex:{flex:1},header:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:1},name:{fontSize:18,fontWeight:'700',color:colors.navy},shield:{alignItems:'center',justifyContent:'center'},safetyPanel:{marginHorizontal:12,marginTop:8,padding:12,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.card,gap:6},panelTitle:{fontSize:15,fontWeight:'700',color:colors.navy},panelDescription:{fontSize:12,lineHeight:17,color:colors.muted},participantList:{maxHeight:150},participant:{flexDirection:'row',alignItems:'center',gap:9,paddingVertical:5},participantAvatar:{width:32,height:32,borderRadius:16,backgroundColor:colors.ivory,alignItems:'center',justifyContent:'center'},participantInitials:{fontSize:11,fontWeight:'700',color:colors.primary},participantName:{fontSize:14,fontWeight:'600',color:colors.text},participantRole:{fontSize:12,color:colors.muted},
- messages:{padding:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,maxWidth:'91%'},mineRow:{alignSelf:'flex-end',justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:12,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,alignItems:'flex-start',gap:3},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:12,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
+ messages:{paddingHorizontal:12,paddingVertical:14,gap:10,flexGrow:1,justifyContent:'flex-end'},messageRow:{flexDirection:'row',alignItems:'flex-end',gap:7,width:'100%'},mineRow:{justifyContent:'flex-end'},initials:{height:28,width:28,borderRadius:14,backgroundColor:'#e5e9ef',alignItems:'center',justifyContent:'center'},initialText:{color:colors.navy,fontSize:12,fontWeight:'700'},bubble:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:16,paddingVertical:9,paddingHorizontal:12,maxWidth:'100%'},mineBubble:{backgroundColor:colors.navy,borderColor:colors.navy},messageContent:{flexShrink:1,maxWidth:'85%',alignItems:'flex-start',gap:3},mineContent:{alignItems:'flex-end'},messageMeta:{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start'},mineMeta:{alignSelf:'flex-end'},messageText:{fontSize:15,color:colors.text,flexShrink:1},mineText:{color:'#fff'},timestamp:{fontSize:12,color:colors.muted},empty:{color:colors.muted,textAlign:'center',padding:18},
  composer:{flexDirection:'row',alignItems:'flex-end',gap:8,paddingHorizontal:12,paddingTop:10,paddingBottom:8,backgroundColor:colors.card,borderTopWidth:1,borderTopColor:colors.border},input:{flex:1,maxHeight:120,minHeight:48,borderRadius:21,borderWidth:1,borderColor:colors.border,paddingHorizontal:15,paddingVertical:10,fontSize:15,color:colors.text},send:{height:48,width:48,borderRadius:21,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},disabled:{opacity:0.45}
 });
