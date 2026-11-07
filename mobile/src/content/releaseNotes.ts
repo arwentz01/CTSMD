@@ -4,6 +4,7 @@
  */
 export type ReleaseNoteSection={title:string;items:string[]};
 export type ReleaseNote={
+ releaseNumber:number;
  version:string;
  title:string;
  publishedOn?:string;
@@ -14,6 +15,7 @@ export type ReleaseNote={
 
 export const releaseNotes:ReleaseNote[]=[
  {
+  releaseNumber:2,
   version:'0.2.0',
   title:'More control, clearer updates',
   status:'upcoming',
@@ -53,6 +55,7 @@ export const releaseNotes:ReleaseNote[]=[
   ]
  },
  {
+  releaseNumber:1,
   version:'0.1.0',
   title:'Welcome to CTSMD Connect',
   status:'published',
