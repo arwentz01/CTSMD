@@ -8,6 +8,7 @@ require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__.'/WorkspaceUI.php';
 require_once __DIR__ . '/HomeDashboardService.php';
+require_once __DIR__ . '/AccessPolicy.php';
 
 final class HomeExperience
 {
@@ -16,7 +17,12 @@ final class HomeExperience
 
     public static function render(string $route,string $basePath,array $legacyData=[]):never
     {
-        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect($basePath.'/login');$_SESSION['notification_csrf']??=bin2hex(random_bytes(24));$data=HomeDashboardService::build($db,$user);self::page($basePath,$user,$data);
+        Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user)self::redirect($basePath.'/login');$_SESSION['notification_csrf']??=bin2hex(random_bytes(24));$data=HomeDashboardService::build($db,$user);
+        $data['moderation_alerts']=null;
+        if(AccessPolicy::canModerateCommunity($user)||AccessPolicy::canManageSafeguarding($user)){
+            $data['moderation_alerts']=(int)$db->query("SELECT COUNT(*) FROM channel_posts WHERE moderation_status IN ('pending','rejected') AND moderation_acknowledged_at IS NULL AND hidden_at IS NULL AND deleted_at IS NULL")->fetchColumn();
+        }
+        self::page($basePath,$user,$data);
     }
 
     private static function page(string $basePath,array $user,array $data):never
@@ -28,6 +34,8 @@ final class HomeExperience
 
         <?php if(($user['organization_membership_status']??'')==='denied'):?><section class="home-membership denied"><div><small>CTSMD MEMBERSHIP</small><h3>General membership access is not active.</h3><p>Your account can still sign in, but organization-wide member spaces remain unavailable. Contact CTSMD if you believe this needs review.</p></div></section><?php elseif(!$membership['approved']&&!$membership['staff']):?><section class="home-membership pending"><div><small>CTSMD MEMBERSHIP · PENDING APPROVAL</small><h3>Your login is ready. General member access is still being reviewed.</h3><p>You can manage your household now. Once CTSMD approves your membership, organization-wide Community areas will unlock automatically. Production access is granted separately when you or your child are added to a show.</p></div><a href="<?=$u('/family/manage')?>">Manage household →</a></section><?php endif;?>
 
+        <?php if($data['moderation_alerts']!==null):?><section class="home-card surface" aria-label="Community moderation" style="padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap"><div><small style="font-weight:700;color:#8b233b">COMMUNITY MODERATION</small><h3 style="margin:.25rem 0"><?=(int)$data['moderation_alerts']?> concern<?= (int)$data['moderation_alerts']===1?'':'s'?> needing acknowledgement</h3><p style="margin:0">Acknowledged concerns remain available in moderation history.</p></div><a class="button" href="<?=$u('/admin/moderation/queue')?>">Review concerns</a></section><?php endif;?>
+        
         <section class="home-stats" aria-label="Account summary"><article><strong><?=(int)$summary['active_productions']?></strong><span>active production<?= (int)$summary['active_productions']===1?'':'s' ?></span></article><?php if(!$student):?><article><strong><?=(int)$summary['linked_children']?></strong><span>linked child<?= (int)$summary['linked_children']===1?'':'ren' ?></span></article><?php endif;?><article class="<?= $summary['open_forms']?'attention':'' ?>"><strong><?=(int)$summary['open_forms']?></strong><span>open form<?= (int)$summary['open_forms']===1?'':'s' ?></span></article><article class="<?= $summary['unread_notifications']?'attention':'' ?>"><strong><?=(int)$summary['unread_notifications']?></strong><span>unread update<?= (int)$summary['unread_notifications']===1?'':'s' ?></span></article></section>
 
         <div class="home-priority-grid"><section class="home-priority-stack surface"><header class="home-section-head section-header"><div class="section-header-main"><span class="section-header-eyebrow">NEEDS YOU</span><h3 class="section-header-title">Action center</h3></div><b class="badge badge-count"><?=count($attention)?></b></header><?php if($attention):foreach(array_slice($attention,0,5) as $item):?><article class="home-action <?=$item['urgent']?'urgent':''?> <?=in_array($item['kind'],['casting_accepted','casting_declined'],true)?'casting-response '.($item['kind']==='casting_accepted'?'casting-accepted':'casting-declined'):''?>"><i><?=match($item['kind']){'form'=>'!','conflict'=>'↔','volunteer'=>'♡','casting_accepted'=>'✓','casting_declined'=>'!',default=>'•'}?></i><div><small><?=$e(match($item['kind']){'casting_accepted'=>'CASTING ACCEPTED','casting_declined'=>'CASTING DECLINED',default=>strtoupper(str_replace('_',' ',$item['kind']))})?></small><b><?=$e((string)$item['title'])?></b><span><?=$e((string)$item['context'])?> · <?=$e((string)$item['detail'])?></span></div><div class="home-action-links"><a href="<?=$u((string)$item['href'])?>"><?=in_array($item['kind'],['casting_accepted','casting_declined'],true)?'Open casting →':'Open →'?></a><?php if(!empty($item['notification_id'])):?><form method="post" action="<?=$u('/notifications')?>"><input type="hidden" name="csrf_token" value="<?=$e((string)$_SESSION['notification_csrf'])?>"><input type="hidden" name="action" value="mark_read"><input type="hidden" name="notification_id" value="<?=(int)$item['notification_id']?>"><input type="hidden" name="return_to" value="/app"><button type="submit" class="home-action-dismiss" type="submit" title="Dismiss this notice from the Action center" aria-label="Dismiss this notice">Dismiss</button></form><?php endif;?></div></article><?php endforeach;else:?><div class="home-empty empty-state empty-state-compact"><b>You are caught up.</b><span>No current forms, family conflicts or near-term commitments need attention.</span></div><?php endif;?></section>
