@@ -17,14 +17,14 @@ let cached:AvailableAndroidUpdate|null=null;
 export const ANDROID_PLAY_STORE_URL='https://play.google.com/store/apps/details?id=com.ctsmd_connect_v01';
 
 export function newerClosedTestRelease(manifest:unknown,installedCode:number|null|undefined):AvailableAndroidUpdate|null{
- if(!Number.isSafeInteger(installedCode)||!(installedCode!>0))return null;
+ if(typeof installedCode!=='number'||!Number.isSafeInteger(installedCode)||installedCode<=0)return null;
  if(!manifest||typeof manifest!=='object'||!('android' in manifest))return null;
  const release=(manifest as {android?:unknown}).android;
  if(!release||typeof release!=='object')return null;
  const data=release as Record<string,unknown>;
  if(data.track!=='closed_testing'||data.available!==true)return null;
  if(typeof data.version!=='string'||!/^\d+\.\d+\.\d+$/.test(data.version))return null;
- if(!Number.isSafeInteger(data.versionCode)||!(Number(data.versionCode)>installedCode!))return null;
+ if(typeof data.versionCode!=='number'||!Number.isSafeInteger(data.versionCode)||data.versionCode<=installedCode)return null;
  return {version:data.version,versionCode:Number(data.versionCode)};
 }
 
