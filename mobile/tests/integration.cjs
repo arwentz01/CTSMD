@@ -82,6 +82,22 @@ test('native website handoffs keep the CTSMD pilot storefront out of live ticket
  assert.ok(!Object.values(webRoutes).includes('/tickets'),'Pilot storefront is deliberately not advertised as the current ticket vendor');
  assert.equal(typeof openWebsite,'function');
 });
+test('Whats New is linked from Settings & support and release entries have publication status',()=>{
+ const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
+ const layout=fs.readFileSync(path.join(__dirname,'../app/_layout.tsx'),'utf8');
+ const page=fs.readFileSync(path.join(__dirname,'../app/whats-new.tsx'),'utf8');
+ assert.match(more,/title:"What's New"/);
+ assert.match(more,/native:'\/whats-new'/);
+ assert.match(layout,/name="whats-new"/);
+ assert.match(page,/releaseStatusLabel/);
+ const {releaseNotes}=load('src/content/releaseNotes.ts');
+ assert.equal(releaseNotes[0].version,'0.1.0');
+ assert.equal(releaseNotes[0].status,'upcoming','Do not label work as published until a store release exists');
+ assert.ok(releaseNotes[0].sections.some(s=>s.title==='Messages'));
+ assert.ok(releaseNotes[0].sections.some(s=>s.title==='Notifications'));
+ assert.ok(releaseNotes[0].sections.some(s=>s.title==='Your home and Action Center'));
+});
+
 test('mobile navigation exposes member, staff and authorized admin workflows without a duplicate checkout',()=>{
  const more=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more.tsx'),'utf8');
  for(const destination of ['My family','Forms','Volunteer','Video Library','Production workspace','Production people','Production tasks','Administration','Commerce & Box Office','Settings'])assert.ok(more.includes(destination),'Missing mobile navigation: '+destination);
