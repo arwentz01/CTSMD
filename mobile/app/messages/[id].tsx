@@ -14,6 +14,8 @@ export default function ThreadScreen(){
  const {user}=useAuth();
  const threadId=Number(id);
  const [participantsOpen,setParticipantsOpen]=useState(false);
+ const [threadSearch,setThreadSearch]=useState('');
+ const [searchOpen,setSearchOpen]=useState(false);
  const [reportTarget,setReportTarget]=useState<number|null>(null);
  const [deleteTarget,setDeleteTarget]=useState<{id:number;mine:boolean;canRecall:boolean}|null>(null);
  const [deleteBusy,setDeleteBusy]=useState(false);
@@ -23,6 +25,7 @@ export default function ThreadScreen(){
  const load=useCallback(()=>Number.isSafeInteger(threadId)&&threadId>0?thread(threadId):Promise.reject(new Error('Invalid conversation.')),[threadId,version]);
  const {data,error,loading,retry}=useScreenData(load);
  const safeguarded=data?.conversation.id===threadId&&data.conversation.conversation_type==='safeguarded';
+ const visibleMessages=(data?.messages||[]).filter(message=>!threadSearch.trim()||message.body.toLocaleLowerCase().includes(threadSearch.trim().toLocaleLowerCase())||message.sender.toLocaleLowerCase().includes(threadSearch.trim().toLocaleLowerCase()));
  const submitReport=async(reason:'harassment'|'inappropriate'|'unwanted_contact'|'safeguarding'|'other')=>{
    if(reportTarget===null||reportBusy)return;
    setReportBusy(true);
@@ -51,6 +54,7 @@ export default function ThreadScreen(){
    <View style={styles.header}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>router.back()} hitSlop={12}><Ionicons name="chevron-back" size={26} color={colors.navy}/></Pressable>
     <View style={styles.flex}><Text style={styles.name} numberOfLines={1}>{data?.conversation.display_name||'Conversation'}</Text></View>
+    <Pressable accessibilityRole="button" accessibilityLabel={searchOpen?'Close conversation search':'Search in conversation'} onPress={()=>{setSearchOpen(v=>!v);setThreadSearch('')}} style={styles.shield}><Ionicons name={searchOpen?'close-outline':'search-outline'} size={23} color={colors.primary}/></Pressable>
     {!!data&&<Pressable accessibilityRole="button" accessibilityLabel={data.conversation.archived_at?'Restore conversation':'Archive conversation'} onPress={changeArchive} style={styles.shield}><Ionicons name={data.conversation.archived_at?'arrow-undo-outline':'archive-outline'} size={22} color={colors.primary}/></Pressable>}
     {safeguarded&&<Pressable accessibilityRole="button" accessibilityLabel="Safeguarding and participants" accessibilityHint="Shows who can see this conversation" accessibilityState={{expanded:participantsOpen}} onPress={()=>setParticipantsOpen(value=>!value)} style={styles.shield}><Ionicons name={participantsOpen?'shield-checkmark':'shield-checkmark-outline'} size={23} color={colors.primary}/></Pressable>}
    </View>
@@ -65,7 +69,8 @@ export default function ThreadScreen(){
      </View>)}
     </ScrollView>
    </View>}
-   <FlatList keyboardShouldPersistTaps="handled" keyboardDismissMode="none" style={styles.flex} contentContainerStyle={styles.messages} data={data?.messages||[]} keyExtractor={m=>String(m.id)} renderItem={({item:m})=>{
+   {searchOpen&&<View style={styles.searchRow}><Ionicons name="search-outline" color={colors.muted} size={20}/><TextInput accessibilityLabel="Search messages in this conversation" placeholder="Search this conversation" placeholderTextColor={colors.muted} value={threadSearch} onChangeText={setThreadSearch} style={styles.searchInput} autoCorrect={false}/></View>}
+   <FlatList keyboardShouldPersistTaps="handled" keyboardDismissMode="none" style={styles.flex} contentContainerStyle={styles.messages} data={visibleMessages} keyExtractor={m=>String(m.id)} renderItem={({item:m})=>{
     const mine=m.sender_user_id===user?.id;
     const intended=(data?.participants||[]).filter(p=>p.user_id!==user?.id&&p.participant_role!=='guardian');
     const read=mine&&intended.length>0&&intended.every(p=>Number(p.last_read_message_id)>=m.id);
@@ -83,7 +88,7 @@ export default function ThreadScreen(){
       </View>
      </View>
     </View>;
-   }} ListEmptyComponent={!loading&&!error?<Text style={styles.empty}>No messages yet.</Text>:undefined}/>
+   }} ListEmptyComponent={!loading&&!error?<Text style={styles.empty}>{threadSearch?'No matching messages.':'No messages yet.'}</Text>:undefined}/>
    {data&&!data.conversation.send_allowed&&<View style={{padding:16}}><Text accessibilityRole="alert" style={{color:colors.text}}>Sending is paused. {data.conversation.safety_issue}</Text></View>}{data?.conversation.send_allowed&&<View style={styles.composer}>
     <TextInput accessibilityLabel="Message" placeholder="Message" multiline maxLength={4000} value={draft} onChangeText={setDraft} style={styles.input}/>
     <Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={busy||!draft.trim()} onPress={()=>void send()} style={[styles.send,(busy||!draft.trim())&&styles.disabled]}><Ionicons name="arrow-up" color="#fff" size={22}/></Pressable>
@@ -114,6 +119,7 @@ export default function ThreadScreen(){
  </ConversationViewport>;
 }
 const styles=StyleSheet.create({
+ searchRow:{flexDirection:'row',alignItems:'center',paddingHorizontal:14,backgroundColor:colors.card,borderBottomWidth:1,borderBottomColor:colors.border,gap:8},searchInput:{flex:1,minHeight:48,fontSize:15,color:colors.text},
  messageAction:{minWidth:36,minHeight:36,justifyContent:'center',alignItems:'center'},deleteChoice:{color:colors.danger,fontWeight:'700'},
  reportBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'center',padding:22},reportCard:{backgroundColor:colors.card,borderRadius:16,padding:18,gap:8},reportChoice:{minHeight:48,justifyContent:'center',paddingHorizontal:8,borderBottomWidth:1,borderBottomColor:colors.border},
  screen:{flex:1,backgroundColor:colors.background},flex:{flex:1},header:{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:1},name:{fontSize:18,fontWeight:'700',color:colors.navy},shield:{alignItems:'center',justifyContent:'center'},safetyPanel:{marginHorizontal:12,marginTop:8,padding:12,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.card,gap:6},panelTitle:{fontSize:15,fontWeight:'700',color:colors.navy},panelDescription:{fontSize:12,lineHeight:17,color:colors.muted},participantList:{maxHeight:150},participant:{flexDirection:'row',alignItems:'center',gap:9,paddingVertical:5},participantAvatar:{width:32,height:32,borderRadius:16,backgroundColor:colors.ivory,alignItems:'center',justifyContent:'center'},participantInitials:{fontSize:11,fontWeight:'700',color:colors.primary},participantName:{fontSize:14,fontWeight:'600',color:colors.text},participantRole:{fontSize:12,color:colors.muted},
