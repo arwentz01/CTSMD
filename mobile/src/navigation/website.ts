@@ -5,6 +5,7 @@ export const webRoutes={
  // The CTSMD storefront is still a restricted pilot. Live ticket purchases remain on Ludus.
 
  publicProductions:'/productions',
+ whatsNew:'/whats-new',
  registration:'/register',
  productionWorkspace:'/production',
  productionCalendar:'/calendar',
