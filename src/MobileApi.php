@@ -21,6 +21,7 @@ require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
+require_once __DIR__ . '/MessageVisibilityService.php';
 require_once __DIR__ . '/CommunityExperience.php';
 require_once __DIR__ . '/FormExperience.php';
 require_once __DIR__ . '/VolunteerExperience.php';
@@ -52,7 +53,7 @@ final class MobileApi
             $roleCheck->execute(['id'=>(int)$user['id']]);$familyTypes=$roleCheck->fetchAll(PDO::FETCH_COLUMN);
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
             $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
-            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report'];
+            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report','/api/mobile/message-delete','/api/mobile/conversation-archive'];
             if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
@@ -91,6 +92,8 @@ final class MobileApi
                 '/api/mobile/message-recipients' => self::messageRecipients($db, $user),
                 '/api/mobile/message-create' => self::messageCreate($db, $user),
                 '/api/mobile/message-report' => self::messageReport($db, $user),
+                '/api/mobile/message-delete' => self::messageDelete($db,$user),
+                '/api/mobile/conversation-archive' => self::conversationArchive($db,$user),
                 '/api/mobile/channels' => self::channels($db, $user),
                 '/api/mobile/community-feed' => self::communityFeed($db, $user),
                 '/api/mobile/channel' => self::channel($db, $user),
@@ -511,12 +514,31 @@ final class MobileApi
         self::json(['ok'=>true]);
     }
 
-    private static function messages(PDO $db, array $user): never
+    private static function messages(PDO $db,array $user):never
     {
-        self::requireMethod('GET');
-        $stmt = $db->prepare("SELECT c.id,c.subject,c.conversation_type,MAX(m.created_at) latest_at,COUNT(DISTINCT m.id) message_count,COUNT(DISTINCT cp.user_id) participant_count,(SELECT COUNT(*) FROM messages um WHERE um.conversation_id=c.id AND um.hidden_at IS NULL AND um.id>mine.last_read_message_id AND um.sender_user_id<>mine.user_id AND (mine.history_through_message_id IS NULL OR um.id<=mine.history_through_message_id)) unread_count,(SELECT sm.body FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR sm.id<=mine.history_through_message_id) ORDER BY sm.id DESC LIMIT 1) preview FROM conversations c JOIN conversation_participants mine ON mine.conversation_id=c.id AND mine.user_id=:user JOIN conversation_participants cp ON cp.conversation_id=c.id LEFT JOIN messages m ON m.conversation_id=c.id AND m.hidden_at IS NULL AND (mine.history_through_message_id IS NULL OR m.id<=mine.history_through_message_id) GROUP BY c.id,c.subject,c.conversation_type,mine.last_read_message_id,mine.user_id,mine.history_through_message_id ORDER BY latest_at DESC,c.id DESC");
-        $stmt->execute(['user'=>(int)$user['id']]);
-        $rows=$stmt->fetchAll();$names=$db->prepare("SELECT cp.user_id,cp.participant_role,CONCAT(u.first_name,' ',u.last_name) name FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id");foreach($rows as &$row){$names->execute(['id'=>$row['id']]);$people=$names->fetchAll();$visible=array_values(array_map(static fn(array $p):string=>(string)$p['name'],array_filter($people,static fn(array $p):bool=>(int)$p['user_id']!==(int)$user['id']&&$p['participant_role']!=='guardian')));$row['display_name']=$row['conversation_type']==='group'?($row['subject']?:'Group conversation'):(implode(', ',$visible)?:$row['subject']);}unset($row);self::json(['conversations'=>$rows]);
+        self::requireMethod('GET');$viewer=(int)$user['id'];
+        $query=mb_substr(trim((string)($_GET['q']??'')),0,100);
+        $archived=($_GET['archived']??'0')==='1';
+        $params=['viewer'=>$viewer];$filters=$archived?' AND mine.archived_at IS NOT NULL':' AND mine.archived_at IS NULL';
+        if($query!==''){
+            $filters.=" AND (c.subject LIKE :subject OR EXISTS (SELECT 1 FROM conversation_participants participant JOIN users person ON person.id=participant.user_id WHERE participant.conversation_id=c.id AND participant.user_id<>mine.user_id AND CONCAT(person.first_name,' ',person.last_name) LIKE :person) OR EXISTS (SELECT 1 FROM messages match_message WHERE match_message.conversation_id=c.id AND match_message.hidden_at IS NULL AND match_message.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides hidden_match WHERE hidden_match.message_id=match_message.id AND hidden_match.user_id=mine.user_id) AND (mine.history_through_message_id IS NULL OR match_message.id<=mine.history_through_message_id) AND match_message.body LIKE :body))";
+            $params['subject']='%'.$query.'%';$params['person']='%'.$query.'%';$params['body']='%'.$query.'%';
+        }
+        $sql="SELECT c.id,c.subject,c.conversation_type,mine.archived_at,MAX(m.created_at) latest_at,COUNT(DISTINCT m.id) message_count,COUNT(DISTINCT cp.user_id) participant_count,
+          (SELECT COUNT(*) FROM messages um WHERE um.conversation_id=c.id AND um.hidden_at IS NULL AND um.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides h WHERE h.message_id=um.id AND h.user_id=mine.user_id) AND um.id>mine.last_read_message_id AND um.sender_user_id<>mine.user_id AND (mine.history_through_message_id IS NULL OR um.id<=mine.history_through_message_id)) unread_count,
+          (SELECT sm.body FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL AND sm.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides h WHERE h.message_id=sm.id AND h.user_id=mine.user_id) AND (mine.history_through_message_id IS NULL OR sm.id<=mine.history_through_message_id) ORDER BY sm.id DESC LIMIT 1) preview
+          FROM conversations c JOIN conversation_participants mine ON mine.conversation_id=c.id AND mine.user_id=:viewer JOIN conversation_participants cp ON cp.conversation_id=c.id
+          LEFT JOIN messages m ON m.conversation_id=c.id AND m.hidden_at IS NULL AND m.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides h WHERE h.message_id=m.id AND h.user_id=mine.user_id) AND (mine.history_through_message_id IS NULL OR m.id<=mine.history_through_message_id)
+          WHERE 1=1 $filters
+          GROUP BY c.id,c.subject,c.conversation_type,mine.archived_at,mine.user_id,mine.last_read_message_id,mine.history_through_message_id
+          ORDER BY latest_at DESC,c.id DESC";
+        $s=$db->prepare($sql);$s->execute($params);$rows=$s->fetchAll();
+        $names=$db->prepare("SELECT cp.user_id,cp.participant_role,CONCAT(u.first_name,' ',u.last_name) name FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id");
+        foreach($rows as &$row){
+            $names->execute(['id'=>$row['id']]);$people=$names->fetchAll();
+            $visible=array_values(array_map(static fn(array $p):string=>(string)$p['name'],array_filter($people,static fn(array $p):bool=>(int)$p['user_id']!==$viewer&&$p['participant_role']!=='guardian')));
+            $row['display_name']=$row['conversation_type']==='group'?($row['subject']?:'Group conversation'):(implode(', ',$visible)?:$row['subject']);
+        }unset($row);self::json(['conversations'=>$rows]);
     }
 
     private static function messageThread(PDO $db, array $user): never
@@ -524,18 +546,33 @@ final class MobileApi
         self::requireMethod('GET');
         $id = (int)($_GET['id'] ?? 0);
         if ($id < 1) throw new RuntimeException('Conversation id is required.');
-        $access = $db->prepare("SELECT c.id,c.subject,c.conversation_type,cp.history_through_message_id,cp.access_revoked_at FROM conversations c JOIN conversation_participants cp ON cp.conversation_id=c.id AND cp.user_id=:user WHERE c.id=:id LIMIT 1");
+        $access = $db->prepare("SELECT c.id,c.subject,c.conversation_type,cp.archived_at,cp.history_through_message_id,cp.access_revoked_at FROM conversations c JOIN conversation_participants cp ON cp.conversation_id=c.id AND cp.user_id=:user WHERE c.id=:id LIMIT 1");
         $access->execute(['user'=>(int)$user['id'],'id'=>$id]);
         $conversation = $access->fetch();
         if (!$conversation) self::json(['error'=>'Conversation not found.'],404);
 
         $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,cp.last_read_message_id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.user_id");
         $p->execute(['id'=>$id]);
-        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
-        $m->execute(['id'=>$id,'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
+        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND m.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides hide WHERE hide.message_id=m.id AND hide.user_id=:viewer) AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
+        $m->execute(['id'=>$id,'viewer'=>(int)$user['id'],'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
         $conversation['send_allowed']=true;$conversation['safety_issue']=null;try{SafeguardedConversationPolicy::enforceForSend($db,$id,(int)$user['id']);}catch(RuntimeException $error){$conversation['send_allowed']=false;$conversation['safety_issue']=$error->getMessage();}
-        $people=$p->fetchAll();$visible=array_values(array_map(static fn(array $person):string=>(string)$person['name'],array_filter($people,static fn(array $person):bool=>(int)$person['user_id']!==(int)$user['id']&&$person['participant_role']!=='guardian')));$conversation['display_name']=$conversation['conversation_type']==='group'?($conversation['subject']?:'Group conversation'):(implode(', ',$visible)?:$conversation['subject']);self::json(['conversation'=>$conversation,'participants'=>$people,'messages'=>$m->fetchAll()]);
+        $people=$p->fetchAll();$messages=$m->fetchAll();foreach($messages as &$message){$message['can_recall']=(int)$message['sender_user_id']===(int)$user['id']&&MessageVisibilityService::unreadRecallAllowed($db,$id,(int)$message['id'],(int)$user['id']);}unset($message);$visible=array_values(array_map(static fn(array $person):string=>(string)$person['name'],array_filter($people,static fn(array $person):bool=>(int)$person['user_id']!==(int)$user['id']&&$person['participant_role']!=='guardian')));$conversation['display_name']=$conversation['conversation_type']==='group'?($conversation['subject']?:'Group conversation'):(implode(', ',$visible)?:$conversation['subject']);self::json(['conversation'=>$conversation,'participants'=>$people,'messages'=>$messages]);
+    }
+
+    private static function messageDelete(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');$input=self::input();
+        MessageVisibilityService::deleteMessage($db,(int)$user['id'],(int)($input['message_id']??0),(string)($input['scope']??''));
+        self::json(['ok'=>true]);
+    }
+
+    private static function conversationArchive(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');$input=self::input();
+        if(!isset($input['archived'])||!is_bool($input['archived']))throw new RuntimeException('Choose archive or restore.');
+        MessageVisibilityService::archive($db,(int)$user['id'],(int)($input['conversation_id']??0),$input['archived']);
+        self::json(['ok'=>true]);
     }
 
     private static function messageReport(PDO $db,array $user):never
@@ -596,6 +633,7 @@ final class MobileApi
             $insert->execute(['conversation'=>$id,'sender'=>(int)$user['id'],'body'=>$body]);
             $messageId=(int)$db->lastInsertId();
             CommunicationReadStateService::markConversationThroughMessage($db,(int)$user['id'],$id,$messageId);
+            MessageVisibilityService::restoreOnNewMessage($db,$id,(int)$user['id']);
             $db->commit();
             self::json(['ok'=>true,'message_id'=>$messageId]);
         }catch(Throwable $e){
