@@ -1,6 +1,6 @@
 /** Release notes shown in the native app.
- * Add an entry when preparing each store release and mark it published
- * only after the build is available to members. Keep newest first.
+ * Add an entry for each store release and indicate whether it is in closed
+ * testing or generally available. Keep newest first.
  */
 export type ReleaseNoteSection={title:string;items:string[]};
 export type ReleaseNote={
@@ -8,7 +8,7 @@ export type ReleaseNote={
  version:string;
  title:string;
  publishedOn?:string;
- status:'published'|'upcoming';
+ status:'published'|'closed_testing'|'upcoming';
  introduction:string;
  sections:ReleaseNoteSection[];
 };
@@ -18,7 +18,7 @@ export const releaseNotes:ReleaseNote[]=[
   releaseNumber:2,
   version:'0.2.0',
   title:'More control, clearer updates',
-  status:'upcoming',
+  status:'closed_testing',
   introduction:'Here is what we have been working on to make CTSMD Connect easier to use and help our theatre community stay connected.',
   sections:[
    {title:'Messages',items:[
@@ -71,5 +71,6 @@ export const releaseNotes:ReleaseNote[]=[
 ];
 
 export function releaseStatusLabel(note:ReleaseNote):string{
- return note.status==='published'?'Released'+(note.publishedOn?' · '+note.publishedOn:''):'Preparing for release';
+ if(note.status==='closed_testing')return 'Closed testing';
+ return note.status==='published'?'Released'+(note.publishedOn?' · '+note.publishedOn:''):'Coming soon';
 }
