@@ -518,8 +518,9 @@ final class MobileApi
     {
         self::requireMethod('GET');$viewer=(int)$user['id'];
         $query=mb_substr(trim((string)($_GET['q']??'')),0,100);
-        $archived=($_GET['archived']??'0')==='1';
-        $params=['viewer'=>$viewer];$filters=$archived?' AND mine.archived_at IS NOT NULL':' AND mine.archived_at IS NULL';
+        $scope=(string)($_GET['scope']??'inbox');
+        if(!in_array($scope,['inbox','archived','all'],true))$scope='inbox';
+        $params=['viewer'=>$viewer];$filters=match($scope){'archived'=>' AND mine.archived_at IS NOT NULL','all'=>'',default=>' AND mine.archived_at IS NULL'};
         if($query!==''){
             $filters.=" AND (c.subject LIKE :subject OR EXISTS (SELECT 1 FROM conversation_participants participant JOIN users person ON person.id=participant.user_id WHERE participant.conversation_id=c.id AND participant.user_id<>mine.user_id AND CONCAT(person.first_name,' ',person.last_name) LIKE :person) OR EXISTS (SELECT 1 FROM messages match_message WHERE match_message.conversation_id=c.id AND match_message.hidden_at IS NULL AND match_message.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides hidden_match WHERE hidden_match.message_id=match_message.id AND hidden_match.user_id=mine.user_id) AND (mine.history_through_message_id IS NULL OR match_message.id<=mine.history_through_message_id) AND match_message.body LIKE :body))";
             $params['subject']='%'.$query.'%';$params['person']='%'.$query.'%';$params['body']='%'.$query.'%';
