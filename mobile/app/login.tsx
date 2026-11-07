@@ -37,8 +37,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
