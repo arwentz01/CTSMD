@@ -1,0 +1,101 @@
+{
+  "app": "CTSMD Connect",
+  "branch": "audit/board-pilot-readiness",
+  "revision": "a5b07b0b0977a296228dee0f156f5c0082b35c14",
+  "runtime": "iOS 27.2",
+  "build": "Native iOS Simulator Release build",
+  "data": "Repository demo seeds loaded into a fresh loopback-only test database. Screens contain synthetic records only.",
+  "capture": "Unmodified PNG originals captured with xcrun simctl io screenshot --mask=ignored.",
+  "screenshots": [
+    {
+      "file": "iphone/01-home-action-center.png",
+      "screen": "Home and Action Center",
+      "simulator_model": "iPhone 17",
+      "width_px": 1206,
+      "height_px": 2622,
+      "fully_opaque": true,
+      "sha256": "08e179985a4a9015b63d6ad012183a26b1f3c90226799046f75f49de11a85d40"
+    },
+    {
+      "file": "iphone/02-messages.png",
+      "screen": "Messages",
+      "simulator_model": "iPhone 17",
+      "width_px": 1206,
+      "height_px": 2622,
+      "fully_opaque": true,
+      "sha256": "3d6107a0323d4bcfcac75a6d306f84dcb2f737571b6c93a6361ad0cb8fb1df3d"
+    },
+    {
+      "file": "iphone/03-community.png",
+      "screen": "Community",
+      "simulator_model": "iPhone 17",
+      "width_px": 1206,
+      "height_px": 2622,
+      "fully_opaque": true,
+      "sha256": "e97dd28611e7b23880f45191c3ff9aae7cbe2b16b1340f3e9e056739838e445c"
+    },
+    {
+      "file": "iphone/04-theatre.png",
+      "screen": "Theatre schedule and productions",
+      "simulator_model": "iPhone 17",
+      "width_px": 1206,
+      "height_px": 2622,
+      "fully_opaque": true,
+      "sha256": "1c13fa4cea7e19dc84a772fa8dffefd922b75f1b3092335ebbe68249df47a6a2"
+    },
+    {
+      "file": "iphone/05-more.png",
+      "screen": "More",
+      "simulator_model": "iPhone 17",
+      "width_px": 1206,
+      "height_px": 2622,
+      "fully_opaque": true,
+      "sha256": "26868fda4bd5330091843dc40787aea8c129a6236a6804506e30e80247f68978"
+    },
+    {
+      "file": "ipad/01-home-action-center.png",
+      "screen": "Home and Action Center",
+      "simulator_model": "iPad Pro 13-inch (M5)",
+      "width_px": 2064,
+      "height_px": 2752,
+      "fully_opaque": true,
+      "sha256": "3de0180f025cf1a0adc8bbf3a0566edd64bc102f699aedbf1d56b74ec7374f90"
+    },
+    {
+      "file": "ipad/02-messages.png",
+      "screen": "Messages",
+      "simulator_model": "iPad Pro 13-inch (M5)",
+      "width_px": 2064,
+      "height_px": 2752,
+      "fully_opaque": true,
+      "sha256": "323ef3df6cdda241b43648af72c8b348ae86cc5b98efda2fa33019285f106adb"
+    },
+    {
+      "file": "ipad/03-community.png",
+      "screen": "Community",
+      "simulator_model": "iPad Pro 13-inch (M5)",
+      "width_px": 2064,
+      "height_px": 2752,
+      "fully_opaque": true,
+      "sha256": "7b847ada6e3d103d71d151d38b6788b233f3d6ca50e9b9328d40f184550ce8dc"
+    },
+    {
+      "file": "ipad/04-theatre.png",
+      "screen": "Theatre schedule and productions",
+      "simulator_model": "iPad Pro 13-inch (M5)",
+      "width_px": 2064,
+      "height_px": 2752,
+      "fully_opaque": true,
+      "sha256": "fe70a8a73e97a6b31118667566a31f01c51200addecc6b792da73ceab79fd9d8"
+    },
+    {
+      "file": "ipad/05-more.png",
+      "screen": "More",
+      "simulator_model": "iPad Pro 13-inch (M5)",
+      "width_px": 2064,
+      "height_px": 2752,
+      "fully_opaque": true,
+      "sha256": "a24836685101a919fba4aa276775b8f292589b908bc5f31c083898c28ac3d734"
+    }
+  ]
+}
