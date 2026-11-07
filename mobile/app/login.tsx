@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Ionicons} from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -35,6 +36,22 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  const focusField = () => {
+    setKeyboardVisible(true);
+    // With the full branding collapsed, the fields stay in the resized viewport.
+    // Reset any scroll offset left from a previous keyboard interaction.
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({y: 0, animated: true}));
+  };
 
   const submit = async () => {
     if (busy || !email.trim() || !password) return;
@@ -56,15 +73,16 @@ export default function Login() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          ref={scrollRef}
           style={s.flex}
-          contentContainerStyle={s.scrollContent}
+          contentContainerStyle={[s.scrollContent, keyboardVisible && s.keyboardScrollContent]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           showsVerticalScrollIndicator={false}
         >
           <View style={s.content}>
-            <View style={s.brand}>
+            {!keyboardVisible && <View style={s.brand}>
               <Image
                 source={require('../assets/images/ctsmd-logo.png')}
                 style={s.logo}
@@ -74,12 +92,15 @@ export default function Login() {
               <Text style={s.eyebrow}>CHILDREN'S THEATRE OF SOUTHERN MARYLAND</Text>
               <Text style={s.title}>CTSMD <Text style={s.brandAccent}>Connect</Text></Text>
               <Text style={s.tagline}>A place for every part of the production.</Text>
-            </View>
+            </View>}
 
-            <View style={s.card}>
-              <Text style={s.cardEyebrow}>WELCOME BACK</Text>
-              <Text style={s.heading} accessibilityRole="header">Sign in</Text>
-              <Text style={s.help}>Access your productions, schedules and community.</Text>
+            <View style={[s.card, keyboardVisible && s.keyboardCard]}>
+              {!keyboardVisible && <>
+                <Text style={s.cardEyebrow}>WELCOME BACK</Text>
+                <Text style={s.heading} accessibilityRole="header">Sign in</Text>
+                <Text style={s.help}>Access your productions, schedules and community.</Text>
+              </>}
+              {keyboardVisible && <Text style={s.compactHeading} accessibilityRole="header">CTSMD Connect · Sign in</Text>}
 
               <Text style={s.label}>Email address</Text>
               <TextInput
@@ -96,6 +117,9 @@ export default function Login() {
                 selectionColor={colors.primary}
                 style={s.input}
                 returnKeyType="next"
+                onFocus={focusField}
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
               />
 
               <View style={s.passwordLabelRow}>
@@ -106,6 +130,7 @@ export default function Login() {
               </View>
               <View style={s.passwordWrap}>
                 <TextInput
+                  ref={passwordRef}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -119,6 +144,7 @@ export default function Login() {
                   selectionColor={colors.primary}
                   style={s.passwordInput}
                   returnKeyType="go"
+                  onFocus={focusField}
                   onSubmitEditing={() => void submit()}
                 />
                 <Pressable
@@ -147,7 +173,7 @@ export default function Login() {
                 {busy ? <ActivityIndicator color="#fff"/> : <Text style={s.submitText}>Sign in</Text>}
               </Pressable>
 
-              <View style={s.divider} />
+              {!keyboardVisible && <><View style={s.divider} />
               <Text style={s.newHere}>New to CTSMD Connect?</Text>
               <Pressable
                 accessibilityRole="link"
@@ -156,7 +182,7 @@ export default function Login() {
               >
                 <Text style={s.createAccountText}>Create parent/guardian account</Text>
                 <Ionicons name="arrow-forward" size={17} color={colors.primary}/>
-              </Pressable>
+              </Pressable></>}
             </View>
           </View>
         </ScrollView>
@@ -169,6 +195,7 @@ const s = StyleSheet.create({
   flex: {flex: 1},
   safe: {flex: 1, backgroundColor: colors.background},
   scrollContent: {flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 36},
+  keyboardScrollContent: {justifyContent: 'flex-start', paddingTop: 8, paddingBottom: 16},
   content: {width: '100%', maxWidth: 440, alignSelf: 'center', gap: 25},
   brand: {alignItems: 'center', gap: 7},
   logo: {width: 76, height: 76, marginBottom: 6},
@@ -177,6 +204,8 @@ const s = StyleSheet.create({
   brandAccent: {color: colors.primary},
   tagline: {fontSize: 14, lineHeight: 21, color: colors.muted, textAlign: 'center'},
   card: {backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 20, padding: 22, gap: 11},
+  keyboardCard: {padding: 16, gap: 8},
+  compactHeading: {fontSize: 18, fontWeight: '800', color: colors.primary, marginBottom: 3},
   cardEyebrow: {fontSize: 11, fontWeight: '800', letterSpacing: 1.7, color: colors.primary},
   heading: {fontSize: 27, fontWeight: '800', letterSpacing: -0.4, color: colors.navy},
   help: {fontSize: 14, lineHeight: 21, color: colors.muted, marginBottom: 9},
