@@ -22,7 +22,7 @@ export default function WhatsNew(){
    return <View key={note.version} style={s.card}>
     <TouchTarget accessibilityRole="button" accessibilityState={{expanded:open}} accessibilityLabel={'Version '+note.version+', '+note.title+', '+releaseStatusLabel(note)} onPress={()=>toggle(note.version)} style={s.cardHeader}>
      <View style={s.cardHeaderCopy}>
-      <Text style={s.version}>VERSION {note.version}{index===0?' · LATEST NOTES':''}</Text>
+      <Text style={s.version}>RELEASE {note.releaseNumber} · VERSION {note.version}{index===0?' · LATEST NOTES':''}</Text>
       <Text style={s.releaseTitle}>{note.title}</Text>
       <Text style={s.status}>{releaseStatusLabel(note)}</Text>
      </View>
