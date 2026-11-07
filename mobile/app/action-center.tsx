@@ -1,6 +1,7 @@
 import {formatLocalDate} from '../src/utils/dates';
 import {TouchTarget as Pressable} from '../src/components/TouchTarget';
-import React,{useCallback,useEffect,useState} from 'react';
+import React,{useCallback,useState} from 'react';
+import {useFocusEffect} from 'expo-router';
 import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
@@ -24,7 +25,7 @@ export default function ActionCenter(){
   if(moderationResult.status==='fulfilled'){setModeration(moderationResult.value);setModerationError('');}
   else{setModeration(null);setModerationError(moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
  },[]);
- useEffect(()=>{void refresh();},[refresh]);
+ useFocusEffect(useCallback(()=>{void refresh();},[refresh]));
  const complete=async(id:number)=>{setBusy('task-'+id);try{await completeProductionTodo(id);await refresh();}catch(e){Alert.alert('Unable to complete task',e instanceof Error?e.message:'Please try again.');}finally{setBusy(null);}};
  const acknowledge=async(type:'community'|'message',id:number)=>{
   setBusy('moderation-'+type+'-'+id);
