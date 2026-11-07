@@ -32,6 +32,15 @@ export const communityFeed=(cursor?:string)=>api<{posts:CommunityFeedPost[];has_
 export const theatre=()=>api<TheatreResult>('theatre');
 export const eventDetail=(id:number)=>api<{event:import('../types/ctsmd').TheatreEvent&{notes?:string|null;description?:string|null}}>('event?id='+encodeURIComponent(String(id)));
 export const tasks=()=>api<TasksResult>('daily-tasks');
+export type ModerationAlerts={
+ allowed:boolean;
+ pending_count:number;
+ community:Array<{id:number;moderation_status:'pending'|'rejected';moderation_reason:string|null;body:string;created_at:string;channel_name:string;author_name:string;category:string|null;severity:string|null}>;
+ messages:Array<{id:number;reason:string;detail:string|null;message_snapshot:string;reported_at:string;subject_name:string}>;
+};
+export const moderationAlerts=()=>api<ModerationAlerts>('moderation-alerts');
+export const acknowledgeModeration=(type:'community'|'message',id:number)=>api<{ok:boolean}>('moderation-acknowledge',{method:'POST',body:{type,id}});
+
 export const completeProductionTodo=(assignment_id:number)=>api<{ok:boolean}>('production-todo-complete',{method:'POST',body:{assignment_id}});
 export const respondCastingOffer=(offer_id:number,decision:'accepted'|'declined',response_note:string)=>api<{ok:boolean}>('casting-offer-respond',{method:'POST',body:{offer_id,decision,response_note}});
 export const thread=(id:number)=>api<Thread>('message-thread?id='+id);
