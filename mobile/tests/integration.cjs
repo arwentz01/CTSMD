@@ -152,6 +152,34 @@ test('caregiver typed endpoint requests only authorized schedule',async()=>{
  assert.equal(captured,'https://ctsmd.me/api/mobile/caregiver-schedule');
 });
 
+test('closed test update icon appears only for a newer available native Android build',async()=>{
+ const deps={
+  'expo-constants':{__esModule:true,default:{platform:{android:{versionCode:2}},appOwnership:null,expoGoConfig:null}},
+  'react-native':{Platform:{OS:'android'}}
+ };
+ const {newerClosedTestRelease,ANDROID_PLAY_STORE_URL,checkForAndroidUpdate}=load('src/updates/closedTestUpdate.ts',{},async()=>({ok:true,json:async()=>({android:{track:'closed_testing',available:true,version:'0.3.0',versionCode:3}})}),deps);
+ const valid={android:{track:'closed_testing',available:true,version:'0.3.0',versionCode:3}};
+ assert.equal(newerClosedTestRelease(valid,2).version,'0.3.0');
+ assert.equal(newerClosedTestRelease(valid,3),null,'An installed matching release must not show an update');
+ assert.equal(newerClosedTestRelease({...valid,android:{...valid.android,available:false}},2),null,'Do not announce releases before store availability');
+ assert.equal(newerClosedTestRelease({...valid,android:{...valid.android,track:'production'}},2),null,'Exclude non-closed-test builds');
+ assert.equal(newerClosedTestRelease({...valid,android:{...valid.android,versionCode:'3'}},2),null,'Reject malformed version codes');
+ assert.equal(newerClosedTestRelease(valid,null),null);
+ assert.match(ANDROID_PLAY_STORE_URL,/^https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.ctsmd_connect_v01$/);
+ const available=await checkForAndroidUpdate();
+ assert.equal(available?.versionCode,3);
+ const screen=fs.readFileSync(path.join(__dirname,'../src/components/Screen.tsx'),'utf8');
+ assert.match(screen,/availableUpdate&&<Pressable/);
+ assert.match(screen,/cloud-download-outline/);
+ assert.match(screen,/Linking.openURL\(ANDROID_PLAY_STORE_URL\)/);
+ assert.match(screen,/AppState.addEventListener/);
+ const go=load('src/updates/closedTestUpdate.ts',{},async()=>{throw Error('Expo Go must not fetch the update manifest')},{
+  'expo-constants':{__esModule:true,default:{platform:{android:{versionCode:2}},appOwnership:'expo',expoGoConfig:{}}},
+  'react-native':{Platform:{OS:'android'}}
+ });
+ assert.equal(await go.checkForAndroidUpdate(),null);
+});
+
 test('Expo Go skips unsupported native push imports and explains development builds',async()=>{
  const device=load('src/notifications/device.ts',{},null,{
   'expo-secure-store':{getItemAsync:async()=>null,deleteItemAsync:async()=>{}},
