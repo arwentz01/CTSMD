@@ -32,8 +32,8 @@ final class StaffDashboardService
             $cards[]=['key'=>'volunteer','label'=>'Uncovered shifts','count'=>self::uncoveredShiftCount($db,$productionIds,$now,$to),'detail'=>'Upcoming shifts below required eligible staffing','href'=>'/admin/volunteer-shifts','tone'=>'attention'];
             $cards[]=['key'=>'volunteer_approval','label'=>'Volunteer approvals','count'=>self::pendingVolunteerApprovals($db),'detail'=>'Upcoming shift approval requests awaiting review','href'=>'/admin/volunteer-approvals','tone'=>'neutral'];
         }
-        if(AccessPolicy::canModerateCommunity($user)){
-            $cards[]=['key'=>'moderation','label'=>'Moderation queue','count'=>self::moderationQueue($db),'detail'=>'Community posts waiting for review','href'=>'/admin/moderation/queue','tone'=>'attention'];
+        if(AccessPolicy::canModerateCommunity($user)||AccessPolicy::canManageSafeguarding($user)){
+            $cards[]=['key'=>'moderation','label'=>'Community moderation','count'=>self::moderationQueue($db),'detail'=>'Concerns awaiting acknowledgement · history retained','href'=>'/admin/moderation/queue','tone'=>'attention'];
         }
 
         $uncovered=AccessPolicy::canManageVolunteers($user)?self::uncoveredShifts($db,$productionIds,$now,$to):[];
@@ -97,7 +97,7 @@ final class StaffDashboardService
     }
 
     private static function pendingVolunteerApprovals(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM volunteer_shift_approval_requests r JOIN volunteer_shifts vs ON vs.id=r.shift_id JOIN users u ON u.id=r.user_id AND u.active=1 AND u.account_status='active' WHERE r.status='pending' AND vs.starts_at>NOW()")->fetchColumn();}
-    private static function moderationQueue(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM channel_posts WHERE moderation_status='pending' AND hidden_at IS NULL AND deleted_at IS NULL")->fetchColumn();}
+    private static function moderationQueue(PDO $db):int{return (int)$db->query("SELECT COUNT(*) FROM channel_posts WHERE moderation_status IN ('pending','rejected') AND moderation_acknowledged_at IS NULL AND hidden_at IS NULL AND deleted_at IS NULL")->fetchColumn();}
 
     private static function registrationRows(PDO $db):array
     {
