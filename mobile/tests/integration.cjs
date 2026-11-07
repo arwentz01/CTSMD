@@ -79,6 +79,7 @@ test('native website handoffs keep the CTSMD pilot storefront out of live ticket
  assert.equal(websiteUrl('productionWorkspace'),'https://ctsmd.me/production');
  assert.equal(websiteUrl('familyManagement'),'https://ctsmd.me/family/manage');
  assert.equal(websiteUrl('commerce'),'https://ctsmd.me/admin/commerce');
+ assert.equal(websiteUrl('whatsNew'),'https://ctsmd.me/whats-new');
  assert.ok(!Object.values(webRoutes).includes('/tickets'),'Pilot storefront is deliberately not advertised as the current ticket vendor');
  assert.equal(typeof openWebsite,'function');
 });
@@ -87,7 +88,7 @@ test('Whats New is linked from Settings & support and release entries have publi
  const layout=fs.readFileSync(path.join(__dirname,'../app/(tabs)/_layout.tsx'),'utf8');
  const page=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/whats-new.tsx'),'utf8');
  assert.match(more,/title:"What's New"/);
- assert.match(more,/native:'\/\(tabs\)\/more\/whats-new'/);
+ assert.match(more,/website:'whatsNew'/);
  assert.match(layout,/name="more"/);
  const moreStack=fs.readFileSync(path.join(__dirname,'../app/(tabs)/more/_layout.tsx'),'utf8');
  assert.match(moreStack,/Stack.Screen name="whats-new"/);
@@ -337,4 +338,19 @@ test('Community feed highlights only unread posts and Messages retains unread ba
  assert.match(mobileApi,/CommunicationReadStateService::communityUnread\(\$db,\$user\)/);
  assert.match(messages,/c\.unread_count>0&&<View style=\{s\.unread\}>/);
  assert.match(messages,/\{c\.unread_count\}/);
+});
+
+test('public release notes are editable without another native binary and iOS increments build numbers',()=>{
+ const front=fs.readFileSync(path.join(__dirname,'../../front.php'),'utf8');
+ const notes=fs.readFileSync(path.join(__dirname,'../../src/ReleaseNotesExperience.php'),'utf8');
+ const eas=JSON.parse(fs.readFileSync(path.join(__dirname,'../eas.json'),'utf8'));
+ assert.match(front,/\$route === '\/whats-new'/);
+ assert.match(front,/ReleaseNotesExperience::render/);
+ assert.match(notes,/private const RELEASES/);
+ assert.match(notes,/<details class="release"/);
+ assert.match(notes,/<details class="section"/);
+ assert.match(notes,/Community/);
+ assert.match(notes,/Unread posts are highlighted in burgundy/);
+ assert.equal(eas.cli.appVersionSource,'local');
+ assert.equal(eas.build.production.ios.autoIncrement,true);
 });
