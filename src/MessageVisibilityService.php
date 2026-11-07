@@ -70,9 +70,9 @@ final class MessageVisibilityService
 
     public static function restoreOnNewMessage(PDO $db,int $conversationId,int $senderId):void
     {
-        // An incoming message reopens an archived thread for its recipients.
-        $stmt=$db->prepare('UPDATE conversation_participants SET archived_at=NULL WHERE conversation_id=:conversation AND user_id<>:sender AND archived_at IS NOT NULL AND access_revoked_at IS NULL');
-        $stmt->execute(['conversation'=>$conversationId,'sender'=>$senderId]);
+        // A new message reopens an archived thread for active participants, including its sender.
+        $stmt=$db->prepare('UPDATE conversation_participants SET archived_at=NULL WHERE conversation_id=:conversation AND archived_at IS NOT NULL AND access_revoked_at IS NULL');
+        $stmt->execute(['conversation'=>$conversationId]);
     }
 
     public static function unreadRecallAllowed(PDO $db,int $conversationId,int $messageId,int $senderId):bool
