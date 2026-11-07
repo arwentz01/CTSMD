@@ -52,7 +52,14 @@ export async function enableDeviceNotifications(){
  if(!supportsNativePush())throw new Error('Remote push notifications require a CTSMD development build. Expo Go can be used to preview the rest of the app.');
  const Notifications=await import('expo-notifications');
  if(Platform.OS!=='ios'&&Platform.OS!=='android')throw new Error('Use an iOS or Android development build for native notifications.');
- if(Platform.OS==='android')await Notifications.setNotificationChannelAsync('default',{name:'CTSMD updates',importance:Notifications.AndroidImportance.DEFAULT});
+ if(Platform.OS==='android'){
+  try{
+   await Notifications.setNotificationChannelAsync('default',{name:'CTSMD updates',importance:Notifications.AndroidImportance.DEFAULT});
+  }catch(error){
+   if(__DEV__)console.warn('Unable to configure Android notification channel.',error);
+   throw new Error('This app build cannot configure Android notifications. Your CTSMD updates are still available in the app. Install a current CTSMD development or production build to enable device alerts.');
+  }
+ }
  let permission=await Notifications.getPermissionsAsync();
  if(!permission.granted)permission=await Notifications.requestPermissionsAsync();
  if(!permission.granted){
@@ -60,7 +67,12 @@ export async function enableDeviceNotifications(){
   if(previous){await unregisterPush(previous);await forgetPushIdentity();}
   return 'Permission denied. Native alerts are off on this device.';
  }
- const token=await Notifications.getDevicePushTokenAsync();
+ let token:Notifications.DevicePushToken;
+ try{token=await Notifications.getDevicePushTokenAsync();}
+ catch(error){
+  if(__DEV__)console.warn('Native device push token unavailable.',error);
+  throw new Error('Notifications are allowed, but this app build cannot register for device alerts yet. Please use an updated CTSMD app build.');
+ }
  return storeDeviceToken(token);
 }
 export async function storeDeviceToken(token:Notifications.DevicePushToken){
