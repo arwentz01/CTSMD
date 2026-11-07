@@ -320,3 +320,20 @@ test('messages inbox uses compact grouped rows and unobtrusive archive navigatio
  assert.match(inbox,/borderBottomWidth:StyleSheet\.hairlineWidth/);
  assert.match(screen,/headerAction\?:React\.ReactNode/);
 });
+
+test('Community feed highlights only unread posts and Messages retains unread badges',()=>{
+ const community=fs.readFileSync(path.join(__dirname,'../app/(tabs)/community.tsx'),'utf8');
+ const messages=fs.readFileSync(path.join(__dirname,'../app/(tabs)/messages.tsx'),'utf8');
+ const mobileApi=fs.readFileSync(path.join(__dirname,'../../src/MobileApi.php'),'utf8');
+ assert.match(community,/p\.unread&&s\.unreadPost/);
+ assert.match(community,/p\.unread&&<View style=\{s\.newDot\}/);
+ assert.match(community,/feedList:\{backgroundColor/);
+ assert.match(community,/borderBottomWidth:StyleSheet\.hairlineWidth/);
+ assert.doesNotMatch(community,/borderLeftColor:colors\.primary,borderRadius:12/);
+ assert.match(community,/openPost\(p\)/);
+ assert.match(mobileApi,/addFeedUnreadFlags\(\$db,\$result\['posts'\],\(int\)\$user\['id'\]\)/);
+ assert.match(mobileApi,/\$post\['unread'\]=\(int\)\$post\['author_user_id'\]!==\$viewerId/);
+ assert.match(mobileApi,/CommunicationReadStateService::communityUnread\(\$db,\$user\)/);
+ assert.match(messages,/c\.unread_count>0&&<View style=\{s\.unread\}>/);
+ assert.match(messages,/\{c\.unread_count\}/);
+});
