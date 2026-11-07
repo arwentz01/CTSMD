@@ -41,6 +41,9 @@ final class CommunicationReadStateService
             FROM conversation_participants mine
             JOIN messages m ON m.conversation_id = mine.conversation_id
                 AND m.hidden_at IS NULL
+                AND m.recalled_at IS NULL
+                AND NOT EXISTS (SELECT 1 FROM message_personal_hides h WHERE h.message_id=m.id AND h.user_id=mine.user_id)
+                AND mine.archived_at IS NULL
                 AND m.id > mine.last_read_message_id
                 AND m.sender_user_id <> mine.user_id
                 AND (mine.history_through_message_id IS NULL OR m.id <= mine.history_through_message_id)
@@ -51,7 +54,7 @@ final class CommunicationReadStateService
 
     public static function markConversationRead(PDO $db, int $userId, int $conversationId): void
     {
-        $latest = $db->prepare("SELECT COALESCE(MAX(m.id),0) FROM messages m JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:user WHERE m.conversation_id=:conversation AND m.hidden_at IS NULL AND (cp.history_through_message_id IS NULL OR m.id<=cp.history_through_message_id)");
+        $latest = $db->prepare("SELECT COALESCE(MAX(m.id),0) FROM messages m JOIN conversation_participants cp ON cp.conversation_id=m.conversation_id AND cp.user_id=:user WHERE m.conversation_id=:conversation AND m.hidden_at IS NULL AND m.recalled_at IS NULL AND (cp.history_through_message_id IS NULL OR m.id<=cp.history_through_message_id)");
         $latest->execute(['conversation' => $conversationId, 'user' => $userId]);
         $messageId = (int)$latest->fetchColumn();
         $stmt = $db->prepare("UPDATE conversation_participants
