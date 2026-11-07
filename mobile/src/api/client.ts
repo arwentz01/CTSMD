@@ -24,7 +24,15 @@ export type FamilyMember={id?:number;name?:string;first_name?:string;is_primary?
 export const myFamily=()=>api<{students:FamilyMember[];guardians:FamilyMember[]}>('my-family');
 export type CaregiverCall={student_first_name:string;production_title:string;title:string;starts_at:string;ends_at:string|null;location:string|null};
 export const caregiverSchedule=()=>api<{calls:CaregiverCall[]}>('caregiver-schedule');
-export const conversations=()=>api<MessagesResult>('messages');
+export const conversations=(options:{q?:string;archived?:boolean}={})=>{
+ const params=new URLSearchParams();
+ if(options.q?.trim())params.set('q',options.q.trim());
+ if(options.archived)params.set('archived','1');
+ const query=params.toString();
+ return api<MessagesResult>('messages'+(query?'?'+query:''));
+};
+export const archiveConversation=(conversation_id:number,archived:boolean)=>api<{ok:boolean}>('conversation-archive',{method:'POST',body:{conversation_id,archived}});
+export const deleteMessage=(message_id:number,scope:'self'|'everyone')=>api<{ok:boolean}>('message-delete',{method:'POST',body:{message_id,scope}});
 export const channels=()=>api<ChannelsResult>('channels');
 export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean};
 export const toggleCommunityHeart=(post_id:number)=>api<{ok:boolean;hearted:boolean}>('channel-reaction',{method:'POST',body:{post_id}});
