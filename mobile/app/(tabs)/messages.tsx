@@ -26,7 +26,7 @@ export default function Messages(){
    })()}]);
  };
  return <Screen title="Messages">
-  <Text style={s.intro}>Search your messages, keep your inbox tidy, and find archived conversations.</Text>
+  <Text style={s.intro}>Search conversations and hold one to archive or restore it.</Text>
   <Pressable accessibilityRole="button" onPress={()=>router.push('/messages/new')} style={s.create}><StageBackdrop/><Ionicons name="add" color={colors.gold} size={27}/><Text style={s.createText}>New conversation</Text><Ionicons name="chatbubbles-outline" size={23} color={colors.gold}/></Pressable>
   <View style={s.searchBar}>
    <Ionicons name="search-outline" size={21} color={colors.muted}/>
@@ -41,16 +41,13 @@ export default function Messages(){
   </View>
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data?.conversations.map(c=><View key={c.id} style={s.card}>
-   <Pressable accessibilityRole="button" accessibilityLabel={'Open conversation with '+(c.display_name||'Conversation')} onPress={()=>router.push({pathname:'/messages/[id]',params:{id:String(c.id)}})} style={s.open}>
+   <Pressable accessibilityRole="button" accessibilityLabel={'Open conversation with '+(c.display_name||'Conversation')} onPress={()=>router.push({pathname:'/messages/[id]',params:{id:String(c.id)}})} onLongPress={()=>changeArchive(c.id,!c.archived_at)} accessibilityHint="Press and hold for archive or restore options" style={s.open}>
     <View style={s.avatar}><Text style={s.initials}>{(c.display_name||'C').split(' ').slice(0,2).map(x=>x[0]||'').join('').toUpperCase()}</Text></View>
     <View style={s.content}><Text style={s.name} numberOfLines={1}>{c.display_name||'Conversation'}</Text><Text style={s.preview} numberOfLines={2}>{c.preview||'No visible messages'}</Text></View>
     {c.unread_count>0&&<View style={s.unread}><Text style={s.unreadText}>{c.unread_count}</Text></View>}
     <Ionicons name="chevron-forward" color={colors.gold} size={21}/>
    </Pressable>
-   <Pressable accessibilityRole="button" accessibilityLabel={(c.archived_at?'Restore':'Archive')+' conversation with '+c.display_name} disabled={busy!==null} onPress={()=>changeArchive(c.id,!c.archived_at)} style={s.archiveAction}>
-    <Ionicons name={c.archived_at?'arrow-undo-outline':'archive-outline'} color={colors.primary} size={17}/>
-    <Text style={s.archiveText}>{c.archived_at?'Restore to inbox':'Archive conversation'}</Text>
-   </Pressable>
+
   </View>)}
   {data?.conversations.length===0&&<Text style={s.preview}>{appliedSearch?'No messages or conversations match that search.':archived?'No archived conversations.':'No conversations yet. Start one to connect with your community.'}</Text>}
  </Screen>;
@@ -58,5 +55,5 @@ export default function Messages(){
 const s=StyleSheet.create({
  intro:{color:colors.muted,fontSize:14},create:{backgroundColor:colors.burgundy,borderColor:colors.gold,borderWidth:2,borderRadius:17,paddingVertical:10,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},createText:{color:colors.ivory,fontWeight:'700',fontSize:16,flex:1},
  searchBar:{flexDirection:'row',alignItems:'center',backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:12,paddingLeft:12,gap:8,minHeight:49},searchInput:{flex:1,color:colors.text,fontSize:15,paddingVertical:8},searchButton:{backgroundColor:colors.primary,borderTopRightRadius:11,borderBottomRightRadius:11,minWidth:49,minHeight:48,alignItems:'center',justifyContent:'center'},tabs:{flexDirection:'row',gap:8},tab:{flex:1,alignItems:'center',paddingVertical:11,borderRadius:10,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border},tabActive:{backgroundColor:colors.burgundy,borderColor:colors.burgundy},tabText:{color:colors.text,fontWeight:'700'},tabTextActive:{color:colors.ivory},
- card:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:17,overflow:'hidden'},open:{flexDirection:'row',alignItems:'center',gap:10,padding:12,minHeight:68},avatar:{height:42,width:42,borderRadius:21,borderWidth:2,borderColor:colors.gold,backgroundColor:colors.burgundy,alignItems:'center',justifyContent:'center'},initials:{color:colors.ivory,fontWeight:'700',fontSize:16},content:{flex:1,gap:5},name:{color:colors.text,fontWeight:'700',fontSize:16},preview:{color:colors.muted,fontSize:14},unread:{minWidth:20,height:20,borderRadius:10,backgroundColor:colors.primary,paddingHorizontal:5,alignItems:'center',justifyContent:'center'},unreadText:{fontSize:12,fontWeight:'700',color:'#fff'},archiveAction:{minHeight:43,borderTopWidth:1,borderTopColor:colors.border,flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:6,paddingHorizontal:13},archiveText:{color:colors.primary,fontSize:13,fontWeight:'700'}
+ card:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:17,overflow:'hidden'},open:{flexDirection:'row',alignItems:'center',gap:10,padding:12,minHeight:68},avatar:{height:42,width:42,borderRadius:21,borderWidth:2,borderColor:colors.gold,backgroundColor:colors.burgundy,alignItems:'center',justifyContent:'center'},initials:{color:colors.ivory,fontWeight:'700',fontSize:16},content:{flex:1,gap:5},name:{color:colors.text,fontWeight:'700',fontSize:16},preview:{color:colors.muted,fontSize:14},unread:{minWidth:20,height:20,borderRadius:10,backgroundColor:colors.primary,paddingHorizontal:5,alignItems:'center',justifyContent:'center'},unreadText:{fontSize:12,fontWeight:'700',color:'#fff'},
 });
