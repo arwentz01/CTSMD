@@ -16,6 +16,13 @@
       "ios": {
         "autoIncrement": true
       }
+    },
+    "android-play": {
+      "extends": "production",
+      "credentialsSource": "local",
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   }
 }
