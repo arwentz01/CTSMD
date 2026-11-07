@@ -138,6 +138,36 @@ test('Expo Go skips unsupported native push imports and explains development bui
  assert.match(integration,/import\('expo-notifications'\)/);
 });
 
+test('first authenticated native launch offers notification opt-in once, and Expo Go never prompts',async()=>{
+ let firstRun=null,prompts=0,requestCount=0;
+ const mockStore={
+  getItemAsync:async key=>key==='ctsmd-native-notifications-first-run-v1'?firstRun:null,
+  setItemAsync:async (key,value)=>{if(key==='ctsmd-native-notifications-first-run-v1')firstRun=value},
+  deleteItemAsync:async()=>{}
+ };
+ const device=load('src/notifications/device.ts',{},null,{
+  'expo-secure-store':mockStore,
+  'expo-notifications':{getPermissionsAsync:async()=>({granted:false,canAskAgain:true}),requestPermissionsAsync:async()=>{requestCount++;return {granted:false}}},
+  './runtime':{supportsNativePush:()=>true},
+  'react-native':{Platform:{OS:'android'},Alert:{alert:()=>{prompts++}}},
+  '../api/client':{unregisterPush:async()=>{}}
+ });
+ await device.offerNotificationsOnFirstSignIn();
+ await device.offerNotificationsOnFirstSignIn();
+ assert.equal(prompts,1);
+ assert.equal(requestCount,0,'The native permission request must wait for an explicit tap');
+ assert.equal(firstRun,'offered');
+ const go=load('src/notifications/device.ts',{},null,{
+  'expo-secure-store':{getItemAsync:async()=>{throw Error('Should not access storage')}},
+  './runtime':{supportsNativePush:()=>false},
+  'react-native':{Platform:{OS:'android'},Alert:{alert:()=>{throw Error('Should not prompt')}}},
+  '../api/client':{}
+ });
+ await go.offerNotificationsOnFirstSignIn();
+ const integration=fs.readFileSync(path.join(__dirname,'../src/notifications/NotificationIntegration.tsx'),'utf8');
+ assert.match(integration,/offerNotificationsOnFirstSignIn\(\)/);
+});
+
 test('Expo Go detection does not disable real development builds',()=>{
  const runtime=(constants)=>load('src/notifications/runtime.ts',{},null,{'expo-constants':{__esModule:true,default:constants},'react-native':{Platform:{OS:'android'}}});
  assert.equal(runtime({appOwnership:'expo',executionEnvironment:'storeClient',expoGoConfig:null}).supportsNativePush(),false);
