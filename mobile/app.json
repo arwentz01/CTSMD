@@ -3,20 +3,22 @@
     "name": "CTSMD Connect",
     "slug": "ctsmd-connect",
     "scheme": "ctsmdconnect",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.ctsmd.connect"
+      "bundleIdentifier": "org.ctsmd.connect",
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.ctsmd_connect_v01",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#590816"
-      }
+      },
+      "versionCode": 2
     },
     "plugins": [
       "expo-router",
