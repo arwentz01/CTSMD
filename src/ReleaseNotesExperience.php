@@ -12,6 +12,13 @@ final class ReleaseNotesExperience
         'name'=>'Coming in the next app update',
         'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
         'sections'=>[
+            ['title'=>'Invitations and Help Center','summary'=>'A faster way for adults to join, with step-by-step help in the app.','details'=>[
+                'Account reviewers can email an adult invitation for General Membership; the recipient completes their profile and password from a secure seven-day link.',
+                'Invited adults do not need a second membership review. Staff permissions and production assignments are still granted separately.',
+                'Account reviewers can resend or revoke pending or expired adult invitations.',
+                'The native Help screen now displays searchable, expandable guides filtered to each person’s permissions.',
+                'Student invitations remain guardian-initiated, with reminders in parents’ Home and Action Center.'
+            ]],
             ['title'=>'Student invitations for families','summary'=>'Parents can see when students still need to activate their login.','details'=>[
                 'Home and Action Center show pending or expired student invitations.',
                 'Parents and legal guardians can resend an expired activation link from Family or add an email to an existing managed child.',
