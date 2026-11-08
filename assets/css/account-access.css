@@ -224,3 +224,21 @@ dialog.acct-profile-dialog .acct-contact-actions button{min-height:42px}
  dialog.acct-profile-dialog .acct-contact-grid .acct-c-zip{grid-column:span 6!important}
  dialog.acct-profile-dialog .acct-contact-actions button{flex:1}
 }
+
+/* Adult General Membership invitations. Keep this a compact staff action, not a role editor. */
+.ux-operations .acct-adult-invite-form{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-top:14px}
+.ux-operations .acct-adult-invite-form label{display:grid;gap:7px;flex:1;min-width:240px;font-size:13px;font-weight:750;color:#393034}
+.ux-operations .acct-adult-invite-form input{background:#fff;border:1px solid #cfc4c7;border-radius:9px;min-height:43px;padding:10px 12px;font:inherit;color:#30292c}
+.ux-operations .acct-adult-invite-form button,.ux-operations .acct-adult-invite-row button{border:1px solid #8b233b;border-radius:9px;background:#8b233b;color:#fff;min-height:43px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.ux-operations .acct-adult-invite-form button:hover,.ux-operations .acct-adult-invite-row button:hover{background:#722036}
+.ux-operations .acct-adult-invite-list{margin-top:20px;padding-top:14px;border-top:1px solid #e9e1df}
+.ux-operations .acct-adult-invite-list h4{font-size:14px;margin:0 0 8px;color:#33282d}
+.ux-operations .acct-adult-invite-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 0;border-bottom:1px solid #eee8e7}
+.ux-operations .acct-adult-invite-row>div{min-width:0;display:grid;gap:3px}
+.ux-operations .acct-adult-invite-row b{font-size:13px;overflow-wrap:anywhere;color:#33282d}
+.ux-operations .acct-adult-invite-row small{font-size:12px;color:#776d70}
+.ux-operations .acct-adult-invite-row form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ux-operations .acct-adult-invite-row button{min-height:38px}
+.ux-operations .acct-adult-invite-row .acct-invite-revoke{background:#fff;color:#842337}
+.ux-operations .acct-adult-invite-row .acct-invite-revoke:hover{background:#faf1f2}
+.ux-operations .acct-adult-invite-form :is(button,input):focus-visible,.ux-operations .acct-adult-invite-row button:focus-visible{outline:3px solid #b06175;outline-offset:2px}
