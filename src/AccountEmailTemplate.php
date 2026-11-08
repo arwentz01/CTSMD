@@ -21,6 +21,7 @@ final class AccountEmailTemplate
             'Finish your CTSMD Connect student account',
             'Reset your CTSMD Connect password',
             'Your CTSMD Connect invitation',
+            'Complete your CTSMD Connect invitation',
             'Your CTSMD Connect membership is approved',
         ],true);
     }
@@ -33,6 +34,7 @@ final class AccountEmailTemplate
             'Finish your CTSMD Connect student account'=>'student',
             'Reset your CTSMD Connect password'=>'reset',
             'Your CTSMD Connect invitation'=>'invite',
+            'Complete your CTSMD Connect invitation'=>'adult_invite',
             'Your CTSMD Connect membership is approved'=>'approved',
             default=>throw new InvalidArgumentException('Unsupported account email'),
         };
@@ -41,6 +43,7 @@ final class AccountEmailTemplate
             'student'=>['STUDENT ACCOUNT','You’re invited!','Your parent or guardian has invited you to finish setting up your CTSMD Connect student account.','Set up my account'],
             'reset'=>['ACCOUNT SECURITY','Reset your password','We received a request to reset the password for your CTSMD Connect account.','Reset my password'],
             'invite'=>['ACCOUNT INVITATION','You’re invited to CTSMD Connect','An invitation is waiting for you. Activate your account and choose your password to get started.','Activate my account'],
+            'adult_invite'=>['WELCOME TO CTSMD CONNECT','Your invitation is here','CTSMD has invited you to join as a General Member. Complete your profile and create a password to get started.','Complete my account'],
             'approved'=>['ACCOUNT UPDATE','Welcome to the community!','Your CTSMD Connect membership has been approved.','Open CTSMD Connect'],
         };
         [$eyebrow,$heading,$description,$button]=$settings;
@@ -77,6 +80,7 @@ final class AccountEmailTemplate
             $security=match($type){
                 'verify'=>'This verification link expires after 24 hours. If you did not create this account, you can ignore this message.',
                 'student'=>'This invitation expires after 48 hours. If you were not expecting it, you can ignore this message.',
+                'adult_invite'=>'This invitation is for adults aged 18 or older and expires in seven days. General Membership does not provide staff or production access. If you were not expecting it, ignore this email.',
                 'reset'=>'This private reset link expires after 2 hours. If you did not request it, you can ignore this message.',
                 default=>'Your invitation link expires after 7 days. If you were not expecting an invitation, contact CTSMD.',
             };
