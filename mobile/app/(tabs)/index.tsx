@@ -83,7 +83,7 @@ function MemberHome(){
           <Pressable accessibilityRole="button" accessibilityLabel="Open getting started instructions" onPress={()=>void openWebsite('helpGuides').catch(e=>Alert.alert('Unable to open Help & Guides',e instanceof Error?e.message:'Please try again.'))}><Ionicons name="help-circle-outline" size={25} color={colors.primary}/></Pressable>
         </View>
         {data.setup.getting_started.steps.map((step:GettingStartedStep,i:number)=><View key={i} style={styles.gettingStartedRow}>
-          <Ionicons name={step.done?'checkmark-circle':step.state==='waiting'?'time-outline':'arrow-forward-circle-outline'} size={24} color={step.done?'#357348':colors.primary}/>
+          <Ionicons name={step.done?'checkmark-circle':step.state==='waiting'?'time-outline':step.state==='needs_help'?'alert-circle-outline':'arrow-forward-circle-outline'} size={24} color={step.done?'#357348':colors.primary}/>
           <View style={{flex:1,gap:4}}><Text style={styles.gettingStartedTitle}>{step.title}</Text><Text style={styles.gettingStartedDetail}>{step.detail}</Text></View>
           {step.href&&step.action&&<Pressable accessibilityRole="button" accessibilityLabel={step.action} onPress={()=>void openWebsite(step.href==='/production'?'productionWorkspace':step.href==='/family/manage'?'familyManagement':step.href==='/family-hub'?'household':step.href==='/my-theatre'?'myTheatre':step.href==='/account'?'accountDetails':step.href==='/help#guide-student-first-login'?'studentGettingStartedGuide':'helpGuides').catch(e=>Alert.alert('Unable to open page',e instanceof Error?e.message:'Please try again.'))}><Ionicons name="open-outline" size={20} color={colors.primary}/></Pressable>}
         </View>)}
