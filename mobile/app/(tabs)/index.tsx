@@ -7,11 +7,11 @@ import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
-import {theatre,tasks,conversations,notifications,moderationAlerts,membershipReviews,ApiError} from '../../src/api/client';
+import {theatre,tasks,conversations,notifications,moderationAlerts,membershipReviews,gettingStarted,ApiError} from '../../src/api/client';
 import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 import {openWebsite} from '../../src/navigation/website';
-import type {TheatreEvent} from '../../src/types/ctsmd';
+import type {TheatreEvent,GettingStartedStep} from '../../src/types/ctsmd';
 
 const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
 const readable=(date:string)=>{const value=new Date(date.replace(' ','T'));return Number.isFinite(value.getTime())?value.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):date;};
@@ -54,8 +54,8 @@ export default function Home(){
 function MemberHome(){
  const {user}=useAuth();
  const load=useCallback(async()=>{
-    const [t,a,m,n,mod,reviews]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'})),membershipReviews().catch(e=>{if(e instanceof ApiError&&e.status===404)return {pending:[],count:0};throw e;})]);
-    return {t,a,m,n,mod,reviews};
+    const [t,a,m,n,mod,reviews,setup]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'})),membershipReviews().catch(e=>{if(e instanceof ApiError&&e.status===404)return {pending:[],count:0};throw e;}),gettingStarted().catch(()=>null)]);
+    return {t,a,m,n,mod,reviews,setup};
   },[]);
   const {data,error,loading,retry}=useScreenData(load);
   const now=Date.now();
@@ -73,6 +73,21 @@ function MemberHome(){
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
     <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
+      {!!data.setup?.getting_started.outstanding&&<View style={styles.gettingStarted}>
+        <View style={styles.gettingStartedHeader}>
+          <View style={{flex:1,gap:4}}>
+            <Text style={styles.gettingStartedEyebrow}>GETTING STARTED</Text>
+            <Text style={styles.sectionTitle}>{data.setup.getting_started.audience==='staff'?'Ready for your first production?':data.setup.getting_started.audience==='student'?'Make yourself at home':'Your next steps at CTSMD'}</Text>
+            <Text style={styles.sub}>What’s ready, what you can do, and what CTSMD is working on.</Text>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open getting started instructions" onPress={()=>void openWebsite('helpGuides').catch(e=>Alert.alert('Unable to open Help & Guides',e instanceof Error?e.message:'Please try again.'))}><Ionicons name="help-circle-outline" size={25} color={colors.primary}/></Pressable>
+        </View>
+        {data.setup.getting_started.steps.map((step:GettingStartedStep,i:number)=><View key={i} style={styles.gettingStartedRow}>
+          <Ionicons name={step.done?'checkmark-circle':step.state==='waiting'?'time-outline':'arrow-forward-circle-outline'} size={24} color={step.done?'#357348':colors.primary}/>
+          <View style={{flex:1,gap:4}}><Text style={styles.gettingStartedTitle}>{step.title}</Text><Text style={styles.gettingStartedDetail}>{step.detail}</Text></View>
+          {step.href&&step.action&&<Pressable accessibilityRole="button" accessibilityLabel={step.action} onPress={()=>void openWebsite(step.href==='/production'?'productionWorkspace':step.href==='/family/manage'?'familyManagement':step.href==='/family-hub'?'household':step.href==='/my-theatre'?'household':'helpGuides').catch(e=>Alert.alert('Unable to open page',e instanceof Error?e.message:'Please try again.'))}><Ionicons name="open-outline" size={20} color={colors.primary}/></Pressable>}
+        </View>)}
+      </View>}
       <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/calendar')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
       <View style={styles.panel}>
@@ -135,6 +150,13 @@ const styles=StyleSheet.create({
  attentionBadge:{backgroundColor:colors.primary,borderRadius:12,minWidth:24,height:24,alignItems:'center',justifyContent:'center',paddingHorizontal:6},attentionBadgeText:{color:'#fff',fontWeight:'800',fontSize:12},issueRow:{flexDirection:'row',gap:8,paddingVertical:8,alignItems:'center'},issueText:{color:colors.danger,fontSize:13,flex:1},actionFooter:{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:8,marginTop:4},
  offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
   intro:{fontSize:13,color:colors.muted,marginTop:-2,marginBottom:6},
+  gettingStarted:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:14,padding:16,gap:11},
+  gettingStartedHeader:{flexDirection:'row',alignItems:'flex-start',gap:12,marginBottom:4},
+  gettingStartedEyebrow:{fontSize:10,color:colors.primary,fontWeight:'800',letterSpacing:1},
+  gettingStartedRow:{flexDirection:'row',alignItems:'flex-start',gap:11,borderTopWidth:1,borderTopColor:colors.border,paddingTop:12},
+  gettingStartedTitle:{fontSize:14,fontWeight:'800',color:colors.text},
+  gettingStartedDetail:{fontSize:12,lineHeight:18,color:colors.muted},
+
   heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   sectionTitle:{fontSize:21,fontWeight:'700',color:colors.navy},
   link:{color:colors.primary,fontSize:13,fontWeight:'700'},
