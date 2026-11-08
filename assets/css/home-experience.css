@@ -98,3 +98,16 @@
 .ux-workspace .home-start-waiting{font-size:11px;font-weight:750;color:#74696d;white-space:nowrap;align-self:center}
 @media(max-width:950px){.ux-workspace .home-start-steps{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.ux-workspace .home-page .home-getting-started{padding:17px}.ux-workspace .home-getting-started-heading>a{width:100%}.ux-workspace .home-start-step{flex-wrap:wrap}.ux-workspace .home-start-waiting{margin-left:41px}}
+
+/* Dismissible Getting Started card: quiet opt-out, always recoverable from Home. */
+.ux-workspace .home-start-shell{margin:0 0 18px}
+.ux-workspace .home-start-shell .home-getting-started{margin-bottom:0}
+.ux-workspace .home-start-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap}
+.ux-workspace .home-start-heading-actions a{color:#8b233b;font-size:13px;font-weight:800;text-underline-offset:3px}
+.ux-workspace .home-start-hide{background:transparent;border:0;color:#70656a;font-size:12px;font-weight:750;padding:9px 5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.ux-workspace .home-start-hide:hover{color:#8b233b}
+.ux-workspace .home-start-restore{width:100%;min-height:42px;text-align:left;background:#fff;border:1px solid #e5dddb;border-radius:10px;color:#8b233b;font-size:13px;font-weight:750;padding:10px 15px;cursor:pointer}
+.ux-workspace .home-start-restore:hover{border-color:#b9949e}
+.ux-workspace :is(.home-start-hide,.home-start-restore):focus-visible{outline:3px solid #a55c74;outline-offset:2px}
+.ux-workspace .home-start-shell [hidden]{display:none!important}
+@media(max-width:600px){.ux-workspace .home-start-heading-actions{justify-content:flex-start;width:100%;gap:12px}}
