@@ -1,5 +1,8 @@
 export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[];permissions?:string[];caregiver_only?:boolean;participant_classification?:'adult'|'student'|'unclassified'};
 export type MeResult={user:CtsmdUser};
+export type GettingStartedStep={title:string;detail:string;done:boolean;state:'complete'|'action'|'waiting'|'explore';href:string|null;action:string|null};
+export type GettingStartedResult={getting_started:{audience:'staff'|'student'|'family';steps:GettingStartedStep[];outstanding:boolean}};
+
 export type Conversation={id:number;subject:string;display_name:string;conversation_type:string;latest_at:string|null;message_count:number;participant_count:number;unread_count:number;preview:string|null;archived_at?:string|null};export type MessagesResult={conversations:Conversation[]};
 export type Channel={id:number;name:string;description:string|null;channel_type:string;production_id:number|null;production_title:string|null;unread_count:number};export type ChannelsResult={channels:Channel[]};
 export type Production={id:number;title:string;season:string|null;status:string;lifecycle_stage?:'upcoming'|'planning'|'in_production'|'performing'|'completed'|'archived';is_active:number;has_artwork?:boolean;is_public_preview?:boolean;audition_starts_at?:string|null;audition_ends_at?:string|null;performance_starts_at?:string|null;performance_ends_at?:string|null};
