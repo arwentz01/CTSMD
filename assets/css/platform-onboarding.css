@@ -85,3 +85,36 @@
  .app-body .household-page .household-guide-feature{padding:13px}
  .app-body .household-page .household-continue{padding:17px}
 }
+
+/* Household management: information on left, family actions on right. */
+.app-body .household-page .household-management-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:22px}
+.app-body .household-page .household-guide-column,
+.app-body .household-page .household-children-column{display:grid;gap:18px;min-width:0;align-content:start}
+.app-body .household-page .household-guide-column .household-family-guide{margin-top:0}
+.app-body .household-page .household-children-column .household-panel{width:100%}
+.app-body .household-page .household-manage-link{display:inline-flex;align-items:center;justify-content:center;text-align:center;min-height:42px;margin-top:10px;line-height:1.35;padding:10px 16px;width:auto;max-width:100%;white-space:normal;text-decoration:none}
+.app-body .household-page .household-children-column .household-child>div{min-width:0}
+.app-body .household-page .household-children-column .household-child{align-items:flex-start}
+.app-body .household-page .household-children-column .member-editor{padding:0;overflow:hidden;border:1px solid #e0cbd0;background:#fff}
+.app-body .household-page .household-children-column .member-editor>summary{display:flex;align-items:center;gap:14px;min-height:84px;padding:17px 20px;cursor:pointer;list-style:none;color:#2d2125;background:#fbf4f3}
+.app-body .household-page .household-children-column .member-editor>summary::-webkit-details-marker{display:none}
+.app-body .household-page .household-children-column .member-editor>summary::marker{content:""}
+.app-body .household-page .household-children-column .member-editor>summary:hover{background:#f7e9e9}
+.app-body .household-page .household-add-icon{display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;border-radius:13px;background:#96253e;color:#fff;font-size:30px;font-weight:500;line-height:1}
+.app-body .household-page .household-add-copy{display:grid;gap:5px;flex:1;min-width:0}
+.app-body .household-page .household-add-copy b{font-size:17px;font-weight:800;line-height:1.2}
+.app-body .household-page .household-add-copy small{font-size:12px;font-weight:450;color:#736267;line-height:1.4}
+.app-body .household-page .household-add-chevron{font-size:27px;color:#96253e;transition:transform .2s ease;line-height:1}
+.app-body .household-page .member-editor[open] .household-add-chevron{transform:rotate(180deg)}
+.app-body .household-page .household-children-column .member-editor-body{padding:22px;border-top:1px solid #eddfe2}
+.app-body .household-page .household-children-column .member-editor>summary:focus-visible{outline:3px solid #ae4160;outline-offset:-3px}
+@media(max-width:820px){
+ .app-body .household-page .household-management-grid{grid-template-columns:minmax(0,1fr)}
+ .app-body .household-page .household-guide-column{order:2}
+ .app-body .household-page .household-children-column{order:1}
+}
+@media(max-width:530px){
+ .app-body .household-page .household-children-column .member-editor>summary{padding:14px;min-height:76px}
+ .app-body .household-page .household-children-column .member-editor-body{padding:17px}
+ .app-body .household-page .household-add-icon{flex-basis:40px;width:40px;height:40px;font-size:27px}
+}
