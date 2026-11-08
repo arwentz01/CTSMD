@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/MembershipReviewQueue.php';
 require_once __DIR__ . '/CommunicationReadStateService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/ProductionContext.php';
@@ -75,6 +76,7 @@ final class MobileApi
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/membership-reviews' => self::membershipReviews($db,$user),
                 '/api/mobile/casting-offer-respond' => self::castingOfferRespond($db,$user),
                 '/api/mobile/production-todo-complete' => self::productionTodoComplete($db,$user),
                 '/api/mobile/volunteer-signup' => self::volunteerSignup($db, $user),
@@ -387,6 +389,12 @@ final class MobileApi
         $assignment['read_only']=WorkspaceUI::productionReadOnly($db,$assignment['production_id']===null?null:(int)$assignment['production_id'])
             || WorkspaceUI::productionReadOnly($db,$assignment['definition_production_id']===null?null:(int)$assignment['definition_production_id']);
         self::json(['form'=>$assignment]);
+    }
+
+    private static function membershipReviews(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        self::json(['pending'=>MembershipReviewQueue::pending($db,$user,100),'count'=>MembershipReviewQueue::count($db,$user)]);
     }
 
     private static function dailyTasks(PDO $db, array $user): never
