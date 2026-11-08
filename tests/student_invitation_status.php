@@ -31,6 +31,7 @@ $db->exec("INSERT INTO auth_email_verifications(user_id,expires_at,verified_at) 
  (5,datetime('now','-2 days'),datetime('now'))");
 $rows=StudentInvitationStatusService::forGuardian($db,1);
 $statuses=[];foreach($rows as $row)$statuses[(int)$row['child_id']]=$row['status'];
+ksort($statuses);
 if($statuses!==[2=>'pending',3=>'expired',7=>'not_sent'])throw new RuntimeException('Expected only pending, expired and unsent invitations for linked students; got '.json_encode($statuses));
 if(count(StudentInvitationStatusService::forGuardian($db,8))!==1)throw new RuntimeException('Guardian boundaries failed.');
 if(StudentInvitationStatusService::forGuardian($db,9)!==[])throw new RuntimeException('Unrelated account must see no student status.');
