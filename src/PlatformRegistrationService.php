@@ -18,7 +18,11 @@ final class PlatformRegistrationService
         $confirm=(string)($input['password_confirm']??'');
         $relationship=(string)($input['relationship_type']??'parent');
         $dob=PersonEligibility::birthDate((string)($input['date_of_birth']??''));
-        $contact=PersonEligibility::contact($input);
+        $contact=PersonEligibility::contact($input,false);
+        // Public signup requires a US ten-digit contact number; addresses are optional.
+        $phoneDigits=preg_replace('/\D+/', '',(string)$contact['contact_phone']);
+        if(strlen($phoneDigits)!==10)throw new RuntimeException('Enter a 10-digit phone number.');
+        $contact['contact_phone']='('.substr($phoneDigits,0,3).') '.substr($phoneDigits,3,3).'-'.substr($phoneDigits,6);
 
         if($first===''||mb_strlen($first)>100||$last===''||mb_strlen($last)>100)throw new RuntimeException('Enter your first and last name.');
         if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new RuntimeException('Enter a valid email address.');
