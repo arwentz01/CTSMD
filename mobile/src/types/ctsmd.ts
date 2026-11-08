@@ -1,5 +1,7 @@
 export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[];permissions?:string[];caregiver_only?:boolean;participant_classification?:'adult'|'student'|'unclassified'};
 export type MeResult={user:CtsmdUser};
+export type HelpGuide={id:string;category:string;title:string;audience:string;where:string;intro:string;steps:string[];tip:string;route:string;permission:string};
+export type HelpGuidesResult={guides:HelpGuide[]};
 export type GettingStartedStep={title:string;detail:string;done:boolean;state:'complete'|'action'|'waiting'|'needs_help'|'explore';href:string|null;action:string|null};
 export type GettingStartedResult={getting_started:{audience:'staff'|'student'|'family';steps:GettingStartedStep[];outstanding:boolean}};
 
