@@ -20,6 +20,12 @@ export const nextReleasePreview={
  title:'Coming in the next app update',
  introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
  sections:[
+  {title:'Help for getting started',summary:'Clear, step-by-step guidance for families, students and staff.',items:[
+   'A Help & Guides link from the app opens the CTSMD website with searchable, step-by-step instructions.',
+   'New getting-started guides explain the first steps for staff, parents and students, including account verification, student invitations and finding your production.',
+   'Guides explain why creating an account, receiving membership approval and joining a production are separate steps.',
+   'Help topics are shown according to your responsibilities, with direct links to the relevant web pages.'
+  ]},
   {title:'Casting responses for production teams',summary:'See accepted and declined casting offers without hunting for updates.',items:[
    'Authorized production staff can see new casting responses under Needs Your Attention.',
    'Open Action Center to review and acknowledge those responses. Once acknowledged, they no longer appear as outstanding for that person.'
