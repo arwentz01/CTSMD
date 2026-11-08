@@ -1,7 +1,7 @@
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {CommunityBody} from '../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import {StyleSheet,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../../src/components/Screen';
