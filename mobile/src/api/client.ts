@@ -42,6 +42,7 @@ export const theatre=()=>api<TheatreResult>('theatre');
 export const eventDetail=(id:number)=>api<{event:import('../types/ctsmd').TheatreEvent&{notes?:string|null;description?:string|null}}>('event?id='+encodeURIComponent(String(id)));
 export const tasks=()=>api<TasksResult>('daily-tasks');
 export const gettingStarted=()=>api<import('../types/ctsmd').GettingStartedResult>('getting-started');
+export const helpGuides=()=>api<import('../types/ctsmd').HelpGuidesResult>('help-guides');
 export type PendingMembershipReview={id:number;first_name:string;last_name:string;name:string;email:string;self_registered_at:string};
 export type MembershipReviews={pending:PendingMembershipReview[];count:number};
 export const membershipReviews=()=>api<MembershipReviews>('membership-reviews');
