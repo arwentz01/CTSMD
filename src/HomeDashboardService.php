@@ -10,6 +10,7 @@ require_once __DIR__ . '/AccessPolicy.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/CastingOfferService.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
+require_once __DIR__ . '/MembershipReviewQueue.php';
 
 final class HomeDashboardService
 {
@@ -69,6 +70,18 @@ final class HomeDashboardService
         });
 
         $attention = [];
+        // A live queue, not per-reviewer notification records. Every reviewer
+        // sees the same remaining applications; approvals remove them for all.
+        $pendingMemberships=MembershipReviewQueue::pending($db,$user,10);
+        foreach($pendingMemberships as $applicant){
+            $attention[]=[
+                'kind'=>'membership_review','urgent'=>true,
+                'title'=>'Membership application awaiting review',
+                'context'=>(string)$applicant['name'],
+                'detail'=>'Review and decide',
+                'href'=>'/admin/accounts/view?id='.(int)$applicant['id'].'#membership-review'
+            ];
+        }
         // The home Action Center must surface the same actionable pending
         // offers as Notifications, for both Students and active Guardians.
         foreach (CastingOfferService::pendingForUser($db,(int)$user['id']) as $offer) {
