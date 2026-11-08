@@ -61,7 +61,7 @@ export default function ActionCenter(){
   finally{setBusy(null);}
  };
  const openReview=async(id?:number)=>{
-  const path=id?'/view?id='+encodeURIComponent(String(id))+'#membership-review':'#pending-membership-reviews';
+  const path=id?'/view?id='+encodeURIComponent(String(id))+'#pending-review-decision':'#pending-membership-reviews';
   const url=websiteUrl('adminAccounts')+path;
   try{if(!await Linking.canOpenURL(url))throw new Error('Unable to open account reviews.');await Linking.openURL(url);}
   catch(e){Alert.alert('Unable to open reviews',e instanceof Error?e.message:'Please try again.');}
