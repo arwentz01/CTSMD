@@ -25,6 +25,7 @@ export const webRoutes={
  volunteerReadiness:'/volunteer-readiness',
  adminProductions:'/admin/productions',
  adminAccounts:'/admin/accounts',
+ pendingMembershipReviews:'/admin/accounts#pending-membership-reviews',
  adminOperations:'/admin/operations',
  commerce:'/admin/commerce',
 } as const;
