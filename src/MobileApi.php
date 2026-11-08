@@ -19,6 +19,7 @@ require_once __DIR__.'/LatePickupService.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
+require_once __DIR__ . '/HomeDashboardService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
@@ -76,6 +77,7 @@ final class MobileApi
                 '/api/mobile/production-artwork' => self::productionArtwork($db,$user),
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
+                '/api/mobile/getting-started' => self::json(['getting_started'=>HomeDashboardService::gettingStarted($db,$user,ProductionContext::activeProductions($db,$user))]),
                 '/api/mobile/membership-reviews' => self::membershipReviews($db,$user),
                 '/api/mobile/casting-offer-respond' => self::castingOfferRespond($db,$user),
                 '/api/mobile/production-todo-complete' => self::productionTodoComplete($db,$user),
