@@ -190,7 +190,7 @@ final class PlatformRegistrationService
         try{
             $child=self::studentInvitation($db,$token);
             if(!$child)throw new RuntimeException('This invitation is invalid or expired.');
-            $q=$db->prepare("UPDATE users SET password_hash=:password,account_status='active',email_verified_at=CURRENT_TIMESTAMP WHERE id=:id AND account_status='managed'");
+            $q=$db->prepare("UPDATE users SET password_hash=:password,account_status='active',email_verified_at=CURRENT_TIMESTAMP,organization_membership_status='approved',organization_membership_reviewed_at=CURRENT_TIMESTAMP WHERE id=:id AND account_status='managed'");
             $q->execute(['password'=>password_hash($password,PASSWORD_DEFAULT),'id'=>$child['user_id']]);
             if($q->rowCount()!==1)throw new RuntimeException('This invitation has already been used.');
             $db->prepare("UPDATE auth_email_verifications SET verified_at=CURRENT_TIMESTAMP WHERE user_id=:user AND verified_at IS NULL")->execute(['user'=>$child['user_id']]);
