@@ -131,10 +131,10 @@ final class PlatformRegistrationService
         $q->execute(['guardian'=>(int)$guardian['id'],'child'=>$childId]);
         $child=$q->fetch(PDO::FETCH_ASSOC);
         if(!$child||$child['account_status']!=='managed'||empty($child['email']))throw new RuntimeException('This student does not have an inactive invited account with an email address.');
-        $latest=$db->prepare('SELECT expires_at,verified_at FROM auth_email_verifications WHERE user_id=:child ORDER BY id DESC LIMIT 1');
+        $latest=$db->prepare('SELECT expires_at,verified_at,CASE WHEN expires_at>NOW() THEN 1 ELSE 0 END still_valid FROM auth_email_verifications WHERE user_id=:child ORDER BY id DESC LIMIT 1');
         $latest->execute(['child'=>$childId]);
         $invitation=$latest->fetch(PDO::FETCH_ASSOC);
-        if($invitation&&empty($invitation['verified_at'])&&strtotime((string)$invitation['expires_at'])>time())throw new RuntimeException('The current invitation is still active. Ask your student to check their email, including the spam folder.');
+        if($invitation&&empty($invitation['verified_at'])&&(int)$invitation['still_valid']===1)throw new RuntimeException('The current invitation is still active. Ask your student to check their email, including the spam folder.');
         self::inviteManagedChild($db,$childId,(int)$guardian['id'],$basePath);
     }
 
