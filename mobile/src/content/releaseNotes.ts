@@ -20,6 +20,13 @@ export const nextReleasePreview={
  title:'Coming in the next app update',
  introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
  sections:[
+  {title:'A clearer first-login experience',summary:'Your next steps appear on Home based on what is actually ready.',items:[
+   'A Getting Started checklist helps new staff, parents and students find their next step.',
+   'Completed steps are based on real account setup and production access, not on whether someone tapped a button.',
+   'Items awaiting CTSMD approval or production assignment are clearly marked, so you know when staff need to act.',
+   'Relevant actions link to the correct account, household, production or Help page.',
+   'The checklist steps out of the way once your setup is ready.'
+  ]},
   {title:'Help for getting started',summary:'Clear, step-by-step guidance for families, students and staff.',items:[
    'A Help & Guides link from the app opens the CTSMD website with searchable, step-by-step instructions.',
    'New getting-started guides explain the first steps for staff, parents and students, including account verification, student invitations and finding your production.',
