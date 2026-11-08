@@ -7,7 +7,7 @@ import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {useAuth} from '../../src/auth/AuthProvider';
-import {theatre,tasks,conversations,moderationAlerts,ApiError} from '../../src/api/client';
+import {theatre,tasks,conversations,notifications,moderationAlerts,ApiError} from '../../src/api/client';
 import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 import type {TheatreEvent} from '../../src/types/ctsmd';
@@ -53,16 +53,18 @@ export default function Home(){
 function MemberHome(){
  const {user}=useAuth();
  const load=useCallback(async()=>{
-    const [t,a,m,mod]=await Promise.all([theatre(),tasks(),conversations(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'}))]);
-    return {t,a,m,mod};
+    const [t,a,m,n,mod]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'}))]);
+    return {t,a,m,n,mod};
   },[]);
   const {data,error,loading,retry}=useScreenData(load);
   const now=Date.now();
   const events=(data?.t.events||[]).filter(e=>Number.isFinite(toTime(e.starts_at))&&toTime(e.starts_at)>=now).sort((a,b)=>toTime(a.starts_at)-toTime(b.starts_at)).slice(0,3);
   const openForms=(data?.a.forms||[]).filter(f=>f.status!=='completed'&&f.submission_status!=='approved');
   const unread=(data?.m.conversations||[]).reduce((total,c)=>total+Math.max(0,c.unread_count||0),0);
+  const canReviewCasting=!!user?.roles?.some(role=>role==='administrator'||role==='production_staff')||!!user?.permissions?.includes('production.manage');
+  const castingResponses=canReviewCasting?(data?.n.notifications||[]).filter(item=>item.source_type==='casting_offer_response'&&!item.read_at):[];
   const moderationCount=data?.mod.value?.pending_count??0;
-  const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount;
+  const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount+castingResponses.length;
   const moderationAccess=!!user?.permissions?.some(permission=>permission==='community.moderate'||permission==='safeguarding.manage')||!!user?.roles?.includes('administrator');
   const moderationError=data?.mod.error;
   return <Screen compact title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
@@ -87,6 +89,11 @@ function MemberHome(){
         {openForms.slice(0,3).map(f=><Pressable key={f.id} accessibilityRole="button" onPress={()=>router.push({pathname:'/forms/[id]',params:{id:String(f.id)}})} style={styles.task}>
           <Ionicons name="document-text-outline" color={colors.primary} size={21}/>
           <View style={{flex:1}}><Text style={styles.rowTitle}>{f.title}</Text><Text style={styles.sub}>Assigned form · Action required</Text></View>
+          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+        </Pressable>)}
+        {castingResponses.map(item=><Pressable key={'casting-response-'+item.id} accessibilityRole="button" accessibilityLabel={'Review casting response: '+item.title} onPress={()=>router.push('/notifications')} style={styles.task}>
+          <Ionicons name="star-outline" color={colors.primary} size={21}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text><Text style={styles.sub} numberOfLines={2}>{item.body}</Text></View>
           <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
         </Pressable>)}
         {data.a.casting_offers.length>0&&<Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.task}>
