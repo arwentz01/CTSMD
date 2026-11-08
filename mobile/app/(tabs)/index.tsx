@@ -2,7 +2,7 @@ import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback} from 'react';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Image,StyleSheet,Text,View} from 'react-native';
+import {Alert,Image,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
@@ -10,6 +10,7 @@ import {useAuth} from '../../src/auth/AuthProvider';
 import {theatre,tasks,conversations,notifications,moderationAlerts,membershipReviews,ApiError} from '../../src/api/client';
 import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
+import {openWebsite} from '../../src/navigation/website';
 import type {TheatreEvent} from '../../src/types/ctsmd';
 
 const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
@@ -82,10 +83,10 @@ function MemberHome(){
           </View>
           <Ionicons name="chevron-forward" size={22} color={colors.primary}/>
         </Pressable>
-        {reviewCount>0&&<Pressable accessibilityRole="button" accessibilityLabel={reviewCount+' membership applications awaiting review'} onPress={()=>router.push('/action-center')} style={styles.task}>
+        {reviewCount>0&&<Pressable accessibilityRole="button" accessibilityLabel={reviewCount+' membership applications awaiting review, open review list on website'} onPress={()=>{void openWebsite('pendingMembershipReviews').catch(e=>Alert.alert('Unable to open registration reviews',e instanceof Error?e.message:'Please try again.'));}} style={styles.task}>
           <Ionicons name="people-outline" color={colors.primary} size={23}/>
-          <View style={{flex:1}}><Text style={styles.rowTitle}>Membership applications</Text><Text style={styles.sub}>{reviewCount} awaiting review · Open Action Center</Text></View>
-          <Ionicons name="chevron-forward" color={colors.muted} size={20}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>Membership applications</Text><Text style={styles.sub}>{reviewCount} awaiting review · Open review list</Text></View>
+          <Ionicons name="open-outline" color={colors.muted} size={20}/>
         </Pressable>}
         {moderationCount>0&&<Pressable accessibilityRole="button" onPress={()=>router.push('/action-center')} style={styles.task}>
           <Ionicons name="shield-checkmark-outline" color={colors.primary} size={23}/>
