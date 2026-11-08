@@ -10,10 +10,10 @@
 .guide-categories button{min-height:39px;padding:8px 13px;border:1px solid #d8d0cf;border-radius:9px;background:#fff;color:#41363a;font-size:12px;font-weight:750;cursor:pointer}
 .guide-categories button:hover{background:#faf6f6;border-color:#bda8ad}
 .guide-categories button.is-selected{background:#8b233b;border-color:#8b233b;color:#fff}
-.guide-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;align-items:start}
-.guide-article{min-width:0;background:#fff;border:1px solid #e5deda;border-radius:12px;overflow:hidden}
+.guide-list{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:0}
+.guide-article{display:block;width:100%;min-width:0;box-sizing:border-box;background:#fff;border:1px solid #e5deda;border-radius:12px;overflow:hidden}
 .guide-article[open]{border-color:#bb9da5}
-.guide-article>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:19px 20px;list-style:none;min-height:125px;box-sizing:border-box}
+.guide-article>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:19px 20px;list-style:none;min-height:84px;box-sizing:border-box}
 .guide-article>summary::-webkit-details-marker{display:none}
 .guide-article>summary::marker{content:""}
 .guide-article>summary:hover{background:#fbf9f8}
@@ -35,10 +35,10 @@
 .guide-tip p{font-size:13px;line-height:1.5;margin:4px 0 0;color:#655b5f}
 .guide-open-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border-radius:9px;background:#8b233b;color:#fff!important;font-size:13px;font-weight:800;text-decoration:none!important}
 .guide-open-link:hover{background:#702036}
-.guide-no-results{grid-column:1/-1;padding:25px;background:#fff;border:1px solid #e5deda;border-radius:12px;color:#61565c}
+.guide-no-results{padding:25px;background:#fff;border:1px solid #e5deda;border-radius:12px;color:#61565c}
 .guide-other-heading{font-size:20px;margin:30px 0 15px;color:#30282b}
 .guide-intro :is(button,input):focus-visible,.guide-article summary:focus-visible,.guide-open-link:focus-visible{outline:3px solid #a84a65;outline-offset:3px}
-@media(max-width:850px){.guide-list{grid-template-columns:1fr}}
+
 @media(max-width:620px){.help-page{padding:14px}.help-page .guide-intro{padding:19px}.guide-article>summary{min-height:110px;padding:15px}.guide-detail{padding:15px}.guide-categories{flex-wrap:nowrap;overflow-x:auto;padding-bottom:7px}.guide-categories button{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){.guide-chevron{transition:none}}
 
