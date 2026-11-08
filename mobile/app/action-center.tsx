@@ -2,14 +2,15 @@ import {formatLocalDate} from '../src/utils/dates';
 import {TouchTarget as Pressable} from '../src/components/TouchTarget';
 import React,{useCallback,useState} from 'react';
 import {useFocusEffect} from 'expo-router';
-import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,Linking,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
 import {useAuth} from '../src/auth/AuthProvider';
-import {tasks,completeProductionTodo,respondCastingOffer,notifications,markNotificationRead,moderationAlerts,acknowledgeModeration,ApiError} from '../src/api/client';
-import type {ModerationAlerts,MobileNotification} from '../src/api/client';
+import {tasks,completeProductionTodo,respondCastingOffer,notifications,markNotificationRead,moderationAlerts,acknowledgeModeration,membershipReviews,ApiError} from '../src/api/client';
+import type {ModerationAlerts,MobileNotification,MembershipReviews} from '../src/api/client';
 import type {TasksResult} from '../src/types/ctsmd';
 import {colors} from '../src/theme/colors';
+import {websiteUrl} from '../src/navigation/website';
 
 export default function ActionCenter(){
  const {user}=useAuth();
@@ -18,6 +19,8 @@ export default function ActionCenter(){
  const canReviewCasting=!!user?.roles?.some(role=>role==='administrator'||role==='production_staff')||!!user?.permissions?.includes('production.manage');
  const [castingResponses,setCastingResponses]=useState<MobileNotification[]>([]);
  const [castingError,setCastingError]=useState('');
+ const [reviews,setReviews]=useState<MembershipReviews>({pending:[],count:0});
+ const [reviewError,setReviewError]=useState('');
  const [moderation,setModeration]=useState<ModerationAlerts|null>(null);
  const [moderationError,setModerationError]=useState('');
  const [busy,setBusy]=useState<string|null>(null);
@@ -25,11 +28,13 @@ export default function ActionCenter(){
  const [notes,setNotes]=useState<Record<number,string>>({});
  const [declining,setDeclining]=useState<number|null>(null);
  const refresh=useCallback(async()=>{
-  const [assignmentResult,moderationResult,castingResult]=await Promise.allSettled([tasks(),canModerate?moderationAlerts():Promise.resolve(null),canReviewCasting?notifications():Promise.resolve(null)]);
+  const [assignmentResult,moderationResult,castingResult,reviewResult]=await Promise.allSettled([tasks(),canModerate?moderationAlerts():Promise.resolve(null),canReviewCasting?notifications():Promise.resolve(null),membershipReviews()]);
   if(assignmentResult.status==='fulfilled'){setData(assignmentResult.value);setError('');}
   else setError(assignmentResult.reason instanceof Error?assignmentResult.reason.message:'Unable to load your Action Center.');
   if(castingResult.status==='fulfilled'){setCastingResponses((castingResult.value?.notifications||[]).filter(item=>item.source_type==='casting_offer_response'&&!item.read_at));setCastingError('');}
   else{setCastingResponses([]);setCastingError(castingResult.reason instanceof Error?castingResult.reason.message:'Casting responses unavailable.');}
+  if(reviewResult.status==='fulfilled'){setReviews(reviewResult.value);setReviewError('');}
+  else{setReviews({pending:[],count:0});setReviewError(reviewResult.reason instanceof Error?reviewResult.reason.message:'Membership reviews unavailable.');}
   if(moderationResult.status==='fulfilled'){setModeration(moderationResult.value);setModerationError('');}
   else{setModeration(null);setModerationError(moderationResult.reason instanceof ApiError&&moderationResult.reason.status===404?'The moderation service has not been deployed to CTSMD.me yet.':moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
  },[canModerate,canReviewCasting]);
@@ -54,6 +59,12 @@ export default function ActionCenter(){
   try{await markNotificationRead(id);setCastingResponses(current=>current.filter(item=>item.id!==id));}
   catch(e){Alert.alert('Unable to acknowledge casting response',e instanceof Error?e.message:'Please try again.');}
   finally{setBusy(null);}
+ };
+ const openReview=async(id?:number)=>{
+  const path=id?'/view?id='+encodeURIComponent(String(id))+'#membership-review':'#pending-membership-reviews';
+  const url=websiteUrl('adminAccounts')+path;
+  try{if(!await Linking.canOpenURL(url))throw new Error('Unable to open account reviews.');await Linking.openURL(url);}
+  catch(e){Alert.alert('Unable to open reviews',e instanceof Error?e.message:'Please try again.');}
  };
  return <Screen title="Action Center">
   <Text style={s.intro}>Production tasks, casting offers, family notices, and moderation concerns assigned to your permissions.</Text>
@@ -83,6 +94,17 @@ export default function ActionCenter(){
     </View>)}
   </View>}
   {data&&<>
+   {(reviews.count>0||!!reviewError)&&<View>
+    <View style={s.heading}><Ionicons name="people-outline" size={22} color={colors.primary}/><Text style={s.title}>Membership Reviews</Text>{reviews.count>0&&<Text style={s.count}>{reviews.count}</Text>}</View>
+    {!!reviewError&&<Text accessibilityRole="alert" style={s.error}>Membership reviews couldn't load: {reviewError}</Text>}
+    {reviews.pending.map(item=><View key={'membership-'+item.id} style={s.card}>
+      <Text style={s.name}>{item.name}</Text>
+      <Text style={s.muted}>New member waiting for approval</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={'Review membership for '+item.name+' on the website'} onPress={()=>void openReview(item.id)} style={s.button}><Text style={s.buttonText}>Review application</Text></Pressable>
+    </View>)}
+    {reviews.count>reviews.pending.length&&<Text style={s.muted}>{reviews.count-reviews.pending.length} more applications awaiting review.</Text>}
+    <Pressable accessibilityRole="button" onPress={()=>void openReview()} style={s.refresh}><Text style={s.link}>View all pending applications</Text></Pressable>
+   </View>}
    {canReviewCasting&&<View>
     <View style={s.heading}><Ionicons name="star-outline" size={22} color={colors.primary}/><Text style={s.title}>Casting Responses</Text>{castingResponses.length>0&&<Text style={s.count}>{castingResponses.length}</Text>}</View>
     {!!castingError&&<Text accessibilityRole="alert" style={s.error}>Casting responses couldn't load: {castingError}</Text>}
