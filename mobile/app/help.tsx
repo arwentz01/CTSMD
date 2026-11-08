@@ -29,7 +29,7 @@ export default function Help(){
  return <Screen title="Help & Support">
  <Pressable accessibilityRole="button" onPress={()=>router.back()}><Text style={s.back}>‹ More</Text></Pressable>
  <Pressable accessibilityRole="link" accessibilityLabel="Open step-by-step CTSMD Help and Guides website" style={s.guideLink} onPress={()=>void openWebsite('helpGuides').catch(e=>Alert.alert('Unable to open Help & Guides',e instanceof Error?e.message:'Please try again.'))}>
-  <View style={{flex:1,gap:5}}><Text style={s.guideTitle}>Step-by-step guides</Text><Text style={s.guideDescription}>Learn how to set up a production, review registrations, take attendance, manage casting and more.</Text><Text style={s.guideHint}>Opens CTSMD Help & Guides on the website</Text></View><Ionicons name="open-outline" size={22} color={colors.primary}/>
+  <View style={{flex:1,gap:5}}><Text style={s.guideTitle}>Full Help Center on the website</Text><Text style={s.guideDescription}>Open the same guides in your browser when you need to work with website-only tools.</Text><Text style={s.guideHint}>Opens CTSMD.me</Text></View><Ionicons name="open-outline" size={22} color={colors.primary}/>
  </Pressable>
  <Text style={s.heading}>Step-by-step guides</Text>
  <Text style={s.text}>Search practical instructions for your account, family and production responsibilities.</Text>
