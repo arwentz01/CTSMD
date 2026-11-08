@@ -39,7 +39,7 @@ final class AccessPolicy
     public static function canManageVolunteers(array $user): bool{return self::permissionOrLegacy($user,'volunteer.manage');}
     public static function canManageForms(array $user): bool{return self::permissionOrLegacy($user,'forms.manage');}
     public static function canManageResources(array $user): bool{return self::permissionOrLegacy($user,'resources.manage');}
-    public static function canManagePlaybill(array $user): bool{return self::permissionOrLegacy($user,'playbill.manage');}
+    public static function canManagePlaybill(array $user): bool{return (int)($user['id']??0)>0 && Auth::hasRole($user,'administrator');}
     public static function canManageAccounts(array $user): bool{return self::permissionOrLegacy($user,'accounts.manage');}
     public static function canViewAudit(array $user): bool{return self::permissionOrLegacy($user,'audit.view');}
 
