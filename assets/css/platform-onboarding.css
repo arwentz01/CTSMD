@@ -180,3 +180,14 @@
  .app-body .household-page .household-guide-feature:nth-child(n){border-top:1px solid #ede8e6}
  .app-body .household-page .household-guide-feature:first-child{border-top:0}
 }
+
+/* Guardian-only student activation status within each managed child card. */
+.app-body .household-page .household-student-invite{margin:10px 0;padding:13px 14px;background:#faf7f6;border:1px solid #e6d9dc;border-radius:10px;scroll-margin-top:90px}
+.app-body .household-page .household-student-invite strong{display:block;color:#7d2439;font-size:13px;margin:0 0 4px}
+.app-body .household-page .household-student-invite p{font-size:12px;color:#645b60;line-height:1.5;margin:4px 0 10px}
+.app-body .household-page .household-invite-action{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:0}
+.app-body .household-page .household-invite-action label{display:grid;gap:5px;flex:1;min-width:190px;font-size:12px;font-weight:750;color:#342c30}
+.app-body .household-page .household-invite-action input{min-height:40px;width:100%;box-sizing:border-box;border:1px solid #cfc3c6;border-radius:8px;padding:9px;color:#31282c;background:#fff}
+.app-body .household-page .household-invite-action button{background:#8b233b;border:0;border-radius:8px;min-height:40px;padding:9px 14px;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.app-body .household-page .household-invite-action button:hover{background:#722036}
+.app-body .household-page .household-invite-action :is(button,input):focus-visible{outline:3px solid #a65d75;outline-offset:2px}
