@@ -7,6 +7,28 @@ declare(strict_types=1);
  */
 final class ReleaseNotesExperience
 {
+    /** Upcoming app changes. No store version or date is promised yet. */
+    private const NEXT_UPDATE = [
+        'name'=>'Coming in the next app update',
+        'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
+        'sections'=>[
+            ['title'=>'Casting responses for production teams','summary'=>'See accepted and declined casting offers without hunting for updates.','details'=>[
+                'Authorized production staff can see new casting responses in Needs Your Attention.',
+                'Open Action Center to review and acknowledge a response. Once acknowledged, it no longer appears as outstanding for that person.'
+            ]],
+            ['title'=>'New member applications','summary'=>'A shared list of new registrations waiting for CTSMD approval.','details'=>[
+                'Staff with account-review permission will see a pending registration count on Home and in Action Center.',
+                'Open an application directly from the alert to review membership access.',
+                'When someone is approved or declined, the pending alert clears for everyone who can review applications.'
+            ]],
+            ['title'=>'Easier everyday navigation','summary'=>'Less clutter in conversations and clearer activity in Community.','details'=>[
+                'A more compact Messages inbox, faster search, and easier ways to start a conversation.',
+                'Clearer highlights for unread Community posts and a tighter feed layout.',
+                'Eligible Android test builds can show when a newer app update is available.'
+            ]]
+        ]
+    ];
+
     private const RELEASES = [
         [
             'version'=>'0.2.0',
@@ -107,6 +129,7 @@ final class ReleaseNotesExperience
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $url = ($basePath ?: '') . '/';
         $releases = self::RELEASES;
+        $preview = self::NEXT_UPDATE;
         ?><!doctype html>
 <html lang="en">
 <head>
@@ -123,6 +146,7 @@ final class ReleaseNotesExperience
  h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,6vw,44px);margin:10px 0 12px}
  .lead{font-size:16px;line-height:1.6;color:#f7e8e8;max-width:570px;margin:0}
  main{padding:26px 18px 50px}.release{border:1px solid #e4dcd5;background:white;border-radius:17px;overflow:hidden;margin-bottom:18px}
+ .release.preview{border-color:#9a4055}
  .release>summary{list-style:none;display:flex;align-items:flex-start;gap:12px;padding:20px;cursor:pointer}
  .release>summary::-webkit-details-marker,.section>summary::-webkit-details-marker{display:none}
  .release>summary:after,.section>summary:after{content:"+";margin-left:auto;font-size:26px;color:#8b233b;line-height:1}
@@ -141,6 +165,22 @@ final class ReleaseNotesExperience
 <body>
  <header class="masthead"><div class="shell"><div class="eyebrow">CTSMD Connect · Release notes</div><h1>What's New</h1><p class="lead">See what's changing in CTSMD Connect. Open a release or a topic to explore the details.</p></div></header>
  <main class="shell">
+ <details class="release preview" open>
+  <summary><div>
+   <div class="meta">NEXT APP UPDATE · PREVIEW</div>
+   <h2><?= $esc($preview['name']) ?></h2>
+   <div class="status">Not released yet · Version and date to be announced</div>
+  </div></summary>
+  <div class="releaseBody">
+   <p class="intro"><?= $esc($preview['intro']) ?></p>
+   <?php foreach ($preview['sections'] as $section): ?>
+   <details class="section">
+    <summary><span><strong><?= $esc($section['title']) ?></strong><small><?= $esc($section['summary']) ?></small></span></summary>
+    <ul class="details"><?php foreach ($section['details'] as $item): ?><li><?= $esc($item) ?></li><?php endforeach; ?></ul>
+   </details>
+   <?php endforeach; ?>
+  </div>
+ </details>
  <?php foreach ($releases as $index => $release): ?>
  <details class="release" <?= $index === 0 ? 'open' : '' ?>>
   <summary><div>
@@ -159,7 +199,7 @@ final class ReleaseNotesExperience
   </div>
  </details>
  <?php endforeach; ?>
- <p class="footer">Release 2 is for our closed-testing group. Features become available when the corresponding app version and supporting services are updated. <a href="<?= $esc($url) ?>">Return to CTSMD Connect</a>.</p>
+ <p class="footer">The next update is a preview, not an available release. Release 2 is for our closed-testing group. Features become available when the corresponding app version and supporting services are updated. <a href="<?= $esc($url) ?>">Return to CTSMD Connect</a>.</p>
  </main>
 </body></html><?php
         exit;
