@@ -175,3 +175,52 @@ dialog.acct-edit-dialog .acct-contact-actions{justify-content:flex-end}
   justify-self:center;
 }
 .acct-edit-dialog .acct-role span{min-width:0}
+
+/* Membership decisions belong alongside the account name, not in a hidden editor. */
+.acct-page .acct-membership-review{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;padding:19px 22px;background:#fff;border:1px solid #e0d9d6;border-radius:12px}
+.acct-membership-review-copy{flex:1 1 310px;min-width:0}
+.acct-membership-review-copy small{font-size:11px;font-weight:850;letter-spacing:.09em;color:#8b233b}
+.acct-membership-review-copy h3{font-size:18px;line-height:1.25;margin:6px 0;color:#2c2527}
+.acct-membership-review-copy p{font-size:13px;line-height:1.5;color:#6c6263;margin:0;max-width:620px}
+.acct-membership-review-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:0}
+.acct-membership-review-actions .acct-review-option{display:inline-flex;align-items:center;justify-content:center;text-align:center;min-width:100px;min-height:42px;padding:10px 16px;font-size:13px;font-weight:800;border-radius:9px;cursor:pointer}
+.acct-membership-review-actions .acct-review-option.current{color:#685c5f;background:#f6f4f3;border:1px solid #d9d3d0;cursor:default;opacity:1}
+.acct-membership-review-actions .acct-review-option.approve{color:#fff;background:#8c233d;border:1px solid #8c233d}
+.acct-membership-review-actions .acct-review-option.deny{color:#8c233d;background:#fff;border:1px solid #b98b96}
+.acct-membership-review-actions .acct-review-option:focus-visible{outline:3px solid #bf8796;outline-offset:2px}
+
+/* Keep the extensive contact editor readable rather than cramming it into a 500px side drawer. */
+dialog.acct-edit-dialog.acct-profile-dialog{
+ position:fixed!important;inset:50% auto auto 50%!important;transform:translate(-50%,-50%);
+ margin:0!important;width:min(760px,calc(100vw - 36px))!important;max-width:calc(100vw - 36px)!important;
+ height:auto!important;max-height:calc(100dvh - 36px)!important;
+ border:1px solid #d9cfca!important;border-radius:16px!important;
+ padding:26px!important;box-shadow:0 24px 80px rgba(24,18,20,.3)!important;
+ background:#fff!important;
+}
+dialog.acct-profile-dialog .acct-contact-form{display:grid;gap:18px}
+dialog.acct-profile-dialog .acct-contact-sections{display:grid;gap:18px;min-width:0}
+dialog.acct-profile-dialog .acct-contact-section{min-width:0;margin:0;padding:0;border:0}
+dialog.acct-profile-dialog .acct-contact-section legend{display:block;width:100%;padding:0 0 9px;margin:0 0 13px;border-bottom:1px solid #ebe5e2;color:#342a2c;font-size:15px;font-weight:800}
+dialog.acct-profile-dialog .acct-contact-section legend span{font-size:12px;color:#776b6d;font-weight:500}
+dialog.acct-profile-dialog .acct-contact-hint{font-size:12px;color:#716769;line-height:1.45;margin:-3px 0 12px}
+dialog.acct-profile-dialog .acct-contact-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px 16px}
+dialog.acct-profile-dialog .acct-contact-grid .acct-contact-field{grid-column:span 6;min-width:0;gap:7px;font-size:13px;line-height:1.4}
+dialog.acct-profile-dialog .acct-contact-grid .acct-c-street{grid-column:span 8}
+dialog.acct-profile-dialog .acct-contact-grid .acct-c-line2{grid-column:span 4}
+dialog.acct-profile-dialog .acct-contact-grid .acct-c-city{grid-column:span 5}
+dialog.acct-profile-dialog .acct-contact-grid .acct-c-state{grid-column:span 3}
+dialog.acct-profile-dialog .acct-contact-grid .acct-c-zip{grid-column:span 4}
+dialog.acct-profile-dialog .acct-contact-grid input{width:100%;min-width:0;height:43px;min-height:43px;padding:10px 12px;font-size:14px}
+dialog.acct-profile-dialog .acct-contact-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding-top:16px;border-top:1px solid #ebe5e2}
+dialog.acct-profile-dialog .acct-contact-actions button{min-height:42px}
+@media(max-width:610px){
+ .acct-page .acct-membership-review{padding:16px}
+ .acct-membership-review-actions{width:100%}
+ .acct-membership-review-actions .acct-review-option{flex:1;min-width:0;padding:10px 8px}
+ dialog.acct-edit-dialog.acct-profile-dialog{inset:0!important;transform:none;width:100vw!important;max-width:100vw!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;padding:20px!important}
+ dialog.acct-profile-dialog .acct-contact-grid .acct-contact-field{grid-column:span 12!important}
+ dialog.acct-profile-dialog .acct-contact-grid .acct-c-state,
+ dialog.acct-profile-dialog .acct-contact-grid .acct-c-zip{grid-column:span 6!important}
+ dialog.acct-profile-dialog .acct-contact-actions button{flex:1}
+}
