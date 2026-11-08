@@ -17,7 +17,7 @@ final class ReleaseNotesExperience
                 'Completion is based on actual account and production records, not manually ticked boxes.',
                 'Approval and production assignment steps are clearly labeled as waiting for CTSMD when staff action is needed.',
                 'Each available action links to account, household, production or Help guidance.',
-                'Once setup is ready, the checklist is no longer shown.'
+                'Once setup is ready, the checklist is no longer shown.',
                 'You can hide the checklist for seven days and restore it from Home at any time.'
             ]],
             ['title'=>'Help for getting started','summary'=>'Clear, step-by-step guidance for families, students and staff.','details'=>[
