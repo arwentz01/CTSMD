@@ -188,11 +188,11 @@ final class HomeDashboardService
             $householdComplete=!empty($state['onboarding_completed_at']);
             $steps[]=['title'=>'Set up your household','detail'=>$householdComplete?'Household setup has been completed. You can add or update children anytime.':'Add your children, or choose to finish setup without adding any.','done'=>$householdComplete,'state'=>$householdComplete?'complete':'action','href'=>$householdComplete?null:'/family/manage','action'=>'Manage household'];
             $status=(string)($user['organization_membership_status']??'pending');
-            $steps[]=['title'=>'CTSMD membership review','detail'=>$approved?'Your CTSMD membership is approved.':($status==='denied'?'Your membership is not approved. Contact CTSMD if you need help.':'CTSMD staff will review your membership. You do not need to submit it again.'),'done'=>$approved,'state'=>$approved?'complete':'waiting','href'=>null,'action'=>null];
+            $steps[]=['title'=>'CTSMD membership review','detail'=>$approved?'Your CTSMD membership is approved.':($status==='denied'?'Your membership is not approved. Contact CTSMD if you need help.':'CTSMD staff will review your membership. You do not need to submit it again.'),'done'=>$approved,'state'=>$approved?'complete':($status==='denied'?'needs_help':'waiting'),'href'=>null,'action'=>null];
             $steps[]=['title'=>'Find your family’s productions','detail'=>$assigned?'A production is available for your account or household.':'Your family’s shows will appear after CTSMD assigns you or your child to a production.','done'=>$assigned,'state'=>$assigned?'complete':'waiting','href'=>$assigned?'/family-hub':null,'action'=>$assigned?'My Family':null];
         }
         $hasOutstanding=false;
-        foreach($steps as $step)if($step['state']==='action'||$step['state']==='waiting')$hasOutstanding=true;
+        foreach($steps as $step)if(in_array($step['state'],['action','waiting','needs_help'],true))$hasOutstanding=true;
         return [
             'audience'=>$staff?'staff':($student?'student':'family'),
             'steps'=>$steps,
