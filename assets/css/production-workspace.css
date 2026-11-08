@@ -53,17 +53,63 @@
 @media(max-width:1150px){.pw-audition-item{align-items:flex-start;flex-direction:column;gap:10px}.pw-audition-actions{justify-content:flex-start;max-width:none;width:100%}}
 @media(max-width:680px){.pw-auditions{padding:15px}.pw-auditions-head{align-items:stretch}.pw-audition-create{width:100%}.pw-audition-action{flex:1 1 auto}.pw-audition-actions{gap:7px}.pw-audition-title-line h4{font-size:14px}}
 
-/* Production workspace: group tasks by the order people perform them. */
-.pw-page .pw-modules{display:grid;grid-template-columns:1fr;gap:18px;margin-top:20px}
-.pw-page .pw-tool-group{background:#fff;border:1px solid #e5dfdd;border-radius:14px;padding:20px 22px;min-width:0}
-.pw-page .pw-tool-group h3{margin:0;color:#2e2628;font-size:19px;line-height:1.3}
-.pw-page .pw-tool-group-description{margin:5px 0 16px;color:#6b6064;font-size:13px;line-height:1.5}
-.pw-page .pw-tool-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.pw-page .pw-tool-links a{display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto 1fr;gap:4px 12px;align-content:start;min-height:104px;min-width:0;padding:16px 14px;border:1px solid #e8e2e0;border-radius:10px;background:#fff;text-decoration:none;color:#2e2628}
-.pw-page .pw-tool-links a:hover{border-color:#b58b95;background:#faf7f7}
-.pw-page .pw-tool-links a:focus-visible{outline:3px solid #bd8191;outline-offset:2px}
-.pw-page .pw-tool-links a i{grid-row:1 / 3;grid-column:1;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#f7f1f2;color:#8b233b;font-size:19px;font-weight:750;font-style:normal}
-.pw-page .pw-tool-links a b{grid-column:2;grid-row:1;font-size:15px;line-height:1.35}
-.pw-page .pw-tool-links a span{grid-column:2;grid-row:2;font-size:12px;line-height:1.5;color:#6c6365}
-@media(max-width:1100px){.pw-page .pw-tool-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:660px){.pw-page .pw-tool-group{padding:16px}.pw-page .pw-tool-links{grid-template-columns:1fr}.pw-page .pw-tool-links a{min-height:90px}}
+/* Production overview. Scoped above shared ux-workspaces rules to prevent
+   legacy grid placement and arrow pseudo-elements from overriding the cards. */
+.ux-workspace .pw-page .pw-modules {
+  display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:18px;
+}
+.ux-workspace .pw-page .pw-tool-group {
+  min-width:0;background:#fff;border:1px solid #e6dfdd;border-radius:12px;
+  padding:18px 20px;margin:0;
+}
+.ux-workspace .pw-page .pw-tool-group > h3 {
+  margin:0;font-size:18px;line-height:1.3;color:#30282b;
+}
+.ux-workspace .pw-page .pw-tool-group-description {
+  margin:5px 0 14px;font-size:13px;line-height:1.45;color:#746b6d;
+}
+.ux-workspace .pw-page .pw-tool-links {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+}
+.ux-workspace .pw-page .pw-tool-links > a {
+  display:flex;flex-direction:row;align-items:center;gap:13px;
+  min-width:0;min-height:76px;padding:13px 14px;
+  background:#fff;color:#31282b;border:1px solid #e8e2e0;border-radius:10px;
+  text-decoration:none;text-align:left;position:relative;box-sizing:border-box;
+}
+.ux-workspace .pw-page .pw-tool-links > a::after{content:none;display:none}
+.ux-workspace .pw-page .pw-tool-links > a > i {
+  display:flex;flex:0 0 38px;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:10px;background:#f6eeef;
+  color:#8b233b;font-size:20px;line-height:1;font-weight:700;font-style:normal;
+}
+.ux-workspace .pw-page .pw-tool-links > a > b,
+.ux-workspace .pw-page .pw-tool-links > a > span {
+  display:block;grid-column:auto;grid-row:auto;text-align:left;
+}
+.ux-workspace .pw-page .pw-tool-links > a > b {
+  font-size:14px;line-height:1.35;font-weight:800;color:#30282b;
+}
+.ux-workspace .pw-page .pw-tool-links > a > span {
+  font-size:12px;line-height:1.45;color:#756a6e;margin:4px 0 0;
+}
+.ux-workspace .pw-page .pw-tool-links > a {
+  display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:auto auto;
+  align-content:center;column-gap:12px;row-gap:1px;
+}
+.ux-workspace .pw-page .pw-tool-links > a > i {grid-column:1;grid-row:1 / 3}
+.ux-workspace .pw-page .pw-tool-links > a > b {grid-column:2;grid-row:1}
+.ux-workspace .pw-page .pw-tool-links > a > span {grid-column:2;grid-row:2}
+.ux-workspace .pw-page .pw-tool-links > a:hover {
+  border-color:#b9959d;background:#fcf9fa;
+}
+.ux-workspace .pw-page .pw-tool-links > a:focus-visible {
+  outline:3px solid #ab5971;outline-offset:2px;
+}
+@media(max-width:1150px){
+  .ux-workspace .pw-page .pw-tool-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .ux-workspace .pw-page .pw-tool-links{grid-template-columns:minmax(0,1fr)}
+  .ux-workspace .pw-page .pw-tool-group{padding:16px}
+}
