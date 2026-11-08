@@ -41,3 +41,11 @@
 @media(max-width:850px){.guide-list{grid-template-columns:1fr}}
 @media(max-width:620px){.help-page{padding:14px}.help-page .guide-intro{padding:19px}.guide-article>summary{min-height:110px;padding:15px}.guide-detail{padding:15px}.guide-categories{flex-wrap:nowrap;overflow-x:auto;padding-bottom:7px}.guide-categories button{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){.guide-chevron{transition:none}}
+
+/* Secondary FAQ stays available without overwhelming the initial guide list. */
+.guide-reference{margin:24px 0;background:#fff;border:1px solid #e5deda;border-radius:12px;overflow:hidden}
+.guide-reference>summary{display:flex;flex-direction:column;gap:3px;cursor:pointer;padding:18px 20px;color:#30282b;font-size:17px;font-weight:800}
+.guide-reference>summary span{font-size:12px;color:#716568;font-weight:450}
+.guide-reference>summary:focus-visible{outline:3px solid #a84a65;outline-offset:-3px}
+.guide-reference-body{padding:0 18px 18px;border-top:1px solid #ece5e2}
+.guide-reference-body .help-hero{margin-top:15px}
