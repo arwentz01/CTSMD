@@ -20,6 +20,12 @@ export const nextReleasePreview={
  title:'Coming in the next app update',
  introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
  sections:[
+  {title:'Student invitations for families',summary:'Parents can tell when a student still needs to activate their own login.',items:[
+   'Home and Action Center highlight student invitations awaiting acceptance or expired.',
+   'Open Family to resend an expired invitation, or add an email to a managed child who wants their own login.',
+   'The student must accept the email invitation and choose a password within 48 hours.',
+   'Once activated, the alert clears automatically. Student activation grants general membership only; production access remains separately assigned by staff.'
+  ]},
   {title:'A clearer first-login experience',summary:'Your next steps appear on Home based on what is actually ready.',items:[
    'A Getting Started checklist helps new staff, parents and students find their next step.',
    'Completed steps are based on real account setup and production access, not on whether someone tapped a button.',
