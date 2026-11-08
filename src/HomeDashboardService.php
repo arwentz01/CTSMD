@@ -11,6 +11,7 @@ require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/CastingOfferService.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/MembershipReviewQueue.php';
+require_once __DIR__ . '/StudentInvitationStatusService.php';
 
 final class HomeDashboardService
 {
@@ -70,6 +71,18 @@ final class HomeDashboardService
         });
 
         $attention = [];
+        $studentInvitations=StudentInvitationStatusService::forGuardian($db,(int)$user['id']);
+        foreach($studentInvitations as $invitation){
+            $expired=$invitation['status']==='expired';
+            $attention[]=[
+                'kind'=>'student_activation',
+                'urgent'=>$expired,
+                'title'=>$expired?'Student invitation expired':'Student account awaiting activation',
+                'context'=>$invitation['child_name'],
+                'detail'=>$expired?'The activation link expired. Send your student a new invitation.':'Your student needs to accept the email invitation and create a password.',
+                'href'=>'/family/manage#student-invite-'.(int)$invitation['child_id']
+            ];
+        }
         // A live queue, not per-reviewer notification records. Every reviewer
         // sees the same remaining applications; approvals remove them for all.
         $pendingReviewCount=MembershipReviewQueue::count($db,$user);
@@ -145,6 +158,7 @@ final class HomeDashboardService
             'next_event'=>$timeline[0] ?? null,
             'forms'=>$forms,
             'attention'=>$attention,
+            'student_invitations'=>$studentInvitations,
             'volunteer'=>$volunteer,
             'notifications'=>$notifications,
             'children'=>$family['children'],
