@@ -8,6 +8,21 @@ declare(strict_types=1);
  */
 final class HelpGuideCatalog
 {
+    public static function availableFor(array $user):array
+    {
+        require_once __DIR__.'/AccessPolicy.php';
+        return array_values(array_filter(self::all(),static function(array $guide)use($user):bool{
+            return match($guide['permission']){
+                'all'=>true,
+                'production'=>AccessPolicy::canManageProduction($user),
+                'accounts'=>AccessPolicy::canManageAccounts($user),
+                'moderation'=>AccessPolicy::canModerateCommunity($user),
+                'schedule'=>AccessPolicy::canManageSchedule($user),
+                default=>false
+            };
+        }));
+    }
+
     public static function all(): array
     {
         return [
@@ -41,6 +56,16 @@ final class HelpGuideCatalog
                 'Visit Community for channels you can access, and Messages for conversations allowed by your age and family safeguards.',
                 'Ask your parent or guardian to contact CTSMD staff if an invitation has expired or your production is missing.'
              ],'tip'=>'Activation does not create a second student profile or automatically add you to a show. Some conversations are safeguarded and include guardian protections.'],
+            ['id'=>'adult-member-invitation','category'=>'Accounts & families','title'=>'Invite an adult to CTSMD Connect','audience'=>'Account administrators','permission'=>'accounts','where'=>'Website','route'=>'/admin/accounts#member-invitations',
+             'intro'=>'Invite an adult as a General Member without a second approval step.',
+             'steps'=>[
+                'Open Accounts & Access and find Invite an adult.',
+                'Enter the adult’s email address and choose Send invitation.',
+                'CTSMD emails a branded, private seven-day link. The adult opens it, enters their full name, date of birth and phone number, then creates a password.',
+                'Acceptance verifies their email and activates General Membership, including general member Community channels.',
+                'Production memberships, staff roles and permissions are added separately by authorized CTSMD staff.',
+                'Return to the invitation list to resend an unaccepted link or revoke it.'
+             ],'tip'=>'These invitations are for adults only. Students are invited exclusively by their linked parent or legal guardian.'],
             ['id'=>'create-account','category'=>'Accounts & families','title'=>'Create your CTSMD account','audience'=>'Everyone','permission'=>'all','where'=>'Website','route'=>'/join',
              'intro'=>'Set up your sign-in first, then add family members if you need to.',
              'steps'=>[
