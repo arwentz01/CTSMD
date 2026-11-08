@@ -188,38 +188,21 @@ final class AppNavigation
             return false;
         };
 
+        // Keep this navigation short and follow the production workflow.
+        // Less-frequent tools remain discoverable in the grouped overview.
         $items = [
             ['label'=>'Overview','href'=>'/production','active'=>$route==='/production'],
-            ['label'=>'Schedule','href'=>'/schedule','active'=>in_array($route, ['/schedule','/production/edit','/production/schedule/new','/production/schedule/import'], true)],
-            ['label'=>'Attendance','href'=>'/attendance','active'=>$active(['/attendance'])],
         ];
-
         if ($canManageProduction) {
-            $items[] = ['label'=>'Late','href'=>'/production/late-pickups','active'=>$active(['/production/late-pickups'])];
-            $items[] = ['label'=>'Groups','href'=>'/production/groups','active'=>$active(['/production/groups'])];
-            $items[] = ['label'=>'People','href'=>'/production/people','active'=>$active(['/production/people'])];
             $items[] = ['label'=>'Casting','href'=>'/production/casting','active'=>$active(['/production/casting'])];
+            $items[] = ['label'=>'People','href'=>'/production/people','active'=>$active(['/production/people'])];
+            $items[] = ['label'=>'Groups','href'=>'/production/groups','active'=>$active(['/production/groups'])];
         }
-
-        $items[] = ['label'=>'Tasks','href'=>'/production/tasks','active'=>$active(['/production/tasks'])];
-        $items[] = ['label'=>'Readiness','href'=>'/production/readiness','active'=>$active(['/production/readiness'])];
+        $items[] = ['label'=>'Schedule','href'=>'/schedule','active'=>in_array($route, ['/schedule','/production/edit','/production/schedule/new','/production/schedule/import'], true)];
         $items[] = ['label'=>'Production day','href'=>'/production/day','active'=>$route==='/production/day'];
+        $items[] = ['label'=>'Attendance','href'=>'/attendance','active'=>$active(['/attendance'])];
+        $items[] = ['label'=>'Tasks','href'=>'/production/tasks','active'=>$active(['/production/tasks'])];
         $items[] = ['label'=>'Resources','href'=>'/resources','active'=>$active(['/resources','/admin/resources'])];
-        $items[] = ['label'=>'Videos','href'=>'/videos','active'=>$active(['/videos','/production/rehearsal-library'])];
-
-        if ($canManageResources) {
-            $items[] = ['label'=>'Files','href'=>'/files','active'=>$active(['/files','/admin/files'])];
-        }
-
-        if ($canManageSchedule) {
-            $items[] = ['label'=>'Updates','href'=>'/production/notices','active'=>$active(['/production/notices','/production/notice'])];
-        }
-
-        $items[] = ['label'=>'Playbill','href'=>'/playbills','active'=>$active(['/playbills','/admin/playbill'])];
-
-        if ($canManagePlaybill) {
-            $items[] = ['label'=>'Playbill media','href'=>'/admin/playbill/media','active'=>$route==='/admin/playbill/media'];
-        }
 
         return $items;
     }
