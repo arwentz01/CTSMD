@@ -1,10 +1,10 @@
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {CommunityBody} from '../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
-import {StyleSheet,Text,View} from 'react-native';
+import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Screen,Item} from '../../src/components/Screen';
+import {Screen} from '../../src/components/Screen';
 import {CommunityPhotos} from '../../src/components/CommunityPhotos';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
 import {channels,communityFeed,type CommunityFeedPost} from '../../src/api/client';
@@ -34,7 +34,10 @@ export default function Community(){
  const general=visible.filter(c=>c.production_id===null);
  const groups=new Map<number,{title:string;items:typeof visible}>();
  visible.filter(c=>c.production_id!==null).forEach(c=>{const key=c.production_id as number;if(!groups.has(key))groups.set(key,{title:c.production_title||'Production',items:[]});groups.get(key)!.items.push(c)});
- const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button"><Item title={c.name} subtitle={(c.description||'Community channel')+(c.unread_count>0?' · '+c.unread_count+' unread':'')}/></Pressable>;
+ const renderChannel=(c:typeof visible[number])=><Pressable key={c.id} onPress={()=>router.push({pathname:'/community/[id]',params:{id:String(c.id)}})} accessibilityRole="button" accessibilityLabel={c.name+(c.unread_count>0?', '+c.unread_count+' unread posts':'')} style={[s.channelRow,c.unread_count>0&&s.channelUnread]}>
+   <View style={s.channelDetails}><Text style={[s.channelTitle,c.unread_count>0&&s.channelTitleUnread]}>{c.name}</Text><Text style={s.channelDescription} numberOfLines={2}>{c.description||'Community channel'}</Text></View>
+   {c.unread_count>0&&<View style={s.unreadBadge} accessibilityLabel={c.unread_count+' unread posts'}><Text style={s.unreadBadgeText}>{c.unread_count>99?'99+':c.unread_count}</Text></View>}
+  </Pressable>;
  const openPost=(post:CommunityFeedPost)=>{
   // Channel entry marks that channel read on the server. Also clear paged
   // items immediately so older locally cached pages don't retain red accents.
@@ -80,6 +83,13 @@ const s=StyleSheet.create({
  selected:{backgroundColor:colors.burgundy},
  tabText:{fontSize:13,fontWeight:'700',color:colors.muted},selectedText:{color:colors.ivory},
  section:{fontSize:17,fontWeight:'700',color:colors.navy},
+ channelRow:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:13,paddingHorizontal:15,paddingVertical:16,minHeight:82},
+ channelUnread:{borderLeftWidth:4,borderLeftColor:colors.primary,backgroundColor:'#fffafa'},
+ channelDetails:{flex:1,gap:6,minWidth:0},channelTitle:{fontSize:17,fontWeight:'700',color:colors.text},channelTitleUnread:{fontWeight:'900'},
+ channelDescription:{fontSize:13,color:colors.muted,lineHeight:19},
+ unreadBadge:{minWidth:32,height:30,paddingHorizontal:8,borderRadius:16,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},
+ unreadBadgeText:{color:'#fff',fontSize:13,fontWeight:'900'},
+
  feedList:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:13,overflow:'hidden'},
  post:{backgroundColor:colors.card,borderBottomColor:colors.border,borderBottomWidth:StyleSheet.hairlineWidth},
  unreadPost:{backgroundColor:'#fff7f7',borderLeftColor:colors.primary,borderLeftWidth:3},
