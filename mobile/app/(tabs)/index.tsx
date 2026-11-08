@@ -3,7 +3,7 @@ import React,{useCallback,useEffect,useState} from 'react';
 import * as SecureStore from 'expo-secure-store';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Alert,Image,StyleSheet,Text,View} from 'react-native';
+import {Alert,Image,Linking,StyleSheet,Text,View} from 'react-native';
 import {Screen} from '../../src/components/Screen';
 import {ProductionArtwork} from '../../src/components/ProductionArtwork';
 import {LoadState,useScreenData} from '../../src/components/LoadState';
@@ -11,7 +11,7 @@ import {useAuth} from '../../src/auth/AuthProvider';
 import {theatre,tasks,conversations,notifications,moderationAlerts,membershipReviews,gettingStarted,ApiError} from '../../src/api/client';
 import type {ModerationAlerts} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
-import {openWebsite} from '../../src/navigation/website';
+import {openWebsite,websiteUrl} from '../../src/navigation/website';
 import type {TheatreEvent,GettingStartedStep} from '../../src/types/ctsmd';
 
 const toTime=(date:string)=>new Date(date.replace(' ','T')).getTime();
@@ -126,7 +126,7 @@ function MemberHome(){
           </View>
           <Ionicons name="chevron-forward" size={22} color={colors.primary}/>
         </Pressable>
-        {studentInvites.slice(0,3).map(invite=><Pressable key={'student-invite-'+invite.child_id} accessibilityRole="button" accessibilityLabel={invite.status==='expired'?'Student invitation expired for '+invite.child_name+', open family management to resend':'Student invitation awaiting acceptance for '+invite.child_name+', open family management'} onPress={()=>void openWebsite('familyManagement').catch(e=>Alert.alert('Unable to open family management',e instanceof Error?e.message:'Please try again.'))} style={styles.task}>
+        {studentInvites.slice(0,3).map(invite=><Pressable key={'student-invite-'+invite.child_id} accessibilityRole="button" accessibilityLabel={invite.status==='expired'?'Student invitation expired for '+invite.child_name+', open family management to resend':'Student invitation awaiting acceptance for '+invite.child_name+', open family management'} onPress={()=>void Linking.openURL(websiteUrl('familyManagement')+'#student-invite-'+invite.child_id).catch(e=>Alert.alert('Unable to open family management',e instanceof Error?e.message:'Please try again.'))} style={styles.task}>
           <Ionicons name={invite.status==='expired'?'alert-circle-outline':'mail-unread-outline'} color={colors.primary} size={23}/>
           <View style={{flex:1}}><Text style={styles.rowTitle}>{invite.status==='expired'?'Student invitation expired':'Student activation pending'}</Text><Text style={styles.sub}>{invite.child_name} · {invite.status==='expired'?'Resend the invitation':invite.status==='not_sent'?'Send an invitation':'Student must accept the email invitation'}</Text></View>
           <Ionicons name="open-outline" color={colors.muted} size={20}/>
