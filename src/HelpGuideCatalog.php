@@ -26,6 +26,51 @@ final class HelpGuideCatalog
     public static function all(): array
     {
         return [
+            ['id'=>'production-banner-prompt','category'=>'Production artwork','title'=>'Create a CTSMD production banner','audience'=>'Production staff and artwork coordinators','permission'=>'production','where'=>'Help & Guides (website and app)','route'=>'/production',
+             'intro'=>'Reuse our cinematic banner format for any show, with artwork on the right, room for titles on the left, and colors chosen for the production.',
+             'steps'=>[
+                'Copy the reusable prompt below and replace the bracketed production details.',
+                'Use the Matilda-style panoramic layout as the composition reference: a dark atmospheric left side with the show’s subjects and scenery on the right.',
+                'Choose colors that fit the specific production. Burgundy or red is not required.',
+                'Keep faces and key objects comfortably inside the image edges and near the vertical center to protect them from cropping.',
+                'Generate without titles or logos. Review the banner in the website and mobile app before publishing, since those surfaces can crop artwork differently.'
+             ],
+             'tip'=>'A 3:1 source image is the recommended artwork format based on the supplied Matilda reference; the production workspace may display it in a shallower viewport. Always preview the actual crop. No single image dimension can guarantee every viewport will show the entire image.',
+             'prompt'=><<<'BANNER'
+Create a premium, cinematic theatrical production banner for [PRODUCTION TITLE], using the CTSMD Matilda production banner as the composition reference.
+
+CANVAS AND COMPOSITION
+- Landscape 3:1 aspect ratio, ideally 2048 × 682 pixels.
+- Reserve approximately 55–60% of the LEFT side as uncluttered atmospheric negative space for interface text.
+- Concentrate the main character, setting, and storytelling details toward the RIGHT side, with a gradual, natural transition into the background.
+- Keep faces and all important focal points comfortably within the vertical center of the image and away from the top, bottom, and outer edges. Allow for responsive website and mobile cropping.
+- Do not put the main subject in the center. Avoid a hard dividing line between empty space and the detailed scene.
+
+SHOW DETAILS
+- Production: [PRODUCTION TITLE]
+- Setting / time period: [SETTING]
+- Main subject: [CHARACTER OR KEY SCENE]
+- Supporting scenery: [IMPORTANT VISUAL ELEMENTS]
+- Mood: [EMOTIONAL TONE]
+- Color palette: [COLORS THAT FIT THIS PARTICULAR SHOW]
+
+ARTISTIC DIRECTION
+Create a believable, cinematic environment inspired by the show's story and atmosphere. Use theatrical lighting, realistic materials, rich environmental detail, layered depth, natural haze where appropriate, and sophisticated color grading. The artwork should feel like professional theatrical key art, not a conventional poster or exaggerated AI fantasy illustration.
+
+COLOR RULE
+Choose the left-side background and accents to complement the production. Do NOT default to burgundy or red. Examples: deep teal and ocean blue for an underwater story, emerald and gold for fantasy, charcoal and violet for gothic drama. The left area should be a darker, understated extension of the show-specific color palette.
+
+RESTRICTIONS
+- No text, titles, lettering, dates, logos, or watermarks.
+- No crowded or overly busy left side.
+- No essential faces or visual elements close to crop-prone edges.
+- No plastic-looking skin, distorted anatomy, or overly glossy AI artwork.
+- Keep the subject and scenery recognizable even when the image is displayed in a shallow horizontal banner.
+
+FINAL OUTPUT
+A polished 3:1 panoramic banner with dark, show-specific negative space on the left and striking story-specific artwork on the right, suitable for CTSMD Connect. The artwork must be evaluated in the actual website and app banner slots for responsive cropping.
+BANNER
+            ],
             ['id'=>'staff-first-day','category'=>'Getting started','title'=>'Your first day as CTSMD staff','audience'=>'Authorized production staff','permission'=>'production','where'=>'Website','route'=>'/production',
              'intro'=>'Find the right show and the tools you need without hunting through menus.',
              'steps'=>[
