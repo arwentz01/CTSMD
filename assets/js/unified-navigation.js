@@ -175,8 +175,8 @@
     const help=document.createElement('a');
     help.className='unified-help';
     help.href=`${appBase}/help${path.startsWith('/messages')?'#messages':''}`;
-    help.setAttribute('aria-label',path.startsWith('/messages')?'Messaging safety help':'Help and safety information');
-    help.title=path.startsWith('/messages')?'Messaging safety':'Help & Safety';
+    help.setAttribute('aria-label',path.startsWith('/messages')?'Messaging safety help':'Help and step-by-step guides');
+    help.title=path.startsWith('/messages')?'Messaging safety':'Help & Guides';
     help.textContent='?';
     const utilities=header.querySelector('.unified-utilities');
     if(utilities) utilities.prepend(help); else header.appendChild(help);
