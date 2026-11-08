@@ -13,6 +13,30 @@ export type ReleaseNote={
  sections:ReleaseNoteSection[];
 };
 
+/** Features built for an upcoming app update, not yet assigned a store version.
+ * Move items into a numbered release only when that build is ready to ship.
+ */
+export const nextReleasePreview={
+ title:'Coming in the next app update',
+ introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
+ sections:[
+  {title:'Casting responses for production teams',summary:'See accepted and declined casting offers without hunting for updates.',items:[
+   'Authorized production staff can see new casting responses under Needs Your Attention.',
+   'Open Action Center to review and acknowledge those responses. Once acknowledged, they no longer appear as outstanding for that person.'
+  ]},
+  {title:'New member applications',summary:'A shared list of new registrations waiting for CTSMD approval.',items:[
+   'Staff with account review permission will see a pending registration count on Home and in Action Center.',
+   'Open an application directly from the alert to review membership access.',
+   'When someone is approved or declined, the pending alert clears for everyone who can review applications.'
+  ]},
+  {title:'Easier everyday navigation',summary:'Less clutter in conversations and clearer activity in Community.',items:[
+   'A more compact Messages inbox, faster search, and easier ways to start a conversation.',
+   'Clearer highlights for unread Community posts and a tighter feed layout.',
+   'Eligible Android test builds can show when a newer app update is available.'
+  ]}
+ ] as ReleaseNoteSection[]
+};
+
 export const releaseNotes:ReleaseNote[]=[
  {
   releaseNumber:2,
