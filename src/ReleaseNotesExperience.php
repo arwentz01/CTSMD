@@ -12,6 +12,13 @@ final class ReleaseNotesExperience
         'name'=>'Coming in the next app update',
         'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
         'sections'=>[
+            ['title'=>'A clearer first-login experience','summary'=>'Your next steps appear on Home based on what is actually ready.','details'=>[
+                'A Getting Started checklist helps new staff, parents and students understand where to begin.',
+                'Completion is based on actual account and production records, not manually ticked boxes.',
+                'Approval and production assignment steps are clearly labeled as waiting for CTSMD when staff action is needed.',
+                'Each available action links to account, household, production or Help guidance.',
+                'Once setup is ready, the checklist is no longer shown.'
+            ]],
             ['title'=>'Help for getting started','summary'=>'Clear, step-by-step guidance for families, students and staff.','details'=>[
                 'The app Help screen opens the CTSMD website Help & Guides center for searchable instructions.',
                 'New first-day guides walk staff, parents and students through sign-in, household setup, invitations, and where to find their next steps.',
