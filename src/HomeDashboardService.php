@@ -72,14 +72,14 @@ final class HomeDashboardService
         $attention = [];
         // A live queue, not per-reviewer notification records. Every reviewer
         // sees the same remaining applications; approvals remove them for all.
-        $pendingMemberships=MembershipReviewQueue::pending($db,$user,10);
-        foreach($pendingMemberships as $applicant){
+        $pendingReviewCount=MembershipReviewQueue::count($db,$user);
+        if($pendingReviewCount>0){
             $attention[]=[
                 'kind'=>'membership_review','urgent'=>true,
-                'title'=>'Membership application awaiting review',
-                'context'=>(string)$applicant['name'],
-                'detail'=>'Review and decide',
-                'href'=>'/admin/accounts/view?id='.(int)$applicant['id'].'#membership-review'
+                'title'=>$pendingReviewCount===1?'1 new registration awaiting review':$pendingReviewCount.' registrations awaiting review',
+                'context'=>'Membership approvals',
+                'detail'=>'Open the pending registrations list',
+                'href'=>'/admin/accounts#pending-membership-reviews'
             ];
         }
         // The home Action Center must surface the same actionable pending
