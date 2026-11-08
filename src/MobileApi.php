@@ -704,9 +704,17 @@ final class MobileApi
         self::requireMethod('GET');$id=(int)($_GET['id']??0);
         if($id<1||!CommunicationReadStateService::canAccessChannel($db,$user,$id))self::json(['error'=>'Channel not found.'],404);
         $c=$db->prepare("SELECT c.id,c.name,c.description,c.channel_type,c.production_id,c.post_scope,p.title production_title FROM channels c LEFT JOIN productions p ON p.id=c.production_id WHERE c.id=:id AND c.archived_at IS NULL LIMIT 1");$c->execute(['id'=>$id]);$channel=$c->fetch();$channel['can_post']=CommunityExperience::mobileCanPost($db,$user,$id);
-        $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.pinned DESC,cp.created_at,cp.id");$p->execute(['id'=>$id]);
-        CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);
-        $posts=$p->fetchAll();$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['channel'=>$channel,'posts'=>$posts]);
+        $baseline=$db->prepare('SELECT last_read_post_id FROM channel_read_states WHERE user_id=:user AND channel_id=:channel LIMIT 1');
+        // Channel read baselines were established by the directory request, but also
+        // initialize them here for people opening a direct channel link.
+        CommunicationReadStateService::communityUnread($db,$user);
+        $baseline->execute(['user'=>(int)$user['id'],'channel'=>$id]);
+        $lastReadId=(int)($baseline->fetchColumn()?:0);
+        $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at,cp.id");$p->execute(['id'=>$id]);
+        $posts=$p->fetchAll();
+        foreach($posts as &$post)$post['unread']=(int)$post['id']>$lastReadId && (int)$post['author_user_id']!==(int)$user['id'];
+        unset($post);
+        CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['channel'=>$channel,'posts'=>$posts]);
     }
 
     private static function communityPhoto(PDO $db,array $user): never
