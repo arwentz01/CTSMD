@@ -16,18 +16,29 @@ final class AdultMembershipInvitationService
         if(!AccessPolicy::canManageAccounts($actor))throw new RuntimeException('Account management permission is required.');
         $email=mb_strtolower(trim($email));
         if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)throw new RuntimeException('Enter a valid email address.');
-        $existing=$db->prepare('SELECT id FROM users WHERE LOWER(email)=:email LIMIT 1');
+        $existing=$db->prepare("SELECT u.id,u.active,u.account_status,u.password_hash,
+            EXISTS(SELECT 1 FROM auth_invitations i WHERE i.user_id=u.id AND i.purpose='general_membership') was_adult_invited
+            FROM users u WHERE LOWER(u.email)=:email LIMIT 1");
         $existing->execute(['email'=>$email]);
-        if($existing->fetchColumn())throw new RuntimeException('An account already uses that email. Review the existing account instead of sending a duplicate invitation.');
+        $prior=$existing->fetch(PDO::FETCH_ASSOC)?:null;
+        $revoked=$prior && !(int)$prior['active'] && $prior['account_status']==='disabled'
+            && empty($prior['password_hash']) && (int)$prior['was_adult_invited']===1;
+        if($prior&&!$revoked)throw new RuntimeException('An account already uses that email. Review the existing account instead of sending a duplicate invitation.');
         $db->beginTransaction();
         try{
-            // Names and contact details are collected by the recipient, not guessed by staff.
-            $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,organization_membership_status,initials,display_role,is_demo_current_user,active) VALUES ('Invited','Member',:email,NULL,'invited','pending','IM','Member',0,1)");
-            $insert->execute(['email'=>$email]);
-            $id=(int)$db->lastInsertId();
-            $role=$db->prepare("INSERT INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :id,id,:actor FROM auth_roles WHERE code='member' AND active=1 LIMIT 1");
-            $role->execute(['id'=>$id,'actor'=>(int)$actor['id']]);
-            if($role->rowCount()!==1)throw new RuntimeException('General Membership role is not configured.');
+            if($revoked){
+                $id=(int)$prior['id'];
+                if(Auth::roles($db,$id)!==['member'])throw new RuntimeException('The revoked account has additional roles and cannot be reinvited automatically.');
+                $db->prepare("UPDATE users SET account_status='invited',active=1,organization_membership_status='pending' WHERE id=:id AND active=0 AND account_status='disabled'")->execute(['id'=>$id]);
+            }else{
+                // Names and contact details are completed by the recipient, not guessed by staff.
+                $insert=$db->prepare("INSERT INTO users (first_name,last_name,email,password_hash,account_status,organization_membership_status,initials,display_role,is_demo_current_user,active) VALUES ('Invited','Member',:email,NULL,'invited','pending','IM','Member',0,1)");
+                $insert->execute(['email'=>$email]);
+                $id=(int)$db->lastInsertId();
+                $role=$db->prepare("INSERT INTO auth_user_roles (user_id,role_id,assigned_by_user_id) SELECT :id,id,:actor FROM auth_roles WHERE code='member' AND active=1 LIMIT 1");
+                $role->execute(['id'=>$id,'actor'=>(int)$actor['id']]);
+                if($role->rowCount()!==1)throw new RuntimeException('General Membership role is not configured.');
+            }
             $token=Auth::createInvitation($db,$id,(int)$actor['id'],168,'general_membership');
             $link=self::absoluteUrl($basePath.'/activate?token='.$token);
             $message="Hello,\n\nYou've been invited by CTSMD to join CTSMD Connect as a general member. Use the secure link below to complete your profile, confirm your email address, and create a password:\n".$link."\n\nOnce you finish, your General Membership becomes active. Production assignments and additional staff permissions are granted separately by CTSMD.\n\nThis invitation expires in seven days. If you weren't expecting it, simply ignore this email.\n\nChildren's Theatre of Southern Maryland";
