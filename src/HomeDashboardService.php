@@ -135,6 +135,7 @@ final class HomeDashboardService
         }
 
         return [
+            'getting_started'=>self::gettingStarted($db,$user,$family['children'],$productions,$selectedProduction),
             'membership'=>[
                 'status'=>(string)($user['organization_membership_status'] ?? 'pending'),
                 'approved'=>$approved,
@@ -158,6 +159,44 @@ final class HomeDashboardService
                 'unread_notifications'=>(int)$notifications['unread_count'],
                 'volunteer_commitments'=>count($volunteer),
             ],
+        ];
+    }
+
+    /**
+     * Read-only first-use guidance. Do not infer membership approval from
+     * sign-in, or treat a missing production as something the user can fix.
+     */
+    private static function gettingStarted(PDO $db,array $user,array $children,array $productions,?array $selectedProduction):array
+    {
+        $stmt=$db->prepare('SELECT email_verified_at,onboarding_completed_at FROM users WHERE id=:id LIMIT 1');
+        $stmt->execute(['id'=>(int)$user['id']]);
+        $state=$stmt->fetch(PDO::FETCH_ASSOC)?:[];
+        $verified=!empty($state['email_verified_at']);
+        $approved=Auth::isApprovedMember($user);
+        $assigned=count($productions)>0;
+        $student=Auth::hasRole($user,'student');
+        $staff=AccessPolicy::isStaff($user);
+        $steps=[];
+        $steps[]=['title'=>'Activate your account','detail'=>$verified?'Your email is verified.':'Check your email to verify your account.','done'=>$verified,'state'=>$verified?'complete':'action','href'=>$verified?null:'/account','action'=>'Account details'];
+        if($staff){
+            $steps[]=['title'=>'Get access to your production','detail'=>$assigned?'You have a production available.':'A CTSMD administrator will add you to the production you are working on.','done'=>$assigned,'state'=>$assigned?'complete':'waiting','href'=>null,'action'=>null];
+            $steps[]=['title'=>'Open your production workspace','detail'=>$assigned?'Choose the correct show before managing its schedule, people or casting.':'Your production tools will become useful when a show is assigned.','done'=>false,'state'=>'explore','href'=>'/production','action'=>'Open Production'];
+        }elseif($student){
+            $steps[]=['title'=>'Find your theatre activities','detail'=>$assigned?'Your show is ready to explore.':'Your shows will appear when CTSMD adds you to a production.','done'=>$assigned,'state'=>$assigned?'complete':'waiting','href'=>$assigned?'/my-theatre':null,'action'=>$assigned?'My Theatre':null];
+            $steps[]=['title'=>'Get to know Community & Messages','detail'=>'Some conversations are safeguarded, with extra protections for younger members.','done'=>false,'state'=>'explore','href'=>'/help#guide-student-first-login','action'=>'Student guide'];
+        }else{
+            $householdComplete=!empty($state['onboarding_completed_at']);
+            $steps[]=['title'=>'Set up your household','detail'=>$householdComplete?'Household setup has been completed. You can add or update children anytime.':'Add your children, or choose to finish setup without adding any.','done'=>$householdComplete,'state'=>$householdComplete?'complete':'action','href'=>$householdComplete?null:'/family/manage','action'=>'Manage household'];
+            $status=(string)($user['organization_membership_status']??'pending');
+            $steps[]=['title'=>'CTSMD membership review','detail'=>$approved?'Your CTSMD membership is approved.':($status==='denied'?'Your membership is not approved. Contact CTSMD if you need help.':'CTSMD staff will review your membership. You do not need to submit it again.'),'done'=>$approved,'state'=>$approved?'complete':'waiting','href'=>null,'action'=>null];
+            $steps[]=['title'=>'Find your family’s productions','detail'=>$assigned?'A production is available for your account or household.':'Your family’s shows will appear after CTSMD assigns you or your child to a production.','done'=>$assigned,'state'=>$assigned?'complete':'waiting','href'=>$assigned?'/family-hub':null,'action'=>$assigned?'My Family':null];
+        }
+        $hasOutstanding=false;
+        foreach($steps as $step)if($step['state']==='action'||$step['state']==='waiting')$hasOutstanding=true;
+        return [
+            'audience'=>$staff?'staff':($student?'student':'family'),
+            'steps'=>$steps,
+            'outstanding'=>$hasOutstanding
         ];
     }
 
