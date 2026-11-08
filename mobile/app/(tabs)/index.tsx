@@ -1,5 +1,6 @@
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
-import React,{useCallback} from 'react';
+import React,{useCallback,useEffect,useState} from 'react';
+import * as SecureStore from 'expo-secure-store';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Alert,Image,StyleSheet,Text,View} from 'react-native';
@@ -53,6 +54,26 @@ export default function Home(){
 }
 function MemberHome(){
  const {user}=useAuth();
+ const [hideSetup,setHideSetup]=useState<boolean|null>(null);
+ const setupKey=user?.id?'ctsmd-getting-started-'+user.id:null;
+ useEffect(()=>{
+   let active=true;
+   setHideSetup(null);
+   if(!setupKey){setHideSetup(false);return ()=>{active=false;};}
+   void SecureStore.getItemAsync(setupKey).then(value=>{
+     if(active)setHideSetup(Number(value||0)>Date.now());
+   }).catch(()=>{if(active)setHideSetup(false);});
+   return ()=>{active=false;};
+ },[setupKey]);
+ const changeSetupVisibility=(hidden:boolean)=>{
+   setHideSetup(hidden);
+   if(!setupKey)return;
+   const operation=hidden
+     ?SecureStore.setItemAsync(setupKey,String(Date.now()+7*24*60*60*1000))
+     :SecureStore.deleteItemAsync(setupKey);
+   void operation.catch(()=>Alert.alert('Preference not saved','You can still use the checklist, but its visibility may reset next time.'));
+ };
+
  const load=useCallback(async()=>{
     const [t,a,m,n,mod,reviews,setup]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'})),membershipReviews().catch(e=>{if(e instanceof ApiError&&e.status===404)return {pending:[],count:0};throw e;}),gettingStarted().catch(()=>null)]);
     return {t,a,m,n,mod,reviews,setup};
@@ -73,7 +94,12 @@ function MemberHome(){
     <Text style={styles.intro}>Your theatre community, all in one place.</Text>
     <LoadState loading={loading} error={error} onRetry={retry}/>
     {data&&<>
-      {!!data.setup?.getting_started.outstanding&&<View style={styles.gettingStarted}>
+      {!!data.setup?.getting_started.outstanding&&hideSetup===true&&<Pressable accessibilityRole="button" accessibilityLabel="Show Getting Started checklist" onPress={()=>changeSetupVisibility(false)} style={styles.gettingStartedRestore}>
+        <Ionicons name="list-outline" size={20} color={colors.primary}/>
+        <Text style={styles.gettingStartedRestoreText}>Show getting started</Text>
+        <Ionicons name="chevron-down" size={17} color={colors.primary}/>
+      </Pressable>}
+      {!!data.setup?.getting_started.outstanding&&hideSetup===false&&<View style={styles.gettingStarted}>
         <View style={styles.gettingStartedHeader}>
           <View style={{flex:1,gap:4}}>
             <Text style={styles.gettingStartedEyebrow}>GETTING STARTED</Text>
@@ -87,6 +113,7 @@ function MemberHome(){
           <View style={{flex:1,gap:4}}><Text style={styles.gettingStartedTitle}>{step.title}</Text><Text style={styles.gettingStartedDetail}>{step.detail}</Text></View>
           {step.href&&step.action&&<Pressable accessibilityRole="button" accessibilityLabel={step.action} onPress={()=>void openWebsite(step.href==='/production'?'productionWorkspace':step.href==='/family/manage'?'familyManagement':step.href==='/family-hub'?'household':step.href==='/my-theatre'?'myTheatre':step.href==='/account'?'accountDetails':step.href==='/help#guide-student-first-login'?'studentGettingStartedGuide':'helpGuides').catch(e=>Alert.alert('Unable to open page',e instanceof Error?e.message:'Please try again.'))}><Ionicons name="open-outline" size={20} color={colors.primary}/></Pressable>}
         </View>)}
+        <Pressable accessibilityRole="button" accessibilityLabel="Hide Getting Started checklist for seven days" onPress={()=>changeSetupVisibility(true)} style={styles.gettingStartedHide}><Text style={styles.gettingStartedHideText}>Hide for now</Text></Pressable>
       </View>}
       <View style={styles.heading}><Text style={styles.sectionTitle}>Coming Up</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/calendar')}><Text style={styles.link}>View calendar  →</Text></Pressable></View>
       {events.length?<><EventRow event={events[0]} featured hasArtwork={!!data.t.productions.find(p=>p.id===events[0].production_id)?.has_artwork}/>{events.slice(1).map(event=><EventRow key={event.id} event={event}/>)}</>:<View style={styles.panel}><Text style={styles.sub}>No upcoming events on your visible theatre calendar.</Text></View>}
@@ -151,6 +178,10 @@ const styles=StyleSheet.create({
  offerCount:{color:colors.primary,fontWeight:'800'},offerRow:{flexDirection:'row',alignItems:'center',gap:13,paddingVertical:12,borderTopWidth:1,borderTopColor:colors.border},offerProduction:{fontSize:17,fontWeight:'700',color:colors.navy},offerRole:{fontSize:16,fontWeight:'800',color:colors.primary,marginVertical:3},
   intro:{fontSize:13,color:colors.muted,marginTop:-2,marginBottom:6},
   gettingStarted:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:14,padding:16,gap:11},
+  gettingStartedHide:{minHeight:42,alignSelf:'flex-end',justifyContent:'center',paddingHorizontal:12},
+  gettingStartedHideText:{color:colors.muted,fontSize:13,fontWeight:'700',textDecorationLine:'underline'},
+  gettingStartedRestore:{backgroundColor:colors.card,borderWidth:1,borderColor:colors.border,borderRadius:12,paddingVertical:13,paddingHorizontal:15,flexDirection:'row',alignItems:'center',gap:10},
+  gettingStartedRestoreText:{flex:1,color:colors.primary,fontSize:13,fontWeight:'700'},
   gettingStartedHeader:{flexDirection:'row',alignItems:'flex-start',gap:12,marginBottom:4},
   gettingStartedEyebrow:{fontSize:10,color:colors.primary,fontWeight:'800',letterSpacing:1},
   gettingStartedRow:{flexDirection:'row',alignItems:'flex-start',gap:11,borderTopWidth:1,borderTopColor:colors.border,paddingTop:12},
