@@ -50,3 +50,14 @@
 .guide-reference>summary:focus-visible{outline:3px solid #a84a65;outline-offset:-3px}
 .guide-reference-body{padding:0 18px 18px;border-top:1px solid #ece5e2}
 .guide-reference-body .help-hero{margin-top:15px}
+
+/* Copy-ready production artwork prompt. */
+.guide-prompt{margin-top:16px;border:1px solid #e0d5d7;background:#fbf9f8;border-radius:11px;padding:16px}
+.guide-prompt-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.guide-prompt-heading h4{margin:0;font-size:15px;color:#30282c}
+.guide-prompt>p{font-size:13px;color:#63595e;line-height:1.55;margin:10px 0}
+.guide-copy-prompt{border:1px solid #8b233b;background:#8b233b;color:#fff;border-radius:8px;min-height:38px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer}
+.guide-copy-prompt:hover{background:#712238}
+.guide-copy-prompt:focus-visible,.guide-prompt-text:focus-visible{outline:3px solid #ac637a;outline-offset:3px}
+.guide-prompt-text{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;color:#332a2e;background:#fff;border:1px solid #e8e2e2;border-radius:8px;padding:16px;max-height:420px;overflow:auto;user-select:text}
+.guide-copy-status{display:block;min-height:18px;margin-top:6px;font-size:12px;color:#6b3142}
