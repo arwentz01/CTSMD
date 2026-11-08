@@ -6,6 +6,7 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/AppNavigation.php';
 require_once __DIR__ . '/AccessPolicy.php';
+require_once __DIR__ . '/HelpGuideCatalog.php';
 
 final class HelpExperience
 {
@@ -15,7 +16,41 @@ final class HelpExperience
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=Auth::currentUser($db);if(!$user){header('Location: '.($basePath?:'').'/login',true,303);exit;}
         $u=static fn(string $p):string=>($basePath?:'').$p;
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help & Safety · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/product-polish.css')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/help',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('CTSMD Connect','Help & Safety',$basePath);?><div class="help-page">
+        $esc=static fn(string $text):string=>htmlspecialchars($text,ENT_QUOTES,'UTF-8');
+        $allowed=static fn(string $permission):bool=>match($permission){
+            'all'=>true,
+            'production'=>AccessPolicy::canManageProduction($user),
+            'accounts'=>AccessPolicy::canManageAccounts($user),
+            'moderation'=>AccessPolicy::canModerateCommunity($user),
+            'schedule'=>AccessPolicy::canManageSchedule($user),
+            default=>false
+        };
+        $guides=array_values(array_filter(HelpGuideCatalog::all(),static fn(array $guide):bool=>$allowed($guide['permission'])));
+        $categories=array_values(array_unique(array_column($guides,'category')));
+
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help &amp; Guides · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/product-polish.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/help-guides.css?v=20261107-1')?>"></head><body class="app-body"><div class="unified-shell"><?php AppNavigation::renderSidebar('/help',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('CTSMD Connect','Help & Guides',$basePath);?><div class="help-page">
+<section class="guide-intro" aria-labelledby="guide-intro-heading">
+    <small>CTSMD CONNECT HELP CENTER</small><h2 id="guide-intro-heading">What would you like to do?</h2>
+    <p>Choose a task for clear, step-by-step instructions. The guides shown here match the tools available to your account. If you don't see an action, your role or production access may be different.</p>
+    <label class="guide-search-label" for="guide-search">Search help guides</label>
+    <input id="guide-search" type="search" placeholder="Try ‘casting’, ‘attendance’ or ‘approve an account’" autocomplete="off" aria-controls="guide-list">
+    <nav class="guide-categories" aria-label="Filter help guides"><button type="button" class="is-selected" data-guide-category="all" aria-pressed="true">All guides</button><?php foreach($categories as $category):?><button type="button" data-guide-category="<?=$esc($category)?>" aria-pressed="false"><?=$esc($category)?></button><?php endforeach;?></nav>
+</section>
+<section class="guide-list" id="guide-list" aria-label="Step-by-step guides">
+<?php foreach($guides as $guide):?>
+<details class="guide-article" id="guide-<?=$esc($guide['id'])?>" data-guide-category="<?=$esc($guide['category'])?>" data-guide-search="<?=$esc(mb_strtolower($guide['title'].' '.$guide['category'].' '.$guide['intro'].' '.implode(' ',$guide['steps'])))?>">
+  <summary><span class="guide-article-summary"><small><?=$esc($guide['category'])?></small><strong><?=$esc($guide['title'])?></strong><span><?=$esc($guide['intro'])?></span></span><span class="guide-chevron" aria-hidden="true">⌄</span></summary>
+  <div class="guide-detail">
+    <p class="guide-audience"><b>For:</b> <?=$esc($guide['audience'])?> <span>·</span> <b>Where:</b> <?=$esc($guide['where'])?></p>
+    <ol><?php foreach($guide['steps'] as $step):?><li><?=$esc($step)?></li><?php endforeach;?></ol>
+    <div class="guide-tip"><b>Good to know</b><p><?=$esc($guide['tip'])?></p></div>
+    <a class="guide-open-link" href="<?=$u($guide['route'])?>">Open the relevant page <span aria-hidden="true">↗</span></a>
+  </div>
+</details>
+<?php endforeach;?>
+<p class="guide-no-results" id="guide-no-results" hidden>No guides match that search. Try a shorter term or choose All guides.</p>
+</section>
+<h2 class="guide-other-heading">More help with CTSMD Connect</h2>
 <section class="help-hero"><small>CTSMD CONNECT · HELP &amp; GUIDE</small><h2>Your theatre, all connected.</h2><p>Find your way around production schedules, family information, conversations, volunteer opportunities, forms, and more. What appears in your account depends on your roles and active memberships.</p></section>
 <nav class="help-jumps" aria-label="Help topics"><a href="#getting-started">Getting started</a><a href="#schedule">Schedules</a><a href="#messages">Messages</a><a href="#community">Community</a><a href="#family">Families</a><a href="#forms">Forms</a><a href="#volunteer">Volunteering</a><a href="#resources">Resources</a><a href="#notifications">Notifications</a><a href="#privacy">Safety &amp; access</a><?php if(AccessPolicy::canManageProduction($user)):?><a href="#staff">For production staff</a><?php endif;?></nav>
 <section id="getting-started" class="help-section"><div class="help-icon">⌂</div><div><small>GETTING STARTED</small><h3>Where to begin</h3><p><a href="<?=$u('/app')?>">Today</a> brings together timely updates and items needing your attention. <a href="<?=$u('/my-theatre')?>">My Theatre</a> gathers the productions and tools available to your account. If you work across shows, choose the production you want to work on from the sidebar before opening its tools.</p><p>Some features are available only to staff, volunteers, students, or linked guardians. You won't necessarily see every tool described here.</p></div></section>
@@ -29,6 +64,6 @@ final class HelpExperience
 <section id="notifications" class="help-section"><div class="help-icon">●</div><div><small>NOTIFICATIONS</small><h3>See what changed and what needs action</h3><p><a href="<?=$u('/notifications')?>">Notifications</a> separates action items from recent updates. Open a related item to see more context, and mark updates as read when you're finished. You can review <a href="<?=$u('/notification-preferences')?>">notification preferences</a> for available delivery settings.</p></div></section>
 <?php if(AccessPolicy::canManageProduction($user)):?><section id="staff" class="help-section"><div class="help-icon">★</div><div><small>FOR PRODUCTION STAFF</small><h3>Operate your show in one workspace</h3><p>The <a href="<?=$u('/production')?>">Production Workspace</a> brings together scheduling, attendance, cast and people, groups, readiness, Playbill management, and volunteer operations according to staff permissions. Authorized schedule managers can add events or use <a href="<?=$u('/production/schedule/import')?>">Import Schedule</a>, then review <a href="<?=$u('/production/notices')?>">Production Updates</a> before publishing changes.</p><p>Always check the selected production in the sidebar before making changes.</p></div></section><?php endif;?>
 <section id="privacy" class="help-section"><div class="help-icon">◇</div><div><small>PRIVACY, SAFETY &amp; ACCESS</small><h3>Who can see your information</h3><p>What you can see depends on your CTSMD membership, production involvement, family relationships and staff responsibilities. Never share login credentials or private calendar subscription links. If you can see information you should not—or cannot access information you need—contact CTSMD staff promptly.</p><p>For an immediate child-safety concern, contact the appropriate CTSMD safeguarding lead directly rather than relying on an app message.</p></div></section>
-</div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script></body></html><?php exit;
+</div></main></div><script src="<?=$u('/assets/js/unified-navigation.js')?>"></script><script src="<?=$u('/assets/js/help-guides.js?v=20261107-1')?>" defer></script></body></html><?php exit;
     }
 }
