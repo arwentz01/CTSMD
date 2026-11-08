@@ -20,6 +20,7 @@ require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/HomeDashboardService.php';
+require_once __DIR__ . '/StudentInvitationStatusService.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
@@ -424,7 +425,8 @@ final class MobileApi
             'production_todos'=>ProductionChecklistAssignmentService::actionItems($db,$id),
             'casting_offers'=>CastingOfferService::pendingForUser($db,$id),
             'pending_membership_reviews'=>MembershipReviewQueue::count($db,$user),
-            'late_pickup_notices'=>LatePickupService::familyNotices($db,$id)]);
+            'late_pickup_notices'=>LatePickupService::familyNotices($db,$id),
+            'student_invitations'=>StudentInvitationStatusService::forGuardian($db,$id)]);
     }
 
     private static function castingOfferRespond(PDO $db,array $user):never
