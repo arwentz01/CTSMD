@@ -242,3 +242,13 @@ dialog.acct-profile-dialog .acct-contact-actions button{min-height:42px}
 .ux-operations .acct-adult-invite-row .acct-invite-revoke{background:#fff;color:#842337}
 .ux-operations .acct-adult-invite-row .acct-invite-revoke:hover{background:#faf1f2}
 .ux-operations .acct-adult-invite-form :is(button,input):focus-visible,.ux-operations .acct-adult-invite-row button:focus-visible{outline:3px solid #b06175;outline-offset:2px}
+
+/* Modal entry keeps the main Accounts screen compact. */
+.ux-operations .acct-invite-open{align-self:flex-start;margin-top:12px;background:#8b233b;border:1px solid #8b233b;border-radius:9px;color:#fff;min-height:42px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer}
+.ux-operations .acct-invite-open:hover{background:#722036}
+.ux-operations .acct-invite-open:focus-visible{outline:3px solid #b06175;outline-offset:2px}
+.ux-operations #acct-new-adult-invite .acct-adult-invite-form{display:grid;grid-template-columns:minmax(0,1fr);padding:17px 22px 22px;gap:12px}
+.ux-operations #acct-new-adult-invite .acct-invite-explanation{font-size:12px;line-height:1.6;color:#655b5e;margin:0}
+.ux-operations #acct-new-adult-invite .acct-dialog-invite-buttons{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.ux-operations #acct-new-adult-invite .acct-dialog-invite-buttons button{min-height:42px}
+.ux-operations #acct-new-adult-invite .acct-dialog-invite-buttons .acct-cancel{background:#fff;border:1px solid #cbc0c4;color:#42383c}
