@@ -77,9 +77,9 @@ final class HomeDashboardService
             $attention[]=[
                 'kind'=>'student_activation',
                 'urgent'=>$expired,
-                'title'=>$expired?'Student invitation expired':'Student account awaiting activation',
+                'title'=>$expired?'Student invitation expired':($invitation['status']==='not_sent'?'Student invitation not sent':'Student account awaiting activation'),
                 'context'=>$invitation['child_name'],
-                'detail'=>$expired?'The activation link expired. Send your student a new invitation.':'Your student needs to accept the email invitation and create a password.',
+                'detail'=>$expired?'The activation link expired. Send your student a new invitation.':($invitation['status']==='not_sent'?'Open Family to send an activation invitation to your student.':'Your student needs to accept the email invitation and create a password.'),
                 'href'=>'/family/manage#student-invite-'.(int)$invitation['child_id']
             ];
         }
