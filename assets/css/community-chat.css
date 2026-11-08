@@ -232,3 +232,30 @@ body[data-native-route="channels-view"] .community-pane-feed .comm-post>header .
  .community-pane-feed .comm-post>header>.community-heart-form{grid-column:2!important;grid-row:1!important}
  .community-pane-feed .comm-post>header>.comm-post-actions{grid-column:3!important;grid-row:1!important}
 }
+
+/* Shared Community unread cues: restrained highlighting and a clear first-new boundary. */
+.community-rail-list .community-rail-item.has-unread{
+ border-left:4px solid #8b233b!important;
+ background:#fff7f8!important;
+ padding-left:calc(12px - 4px);
+}
+.community-rail-list .community-rail-item.has-unread b{font-weight:850;color:#342429}
+.community-rail-list .community-rail-item.has-unread em{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-width:28px;height:27px;padding:0 8px;border-radius:14px;
+ background:#8b233b!important;color:#fff!important;font-size:12px;font-style:normal;font-weight:850;
+}
+.community-pane-feed .comm-new-divider{
+ display:flex;align-items:center;gap:12px;
+ padding:16px 15px 12px;color:#8b233b;
+ font-size:11px;font-weight:850;letter-spacing:.1em;
+}
+.community-pane-feed .comm-new-divider::before,
+.community-pane-feed .comm-new-divider::after{content:"";flex:1;height:1px;background:#a64159}
+.community-pane-feed .comm-new-divider span{white-space:nowrap}
+.community-pane-feed .comm-post.comm-post-unread{
+ background:#fff6f7!important;
+ border-left:3px solid #8b233b!important;
+ padding-left:calc(12px - 3px);
+}
+@media(prefers-reduced-motion:reduce){.community-pane-feed .comm-post.comm-post-unread{transition:none}}
