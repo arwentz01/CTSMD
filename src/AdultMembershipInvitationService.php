@@ -91,6 +91,26 @@ final class AdultMembershipInvitationService
         }
     }
 
+    public static function resend(PDO $db,array $actor,int $userId,string $basePath):void
+    {
+        if(!AccessPolicy::canManageAccounts($actor))throw new RuntimeException('Account management permission is required.');
+        $q=$db->prepare("SELECT u.email,u.id FROM users u JOIN auth_invitations i ON i.user_id=u.id AND i.purpose='general_membership'
+          WHERE u.id=:id AND u.active=1 AND u.account_status='invited' AND i.accepted_at IS NULL
+          ORDER BY i.id DESC LIMIT 1");
+        $q->execute(['id'=>$userId]);
+        $recipient=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$recipient)throw new RuntimeException('An unaccepted adult General Membership invitation was not found.');
+        $db->beginTransaction();
+        try{
+            $token=Auth::createInvitation($db,$userId,(int)$actor['id'],168,'general_membership');
+            $link=self::absoluteUrl($basePath.'/activate?token='.$token);
+            $message="Hello,\n\nCTSMD sent you a new secure invitation to join CTSMD Connect. Complete your profile and create a password using this link:\n".$link."\n\nWhen you accept, your General Membership becomes active. Staff roles and production assignments are managed separately.\n\nThe link expires in seven days. If you weren't expecting this message, you can ignore it.\n\nChildren's Theatre of Southern Maryland";
+            MailService::queue($db,$userId,(string)$recipient['email'],null,'account_security','Complete your CTSMD Connect invitation',$message,null,'adult-general-invite-'.hash('sha256',$token));
+            $db->prepare("INSERT INTO audit_events (actor_user_id,event_type,subject_type,subject_id,summary,metadata_json) VALUES (:actor,'account.general_member_invitation_resent','user',:id,'Resent adult General Membership invitation.',NULL)")->execute(['actor'=>(int)$actor['id'],'id'=>$userId]);
+            $db->commit();
+        }catch(Throwable $error){if($db->inTransaction())$db->rollBack();throw $error;}
+    }
+
     public static function pending(PDO $db):array
     {
         return $db->query("SELECT i.user_id,u.email,i.created_at,i.expires_at,
