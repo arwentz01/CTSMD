@@ -44,9 +44,9 @@ final class HomeExperience
             </div>
             <ol class="home-start-steps"><?php foreach($gettingStarted['steps'] as $step):?>
                 <li class="home-start-step home-start-<?= $e($step['state']) ?>">
-                    <span class="home-start-status" aria-label="<?=$step['done']?'Complete':($step['state']==='waiting'?'Waiting for CTSMD':'Information')?>"><?=$step['done']?'✓':($step['state']==='waiting'?'◷':'→')?></span>
+                    <span class="home-start-status" aria-label="<?=$step['done']?'Complete':($step['state']==='waiting'?'Waiting for CTSMD':($step['state']==='needs_help'?'Needs assistance':'Information'))?>"><?=$step['done']?'✓':($step['state']==='waiting'?'◷':'→')?></span>
                     <div class="home-start-copy"><b><?=$e($step['title'])?></b><p><?=$e($step['detail'])?></p></div>
-                    <?php if(!empty($step['href'])&&!empty($step['action'])):?><a href="<?=$u($step['href'])?>"><?=$e($step['action'])?> →</a><?php elseif($step['state']==='waiting'):?><span class="home-start-waiting">Waiting for CTSMD</span><?php endif;?>
+                    <?php if(!empty($step['href'])&&!empty($step['action'])):?><a href="<?=$u($step['href'])?>"><?=$e($step['action'])?> →</a><?php elseif($step['state']==='waiting'):?><span class="home-start-waiting">Waiting for CTSMD</span><?php elseif($step['state']==='needs_help'):?><span class="home-start-waiting">Contact CTSMD</span><?php endif;?>
                 </li>
             <?php endforeach;?></ol>
         </section>
