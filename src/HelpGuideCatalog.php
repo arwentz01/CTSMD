@@ -11,6 +11,36 @@ final class HelpGuideCatalog
     public static function all(): array
     {
         return [
+            ['id'=>'staff-first-day','category'=>'Getting started','title'=>'Your first day as CTSMD staff','audience'=>'Authorized production staff','permission'=>'production','where'=>'Website','route'=>'/production',
+             'intro'=>'Find the right show and the tools you need without hunting through menus.',
+             'steps'=>[
+                'Sign in and open Home to check anything that needs your attention.',
+                'Use Working Production to choose the show you are helping with. Confirm the title before making changes.',
+                'Open Production for the grouped work areas: Plan & Prepare, Rehearsals & Show Days, and People & Communication.',
+                'Start with Schedule and People to understand the show and who is involved.',
+                'Use Casting for decisions and offers, Attendance for calls, and Tasks for assigned work only when your role allows it.',
+                'Return to Home and Action Center for new notifications and follow-up items.'
+             ],'tip'=>'If a tool is missing, ask an administrator to check your assigned role and production access. Do not share another staff member’s login.'],
+            ['id'=>'family-first-week','category'=>'Getting started','title'=>'Your first steps as a parent or guardian','audience'=>'Parents & guardians','permission'=>'all','where'=>'Website and app','route'=>'/family/manage',
+             'intro'=>'Learn what to do after creating your account and adding children.',
+             'steps'=>[
+                'Verify your email and sign in to CTSMD Connect.',
+                'Open Family or Manage household, then add each participating child separately.',
+                'Add a child’s email only if you want them invited to create their own login.',
+                'Check Home for membership approval status and items needing attention.',
+                'When your family is assigned to a production, use My Theatre or Family for schedules, forms and casting updates.',
+                'Open Messages or Community to see conversations and announcements available to your family.'
+             ],'tip'=>'Your login, general membership approval, and each child’s production participation are separate. Safeguarded messages have extra protections for younger members.'],
+            ['id'=>'student-first-login','category'=>'Getting started','title'=>'Activate your student account and get started','audience'=>'Students & families','permission'=>'all','where'=>'Invitation website, then website or app','route'=>'/login',
+             'intro'=>'Use the email invitation from your parent or guardian to activate an existing student profile.',
+             'steps'=>[
+                'Open the CTSMD student invitation sent to your email address.',
+                'Check that the invitation is for you and choose a password to activate your account.',
+                'Sign in with your student email and new password.',
+                'Open Home to see updates and tasks. Check My Theatre for any shows and schedules assigned to you.',
+                'Visit Community for channels you can access, and Messages for conversations allowed by your age and family safeguards.',
+                'Ask your parent or guardian to contact CTSMD staff if an invitation has expired or your production is missing.'
+             ],'tip'=>'Activation does not create a second student profile or automatically add you to a show. Some conversations are safeguarded and include guardian protections.'],
             ['id'=>'create-account','category'=>'Accounts & families','title'=>'Create your CTSMD account','audience'=>'Everyone','permission'=>'all','where'=>'Website','route'=>'/join',
              'intro'=>'Set up your sign-in first, then add family members if you need to.',
              'steps'=>[
