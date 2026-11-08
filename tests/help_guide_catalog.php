@@ -20,6 +20,15 @@ foreach($guides as $guide){
     if(!preg_match('~^/[a-z0-9/?#=&%-]+$~i',$route))$failures[]=$id.' invalid relative route: '.$route;
     $categories[$guide['category']??'']=true;
 }
+$banner=array_values(array_filter($guides,static fn(array $guide):bool=>($guide['id']??'')==='production-banner-prompt'));
+if(count($banner)!==1)$failures[]='Missing reusable production banner prompt guide';
+else{
+    $prompt=(string)($banner[0]['prompt']??'');
+    foreach(['[PRODUCTION TITLE]','[SETTING]','3:1','Do NOT default to burgundy or red','No text'] as $phrase){
+        if(!str_contains($prompt,$phrase))$failures[]='Banner prompt missing required guidance: '.$phrase;
+    }
+    if(($banner[0]['permission']??null)!=='production')$failures[]='Banner prompt must be limited to production staff';
+}
 if(count($categories)<5)$failures[]='Expected a broad set of guide categories';
 if($failures){fwrite(STDERR,implode(PHP_EOL,$failures).PHP_EOL);exit(1);}
 echo count($guides).' Help guides across '.count($categories).' categories validated.'.PHP_EOL;
