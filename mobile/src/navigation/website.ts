@@ -20,6 +20,8 @@ export const webRoutes={
  volunteerTraining:'/volunteer/training',
  volunteerHistory:'/volunteer/history',
  familyManagement:'/family/manage',
+ accountDetails:'/account',
+ myTheatre:'/my-theatre',
  household:'/family-hub',
  performerProfile:'/student-profile',
  theatreHistory:'/theatre-history',
