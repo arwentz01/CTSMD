@@ -21,6 +21,7 @@ require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/HomeDashboardService.php';
 require_once __DIR__ . '/StudentInvitationStatusService.php';
+require_once __DIR__ . '/HelpGuideCatalog.php';
 require_once __DIR__ . '/VolunteerCoverageService.php';
 require_once __DIR__ . '/PushService.php';
 require_once __DIR__ . '/CommunicationExperience.php';
@@ -57,7 +58,7 @@ final class MobileApi
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
             $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
             $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report','/api/mobile/message-delete','/api/mobile/conversation-archive'];
-            if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/logout'],$accountConversationRoutes),true)){
+            if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/help-guides','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
             // Mirror the web membership gate: a pending account without an active
@@ -79,6 +80,7 @@ final class MobileApi
                 '/api/mobile/event' => self::eventDetail($db, $user),
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/getting-started' => self::json(['getting_started'=>HomeDashboardService::gettingStarted($db,$user,ProductionContext::activeProductions($db,$user))]),
+                '/api/mobile/help-guides' => self::json(['guides'=>HelpGuideCatalog::availableFor($user)]),
                 '/api/mobile/membership-reviews' => self::membershipReviews($db,$user),
                 '/api/mobile/casting-offer-respond' => self::castingOfferRespond($db,$user),
                 '/api/mobile/production-todo-complete' => self::productionTodoComplete($db,$user),
