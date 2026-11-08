@@ -12,6 +12,7 @@
 .guide-categories button.is-selected{background:#8b233b;border-color:#8b233b;color:#fff}
 .guide-list{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:0}
 .guide-article{display:block;width:100%;min-width:0;box-sizing:border-box;background:#fff;border:1px solid #e5deda;border-radius:12px;overflow:hidden}
+.guide-article[hidden],.guide-no-results[hidden]{display:none!important}
 .guide-article[open]{border-color:#bb9da5}
 .guide-article>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:19px 20px;list-style:none;min-height:84px;box-sizing:border-box}
 .guide-article>summary::-webkit-details-marker{display:none}
