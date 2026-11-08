@@ -87,7 +87,8 @@ function MemberHome(){
   const castingResponses=canReviewCasting?(data?.n.notifications||[]).filter(item=>item.source_type==='casting_offer_response'&&!item.read_at):[];
   const moderationCount=data?.mod.value?.pending_count??0;
   const reviewCount=data?.reviews.count??0;
-  const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount+castingResponses.length+reviewCount;
+  const studentInvites=data?.a.student_invitations||[];
+  const actionCount=(data?.a.production_todos.length??0)+(data?.a.casting_offers.length??0)+openForms.length+moderationCount+castingResponses.length+reviewCount+studentInvites.length;
   const moderationAccess=!!user?.permissions?.some(permission=>permission==='community.moderate'||permission==='safeguarding.manage')||!!user?.roles?.includes('administrator');
   const moderationError=data?.mod.error;
   return <Screen compact title={'Hello'+(user?.first_name?', '+user.first_name:'')+'!'}>
@@ -125,6 +126,11 @@ function MemberHome(){
           </View>
           <Ionicons name="chevron-forward" size={22} color={colors.primary}/>
         </Pressable>
+        {studentInvites.slice(0,3).map(invite=><Pressable key={'student-invite-'+invite.child_id} accessibilityRole="button" accessibilityLabel={invite.status==='expired'?'Student invitation expired for '+invite.child_name+', open family management to resend':'Student invitation awaiting acceptance for '+invite.child_name+', open family management'} onPress={()=>void openWebsite('familyManagement').catch(e=>Alert.alert('Unable to open family management',e instanceof Error?e.message:'Please try again.'))} style={styles.task}>
+          <Ionicons name={invite.status==='expired'?'alert-circle-outline':'mail-unread-outline'} color={colors.primary} size={23}/>
+          <View style={{flex:1}}><Text style={styles.rowTitle}>{invite.status==='expired'?'Student invitation expired':'Student activation pending'}</Text><Text style={styles.sub}>{invite.child_name} · {invite.status==='expired'?'Resend the invitation':invite.status==='not_sent'?'Send an invitation':'Student must accept the email invitation'}</Text></View>
+          <Ionicons name="open-outline" color={colors.muted} size={20}/>
+        </Pressable>)}
         {reviewCount>0&&<Pressable accessibilityRole="button" accessibilityLabel={reviewCount+' membership applications awaiting review, open review list on website'} onPress={()=>{void openWebsite('pendingMembershipReviews').catch(e=>Alert.alert('Unable to open registration reviews',e instanceof Error?e.message:'Please try again.'));}} style={styles.task}>
           <Ionicons name="people-outline" color={colors.primary} size={23}/>
           <View style={{flex:1}}><Text style={styles.rowTitle}>Membership applications</Text><Text style={styles.sub}>{reviewCount} awaiting review · Open review list</Text></View>
