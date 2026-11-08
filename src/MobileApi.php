@@ -14,6 +14,7 @@ require_once __DIR__ . '/RehearsalVideoService.php';
 require_once __DIR__ . '/ProductionNotificationAccess.php';
 require_once __DIR__ . '/CastingCommunicationService.php';
 require_once __DIR__ . '/CastingOfferService.php';
+require_once __DIR__ . '/MembershipReviewQueue.php';
 require_once __DIR__ . '/ProductionChecklistAssignmentService.php';
 require_once __DIR__.'/LatePickupService.php';
 require_once __DIR__ . '/StorageService.php';
@@ -421,6 +422,7 @@ final class MobileApi
         self::json(['forms'=>$forms->fetchAll(),'shifts'=>$rows,'volunteer_enabled'=>$live,
             'production_todos'=>ProductionChecklistAssignmentService::actionItems($db,$id),
             'casting_offers'=>CastingOfferService::pendingForUser($db,$id),
+            'pending_membership_reviews'=>MembershipReviewQueue::count($db,$user),
             'late_pickup_notices'=>LatePickupService::familyNotices($db,$id)]);
     }
 
