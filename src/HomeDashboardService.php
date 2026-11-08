@@ -135,7 +135,7 @@ final class HomeDashboardService
         }
 
         return [
-            'getting_started'=>self::gettingStarted($db,$user,$family['children'],$productions,$selectedProduction),
+            'getting_started'=>self::gettingStarted($db,$user,$productions),
             'membership'=>[
                 'status'=>(string)($user['organization_membership_status'] ?? 'pending'),
                 'approved'=>$approved,
@@ -166,7 +166,7 @@ final class HomeDashboardService
      * Read-only first-use guidance. Do not infer membership approval from
      * sign-in, or treat a missing production as something the user can fix.
      */
-    private static function gettingStarted(PDO $db,array $user,array $children,array $productions,?array $selectedProduction):array
+    public static function gettingStarted(PDO $db,array $user,array $productions):array
     {
         $stmt=$db->prepare('SELECT email_verified_at,onboarding_completed_at FROM users WHERE id=:id LIMIT 1');
         $stmt->execute(['id'=>(int)$user['id']]);
