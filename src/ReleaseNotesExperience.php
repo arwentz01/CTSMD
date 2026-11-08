@@ -12,6 +12,12 @@ final class ReleaseNotesExperience
         'name'=>'Coming in the next app update',
         'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
         'sections'=>[
+            ['title'=>'Help for getting started','summary'=>'Clear, step-by-step guidance for families, students and staff.','details'=>[
+                'The app Help screen opens the CTSMD website Help & Guides center for searchable instructions.',
+                'New first-day guides walk staff, parents and students through sign-in, household setup, invitations, and where to find their next steps.',
+                'Guides explain that account activation, membership approval, and production assignments happen separately.',
+                'Instructions link directly to the relevant web pages, with topics filtered by staff responsibilities.'
+            ]],
             ['title'=>'Casting responses for production teams','summary'=>'See accepted and declined casting offers without hunting for updates.','details'=>[
                 'Authorized production staff can see new casting responses in Needs Your Attention.',
                 'Open Action Center to review and acknowledge a response. Once acknowledged, it no longer appears as outstanding for that person.'
