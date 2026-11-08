@@ -44,6 +44,7 @@ export default function Help(){
    <Text style={s.articleCategory}>WHERE: {g.where}</Text>
    {g.steps.map((step,index)=><View key={index} style={s.guideStep}><Text style={s.stepNumber}>{index+1}.</Text><Text style={s.stepText}>{step}</Text></View>)}
    <View style={s.guideTip}><Text style={s.title}>Good to know</Text><Text style={s.text}>{g.tip}</Text></View>
+   {!!g.prompt&&<View style={s.guidePrompt}><Text style={s.title}>Reusable production banner prompt</Text><Text style={s.text}>Select and copy this prompt, then replace the bracketed show details.</Text><Text selectable style={s.promptText}>{g.prompt}</Text></View>}
    <Pressable accessibilityRole="link" onPress={()=>void openWebsite('helpGuides').catch(e=>Alert.alert('Unable to open Help',e instanceof Error?e.message:'Please try again.'))}><Text style={s.link}>Open website Help Center <Ionicons name="open-outline" size={13} color={colors.primary}/></Text></Pressable>
   </View>}
  </View>)}
@@ -71,5 +72,7 @@ const s=StyleSheet.create({
  stepNumber:{width:20,fontWeight:'800',fontSize:14,color:colors.primary},
  stepText:{flex:1,fontSize:14,lineHeight:21,color:colors.text},
  guideTip:{padding:12,backgroundColor:colors.background,borderRadius:9,gap:5},
+ guidePrompt:{padding:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.background,borderRadius:10,gap:9},
+ promptText:{fontSize:12,lineHeight:20,color:colors.text,fontFamily:'monospace'},
  link:{color:colors.primary,fontSize:13,fontWeight:'800',paddingVertical:9},
  guideLink:{backgroundColor:colors.card,borderColor:colors.primary,borderWidth:1,borderRadius:12,padding:17,flexDirection:'row',alignItems:'center',gap:12,minHeight:104},guideTitle:{color:colors.text,fontWeight:'800',fontSize:17},guideDescription:{color:colors.text,fontSize:13,lineHeight:19},guideHint:{color:colors.primary,fontSize:12,fontWeight:'700'},back:{color:colors.primary,fontWeight:'700'},heading:{color:colors.navy,fontSize:18,fontWeight:'800',marginTop:9},card:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:15,gap:7},title:{color:colors.text,fontWeight:'700',fontSize:15},text:{color:colors.text,fontSize:14,lineHeight:21},row:{backgroundColor:colors.card,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},note:{color:colors.muted,fontSize:12,lineHeight:19,marginTop:9}});
