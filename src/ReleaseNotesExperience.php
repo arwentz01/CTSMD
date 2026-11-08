@@ -12,6 +12,12 @@ final class ReleaseNotesExperience
         'name'=>'Coming in the next app update',
         'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
         'sections'=>[
+            ['title'=>'Student invitations for families','summary'=>'Parents can see when students still need to activate their login.','details'=>[
+                'Home and Action Center show pending or expired student invitations.',
+                'Parents and legal guardians can resend an expired activation link from Family or add an email to an existing managed child.',
+                'Students must accept the email invitation and choose a password within 48 hours.',
+                'The alert clears after activation. Student activation grants general membership only; staff control production access.'
+            ]],
             ['title'=>'A clearer first-login experience','summary'=>'Your next steps appear on Home based on what is actually ready.','details'=>[
                 'A Getting Started checklist helps new staff, parents and students understand where to begin.',
                 'Completion is based on actual account and production records, not manually ticked boxes.',
