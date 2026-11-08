@@ -7,6 +7,7 @@ export const webRoutes={
  publicProductions:'/productions',
  whatsNew:'/whats-new',
  helpGuides:'/help',
+ studentGettingStartedGuide:'/help#guide-student-first-login',
  registration:'/register',
  productionWorkspace:'/production',
  productionCalendar:'/calendar',
