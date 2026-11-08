@@ -49,6 +49,16 @@ final class HelpGuideCatalog
                 'Sign in and complete household setup. If you do not have children to add, choose Continue without adding children.',
                 'Wait for staff to approve general CTSMD membership. Creating a login does not automatically approve membership or add you to a production.'
              ],'tip'=>'If your verification email does not arrive, check spam or junk before requesting another email.'],
+            ['id'=>'student-invitation-status','category'=>'Accounts & families','title'=>'Help your student activate their login','audience'=>'Parents & legal guardians','permission'=>'all','where'=>'Website and app','route'=>'/family/manage',
+             'intro'=>'Check an invitation, resend an expired link, or give an existing managed child their own login.',
+             'steps'=>[
+                'Open Home and look in Action Center for a student invitation alert. Pending means your student has not accepted the email yet.',
+                'Ask your student to open the invitation email and use the link within 48 hours to create a password.',
+                'If the invitation has expired, open the alert, find the student in Manage household, and choose Resend invitation.',
+                'If the child has no email and you want them to sign in separately, use Send student invitation in their household card to add an email address.',
+                'Once the student activates the existing account, the pending or expired alert disappears. There is no second account approval.',
+                'The student receives General Membership, but their production access is still assigned and removed separately by CTSMD staff.'
+             ],'tip'=>'A managed child without an email does not need to activate a separate login. Only their linked parent or legal guardian can send the student invitation.'],
             ['id'=>'add-children','category'=>'Accounts & families','title'=>'Add a child to your household','audience'=>'Parents & guardians','permission'=>'all','where'=>'Website','route'=>'/family/manage',
              'intro'=>'You can manage more than one child from the same family account.',
              'steps'=>[
