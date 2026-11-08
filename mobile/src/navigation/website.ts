@@ -6,6 +6,7 @@ export const webRoutes={
 
  publicProductions:'/productions',
  whatsNew:'/whats-new',
+ helpGuides:'/help',
  registration:'/register',
  productionWorkspace:'/production',
  productionCalendar:'/calendar',
