@@ -6,8 +6,8 @@ import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '../src/components/Screen';
 import {useAuth} from '../src/auth/AuthProvider';
-import {tasks,completeProductionTodo,respondCastingOffer,moderationAlerts,acknowledgeModeration,ApiError} from '../src/api/client';
-import type {ModerationAlerts} from '../src/api/client';
+import {tasks,completeProductionTodo,respondCastingOffer,notifications,markNotificationRead,moderationAlerts,acknowledgeModeration,ApiError} from '../src/api/client';
+import type {ModerationAlerts,MobileNotification} from '../src/api/client';
 import type {TasksResult} from '../src/types/ctsmd';
 import {colors} from '../src/theme/colors';
 
@@ -15,6 +15,9 @@ export default function ActionCenter(){
  const {user}=useAuth();
  const canModerate=!!user?.permissions?.some(p=>p==='community.moderate'||p==='safeguarding.manage')||!!user?.roles?.includes('administrator');
  const [data,setData]=useState<TasksResult|null>(null);
+ const canReviewCasting=!!user?.roles?.some(role=>role==='administrator'||role==='production_staff')||!!user?.permissions?.includes('production.manage');
+ const [castingResponses,setCastingResponses]=useState<MobileNotification[]>([]);
+ const [castingError,setCastingError]=useState('');
  const [moderation,setModeration]=useState<ModerationAlerts|null>(null);
  const [moderationError,setModerationError]=useState('');
  const [busy,setBusy]=useState<string|null>(null);
@@ -22,12 +25,14 @@ export default function ActionCenter(){
  const [notes,setNotes]=useState<Record<number,string>>({});
  const [declining,setDeclining]=useState<number|null>(null);
  const refresh=useCallback(async()=>{
-  const [assignmentResult,moderationResult]=await Promise.allSettled([tasks(),canModerate?moderationAlerts():Promise.resolve(null)]);
+  const [assignmentResult,moderationResult,castingResult]=await Promise.allSettled([tasks(),canModerate?moderationAlerts():Promise.resolve(null),canReviewCasting?notifications():Promise.resolve(null)]);
   if(assignmentResult.status==='fulfilled'){setData(assignmentResult.value);setError('');}
   else setError(assignmentResult.reason instanceof Error?assignmentResult.reason.message:'Unable to load your Action Center.');
+  if(castingResult.status==='fulfilled'){setCastingResponses((castingResult.value?.notifications||[]).filter(item=>item.source_type==='casting_offer_response'&&!item.read_at));setCastingError('');}
+  else{setCastingResponses([]);setCastingError(castingResult.reason instanceof Error?castingResult.reason.message:'Casting responses unavailable.');}
   if(moderationResult.status==='fulfilled'){setModeration(moderationResult.value);setModerationError('');}
   else{setModeration(null);setModerationError(moderationResult.reason instanceof ApiError&&moderationResult.reason.status===404?'The moderation service has not been deployed to CTSMD.me yet.':moderationResult.reason instanceof Error?moderationResult.reason.message:'Moderation alerts unavailable.');}
- },[canModerate]);
+ },[canModerate,canReviewCasting]);
  useFocusEffect(useCallback(()=>{void refresh();},[refresh]));
  const complete=async(id:number)=>{setBusy('task-'+id);try{await completeProductionTodo(id);await refresh();}catch(e){Alert.alert('Unable to complete task',e instanceof Error?e.message:'Please try again.');}finally{setBusy(null);}};
  const acknowledge=async(type:'community'|'message',id:number)=>{
@@ -42,6 +47,12 @@ export default function ActionCenter(){
   setBusy('offer-'+id);
   try{await respondCastingOffer(id,decision,note);await refresh();Alert.alert('Response recorded',decision==='accepted'?'You accepted the role.':'Your decline was sent to production staff.');}
   catch(e){Alert.alert('Unable to respond',e instanceof Error?e.message:'Please try again.');}
+  finally{setBusy(null);}
+ };
+ const acknowledgeCasting=async(id:number)=>{
+  setBusy('casting-response-'+id);
+  try{await markNotificationRead(id);setCastingResponses(current=>current.filter(item=>item.id!==id));}
+  catch(e){Alert.alert('Unable to acknowledge casting response',e instanceof Error?e.message:'Please try again.');}
   finally{setBusy(null);}
  };
  return <Screen title="Action Center">
@@ -72,6 +83,16 @@ export default function ActionCenter(){
     </View>)}
   </View>}
   {data&&<>
+   {canReviewCasting&&<View>
+    <View style={s.heading}><Ionicons name="star-outline" size={22} color={colors.primary}/><Text style={s.title}>Casting Responses</Text>{castingResponses.length>0&&<Text style={s.count}>{castingResponses.length}</Text>}</View>
+    {!!castingError&&<Text accessibilityRole="alert" style={s.error}>Casting responses couldn't load: {castingError}</Text>}
+    {!castingResponses.length&&!castingError&&<Text style={s.muted}>No casting responses awaiting acknowledgement.</Text>}
+    {castingResponses.map(item=><View key={'casting-response-'+item.id} style={s.card}>
+      <Text style={s.name}>{item.title}</Text>
+      <Text style={s.body}>{item.body}</Text>
+      <Pressable disabled={busy!==null} accessibilityRole="button" accessibilityLabel={'Acknowledge '+item.title} style={[s.button,busy!==null&&s.disabled]} onPress={()=>void acknowledgeCasting(item.id)}><Text style={s.buttonText}>Acknowledge response</Text></Pressable>
+    </View>)}
+   </View>}
    <View style={s.heading}><Ionicons name="checkbox-outline" size={22} color={colors.primary}/><Text style={s.title}>Production To-Dos</Text></View>
    {!data.production_todos.length&&<Text style={s.muted}>No outstanding production tasks.</Text>}
    {data.production_todos.map(t=><View key={t.assignment_id} style={s.card}>
