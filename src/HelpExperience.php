@@ -29,7 +29,7 @@ final class HelpExperience
         $guides=array_values(array_filter(HelpGuideCatalog::all(),static fn(array $guide):bool=>$allowed($guide['permission'])));
         $categories=array_values(array_unique(array_column($guides,'category')));
 
-        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help &amp; Guides · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/product-polish.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/help-guides.css?v=20261108-stable-accordion')?>"><?php MemberUI::styles($basePath); ?></head><body class="app-body<?=MemberUI::bodyClass()?>"><div class="unified-shell"><?php AppNavigation::renderSidebar('/help',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('CTSMD Connect','Help & Guides',$basePath);?><div class="help-page">
+        header('Content-Type:text/html; charset=utf-8');?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help &amp; Guides · CTSMD Connect</title><link rel="stylesheet" href="<?=$u('/assets/css/app.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/unified-navigation.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/product-polish.css')?>"><link rel="stylesheet" href="<?=$u('/assets/css/help-guides.css?v=20261108-banner-prompt')?>"><?php MemberUI::styles($basePath); ?></head><body class="app-body<?=MemberUI::bodyClass()?>"><div class="unified-shell"><?php AppNavigation::renderSidebar('/help',$basePath,$user);?><main class="unified-main"><?php AppNavigation::renderHeader('CTSMD Connect','Help & Guides',$basePath);?><div class="help-page">
 <section class="guide-intro" aria-labelledby="guide-intro-heading">
     <small>CTSMD CONNECT HELP CENTER</small><h2 id="guide-intro-heading">What would you like to do?</h2>
     <p>Choose a task for clear, step-by-step instructions. The guides shown here match the tools available to your account. If you don't see an action, your role or production access may be different.</p>
@@ -39,12 +39,20 @@ final class HelpExperience
 </section>
 <section class="guide-list" id="guide-list" aria-label="Step-by-step guides">
 <?php foreach($guides as $guide):?>
-<details class="guide-article" id="guide-<?=$esc($guide['id'])?>" data-guide-category="<?=$esc($guide['category'])?>" data-guide-search="<?=$esc(mb_strtolower($guide['title'].' '.$guide['category'].' '.$guide['intro'].' '.implode(' ',$guide['steps'])))?>">
+<details class="guide-article" id="guide-<?=$esc($guide['id'])?>" data-guide-category="<?=$esc($guide['category'])?>" data-guide-search="<?=$esc(mb_strtolower($guide['title'].' '.$guide['category'].' '.$guide['intro'].' '.implode(' ',$guide['steps']).' '.(string)($guide['prompt']??'')))?>">
   <summary><span class="guide-article-summary"><small><?=$esc($guide['category'])?></small><strong><?=$esc($guide['title'])?></strong><span><?=$esc($guide['intro'])?></span></span><span class="guide-chevron" aria-hidden="true">⌄</span></summary>
   <div class="guide-detail">
     <p class="guide-audience"><b>For:</b> <?=$esc($guide['audience'])?> <span>·</span> <b>Where:</b> <?=$esc($guide['where'])?></p>
     <ol><?php foreach($guide['steps'] as $step):?><li><?=$esc($step)?></li><?php endforeach;?></ol>
     <div class="guide-tip"><b>Good to know</b><p><?=$esc($guide['tip'])?></p></div>
+    <?php if(!empty($guide['prompt'])):?>
+      <section class="guide-prompt" aria-label="Reusable production banner prompt">
+        <div class="guide-prompt-heading"><h4>Reusable prompt</h4><button type="button" class="guide-copy-prompt" data-guide-copy-prompt>Copy prompt</button></div>
+        <p>Replace the bracketed details with your show's information. The background colors should match the production, not a fixed CTSMD color.</p>
+        <pre class="guide-prompt-text"><?=$esc($guide['prompt'])?></pre>
+        <span class="guide-copy-status" role="status" aria-live="polite"></span>
+      </section>
+    <?php endif;?>
     <a class="guide-open-link" href="<?=$u($guide['route'])?>">Open the relevant page <span aria-hidden="true">↗</span></a>
   </div>
 </details>
