@@ -12,7 +12,7 @@ final class MemberUI
         '/calendar'=>'Schedule','/schedule'=>'Production schedule','/cast'=>'Cast & company','/notifications'=>'Updates & actions',
         '/forms'=>'Forms','/forms/view'=>'Form details','/volunteer-readiness'=>'Volunteer readiness','/volunteer-shifts'=>'Opportunities & commitments','/volunteer/shift'=>'Shift details','/volunteer/approvals'=>'My approvals',
         '/volunteer/history'=>'Service history','/volunteer/service-record'=>'Service record','/volunteer/training'=>'Training','/volunteer/verifications'=>'Verified service','/volunteer/verification'=>'Service letter',
-        '/theatre-history'=>'Theatre History','/theatre-history/resume'=>'Acting CV','/student-profile'=>'Performer profile','/student-profile/family'=>'Family & Pickup','/family/caregiver-schedule'=>'Caregiver schedule',
+        '/help'=>'Help & Guides','/theatre-history'=>'Theatre History','/theatre-history/resume'=>'Acting CV','/student-profile'=>'Performer profile','/student-profile/family'=>'Family & Pickup','/family/caregiver-schedule'=>'Caregiver schedule',
         '/resources'=>'Resources','/resources/view'=>'Resource details','/files'=>'Files','/files/view'=>'File details','/videos'=>'Video Library','/videos/view'=>'Video details',
         '/archive'=>'Past productions','/archive/production'=>'Production history','/archive/community'=>'Historical Community','/attendance'=>'Attendance','/production'=>'Production','/playbills'=>'Playbill',
     ];
