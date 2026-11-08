@@ -94,6 +94,15 @@ export default function ActionCenter(){
     </View>)}
   </View>}
   {data&&<>
+   {!!data.student_invitations?.length&&<View>
+     <View style={s.heading}><Ionicons name="mail-unread-outline" size={22} color={colors.primary}/><Text style={s.title}>Student account invitations</Text><Text style={s.count}>{data.student_invitations.length}</Text></View>
+     {data.student_invitations.map(invitation=><View key={'student-'+invitation.child_id} style={s.card}>
+       <Text style={s.name}>{invitation.child_name}</Text>
+       <Text style={s.muted}>{invitation.status==='expired'?'Invitation expired':invitation.status==='not_sent'?'Invitation not sent':'Awaiting student activation'}</Text>
+       <Text style={s.body}>{invitation.status==='expired'?'The email invitation expired. Send a new activation link.':invitation.status==='not_sent'?'Send an invitation from Family to activate a student login.':'Your student must open the invitation email and create a password before signing in.'}</Text>
+       <Pressable accessibilityRole="button" accessibilityLabel={'Open family invitations for '+invitation.child_name} style={s.button} onPress={()=>void Linking.openURL(websiteUrl('familyManagement')+'#student-invite-'+invitation.child_id).catch(e=>Alert.alert('Unable to open family invitations',e instanceof Error?e.message:'Please try again.'))}><Text style={s.buttonText}>{invitation.status==='expired'?'Resend in Family':'Review in Family'}</Text></Pressable>
+     </View>)}
+   </View>}
    {(reviews.count>0||!!reviewError)&&<View>
     <View style={s.heading}><Ionicons name="people-outline" size={22} color={colors.primary}/><Text style={s.title}>Membership Reviews</Text>{reviews.count>0&&<Text style={s.count}>{reviews.count}</Text>}</View>
     {!!reviewError&&<Text accessibilityRole="alert" style={s.error}>Membership reviews couldn't load: {reviewError}</Text>}
