@@ -23,7 +23,7 @@ final class ReleaseNotesExperience
             ]],
             ['title'=>'Easier everyday navigation','summary'=>'Less clutter in conversations and clearer activity in Community.','details'=>[
                 'A more compact Messages inbox, faster search, and easier ways to start a conversation.',
-                'Clearer highlights for unread Community posts and a tighter feed layout.',
+                'Clearer unread badges on Community channels, plus a New Posts divider and temporary highlights when you open a channel.',
                 'Eligible Android test builds can show when a newer app update is available.'
             ]]
         ]
