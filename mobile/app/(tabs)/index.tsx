@@ -53,7 +53,7 @@ export default function Home(){
 function MemberHome(){
  const {user}=useAuth();
  const load=useCallback(async()=>{
-    const [t,a,m,n,mod,reviews]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'})),membershipReviews()]);
+    const [t,a,m,n,mod,reviews]=await Promise.all([theatre(),tasks(),conversations(),notifications(),moderationAlerts().then(value=>({value,error:null as string|null})).catch(e=>({value:null as ModerationAlerts|null,error:e instanceof ApiError&&e.status===404?'The moderation service has not been deployed to CTSMD.me yet.':e instanceof Error?e.message:'Moderation alerts unavailable.'})),membershipReviews().catch(e=>{if(e instanceof ApiError&&e.status===404)return {pending:[],count:0};throw e;})]);
     return {t,a,m,n,mod,reviews};
   },[]);
   const {data,error,loading,retry}=useScreenData(load);
