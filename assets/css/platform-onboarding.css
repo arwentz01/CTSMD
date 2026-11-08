@@ -118,3 +118,65 @@
  .app-body .household-page .household-children-column .member-editor-body{padding:17px}
  .app-body .household-page .household-add-icon{flex-basis:40px;width:40px;height:40px;font-size:27px}
 }
+
+/* Household visual reset: neutral surfaces, clear hierarchy, burgundy only for actions. */
+.app-body .household-page .household-hero{
+  background:#fff;color:#2b2024;border:1px solid #e5e0de;
+  box-shadow:none;border-radius:16px;padding:24px 28px;
+}
+.app-body .household-page .household-hero small{color:#8d243c}
+.app-body .household-page .household-hero h2{color:#2b2024;font-size:clamp(25px,2vw,32px)}
+.app-body .household-page .household-hero p{color:#635b5e}
+.app-body .household-page .household-hero a{color:#90243c;text-decoration:underline;text-underline-offset:3px}
+.app-body .household-page .household-panel,
+.app-body .household-page .household-family-guide{
+  background:#fff;border:1px solid #e5e0de;box-shadow:none;
+}
+.app-body .household-page .household-guide-top{
+  background:transparent;border-bottom:1px solid #ece7e5;padding:22px 23px;
+}
+.app-body .household-page .household-guide-features{
+  background:transparent;gap:0;padding:8px 22px;
+}
+.app-body .household-page .household-guide-feature{
+  background:transparent;border:0;border-radius:0;padding:18px 10px;
+}
+.app-body .household-page .household-guide-feature:nth-child(n+3){
+  border-top:1px solid #ede8e6;
+}
+.app-body .household-page .household-feature-icon{
+  background:transparent;border:1px solid #e7d8db;color:#92253d;
+  border-radius:11px;flex-basis:44px;width:44px;height:44px;font-size:25px;
+}
+.app-body .household-page .household-guide-foot{
+  background:transparent;border-top:1px solid #ece7e5;padding:15px 23px 18px;
+}
+.app-body .household-page .household-children-column .member-editor{
+  background:#fff;border:1px solid #e5e0de;
+}
+.app-body .household-page .household-children-column .member-editor>summary{
+  background:#fff;
+}
+.app-body .household-page .household-children-column .member-editor>summary:hover,
+.app-body .household-page .household-children-column .member-editor>summary:focus-visible{
+  background:#f7f5f4;
+}
+.app-body .household-page .household-children-column .member-editor-body{
+  background:#fff;border-top:1px solid #ece7e5;
+}
+.app-body .household-page .household-email-field{
+  background:#fff;border:1px solid #e5e0de;
+}
+@media(max-width:1200px){
+ .app-body .household-page .household-guide-feature:nth-child(n+2){border-top:1px solid #ede8e6}
+ .app-body .household-page .household-guide-feature:first-child{border-top:0}
+}
+@media(min-width:821px) and (max-width:1200px){
+ .app-body .household-page .household-guide-features{grid-template-columns:1fr}
+}
+@media(max-width:540px){
+ .app-body .household-page .household-hero{padding:20px}
+ .app-body .household-page .household-guide-features{padding:6px 14px}
+ .app-body .household-page .household-guide-feature:nth-child(n){border-top:1px solid #ede8e6}
+ .app-body .household-page .household-guide-feature:first-child{border-top:0}
+}
