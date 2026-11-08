@@ -124,7 +124,8 @@ final class AdultMembershipInvitationService
     public static function revoke(PDO $db,array $actor,int $userId):void
     {
         if(!AccessPolicy::canManageAccounts($actor))throw new RuntimeException('Account management permission is required.');
-        $q=$db->prepare("SELECT id FROM users WHERE id=:id AND account_status='invited' AND active=1 LIMIT 1");
+        $q=$db->prepare("SELECT u.id FROM users u WHERE u.id=:id AND u.account_status='invited' AND u.active=1
+            AND EXISTS(SELECT 1 FROM auth_invitations i WHERE i.user_id=u.id AND i.purpose='general_membership' AND i.accepted_at IS NULL) LIMIT 1");
         $q->execute(['id'=>$userId]);
         if(!$q->fetchColumn())throw new RuntimeException('Only pending invitations can be revoked.');
         $db->beginTransaction();
