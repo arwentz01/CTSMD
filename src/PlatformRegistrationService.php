@@ -117,10 +117,55 @@ final class PlatformRegistrationService
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw new RuntimeException('We could not add that child profile. Please try again.');}
     }
 
+    public static function resendStudentInvitation(PDO $db,array $guardian,int $childId,string $basePath):void
+    {
+        if($childId<=0||Auth::hasRole($guardian,'student'))throw new RuntimeException('That student invitation is not available.');
+        // No administrator override: only a currently linked parent or legal guardian.
+        $q=$db->prepare("SELECT u.id,u.account_status,u.email
+            FROM family_relationships fr
+            JOIN users u ON u.id=fr.student_user_id AND u.active=1
+            WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:child
+              AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+              AND EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.active=1 AND ar.code='student' WHERE ur.user_id=u.id)
+            LIMIT 1");
+        $q->execute(['guardian'=>(int)$guardian['id'],'child'=>$childId]);
+        $child=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$child||$child['account_status']!=='managed'||empty($child['email']))throw new RuntimeException('This student does not have an inactive invited account with an email address.');
+        $latest=$db->prepare('SELECT expires_at,verified_at FROM auth_email_verifications WHERE user_id=:child ORDER BY id DESC LIMIT 1');
+        $latest->execute(['child'=>$childId]);
+        $invitation=$latest->fetch(PDO::FETCH_ASSOC);
+        if($invitation&&empty($invitation['verified_at'])&&strtotime((string)$invitation['expires_at'])>time())throw new RuntimeException('The current invitation is still active. Ask your student to check their email, including the spam folder.');
+        self::inviteManagedChild($db,$childId,(int)$guardian['id'],$basePath);
+    }
+
+    public static function addStudentInvitationEmail(PDO $db,array $guardian,int $childId,string $email,string $basePath):void
+    {
+        $email=mb_strtolower(trim($email));
+        if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>254)throw new RuntimeException('Enter a valid student email address.');
+        if($childId<=0||Auth::hasRole($guardian,'student'))throw new RuntimeException('That student invitation is not available.');
+        $q=$db->prepare("SELECT u.email FROM family_relationships fr JOIN users u ON u.id=fr.student_user_id AND u.active=1 AND u.account_status='managed'
+            WHERE fr.guardian_user_id=:guardian AND fr.student_user_id=:child AND fr.status='active' AND fr.relationship_type IN ('parent','guardian')
+            AND EXISTS(SELECT 1 FROM auth_user_roles ur JOIN auth_roles ar ON ar.id=ur.role_id AND ar.active=1 AND ar.code='student' WHERE ur.user_id=u.id)
+            LIMIT 1");
+        $q->execute(['guardian'=>(int)$guardian['id'],'child'=>$childId]);
+        $existing=$q->fetchColumn();
+        if($existing===false)throw new RuntimeException('You do not have permission to invite this student.');
+        if(trim((string)$existing)!=='')throw new RuntimeException('This student already has an invitation email. Contact CTSMD if it needs correcting.');
+        $duplicate=$db->prepare('SELECT id FROM users WHERE LOWER(email)=:email LIMIT 1');
+        $duplicate->execute(['email'=>$email]);
+        if($duplicate->fetchColumn())throw new RuntimeException('This email belongs to an existing CTSMD account. Contact CTSMD to resolve the duplicate.');
+        $update=$db->prepare("UPDATE users SET email=:email WHERE id=:id AND account_status='managed' AND (email IS NULL OR email='')");
+        $update->execute(['email'=>$email,'id'=>$childId]);
+        if($update->rowCount()!==1)throw new RuntimeException('The student email could not be saved.');
+        self::inviteManagedChild($db,$childId,(int)$guardian['id'],$basePath);
+    }
+
     private static function inviteManagedChild(PDO $db,int $childId,int $guardianId,string $basePath):void
     {
         $q=$db->prepare("SELECT id,first_name,last_name,email FROM users WHERE id=:id AND account_status='managed' AND active=1 AND email IS NOT NULL LIMIT 1");
         $q->execute(['id'=>$childId]);$child=$q->fetch();if(!$child)return;
+        // Invalidate older unused tokens before issuing a replacement.
+        $db->prepare('UPDATE auth_email_verifications SET verified_at=CURRENT_TIMESTAMP WHERE user_id=:user AND verified_at IS NULL')->execute(['user'=>$childId]);
         $token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);
         $db->prepare("INSERT INTO auth_email_verifications (user_id,token_hash,expires_at) VALUES (:user,:hash,DATE_ADD(NOW(),INTERVAL 48 HOUR))")->execute(['user'=>$childId,'hash'=>$hash]);
         $link=self::absoluteUrl('/student/activate?token='.$token,$basePath);
