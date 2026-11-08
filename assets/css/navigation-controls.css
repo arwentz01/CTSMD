@@ -5,3 +5,14 @@
 @media(max-width:780px){.unified-header .unified-account-panel{position:fixed;top:calc(64px + env(safe-area-inset-top));right:12px}.unified-header .unified-utilities{gap:6px}.unified-header .unified-account>summary{width:44px!important;height:44px!important}.unified-header .unified-title,.ux-member .unified-header .unified-title{max-width:calc(100% - 220px)!important}.unified-header .unified-title h1{max-width:100%!important}}
 
 @media(max-width:780px){.unified-header{justify-content:flex-start!important}.unified-header .unified-title,.ux-member .unified-header .unified-title,.ux-operations .unified-header .unified-title{flex:1;max-width:none!important;margin-left:44px;text-align:left!important}.unified-header .unified-utilities{position:static!important;margin-left:auto!important;flex:none}.unified-header .unified-title h1{max-width:100%!important}}
+
+/* Help & Guides shortcut in the shared header. */
+.unified-header .unified-help-link{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 35px;width:35px;height:35px;
+ border:1px solid var(--ux-line,#ddd4d0);border-radius:50%;
+ background:#fff;color:var(--ux-wine,#8b233b);
+ font-size:15px;font-weight:800;text-decoration:none;
+}
+.unified-header .unified-help-link:hover{background:#faf5f5;border-color:#ba8996}
+.unified-header .unified-help-link:focus-visible{outline:3px solid var(--ux-focus,#8b2038);outline-offset:2px}
