@@ -25,7 +25,8 @@ export const nextReleasePreview={
    'Completed steps are based on real account setup and production access, not on whether someone tapped a button.',
    'Items awaiting CTSMD approval or production assignment are clearly marked, so you know when staff need to act.',
    'Relevant actions link to the correct account, household, production or Help page.',
-   'The checklist steps out of the way once your setup is ready.'
+   'The checklist steps out of the way once your setup is ready.',
+   'You can hide the checklist for seven days and bring it back from Home whenever you want.'
   ]},
   {title:'Help for getting started',summary:'Clear, step-by-step guidance for families, students and staff.',items:[
    'A Help & Guides link from the app opens the CTSMD website with searchable, step-by-step instructions.',
