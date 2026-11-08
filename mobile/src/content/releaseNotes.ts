@@ -20,6 +20,13 @@ export const nextReleasePreview={
  title:'Coming in the next app update',
  introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
  sections:[
+  {title:'Invitations and Help Center',summary:'A faster way for adults to join, and help articles you can read in the app.',items:[
+   'Authorized account reviewers can invite adults by email with General Membership preapproved. The adult completes their name, contact details and password from the seven-day invitation link.',
+   'No second membership review is needed after that invitation is accepted. Staff permissions and show assignments are granted separately.',
+   'Account reviewers can see pending or expired invitations and resend or revoke them.',
+   'Help & Support now includes searchable, expandable step-by-step guides directly in the mobile app, filtered to your permissions.',
+   'Parents continue to initiate all student account invitations, with activation reminders in Home and Action Center.'
+  ]},
   {title:'Student invitations for families',summary:'Parents can tell when a student still needs to activate their own login.',items:[
    'Home and Action Center highlight student invitations awaiting acceptance or expired.',
    'Open Family to resend an expired invitation, or add an email to a managed child who wants their own login.',
