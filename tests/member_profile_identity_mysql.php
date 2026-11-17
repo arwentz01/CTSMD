@@ -15,6 +15,16 @@ try{
     $fixture=myTheatreFixture($db);$u=$fixture['users'];
     $actor=static fn(string $name):array=>['id'=>$u[$name],'roles'=>$fixture['roles'][$name],'permissions'=>[]];
     $ok(MemberProfilePhotoService::canView($db,$actor('StudentSingle'),$u['StudentSingle']),'A member can view their own photo');
+    $ok(CommunicationExperience::eligibleForNewMessage($db,$actor('Member'),$u['StudentSingle'])!==null,
+        'Eligible adult can reach student through guardian-inclusive messaging');
+    $ok(CommunicationExperience::eligibleForNewMessage($db,$actor('StudentSingle'),$u['Member'])!==null,
+        'Eligible student can contact adult with guardian protections');
+    $ok(CommunicationExperience::eligibleForNewMessage($db,$actor('StudentSingle'),$u['StudentB'])===null,
+        'Student-to-student shortcut is never offered');
+    $results=CommunicationExperience::searchRecipients($db,$actor('Member'),'Theatre StudentSingle');
+    $ok(in_array($u['StudentSingle'],array_map('intval',array_column($results,'id')),true),
+        'Native recipient search finds eligible student under existing safeguarding rules');
+
     $ok(MemberProfilePhotoService::canView($db,$actor('GuardianOne'),$u['StudentSingle']),'An active parent or guardian can view their linked student');
     $ok(MemberProfilePhotoService::canView($db,$actor('StudentSingle'),$u['GuardianOne']),'An active student can view their guardian');
     $ok(!MemberProfilePhotoService::canView($db,$actor('FormerGuardian'),$u['StudentSingle']),'Former guardian has no photo permission from inactive relationship');
