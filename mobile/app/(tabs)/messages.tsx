@@ -1,4 +1,5 @@
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
+import {MemberAvatar} from '../../src/components/MemberAvatar';
 import React,{useCallback,useEffect,useState} from 'react';
 import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -49,7 +50,7 @@ export default function Messages(){
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {!!data?.conversations.length&&<View style={s.list}>
    {data.conversations.map(c=><Pressable key={c.id} accessibilityRole="button" accessibilityLabel={'Open conversation with '+(c.display_name||'Conversation')} accessibilityHint="Press and hold to archive or restore this conversation" disabled={busy!==null} onPress={()=>router.push({pathname:'/messages/[id]',params:{id:String(c.id)}})} onLongPress={()=>changeArchive(c.id,!c.archived_at)} style={s.row}>
-    <View style={s.avatar}><Text style={s.initials}>{(c.display_name||'C').split(' ').slice(0,2).map(x=>x[0]||'').join('').toUpperCase()}</Text></View>
+    {c.avatar_user_id?<MemberAvatar userId={c.avatar_user_id} initials={c.avatar_initials||'?'} size={43} hasAvatar={!!c.has_avatar}/>:<View style={s.avatar}><Text style={s.initials}>{(c.display_name||'C').split(' ').slice(0,2).map(x=>x[0]||'').join('').toUpperCase()}</Text></View>}
     <View style={s.content}><Text style={s.name} numberOfLines={1}>{c.display_name||'Conversation'}</Text><Text style={s.preview} numberOfLines={1}>{c.preview||'No visible messages'}</Text></View>
     {c.unread_count>0&&<View style={s.unread}><Text style={s.unreadText}>{c.unread_count}</Text></View>}
    </Pressable>)}
