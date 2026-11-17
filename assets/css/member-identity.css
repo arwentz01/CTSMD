@@ -1,0 +1,11 @@
+/* Member identity: consistent round avatars, never full-size uploads. */
+.member-avatar{display:inline-grid;place-items:center;flex:none;object-fit:cover;border-radius:50%;vertical-align:middle}
+.member-avatar-small{width:36px;height:36px}
+.member-avatar-medium{width:52px;height:52px}
+.member-avatar-fallback{background:#eee4e8;color:#773045;font-size:12px;font-weight:800;border:1px solid #d8c3cc}
+.community-author-identity{display:flex;align-items:center;gap:9px;min-width:0}
+.community-author-identity>b{font-size:inherit}
+.comm-post-byline.community-author-identity{display:flex;align-items:center;gap:8px}
+.comm-post-byline .member-avatar{margin:0}
+.comm-avatar-stack i:has(.member-avatar),.comm-message-avatar:has(.member-avatar),.comm-bubble header i:has(.member-avatar),.comm-participants-list i:has(.member-avatar){overflow:hidden;padding:0}
+.comm-avatar-stack img.member-avatar,.comm-message-avatar img.member-avatar,.comm-bubble header img.member-avatar,.comm-participants-list img.member-avatar{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
