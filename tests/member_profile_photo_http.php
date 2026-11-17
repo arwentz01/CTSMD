@@ -41,7 +41,13 @@ try{
         foreach($headersOut as $h)if(preg_match('/^Set-Cookie:\\s*([^=]+)=([^;]*)/i',$h,$m))$cookies[$actor][$m[1]]=$m[1].'='.$m[2];
         return ['status'=>(int)($status[1]??0),'body'=>(string)$response,'headers'=>$headersOut];
     };
-    $csrf=static function(string $html):string{
+    $csrf=static function(string $html,?string $action=null):string{
+        if($action!==null){
+            $doc=new DOMDocument();@$doc->loadHTML($html);$xpath=new DOMXPath($doc);
+            $node=$xpath->query("//form[.//input[@name='action' and @value='".$action."']]//input[@name='csrf_token']/@value")->item(0);
+            if(!$node)throw new RuntimeException('Action-specific CSRF token not found.');
+            return (string)$node->nodeValue;
+        }
         if(!preg_match('/name="csrf_token" value="([^"]+)"/',$html,$m))throw new RuntimeException('CSRF token not found.');
         return html_entity_decode($m[1],ENT_QUOTES,'UTF-8');
     };
@@ -53,7 +59,7 @@ try{
     }
     $account=$request('GuardianOne','/account');
     $ok($account['status']===200,'Account photo editor is available');
-    $token=$csrf($account['body']);
+    $token=$csrf($account['body'],'avatar');
     $upload=static function(string $actor,string $csrfToken,string $filename,string $type,string $bytes)use($request):array{
         $boundary='ctsmdPhoto'.bin2hex(random_bytes(10));$data='';
         foreach(['csrf_token'=>$csrfToken,'action'=>'avatar'] as $field=>$value){
