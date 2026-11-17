@@ -692,7 +692,20 @@ final class MobileApi
         try {$result=CommunityExperience::activityFeed($db,$user,0,isset($_GET['cursor'])?(string)$_GET['cursor']:null);} catch (InvalidArgumentException $e) {self::json(['error'=>'Invalid feed cursor.'],400);}
         self::addHeartCounts($db,$result['posts'],(int)$user['id']);
         self::addFeedUnreadFlags($db,$result['posts'],(int)$user['id']);
+        self::addMessageEligibility($db,$user,$result['posts']);
         self::json($result);
+    }
+
+    /** Do not offer member DMs when the existing CTSMD safeguarding flow forbids them. */
+    private static function addMessageEligibility(PDO $db,array $viewer,array &$rows):void
+    {
+        $cache=[];
+        foreach($rows as &$row){
+            $id=(int)($row['author_user_id']??0);
+            if(!array_key_exists($id,$cache))$cache[$id]=CommunicationExperience::eligibleForNewMessage($db,$viewer,$id)!==null;
+            $row['can_message']=$cache[$id];
+        }
+        unset($row);
     }
 
     private static function addFeedUnreadFlags(PDO $db,array &$posts,int $viewerId): void
@@ -736,7 +749,7 @@ final class MobileApi
         $posts=$p->fetchAll();
         foreach($posts as &$post)$post['unread']=(int)$post['id']>$lastReadId && (int)$post['author_user_id']!==(int)$user['id'];
         unset($post);
-        CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::json(['channel'=>$channel,'posts'=>$posts]);
+        CommunicationReadStateService::markChannelRead($db,(int)$user['id'],$id);$media=CommunityAttachmentService::forPosts($db,array_map(static fn(array $post):int=>(int)$post['id'],$posts));foreach($posts as &$post)$post['attachments']=$media[(int)$post['id']]??[];unset($post);self::addHeartCounts($db,$posts,(int)$user['id']);self::addMessageEligibility($db,$user,$posts);self::json(['channel'=>$channel,'posts'=>$posts]);
     }
 
     private static function communityPhoto(PDO $db,array $user): never
@@ -814,7 +827,7 @@ final class MobileApi
         }
         self::requireMethod('GET');
         $stmt=$db->prepare("SELECT r.id,r.post_id,r.body,r.created_at,r.author_user_id,u.initials,(photo.user_id IS NOT NULL) has_avatar,CONCAT(u.first_name,' ',u.last_name) author FROM channel_post_replies r JOIN users u ON u.id=r.author_user_id LEFT JOIN member_profile_photos photo ON photo.user_id=r.author_user_id WHERE r.post_id=:post AND r.moderation_status='published' AND r.deleted_at IS NULL ORDER BY r.created_at ASC,r.id ASC LIMIT 200");
-        $stmt->execute(['post'=>$postId]);self::json(['replies'=>$stmt->fetchAll()]);
+        $stmt->execute(['post'=>$postId]);$replies=$stmt->fetchAll();self::addMessageEligibility($db,$user,$replies);self::json(['replies'=>$replies]);
     }
 
     private static function logout(PDO $db): never
