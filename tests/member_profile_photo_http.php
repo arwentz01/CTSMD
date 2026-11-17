@@ -65,6 +65,11 @@ try{
     };
     $response=$upload('GuardianOne',$token,'portrait.png','image/png',$makeImage(30));
     $ok($response['status']===303,'Valid image upload redirects successfully');
+    $feedback=$request('GuardianOne','/account');
+    if(!str_contains($feedback['body'],'Your profile photo was updated.')){
+        preg_match('~<div class="myaccount-flash[^"]*"[^>]*>(.*?)</div>~s',$feedback['body'],$flash);
+        throw new RuntimeException('Upload did not save: '.trim(strip_tags((string)($flash[1]??'No account feedback reported'))));
+    }
     $userId=(int)$users['GuardianOne'];$photo=MemberProfilePhotoService::row($db,$userId);
     $ok(is_array($photo)&&$photo['avatar_small_key']!=='','Profile image references stored in database');
     $oldPaths=array_map(static fn(string $field):string=>$storage.'/'.(string)$photo[$field],['avatar_large_key','avatar_medium_key','avatar_small_key']);
