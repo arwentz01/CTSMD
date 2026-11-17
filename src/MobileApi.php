@@ -17,6 +17,7 @@ require_once __DIR__ . '/CastingOfferService.php';
 require_once __DIR__ . '/ProductionChecklistAssignmentService.php';
 require_once __DIR__.'/LatePickupService.php';
 require_once __DIR__ . '/StorageService.php';
+require_once __DIR__ . '/MemberProfilePhotoService.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CalendarService.php';
 require_once __DIR__ . '/HomeDashboardService.php';
@@ -58,7 +59,7 @@ final class MobileApi
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
             $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
             $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report','/api/mobile/message-delete','/api/mobile/conversation-archive'];
-            if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/help-guides','/api/mobile/logout'],$accountConversationRoutes),true)){
+            if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/help-guides','/api/mobile/avatar','/api/mobile/avatar-upload','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
             // Mirror the web membership gate: a pending account without an active
@@ -81,6 +82,8 @@ final class MobileApi
                 '/api/mobile/daily-tasks' => self::dailyTasks($db, $user),
                 '/api/mobile/getting-started' => self::json(['getting_started'=>HomeDashboardService::gettingStarted($db,$user,ProductionContext::activeProductions($db,$user))]),
                 '/api/mobile/help-guides' => self::json(['guides'=>HelpGuideCatalog::availableFor($user)]),
+                '/api/mobile/avatar' => self::avatarImage($db,$user),
+                '/api/mobile/avatar-upload' => self::avatarUpload($db,$user),
                 '/api/mobile/membership-reviews' => self::membershipReviews($db,$user),
                 '/api/mobile/casting-offer-respond' => self::castingOfferRespond($db,$user),
                 '/api/mobile/production-todo-complete' => self::productionTodoComplete($db,$user),
@@ -123,6 +126,19 @@ final class MobileApi
             error_log('Mobile API error: ' . $e->getMessage());
             self::json(['error' => 'The CTSMD service could not complete that request.'], 500);
         }
+    }
+
+    private static function avatarImage(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        MemberProfilePhotoService::stream($db,dirname(__DIR__),$user,(int)($_GET['id']??$user['id']),(string)($_GET['size']??'small'));
+    }
+
+    private static function avatarUpload(PDO $db,array $user):never
+    {
+        self::requireMethod('POST');
+        MemberProfilePhotoService::save($db,dirname(__DIR__),(int)$user['id'],$_FILES['avatar']??[]);
+        self::json(['ok'=>true]);
     }
 
     private static function videos(PDO $db,array $user):never
@@ -567,9 +583,9 @@ final class MobileApi
         $conversation = $access->fetch();
         if (!$conversation) self::json(['error'=>'Conversation not found.'],404);
 
-        $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,cp.last_read_message_id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.user_id");
+        $p=$db->prepare("SELECT cp.user_id,cp.participant_role,cp.guardian_required,cp.last_read_message_id,CONCAT(u.first_name,' ',u.last_name) name,u.display_role role,u.initials,(photo.user_id IS NOT NULL) has_avatar FROM conversation_participants cp JOIN users u ON u.id=cp.user_id LEFT JOIN member_profile_photos photo ON photo.user_id=cp.user_id WHERE cp.conversation_id=:id ORDER BY cp.user_id");
         $p->execute(['id'=>$id]);
-        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials FROM messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND m.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides hide WHERE hide.message_id=m.id AND hide.user_id=:viewer) AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
+        $m=$db->prepare("SELECT m.id,m.body,m.created_at,m.sender_user_id,CONCAT(u.first_name,' ',u.last_name) sender,u.display_role sender_role,u.initials,(photo.user_id IS NOT NULL) has_avatar FROM messages m JOIN users u ON u.id=m.sender_user_id LEFT JOIN member_profile_photos photo ON photo.user_id=m.sender_user_id WHERE m.conversation_id=:id AND m.hidden_at IS NULL AND m.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides hide WHERE hide.message_id=m.id AND hide.user_id=:viewer) AND (:cutoff IS NULL OR m.id<=:cutoff2) ORDER BY m.created_at,m.id");
         $m->execute(['id'=>$id,'viewer'=>(int)$user['id'],'cutoff'=>$conversation['history_through_message_id'],'cutoff2'=>$conversation['history_through_message_id']]);
         CommunicationReadStateService::markConversationRead($db,(int)$user['id'],$id);
         $conversation['send_allowed']=true;$conversation['safety_issue']=null;try{SafeguardedConversationPolicy::enforceForSend($db,$id,(int)$user['id']);}catch(RuntimeException $error){$conversation['send_allowed']=false;$conversation['safety_issue']=$error->getMessage();}
@@ -716,7 +732,7 @@ final class MobileApi
         CommunicationReadStateService::communityUnread($db,$user);
         $baseline->execute(['user'=>(int)$user['id'],'channel'=>$id]);
         $lastReadId=(int)($baseline->fetchColumn()?:0);
-        $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at,cp.id");$p->execute(['id'=>$id]);
+        $p=$db->prepare("SELECT cp.id,cp.body,cp.created_at,cp.author_user_id,cp.pinned,CONCAT(u.first_name,' ',u.last_name) author,u.display_role author_role,u.initials,(photo.user_id IS NOT NULL) has_avatar FROM channel_posts cp JOIN users u ON u.id=cp.author_user_id LEFT JOIN member_profile_photos photo ON photo.user_id=cp.author_user_id WHERE cp.channel_id=:id AND cp.moderation_status='published' AND cp.hidden_at IS NULL AND cp.deleted_at IS NULL ORDER BY cp.created_at,cp.id");$p->execute(['id'=>$id]);
         $posts=$p->fetchAll();
         foreach($posts as &$post)$post['unread']=(int)$post['id']>$lastReadId && (int)$post['author_user_id']!==(int)$user['id'];
         unset($post);
@@ -797,7 +813,7 @@ final class MobileApi
             self::json(['ok'=>true,'status'=>$status,'reply_id'=>(int)$db->lastInsertId()]);
         }
         self::requireMethod('GET');
-        $stmt=$db->prepare("SELECT r.id,r.post_id,r.body,r.created_at,r.author_user_id,u.initials,CONCAT(u.first_name,' ',u.last_name) author FROM channel_post_replies r JOIN users u ON u.id=r.author_user_id WHERE r.post_id=:post AND r.moderation_status='published' AND r.deleted_at IS NULL ORDER BY r.created_at ASC,r.id ASC LIMIT 200");
+        $stmt=$db->prepare("SELECT r.id,r.post_id,r.body,r.created_at,r.author_user_id,u.initials,(photo.user_id IS NOT NULL) has_avatar,CONCAT(u.first_name,' ',u.last_name) author FROM channel_post_replies r JOIN users u ON u.id=r.author_user_id LEFT JOIN member_profile_photos photo ON photo.user_id=r.author_user_id WHERE r.post_id=:post AND r.moderation_status='published' AND r.deleted_at IS NULL ORDER BY r.created_at ASC,r.id ASC LIMIT 200");
         $stmt->execute(['post'=>$postId]);self::json(['replies'=>$stmt->fetchAll()]);
     }
 
