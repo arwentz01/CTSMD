@@ -24,7 +24,8 @@ final class CommunicationExperience
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);$userId=(int)$user['id'];$_SESSION['communication_csrf']??=bin2hex(random_bytes(24));
         if($route==='/messages/recipient-search'){
-            RateLimiter::enforce($db,'message_recipient_search','account:'.(int)$user['id'],120,300,300);
+            try{RateLimiter::enforce($db,'message_recipient_search','account:'.(int)$user['id'],120,300,300);}
+            catch(RateLimitExceeded $e){http_response_code(429);header('Retry-After: '.$e->retryAfter);header('Content-Type: application/json; charset=utf-8');echo json_encode(['error'=>$e->getMessage()]);exit;}
             header('Content-Type: application/json; charset=utf-8');
             header('Cache-Control: no-store');
             echo json_encode(['recipients'=>self::searchRecipients($db,$user,(string)($_GET['q']??''))],JSON_THROW_ON_ERROR);
