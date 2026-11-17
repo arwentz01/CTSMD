@@ -20,6 +20,13 @@ export const nextReleasePreview={
  title:'Coming in the next app update',
  introduction:'We are working on a few improvements to make important updates easier to find and act on. These are not available in every installed app yet.',
  sections:[
+  {title:'Profile photos and easier messaging',summary:'Recognize members and find the right person before messaging.',items:[
+   'Add or replace a profile photo through My Account. The mobile picker offers an adjustable square crop, while the website provides a circular preview with zoom and reposition controls.',
+   'Your current profile photo appears in Community and conversations. People without a photo display their initials.',
+   'Find eligible members by searching their names. Matching names include a member identifier to help you choose correctly.',
+   'Tap the Message shortcut beside an eligible Community author to start a conversation using the existing Messages screen.',
+   'Student-to-staff conversations continue to require appropriate safeguarding and guardian participation. Private messaging shortcuts never bypass these rules.'
+  ]},
   {title:'Invitations and Help Center',summary:'A faster way for adults to join, and help articles you can read in the app.',items:[
    'Authorized account reviewers can invite adults by email with General Membership preapproved. The adult completes their name, contact details and password from the seven-day invitation link.',
    'No second membership review is needed after that invitation is accepted. Staff permissions and show assignments are granted separately.',
