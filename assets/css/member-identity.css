@@ -9,3 +9,8 @@
 .comm-post-byline .member-avatar{margin:0}
 .comm-avatar-stack i:has(.member-avatar),.comm-message-avatar:has(.member-avatar),.comm-bubble header i:has(.member-avatar),.comm-participants-list i:has(.member-avatar){overflow:hidden;padding:0}
 .comm-avatar-stack img.member-avatar,.comm-message-avatar img.member-avatar,.comm-bubble header img.member-avatar,.comm-participants-list img.member-avatar{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
+
+.community-message-shortcut{display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;min-width:31px;border-radius:9px;color:#85465c;text-decoration:none;vertical-align:middle}
+.community-message-shortcut:hover{background:#f3e8ed;color:#65263e}
+.community-message-shortcut:focus-visible{outline:3px solid #ab6f84;outline-offset:2px}
+.community-author-identity .community-message-shortcut{margin-left:0}
