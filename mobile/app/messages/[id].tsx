@@ -2,6 +2,7 @@ import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import React,{useCallback,useEffect,useState} from 'react';
 import {Alert,FlatList,Modal,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {ConversationViewport} from '../../src/components/ConversationViewport';
+import {MemberAvatar} from '../../src/components/MemberAvatar';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {thread,sendMessage,reportMessage,deleteMessage,archiveConversation} from '../../src/api/client';
@@ -72,7 +73,7 @@ export default function ThreadScreen(){
     <Text style={styles.panelDescription}>Conversation participants are listed below. CTSMD monitors messages for safeguarding.</Text>
     <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={styles.participantList}>
      {data.participants.map(person=><View key={person.user_id} style={styles.participant}>
-      <View style={styles.participantAvatar}><Text style={styles.participantInitials}>{person.initials||person.name.split(' ').filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?'}</Text></View>
+      <MemberAvatar userId={person.user_id} initials={person.initials||'?'} size={42} hasAvatar={!!person.has_avatar}/>
       <View style={styles.flex}><Text style={styles.participantName}>{person.name}</Text><Text style={styles.participantRole}>{person.participant_role.replace(/_/g,' ').replace(/^./,letter=>letter.toUpperCase())}</Text></View>
      </View>)}
     </ScrollView>
@@ -83,7 +84,7 @@ export default function ThreadScreen(){
     const intended=(data?.participants||[]).filter(p=>p.user_id!==user?.id&&p.participant_role!=='guardian');
     const read=mine&&intended.length>0&&intended.every(p=>Number(p.last_read_message_id)>=m.id);
     return <View style={[styles.messageRow,mine&&styles.mineRow]}>
-     {!mine&&<View style={styles.initials}><Text style={styles.initialText}>{m.initials||'?'}</Text></View>}
+     {!mine&&<MemberAvatar userId={m.sender_user_id} initials={m.initials||'?'} size={36} hasAvatar={!!m.has_avatar}/>}
      <View style={[styles.messageContent,mine&&styles.mineContent]}>
       <Pressable accessibilityRole="button" accessibilityLabel={reportSelecting?'Select message to report':'Message options'} accessibilityHint={reportSelecting?'Tap to report this message':'Press and hold for message deletion options'} onPress={()=>{if(reportSelecting){setReportTarget(m.id);setReportReason('other');setReportDetail('');setReportSelecting(false)}}} onLongPress={()=>{if(!reportSelecting)setDeleteTarget({id:m.id,mine,canRecall:!!m.can_recall})}} style={[styles.bubble,mine&&styles.mineBubble]}>
        <Text style={[styles.messageText,mine&&styles.mineText]}>{m.body}</Text>
