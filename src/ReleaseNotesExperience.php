@@ -12,6 +12,13 @@ final class ReleaseNotesExperience
         'name'=>'Coming in the next app update',
         'intro'=>'We are working on improvements that make important theatre updates easier to find and act on. These features are not available in every installed app yet.',
         'sections'=>[
+            ['title'=>'Profile photos and easier messaging','summary'=>'See who is posting and messaging, and find the right member more easily.','details'=>[
+                'Add or replace your private profile photo from My Account, with a square crop preview and adjustable zoom.',
+                'Circular member photos appear in Community posts, conversation lists and message participants; initials are shown when a photo is unavailable.',
+                'New Conversation now searches eligible members as you type instead of showing the entire directory; matching names are distinguished by a member identifier.',
+                'A small Message shortcut appears beside Community authors only when a private conversation is permitted.',
+                'Student messaging still requires authorized staff contact and automatic guardian safeguards; this shortcut cannot bypass those protections.'
+            ]],
             ['title'=>'Invitations and Help Center','summary'=>'A faster way for adults to join, with step-by-step help in the app.','details'=>[
                 'Account reviewers can email an adult invitation for General Membership; the recipient completes their profile and password from a secure seven-day link.',
                 'Invited adults do not need a second membership review. Staff permissions and production assignments are still granted separately.',
