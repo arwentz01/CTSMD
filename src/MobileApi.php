@@ -565,11 +565,16 @@ final class MobileApi
           GROUP BY c.id,c.subject,c.conversation_type,mine.archived_at,mine.user_id,mine.last_read_message_id,mine.history_through_message_id
           ORDER BY latest_at DESC,c.id DESC";
         $s=$db->prepare($sql);$s->execute($params);$rows=$s->fetchAll();
-        $names=$db->prepare("SELECT cp.user_id,cp.participant_role,CONCAT(u.first_name,' ',u.last_name) name FROM conversation_participants cp JOIN users u ON u.id=cp.user_id WHERE cp.conversation_id=:id");
+        $names=$db->prepare("SELECT cp.user_id,cp.participant_role,CONCAT(u.first_name,' ',u.last_name) name,u.initials,(photo.user_id IS NOT NULL) has_avatar FROM conversation_participants cp JOIN users u ON u.id=cp.user_id LEFT JOIN member_profile_photos photo ON photo.user_id=cp.user_id WHERE cp.conversation_id=:id");
         foreach($rows as &$row){
             $names->execute(['id'=>$row['id']]);$people=$names->fetchAll();
             $visible=array_values(array_map(static fn(array $p):string=>(string)$p['name'],array_filter($people,static fn(array $p):bool=>(int)$p['user_id']!==$viewer&&$p['participant_role']!=='guardian')));
             $row['display_name']=$row['conversation_type']==='group'?($row['subject']?:'Group conversation'):(implode(', ',$visible)?:$row['subject']);
+            $visiblePeople=array_values(array_filter($people,static fn(array $p):bool=>(int)$p['user_id']!==$viewer&&$p['participant_role']!=='guardian'));
+            $row['avatar_user_id']=($row['conversation_type']!=='group'&&count($visiblePeople)===1)?(int)$visiblePeople[0]['user_id']:null;
+            $row['avatar_initials']=$row['avatar_user_id']?(string)$visiblePeople[0]['initials']:null;
+            $row['has_avatar']=($row['avatar_user_id']&&!empty($visiblePeople[0]['has_avatar']));
+
         }unset($row);self::json(['conversations'=>$rows]);
     }
 
