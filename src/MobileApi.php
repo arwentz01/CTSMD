@@ -58,7 +58,7 @@ final class MobileApi
             $roleCheck->execute(['id'=>(int)$user['id']]);$familyTypes=$roleCheck->fetchAll(PDO::FETCH_COLUMN);
             $caregiverOnly=in_array('caregiver',$familyTypes,true) && !array_intersect($familyTypes,['parent','guardian']);
             $independentParticipant=IdentityRolePolicy::isAdult($db,(int)$user['id'])||AccessPolicy::isStaff($user);
-            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-create','/api/mobile/message-report','/api/mobile/message-delete','/api/mobile/conversation-archive'];
+            $accountConversationRoutes=['/api/mobile/messages','/api/mobile/message-thread','/api/mobile/message-send','/api/mobile/message-recipients','/api/mobile/message-recipient','/api/mobile/message-create','/api/mobile/message-report','/api/mobile/message-delete','/api/mobile/conversation-archive'];
             if($caregiverOnly && !$independentParticipant && !in_array($route,array_merge(['/api/mobile/me','/api/mobile/my-family','/api/mobile/caregiver-schedule','/api/mobile/help-guides','/api/mobile/avatar','/api/mobile/avatar-upload','/api/mobile/logout'],$accountConversationRoutes),true)){
                 self::json(['error'=>'Caregiver accounts are limited to family logistics on mobile.'],403);
             }
@@ -100,6 +100,7 @@ final class MobileApi
                 '/api/mobile/message-thread' => self::messageThread($db, $user),
                 '/api/mobile/message-send' => self::messageSend($db, $user),
                 '/api/mobile/message-recipients' => self::messageRecipients($db, $user),
+                '/api/mobile/message-recipient' => self::messageRecipient($db, $user),
                 '/api/mobile/message-create' => self::messageCreate($db, $user),
                 '/api/mobile/message-report' => self::messageReport($db, $user),
                 '/api/mobile/message-delete' => self::messageDelete($db,$user),
@@ -639,6 +640,22 @@ final class MobileApi
             throw $e;
         }
         self::json(['ok'=>true]);
+    }
+
+    /** Community shortcuts must verify the chosen recipient again in the app. */
+    private static function messageRecipient(PDO $db,array $user):never
+    {
+        self::requireMethod('GET');
+        RateLimiter::enforce($db,'mobile_message_recipient_lookup','account:'.(int)$user['id'],120,300,300);
+        $id=filter_var($_GET['id']??null,FILTER_VALIDATE_INT);
+        $member=$id!==false&&$id!==null
+            ?CommunicationExperience::eligibleForNewMessage($db,$user,(int)$id)
+            :null;
+        if($member===null)self::json(['error'=>'This member is no longer available for a new conversation.'],404);
+        $member['selectable']=true;
+        $member['has_avatar']=MemberProfilePhotoService::row($db,(int)$member['id'])!==null
+            &&MemberProfilePhotoService::canView($db,$user,(int)$member['id']);
+        self::json(['recipient'=>$member]);
     }
 
     private static function messageRecipients(PDO $db,array $user):never
