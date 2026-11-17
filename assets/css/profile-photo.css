@@ -1,0 +1,9 @@
+.myaccount-avatar{border-radius:50%;overflow:hidden}.myaccount-avatar img{height:100%;width:100%;object-fit:cover;border-radius:50%}
+.myaccount-photo-card{display:grid;gap:15px;padding:24px;border:1px solid var(--border-default);border-radius:18px;margin-bottom:20px;background:var(--surface-card)}
+.myaccount-photo-card h3{font-size:19px;margin:0 0 5px}.myaccount-photo-card p{color:var(--text-muted);line-height:1.5;margin:0}
+.myaccount-photo-card form{display:grid;gap:12px;max-width:600px}.myaccount-photo-card label{font-size:13px;font-weight:700;color:var(--text-primary)}
+.myaccount-photo-card input[type=file]{max-width:100%;font:inherit}.myaccount-photo-card input[type=range]{width:100%;accent-color:var(--brand-primary)}
+.myaccount-photo-crop{display:grid;gap:10px;justify-items:start}.myaccount-photo-crop[hidden]{display:none}
+.myaccount-photo-crop canvas{width:min(100%,320px);height:auto;aspect-ratio:1/1;border-radius:50%;border:3px solid var(--brand-primary);touch-action:none;cursor:grab}
+.myaccount-photo-crop canvas:active{cursor:grabbing}.myaccount-photo-crop label{display:grid;gap:6px;width:min(100%,320px)}
+.myaccount-photo-card [data-avatar-crop-status]{font-size:12px}
