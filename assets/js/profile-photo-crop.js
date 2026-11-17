@@ -9,7 +9,7 @@ const y=form.querySelector('[data-avatar-y]');
 const status=form.querySelector('[data-avatar-crop-status]');
 const context=canvas?.getContext('2d');
 if(!input||!controls||!canvas||!context)return;
-let image=null,objectUrl=null,processing=false,start=null;
+let image=null,objectUrl=null,processing=false,start=null,skipCrop=false;
 function render(target=canvas){
  if(!image)return;
  const ctx=target.getContext('2d');if(!ctx)return;
@@ -50,7 +50,7 @@ canvas.addEventListener('pointermove',event=>{
 canvas.addEventListener('pointerup',()=>{start=null;});
 canvas.addEventListener('pointercancel',()=>{start=null;});
 form.addEventListener('submit',async event=>{
- if(processing||!image)return;
+ if(skipCrop||processing||!image)return;
  event.preventDefault();processing=true;status.textContent='Saving your adjusted crop…';
  const output=document.createElement('canvas');output.width=512;output.height=512;render(output);
  try{
@@ -59,7 +59,7 @@ form.addEventListener('submit',async event=>{
   const original=input.files?.[0];if(!original)throw new Error('Choose a photo.');
   const transfer=new DataTransfer();transfer.items.add(new File([blob],'profile-photo.jpg',{type:'image/jpeg'}));
   input.files=transfer.files;
-  form.requestSubmit(event.submitter||undefined);
- }catch(error){processing=false;status.textContent='Cropping was unavailable. You can save the original image and CTSMD will center-crop it.';form.requestSubmit(event.submitter||undefined);processing=true;}
+  skipCrop=true;form.requestSubmit(event.submitter||undefined);
+ }catch(error){processing=false;status.textContent='Cropping was unavailable. CTSMD will center-crop the original image.';skipCrop=true;form.requestSubmit(event.submitter||undefined);}
 });
 })();
