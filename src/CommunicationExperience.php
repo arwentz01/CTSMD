@@ -14,13 +14,19 @@ require_once __DIR__ . '/StorageService.php';
 
 final class CommunicationExperience
 {
-    private const ROUTES = ['/messages', '/messages/archive', '/messages/all', '/messages/new', '/messages/thread', '/messages/attachment'];
+    private const ROUTES = ['/messages', '/messages/archive', '/messages/all', '/messages/new', '/messages/recipient-search', '/messages/thread', '/messages/attachment'];
 
     public static function handles(string $route): bool{return in_array($route,self::ROUTES,true);}
 
     public static function render(string $route,string $basePath): never
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);$userId=(int)$user['id'];$_SESSION['communication_csrf']??=bin2hex(random_bytes(24));
+        if($route==='/messages/recipient-search'){
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo json_encode(['recipients'=>self::searchRecipients($db,$user,(string)($_GET['q']??''))],JSON_THROW_ON_ERROR);
+            exit;
+        }
         if($route==='/messages/attachment'){$id=filter_input(INPUT_GET,'id',FILTER_VALIDATE_INT)?:0;$attachment=MessageAttachmentService::attachmentForParticipant($db,(int)$id,$userId);if(!$attachment){http_response_code(404);exit('Attachment unavailable.');}StorageService::stream(dirname(__DIR__),$attachment,true);}
         if($_SERVER['REQUEST_METHOD']==='POST')self::handlePost($db,$user,$basePath);
         $query=trim((string)($_GET['q']??''));if(mb_strlen($query)>100)$query=mb_substr($query,0,100);$scope=$route==='/messages/archive'?'archived':($route==='/messages/all'?'all':'inbox');$conversations=self::conversations($db,$userId,$query,$scope);$recipients=$route==='/messages/new'?self::availableRecipients($db,$user):[];$selectedConversation=null;
@@ -49,12 +55,9 @@ final class CommunicationExperience
     }
 
     // Reuse the web experience's safeguarding rules for mobile conversation creation.
-    public static function mobileRecipients(PDO $db,array $user):array
+    public static function mobileRecipients(PDO $db,array $user,string $query=''):array
     {
-        return array_values(array_map(static fn(array $row):array=>[
-            'id'=>(int)$row['id'],'name'=>(string)$row['name'],
-            'role'=>(string)$row['role'],'selectable'=>(bool)$row['selectable']
-        ],self::availableRecipients($db,$user)));
+        return self::searchRecipients($db,$user,$query);
     }
 
     public static function mobileCreateConversation(PDO $db,array $user,int $recipientId,string $subject,string $body):int
@@ -147,7 +150,34 @@ final class CommunicationExperience
     private static function currentUser(PDO $db):array{$user=Auth::currentUser($db);if(!$user)throw new RuntimeException('Sign in to use Messages.');return$user;}
     private static function isStudentUser(array $user):bool{return in_array('student',(array)($user['roles']??[]),true);}
     private static function isStaffUser(array $user):bool{return in_array('production_staff',(array)($user['roles']??[]),true)||in_array('administrator',(array)($user['roles']??[]),true);}
-    private static function availableRecipients(PDO $db,array $user):array{$s=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE active=1 AND account_status<>'disabled' AND id<>:user ORDER BY last_name,first_name");$s->execute(['user'=>(int)$user['id']]);$rows=$s->fetchAll();$userIsStudent=self::isStudentUser($user);foreach($rows as &$r){$r['roles']=Auth::roles($db,(int)$r['id']);$r['student']=self::isStudentUser($r);$r['selectable']=$userIsStudent?self::isStaffUser($r):(!$r['student']||self::isStaffUser($user));}unset($r);return$rows;}
+    /** Searchable, bounded recipient candidates. Keep authoritative checks in createConversation. */
+    public static function searchRecipients(PDO $db,array $user,string $query):array
+    {
+        $query=trim($query);
+        if(mb_strlen($query)<2||mb_strlen($query)>80)return [];
+        $pattern='%'.str_replace(['\\','%','_'],['\\\\','\\%','\\_'],$query).'%';
+        $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials
+            FROM users WHERE active=1 AND account_status='active' AND id<>:viewer
+            AND (CONCAT(first_name,' ',last_name) LIKE :pattern OR display_role LIKE :rolePattern)
+            ORDER BY last_name,first_name,id LIMIT 25");
+        $stmt->execute(['viewer'=>(int)$user['id'],'pattern'=>$pattern,'rolePattern'=>$pattern]);
+        $student=self::isStudentUser($user);
+        $rows=[];
+        foreach($stmt->fetchAll() as $row){
+            $row['roles']=Auth::roles($db,(int)$row['id']);
+            $row['student']=self::isStudentUser($row);
+            $row['selectable']=$student?self::isStaffUser($row):(!$row['student']||self::isStaffUser($user));
+            if(!$row['selectable'])continue;
+            $rows[]=['id'=>(int)$row['id'],'name'=>(string)$row['name'],'role'=>(string)$row['role'],
+                'initials'=>(string)$row['initials'],'selectable'=>true,
+                'identifier'=>'Member #'.(int)$row['id']];
+        }
+        return $rows;
+    }
+    private static function availableRecipients(PDO $db,array $user):array
+    {
+        return self::searchRecipients($db,$user,trim((string)($_GET['q']??'')));
+    }
     private static function conversations(PDO $db,int $userId,string $query='',string $scope='inbox'):array
     {
         $search=match($scope){'archived'=>' AND mine.archived_at IS NOT NULL','all'=>'',default=>' AND mine.archived_at IS NULL'};$params=['user_id'=>$userId];if($query!==''){$search.=" AND (c.subject LIKE :query OR EXISTS (SELECT 1 FROM conversation_participants member JOIN users person ON person.id=member.user_id WHERE member.conversation_id=c.id AND member.user_id<>mine.user_id AND CONCAT(person.first_name,' ',person.last_name) LIKE :person) OR EXISTS (SELECT 1 FROM messages sm WHERE sm.conversation_id=c.id AND sm.hidden_at IS NULL AND sm.recalled_at IS NULL AND NOT EXISTS (SELECT 1 FROM message_personal_hides h WHERE h.message_id=sm.id AND h.user_id=mine.user_id) AND (mine.history_through_message_id IS NULL OR sm.id<=mine.history_through_message_id) AND sm.body LIKE :query2))";$params['query']='%'.$query.'%';$params['query2']='%'.$query.'%';$params['person']='%'.$query.'%';}
