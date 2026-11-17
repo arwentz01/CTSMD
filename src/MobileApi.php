@@ -644,6 +644,7 @@ final class MobileApi
     private static function messageRecipients(PDO $db,array $user):never
     {
         self::requireMethod('GET');
+        RateLimiter::enforce($db,'mobile_message_recipient_search','account:'.(int)$user['id'],120,300,300);
         self::json(['recipients'=>CommunicationExperience::mobileRecipients($db,$user,(string)($_GET['q']??''))]);
     }
 
