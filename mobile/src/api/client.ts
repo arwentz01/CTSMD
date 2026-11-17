@@ -105,6 +105,7 @@ export const cancelVolunteer=(shift_id:number)=>api<{ok:boolean}>('volunteer-can
 export const approvalVolunteer=(input:{action:'request';shift_id:number;note:string}|{action:'withdraw';request_id:number})=>api<{ok:boolean}>('volunteer-approval',{method:'POST',body:input});
 export type Recipient={id:number;name:string;role:string;selectable:boolean;initials?:string;identifier?:string;has_avatar?:boolean};
 export const recipients=(query:string)=>api<{recipients:Recipient[]}>('message-recipients?q='+encodeURIComponent(query));
+export const recipientById=(id:number)=>api<{recipient:Recipient}>('message-recipient?id='+encodeURIComponent(String(id)));
 export const createConversation=(recipient_id:number,body:string)=>api<{conversation_id:number}>('message-create',{method:'POST',body:{recipient_id,body}});
 
 export type PublishedCasting={headline:string|null;member_note:string|null;published_at:string|null;cast:Array<{name:string;role?:string;participation_track?:string}>};
