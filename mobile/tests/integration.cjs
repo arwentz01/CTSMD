@@ -20,6 +20,25 @@ test('authorization role labels do not infer authority and web handoffs use conf
  assert.equal(participantWebsite('/admin/accounts'),'https://ctsmd.me/admin/accounts');
  assert.equal(participantWebsite('/admin/productions'),'https://ctsmd.me/admin/productions');
 });
+test('profile photo experience uses authenticated, permission-aware mobile flows',()=>{
+ const account=fs.readFileSync(path.join(__dirname,'../app/account.tsx'),'utf8');
+ const avatar=fs.readFileSync(path.join(__dirname,'../src/components/MemberAvatar.tsx'),'utf8');
+ const client=fs.readFileSync(path.join(__dirname,'../src/api/client.ts'),'utf8');
+ const config=JSON.parse(fs.readFileSync(path.join(__dirname,'../app.json'),'utf8')).expo;
+ assert.match(account,/hasAvatar=\{!!user\?\.has_avatar\}/);
+ assert.match(account,/await uploadProfilePhoto/);
+ assert.match(account,/await refresh\(\)/);
+ assert.match(account,/allowsEditing:true,aspect:\[1,1\]/);
+ assert.match(account,/Unsupported image format/);
+ assert.match(avatar,/headers:\{Authorization:'Bearer '\+token\}/);
+ assert.match(avatar,/failed&&Number.isSafeInteger\(userId\)/);
+ assert.match(client,/\/api\/mobile\/avatar-upload/);
+ assert.match(client,/form\.append\('avatar'/);
+ const picker=config.plugins.find(item=>Array.isArray(item)&&item[0]==='expo-image-picker');
+ assert.ok(picker,'Photo library usage must be declared in native app configuration');
+ assert.equal(picker[1].cameraPermission,false);
+ assert.equal(picker[1].microphonePermission,false);
+});
 test('notification routes are allowlisted and reject arbitrary destinations',()=>{
  const {notificationDestination:route}=load('src/notifications/destination.ts');
  for(const [input,expected] of [
