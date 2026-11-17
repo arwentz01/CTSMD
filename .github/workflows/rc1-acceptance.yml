@@ -57,6 +57,8 @@ jobs:
         run: php tests/rc1_acceptance.php > "$RUNNER_TEMP/rc1-acceptance.json"
       - name: Existing transactional safeguarding suite
         run: php tests/safeguarded_conversation.php
+      - name: Member photo privacy and revoked conversation access
+        run: php tests/member_profile_identity_mysql.php
       - name: Adult enhancement isolated assertions (separate deployment scope)
         run: |
           php tests/adult_performer_migration.php
