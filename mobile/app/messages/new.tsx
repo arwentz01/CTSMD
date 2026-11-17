@@ -5,7 +5,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {ConversationViewport} from '../../src/components/ConversationViewport';
 import {MemberAvatar} from '../../src/components/MemberAvatar';
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
-import {recipients,createConversation} from '../../src/api/client';
+import {recipients,recipientById,createConversation} from '../../src/api/client';
 
 import {colors} from '../../src/theme/colors';
 
@@ -14,15 +14,31 @@ export default function NewMessage(){
  const linkedId=Number(params.recipient_id);
  const linkedName=typeof params.recipient_name==='string'?params.recipient_name.slice(0,200):'';
  const fromAuthor=Number.isSafeInteger(linkedId)&&linkedId>0&&linkedName.length>0;
- const [recipient,setRecipient]=useState<number|null>(fromAuthor?linkedId:null);
- const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(fromAuthor?{id:linkedId,name:linkedName,role:'Community member'}:null);
- const [query,setQuery]=useState(fromAuthor?linkedName:'');
+ const [recipient,setRecipient]=useState<number|null>(null);
+ const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(null);
+ const [query,setQuery]=useState('');
+ const [linkBusy,setLinkBusy]=useState(fromAuthor);
  const [people,setPeople]=useState<Array<{id:number;name:string;role:string;identifier?:string;initials?:string;has_avatar?:boolean;selectable:boolean}>>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
  const [message,setMessage]=useState('');
  const [busy,setBusy]=useState(false);
  const generation=useRef(0);
+ useEffect(()=>{
+  if(!fromAuthor)return;
+  let live=true;setLinkBusy(true);setError('');
+  void recipientById(linkedId).then(({recipient:person})=>{
+   if(!live)return;
+   setRecipient(person.id);
+   setSelected(person);
+   setQuery(person.name);
+  }).catch(()=>{
+   if(!live)return;
+   setRecipient(null);setSelected(null);
+   setError('This Community member is no longer available to message. Search for another recipient.');
+  }).finally(()=>{if(live)setLinkBusy(false)});
+  return ()=>{live=false};
+ },[fromAuthor,linkedId]);
  useEffect(()=>{
   const current=++generation.current;
   const q=query.trim();
@@ -39,7 +55,7 @@ export default function NewMessage(){
   return ()=>clearTimeout(timer);
  },[query,selected]);
  async function send(){
-  if(busy||!recipient||!message.trim())return;
+  if(busy||linkBusy||!recipient||!message.trim())return;
   setBusy(true);
   try{
    const result=await createConversation(recipient,message.trim());
@@ -60,6 +76,7 @@ export default function NewMessage(){
     <TextInput accessibilityLabel="Search recipients" placeholder="Type at least 2 letters" placeholderTextColor={colors.muted} autoCorrect={false} value={query} onChangeText={v=>{setQuery(v);setRecipient(null);setSelected(null)}} style={styles.searchInput}/>
     {!!query&&<Pressable accessibilityLabel="Clear recipient search" onPress={()=>{setQuery('');setRecipient(null);setSelected(null)}}><Ionicons name="close-circle" color={colors.muted} size={19}/></Pressable>}
    </View>
+   {linkBusy&&<Text style={styles.helper}>Checking whether this member can receive messages…</Text>}
    {loading&&<Text style={styles.helper}>Searching for members…</Text>}
    {!!error&&<Text accessibilityRole="alert" style={styles.helper}>{error}</Text>}
    {selected&&<Text style={styles.selected}>To: {selected.name} · {selected.identifier||selected.role}</Text>}
@@ -71,7 +88,7 @@ export default function NewMessage(){
   </ScrollView>
   <View style={styles.composer}>
    <TextInput accessibilityLabel="Message body" placeholder={recipient?'Write a message':'Choose a recipient first'} placeholderTextColor={colors.muted} multiline maxLength={4000} value={message} onChangeText={setMessage} style={styles.input}/>
-   <Pressable accessibilityLabel="Start conversation" disabled={!recipient||!message.trim()||busy} onPress={()=>void send()} style={[styles.send,(!recipient||!message.trim()||busy)&&styles.disabled]}>
+   <Pressable accessibilityLabel="Start conversation" disabled={linkBusy||!recipient||!message.trim()||busy} onPress={()=>void send()} style={[styles.send,(linkBusy||!recipient||!message.trim()||busy)&&styles.disabled]}>
     <Ionicons name="arrow-up" color="#fff" size={23}/>
    </Pressable>
   </View>
