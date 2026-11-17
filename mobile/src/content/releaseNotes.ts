@@ -25,7 +25,7 @@ export const nextReleasePreview={
    'Your current profile photo appears in Community and conversations. People without a photo display their initials.',
    'Find eligible members by searching their names. Matching names include a member identifier to help you choose correctly.',
    'Tap the Message shortcut beside an eligible Community author to start a conversation using the existing Messages screen.',
-   'Student-to-staff conversations continue to require appropriate safeguarding and guardian participation. Private messaging shortcuts never bypass these rules.'
+   'Student conversations continue to follow existing contact permissions and required guardian participation. Private messaging shortcuts never bypass these rules.'
   ]},
   {title:'Invitations and Help Center',summary:'A faster way for adults to join, and help articles you can read in the app.',items:[
    'Authorized account reviewers can invite adults by email with General Membership preapproved. The adult completes their name, contact details and password from the seven-day invitation link.',
