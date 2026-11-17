@@ -11,7 +11,7 @@ Run `database/migrations/129_member_profile_photos.sql` before deploying the PHP
 - Website and native Community: current account avatars, initials fallback, and an inline Message shortcut only when contact is currently eligible. The shortcut uses the existing conversation composer, not a second message service.
 - Website and native Messages: current account avatars in inbox, participants and messages; inbox only uses individual avatars where one non-guardian direct recipient can be identified.
 - Recipient search: at least two search characters, name search only, a maximum of 25 visible selectable results, 300 ms client debounce, per-account request limiting, and a non-sensitive unique member ID to distinguish duplicate names.
-- Server-side conversation creation still enforces student-to-student prohibition, staff-only student contact, required active guardians and safeguarded participant membership. The shortcut does not grant new conversation permissions.
+- Server-side conversation creation still enforces student-to-student prohibition, existing student contact permissions, required active guardians and safeguarded participant membership. The shortcut does not grant new conversation permissions.
 - Image delivery: session-authenticated `GET /account/avatar?id=...&size=small|medium|large` or bearer-authenticated `GET /api/mobile/avatar`. Only image owners, authorized existing conversation participants, linked active parents/guardians and viewers of visible Community authors can load the rendition. No public static photo URLs.
 
 ## Validation before pilot rollout
@@ -20,7 +20,7 @@ Run `database/migrations/129_member_profile_photos.sql` before deploying the PHP
 3. Verify native image picker on physical iOS and Android devices (square crop, uploads, saved avatar and fallback); check a photo taken with an HEIC-enabled device.
 4. Test a member and an unrelated account cannot retrieve the private avatar URL unless they share permitted content, guardian relationships or conversation access. Revoke a relationship/channel/participant and confirm access is lost.
 5. Test duplicate-name searches, keyboard arrows/Enter/Escape, screen reader labels, touch interactions, debounce, result limits and rate limiting, including cross-role account visibility.
-6. Test adult-to-adult, staff-to-student, student-to-staff, guardian safeguarding and student-to-student prohibition; try forged recipient IDs and stale Community shortcut links.
+6. Test adult-to-adult, adult-to-student with active guardians, student-to-staff, guardian safeguarding and student-to-student prohibition; try forged recipient IDs and stale Community shortcut links.
 7. Verify no message author avatar is substituted for an organization/represented identity if that attribution is enabled in future. This version follows CTSMD's existing user-attributed Community records.
 8. Confirm account photos appear in feed, channel, replies, thread list, participants and the mobile app. Check large feeds for acceptable query performance.
 9. Confirm existing attachments, recall, archive, notifications, reactions and safeguarding audit still work.
