@@ -18,6 +18,22 @@ export async function api<T>(path:string,opts:{method?:'GET'|'POST'|'DELETE';bod
  if(!res.ok){const message=(body && typeof body==='object' && 'error' in body && body.error!==undefined)?String(body.error):'CTSMD request failed.';throw new ApiError(message,res.status)}
  return body as T;
 }
+/** Avatar URLs are private and require the signed-in member's bearer header. */
+export function avatarUrl(userId:number,size:'small'|'medium'|'large'='small'){
+ return BASE+'/api/mobile/avatar?id='+encodeURIComponent(String(userId))+'&size='+size;
+}
+export async function uploadProfilePhoto(file:{uri:string;name:string;type:string}):Promise<void>{
+ const token=await readToken();if(!token)throw new ApiError('Sign in to upload a photo.',401);
+ const form=new FormData();form.append('avatar',{uri:file.uri,name:file.name,type:file.type} as unknown as Blob);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+ let response:Response;
+ try{
+  response=await fetch(BASE+'/api/mobile/avatar-upload',{method:'POST',headers:{Accept:'application/json',Authorization:'Bearer '+token},body:form,signal:controller.signal});
+ }finally{clearTimeout(timer)}
+ if(await readToken()!==token)throw new ApiError('Your session changed. Please sign in again.',401);
+ let data:{error?:string};try{data=await response.json()}catch{throw new ApiError('CTSMD returned an unreadable response.',response.status)}
+ if(!response.ok)throw new ApiError(data.error||'Could not update your profile photo.',response.status);
+}
 export async function login(email:string,password:string){return api<{token:string;user:MeResult['user']}>('login',{method:'POST',body:{email,password},token:null})}
 export const me=()=>api<MeResult>('me');
 export type FamilyMember={id?:number;name?:string;first_name?:string;is_primary?:number;relationship_type?:'parent'|'guardian'|'caregiver'};
