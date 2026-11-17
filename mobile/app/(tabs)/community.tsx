@@ -1,4 +1,5 @@
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
+import {MemberAvatar} from '../../src/components/MemberAvatar';
 import {CommunityBody} from '../../src/components/CommunityBody';
 import React,{useCallback,useState} from 'react';
 import {StyleSheet,Text,View} from 'react-native';
@@ -54,9 +55,9 @@ export default function Community(){
     {posts.map(p=><View key={p.id} style={[s.post,p.unread&&s.unreadPost]}>
       <Pressable accessibilityRole="button" accessibilityLabel={(p.unread?'New post. ':'')+'Open post by '+p.author+' in '+p.channel_name} onPress={()=>openPost(p)} style={s.postOpen}>
         <View style={s.authorRow}>
-          <View style={s.avatar}><Text style={s.avatarText}>{p.initials||'?'}</Text></View>
+          <MemberAvatar userId={p.author_user_id} initials={p.initials||'?'} size={38} hasAvatar={!!p.has_avatar}/>
           <View style={s.authorDetails}>
-            <View style={s.authorNameRow}><Text numberOfLines={1} style={s.author}>{p.author}</Text>{p.unread&&<View style={s.newDot} accessibilityLabel="Unread post"/>}</View>
+            <View style={s.authorNameRow}><Text numberOfLines={1} style={s.author}>{p.author}</Text>{p.can_message&&<Pressable accessibilityRole="button" accessibilityLabel={'Message '+p.author} hitSlop={8} onPress={event=>{event.stopPropagation();router.push({pathname:'/messages/new',params:{recipient_id:String(p.author_user_id),recipient_name:p.author}})}}><Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.primary}/></Pressable>}{p.unread&&<View style={s.newDot} accessibilityLabel="Unread post"/>}</View>
             <Text numberOfLines={1} style={s.channel}>{p.channel_name}{p.production_title?' · '+p.production_title:''}</Text>
           </View>
           <Text style={s.postDate}>{shortDate(p.created_at)}</Text>
