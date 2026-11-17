@@ -17,9 +17,18 @@ function paint(){
  results.replaceChildren();
  items.forEach(function(person,index){
   var button=document.createElement('button');button.type='button';button.id='recipient-option-'+index;button.className='comm-recipient-option';button.setAttribute('role','option');button.setAttribute('aria-selected',String(index===active));
+  var avatar=document.createElement(person.has_avatar?'img':'span');
+  avatar.className='member-avatar member-avatar-small'+(person.has_avatar?'':' member-avatar-fallback');
+  if(person.has_avatar){
+   avatar.src=root.dataset.avatarBase+'?id='+encodeURIComponent(person.id)+'&size=small';
+   avatar.alt='';avatar.loading='lazy';
+   avatar.addEventListener('error',function(){var fallback=document.createElement('span');fallback.className='member-avatar member-avatar-small member-avatar-fallback';fallback.textContent=person.initials||'?';avatar.replaceWith(fallback);});
+  }else avatar.textContent=person.initials||'?';
+  button.appendChild(avatar);
+  var details=document.createElement('span');details.className='comm-recipient-info';
   var title=document.createElement('strong');title.textContent=person.name;
   var detail=document.createElement('small');detail.textContent=person.role+' · '+person.identifier;
-  button.append(title,detail);button.addEventListener('click',function(){setPerson(person)});results.appendChild(button);
+  details.append(title,detail);button.appendChild(details);button.addEventListener('click',function(){setPerson(person)});results.appendChild(button);
  });
  input.setAttribute('aria-expanded',String(items.length>0));
  if(active>=0)input.setAttribute('aria-activedescendant','recipient-option-'+active);else input.removeAttribute('aria-activedescendant');
