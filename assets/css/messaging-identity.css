@@ -1,0 +1,12 @@
+/* On-demand member discovery with a compact selectable recipient result. */
+.comm-recipient-picker{display:grid;gap:8px;min-width:0}
+.comm-recipient-picker>label{font-weight:750}
+.comm-recipient-picker input[type=search]{min-height:44px;width:100%;max-width:100%;border:1px solid #bcb4b7;border-radius:10px;padding:10px;background:#fff;color:#34252b;font:inherit}
+.comm-recipient-hint{font-size:12px;color:#63555c;margin:0}
+.comm-recipient-selected{padding:8px 12px;border-radius:8px;background:#f2e9ed;border:1px solid #d4bac4;font-size:13px;font-weight:700;color:#5e2637}
+.comm-recipient-selected[hidden]{display:none}
+.comm-recipient-results{display:grid;gap:5px;max-height:270px;overflow-y:auto}
+.comm-recipient-option{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;border-radius:9px;padding:10px 12px;min-height:50px;border:1px solid #e2d9dd;background:#fff;color:#39252d;cursor:pointer}
+.comm-recipient-option:hover,.comm-recipient-option[aria-selected=true]{background:#f9f1f4;border-color:#9b576f}
+.comm-recipient-option:focus-visible,.comm-recipient-picker input:focus-visible{outline:3px solid #ab6f84;outline-offset:2px}
+.comm-recipient-option strong{font-size:14px}.comm-recipient-option small{font-size:12px;color:#6e6267}
