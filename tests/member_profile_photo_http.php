@@ -70,7 +70,7 @@ try{
     $oldPaths=array_map(static fn(string $field):string=>$storage.'/'.(string)$photo[$field],['avatar_large_key','avatar_medium_key','avatar_small_key']);
     foreach($oldPaths as $path)$ok(is_file($path)&&filesize($path)>0,'Optimized private thumbnail exists: '.basename($path));
     $self=$request('GuardianOne','/account/avatar?id='.$userId.'&size=large');
-    $ok($self['status']===200&&str_starts_with($self['body'],"\\xff\\xd8"),'Owner can stream optimized JPEG');
+    $ok($self['status']===200&&substr($self['body'],0,2)===pack('H*','ffd8'),'Owner can stream optimized JPEG');
     $other=$request('Member','/account/avatar?id='.$userId.'&size=small');
     $ok($other['status']===404,'Unrelated member is denied owner avatar');
     $child=$request('StudentSingle','/account/avatar?id='.$userId.'&size=small');
