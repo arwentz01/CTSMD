@@ -88,6 +88,8 @@ jobs:
           node --check assets/js/unified-navigation.js
           node --check assets/js/ux-workspaces.js
           node --check assets/js/account-menu.js
+          node --check assets/js/message-recipient-search.js
+          node --check assets/js/profile-photo-crop.js
           node --check assets/js/playbill-studio.js
           node --check assets/js/commerce.js
           node --check assets/js/commerce-planning.js
@@ -101,6 +103,8 @@ jobs:
           node --check tests/my_theatre_browser.mjs
           node --check tests/my_theatre_interactions.mjs
           node --check assets/js/ux-member.js
+      - name: Member avatars and safeguarded messaging identity
+        run: php tests/member_profile_identity.php
       - name: Eastern business timezone and DST invariants
         run: php tests/app_clock.php
       - name: Staff production directory ordering and past grouping
