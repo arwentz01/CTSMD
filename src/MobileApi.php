@@ -623,7 +623,7 @@ final class MobileApi
     private static function messageRecipients(PDO $db,array $user):never
     {
         self::requireMethod('GET');
-        self::json(['recipients'=>CommunicationExperience::mobileRecipients($db,$user)]);
+        self::json(['recipients'=>CommunicationExperience::mobileRecipients($db,$user,(string)($_GET['q']??''))]);
     }
 
     private static function messageCreate(PDO $db,array $user):never
