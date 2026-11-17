@@ -20,6 +20,23 @@ test('authorization role labels do not infer authority and web handoffs use conf
  assert.equal(participantWebsite('/admin/accounts'),'https://ctsmd.me/admin/accounts');
  assert.equal(participantWebsite('/admin/productions'),'https://ctsmd.me/admin/productions');
 });
+test('Community Message shortcuts verify the recipient before enabling composition',()=>{
+ const newMessage=fs.readFileSync(path.join(__dirname,'../app/messages/new.tsx'),'utf8');
+ const client=fs.readFileSync(path.join(__dirname,'../src/api/client.ts'),'utf8');
+ const feed=fs.readFileSync(path.join(__dirname,'../app/(tabs)/community.tsx'),'utf8');
+ const channel=fs.readFileSync(path.join(__dirname,'../app/community/[id].tsx'),'utf8');
+ const post=fs.readFileSync(path.join(__dirname,'../app/community/post/[id].tsx'),'utf8');
+ assert.match(client,/recipientById=\(id:number\)=>api/);
+ assert.match(client,/message-recipient\?id=/);
+ assert.match(newMessage,/recipientById\(linkedId\)/);
+ assert.match(newMessage,/setRecipient\(person.id\)/);
+ assert.match(newMessage,/setLinkBusy\(true\)/);
+ assert.match(newMessage,/disabled=\{linkBusy\|\|!recipient/);
+ for(const surface of [feed,channel,post]){
+  assert.match(surface,/can_message/,'Community shortcuts must honor server-authorized messaging');
+  assert.match(surface,/recipient_id:String\(/);
+ }
+});
 test('profile photo experience uses authenticated, permission-aware mobile flows',()=>{
  const account=fs.readFileSync(path.join(__dirname,'../app/account.tsx'),'utf8');
  const avatar=fs.readFileSync(path.join(__dirname,'../src/components/MemberAvatar.tsx'),'utf8');
