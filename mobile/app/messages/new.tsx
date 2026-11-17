@@ -3,6 +3,7 @@ import {Alert,Keyboard,ScrollView,StyleSheet,Text,TextInput,View} from 'react-na
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {ConversationViewport} from '../../src/components/ConversationViewport';
+import {MemberAvatar} from '../../src/components/MemberAvatar';
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {recipients,createConversation} from '../../src/api/client';
 
@@ -16,7 +17,7 @@ export default function NewMessage(){
  const [recipient,setRecipient]=useState<number|null>(fromAuthor?linkedId:null);
  const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(fromAuthor?{id:linkedId,name:linkedName,role:'Community member'}:null);
  const [query,setQuery]=useState(fromAuthor?linkedName:'');
- const [people,setPeople]=useState<Array<{id:number;name:string;role:string;identifier?:string;selectable:boolean}>>([]);
+ const [people,setPeople]=useState<Array<{id:number;name:string;role:string;identifier?:string;initials?:string;has_avatar?:boolean;selectable:boolean}>>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
  const [message,setMessage]=useState('');
@@ -63,7 +64,7 @@ export default function NewMessage(){
    {!!error&&<Text accessibilityRole="alert" style={styles.helper}>{error}</Text>}
    {selected&&<Text style={styles.selected}>To: {selected.name} · {selected.identifier||selected.role}</Text>}
    {people.map(person=><Pressable key={person.id} accessibilityRole="radio" accessibilityState={{checked:recipient===person.id}} onPress={()=>{setRecipient(person.id);setSelected(person);setQuery(person.name);setPeople([]);Keyboard.dismiss()}} style={[styles.person,recipient===person.id&&styles.activePerson]}>
-    <Ionicons name={recipient===person.id?'checkmark-circle':'ellipse-outline'} color={colors.primary} size={21}/>
+    <Ionicons name={recipient===person.id?'checkmark-circle':'ellipse-outline'} color={colors.primary} size={21}/><MemberAvatar userId={person.id} initials={person.initials||'?'} hasAvatar={!!person.has_avatar} size={36}/>
     <View style={{flex:1}}><Text style={styles.personName}>{person.name}</Text><Text style={styles.role}>{person.role} · {person.identifier||('Member #'+person.id)}</Text></View>
    </Pressable>)}
    {!loading&&!error&&people.length===0&&!selected&&<Text style={styles.helper}>{query.trim().length>=2?'No eligible members match that search.':'Search by name to find an eligible recipient. No full member directory is shown.'}</Text>}
