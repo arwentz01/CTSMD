@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Alert,Keyboard,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
-import {router} from 'expo-router';
+import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {ConversationViewport} from '../../src/components/ConversationViewport';
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
@@ -9,9 +9,13 @@ import {recipients,createConversation} from '../../src/api/client';
 import {colors} from '../../src/theme/colors';
 
 export default function NewMessage(){
- const [recipient,setRecipient]=useState<number|null>(null);
- const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(null);
- const [query,setQuery]=useState('');
+ const params=useLocalSearchParams<{recipient_id?:string;recipient_name?:string}>();
+ const linkedId=Number(params.recipient_id);
+ const linkedName=typeof params.recipient_name==='string'?params.recipient_name.slice(0,200):'';
+ const fromAuthor=Number.isSafeInteger(linkedId)&&linkedId>0&&linkedName.length>0;
+ const [recipient,setRecipient]=useState<number|null>(fromAuthor?linkedId:null);
+ const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(fromAuthor?{id:linkedId,name:linkedName,role:'Community member'}:null);
+ const [query,setQuery]=useState(fromAuthor?linkedName:'');
  const [people,setPeople]=useState<Array<{id:number;name:string;role:string;identifier?:string;selectable:boolean}>>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
@@ -21,6 +25,7 @@ export default function NewMessage(){
  useEffect(()=>{
   const current=++generation.current;
   const q=query.trim();
+  if(selected&&q===selected.name){setPeople([]);setLoading(false);setError('');return;}
   if(q.length<2){setPeople([]);setLoading(false);setError('');return;}
   setLoading(true);setError('');
   const timer=setTimeout(()=>{
@@ -31,7 +36,7 @@ export default function NewMessage(){
     .finally(()=>{if(current===generation.current)setLoading(false)});
   },300);
   return ()=>clearTimeout(timer);
- },[query]);
+ },[query,selected]);
  async function send(){
   if(busy||!recipient||!message.trim())return;
   setBusy(true);
