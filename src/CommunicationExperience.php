@@ -12,6 +12,7 @@ require_once __DIR__ . '/MessageAttachmentService.php';
 require_once __DIR__ . '/SafeguardedConversationPolicy.php';
 require_once __DIR__ . '/StorageService.php';
 require_once __DIR__ . '/MemberProfilePhotoService.php';
+require_once __DIR__ . '/RateLimiter.php';
 
 final class CommunicationExperience
 {
@@ -23,6 +24,7 @@ final class CommunicationExperience
     {
         Auth::startSession();$db=Database::connect(dirname(__DIR__));$user=self::currentUser($db);$userId=(int)$user['id'];$_SESSION['communication_csrf']??=bin2hex(random_bytes(24));
         if($route==='/messages/recipient-search'){
+            RateLimiter::enforce($db,'message_recipient_search','account:'.(int)$user['id'],120,300,300);
             header('Content-Type: application/json; charset=utf-8');
             header('Cache-Control: no-store');
             echo json_encode(['recipients'=>self::searchRecipients($db,$user,(string)($_GET['q']??''))],JSON_THROW_ON_ERROR);
@@ -184,9 +186,9 @@ final class CommunicationExperience
         $pattern='%'.str_replace(['\\','%','_'],['\\\\','\\%','\\_'],$query).'%';
         $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials
             FROM users WHERE active=1 AND account_status='active' AND id<>:viewer
-            AND (CONCAT(first_name,' ',last_name) LIKE :pattern OR display_role LIKE :rolePattern)
+            AND CONCAT(first_name,' ',last_name) LIKE :pattern
             ORDER BY last_name,first_name,id LIMIT 25");
-        $stmt->execute(['viewer'=>(int)$user['id'],'pattern'=>$pattern,'rolePattern'=>$pattern]);
+        $stmt->execute(['viewer'=>(int)$user['id'],'pattern'=>$pattern]);
         $student=self::isStudentUser($user);
         $rows=[];
         foreach($stmt->fetchAll() as $row){
