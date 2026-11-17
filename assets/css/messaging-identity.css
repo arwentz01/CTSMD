@@ -10,3 +10,7 @@
 .comm-recipient-option:hover,.comm-recipient-option[aria-selected=true]{background:#f9f1f4;border-color:#9b576f}
 .comm-recipient-option:focus-visible,.comm-recipient-picker input:focus-visible{outline:3px solid #ab6f84;outline-offset:2px}
 .comm-recipient-option strong{font-size:14px}.comm-recipient-option small{font-size:12px;color:#6e6267}
+
+.comm-recipient-option{flex-direction:row;align-items:center;gap:11px}
+.comm-recipient-info{min-width:0;display:grid;gap:3px}
+.comm-recipient-option .member-avatar{width:36px;height:36px;border-radius:50%;flex:none}
