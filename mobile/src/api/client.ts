@@ -103,7 +103,7 @@ export const submitForm=(input:{assignment_id:number;acknowledgment:boolean;type
 export const signupVolunteer=(shift_id:number)=>api<{ok:boolean}>('volunteer-signup',{method:'POST',body:{shift_id}});
 export const cancelVolunteer=(shift_id:number)=>api<{ok:boolean}>('volunteer-cancel',{method:'POST',body:{shift_id}});
 export const approvalVolunteer=(input:{action:'request';shift_id:number;note:string}|{action:'withdraw';request_id:number})=>api<{ok:boolean}>('volunteer-approval',{method:'POST',body:input});
-export type Recipient={id:number;name:string;role:string;selectable:boolean;initials?:string;identifier?:string};
+export type Recipient={id:number;name:string;role:string;selectable:boolean;initials?:string;identifier?:string;has_avatar?:boolean};
 export const recipients=(query:string)=>api<{recipients:Recipient[]}>('message-recipients?q='+encodeURIComponent(query));
 export const createConversation=(recipient_id:number,body:string)=>api<{conversation_id:number}>('message-create',{method:'POST',body:{recipient_id,body}});
 
