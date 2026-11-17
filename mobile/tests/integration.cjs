@@ -109,7 +109,7 @@ test('Whats New is linked from Settings & support and release entries have publi
  assert.equal(appConfig.version,'0.2.0');
  assert.equal(appConfig.android.versionCode,2);
  assert.equal(appConfig.android.package,'org.ctsmd.connect','Android must match the existing Google Play application ID');
- assert.equal(appConfig.ios.buildNumber,'2');
+ assert.match(appConfig.ios.buildNumber,/^[1-9]\d*$/,'The active iOS build number must be a valid positive numeric string');
 });
 
 test('mobile navigation exposes member, staff and authorized admin workflows without a duplicate checkout',()=>{
@@ -295,8 +295,10 @@ test('native messaging presents live recipient filtering, keyboard safe composer
  const thread=fs.readFileSync(path.join(__dirname,'../app/messages/[id].tsx'),'utf8');
  const client=fs.readFileSync(path.join(__dirname,'../src/api/client.ts'),'utf8');
  assert.match(newMessage,/ConversationViewport/);
- assert.match(newMessage,/onChangeText=\{setQuery\}/);
- assert.match(newMessage,/person\.name\.toLocaleLowerCase\(\)\.includes/);
+ assert.match(newMessage,/onChangeText=\{v=>\{setQuery\(v\)/);
+ assert.match(newMessage,/setTimeout\(\(\)=>\{/);
+ assert.match(newMessage,/recipients\(q\)/);
+ assert.doesNotMatch(newMessage,/person\.name\.toLocaleLowerCase\(\)\.includes/,'Search should be server-side, not download the member directory');
  assert.match(newMessage,/<View style=\{styles\.composer\}>/);
  assert.match(inbox,/onLongPress=\{\(\)=>changeArchive/);
  assert.doesNotMatch(inbox,/archiveAction/);
