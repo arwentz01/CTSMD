@@ -28,7 +28,15 @@
       "expo-secure-store",
       "expo-notifications",
       "expo-font",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow CTSMD Connect to select a profile photo from your library.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "router": {
