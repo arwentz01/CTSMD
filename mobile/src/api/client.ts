@@ -51,7 +51,7 @@ export const conversations=(options:{q?:string;archived?:boolean;scope?:'inbox'|
 export const archiveConversation=(conversation_id:number,archived:boolean)=>api<{ok:boolean}>('conversation-archive',{method:'POST',body:{conversation_id,archived}});
 export const deleteMessage=(message_id:number,scope:'self'|'everyone')=>api<{ok:boolean}>('message-delete',{method:'POST',body:{message_id,scope}});
 export const channels=()=>api<ChannelsResult>('channels');
-export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean;unread:boolean};
+export type CommunityFeedPost={id:number;channel_id:number;channel_name:string;production_id:number|null;production_title:string|null;body:string;created_at:string;pinned:number;author_user_id:number;initials:string;author:string;attachments:CommunityAttachment[];heart_count:number;hearted:boolean;unread:boolean;has_avatar?:boolean;can_message?:boolean};
 export const toggleCommunityHeart=(post_id:number)=>api<{ok:boolean;hearted:boolean}>('channel-reaction',{method:'POST',body:{post_id}});
 export const communityFeed=(cursor?:string)=>api<{posts:CommunityFeedPost[];has_more:boolean;next_cursor:string|null}>('community-feed'+(cursor?'?cursor='+encodeURIComponent(cursor):''));
 export const theatre=()=>api<TheatreResult>('theatre');
@@ -75,7 +75,7 @@ export const completeProductionTodo=(assignment_id:number)=>api<{ok:boolean}>('p
 export const respondCastingOffer=(offer_id:number,decision:'accepted'|'declined',response_note:string)=>api<{ok:boolean}>('casting-offer-respond',{method:'POST',body:{offer_id,decision,response_note}});
 export const thread=(id:number)=>api<Thread>('message-thread?id='+id);
 export const channel=(id:number)=>api<ChannelFeed>('channel?id='+id);
-export type CommunityReply={id:number;post_id:number;body:string;created_at:string;author_user_id:number;initials:string;author:string};
+export type CommunityReply={id:number;post_id:number;body:string;created_at:string;author_user_id:number;initials:string;author:string;has_avatar?:boolean;can_message?:boolean};
 export const channelReplies=(post_id:number)=>api<{replies:CommunityReply[]}>('channel-replies?post_id='+encodeURIComponent(String(post_id)));
 export const createChannelReply=(post_id:number,body:string)=>api<{ok:boolean;status:string;reply_id:number}>('channel-replies',{method:'POST',body:{post_id,body}});
 export const communityPhotoUrl=(id:number)=>BASE+'/api/mobile/community-photo?id='+encodeURIComponent(String(id));
