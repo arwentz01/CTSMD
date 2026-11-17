@@ -62,7 +62,7 @@ export default function NewMessage(){
    {loading&&<Text style={styles.helper}>Searching for members…</Text>}
    {!!error&&<Text accessibilityRole="alert" style={styles.helper}>{error}</Text>}
    {selected&&<Text style={styles.selected}>To: {selected.name} · {selected.identifier||selected.role}</Text>}
-   {people.map(person=><Pressable key={person.id} accessibilityRole="radio" accessibilityState={{checked:recipient===person.id}} onPress={()=>{setRecipient(person.id);setSelected(person);setPeople([]);Keyboard.dismiss()}} style={[styles.person,recipient===person.id&&styles.activePerson]}>
+   {people.map(person=><Pressable key={person.id} accessibilityRole="radio" accessibilityState={{checked:recipient===person.id}} onPress={()=>{setRecipient(person.id);setSelected(person);setQuery(person.name);setPeople([]);Keyboard.dismiss()}} style={[styles.person,recipient===person.id&&styles.activePerson]}>
     <Ionicons name={recipient===person.id?'checkmark-circle':'ellipse-outline'} color={colors.primary} size={21}/>
     <View style={{flex:1}}><Text style={styles.personName}>{person.name}</Text><Text style={styles.role}>{person.role} · {person.identifier||('Member #'+person.id)}</Text></View>
    </Pressable>)}
