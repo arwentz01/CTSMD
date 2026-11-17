@@ -165,7 +165,6 @@ final class CommunicationExperience
         $person['roles']=Auth::roles($db,$subjectId);
         $viewerIsStudent=self::isStudentUser($viewer);$subjectIsStudent=self::isStudentUser($person);
         if($viewerIsStudent&&$subjectIsStudent)return null;
-        if(($viewerIsStudent&&!self::isStaffUser($person))||($subjectIsStudent&&!self::isStaffUser($viewer)))return null;
         if($viewerIsStudent||$subjectIsStudent){
             $student=$viewerIsStudent?$viewer:$person;$adult=$viewerIsStudent?$person:$viewer;
             if(!SafeguardedConversationPolicy::canContactStudent($db,(int)$adult['id'],(int)$student['id']))return null;
@@ -186,18 +185,17 @@ final class CommunicationExperience
             AND CONCAT(first_name,' ',last_name) LIKE :pattern
             ORDER BY last_name,first_name,id LIMIT 25");
         $stmt->execute(['viewer'=>(int)$user['id'],'pattern'=>$pattern]);
-        $student=self::isStudentUser($user);
         $rows=[];
         foreach($stmt->fetchAll() as $row){
-            $row['roles']=Auth::roles($db,(int)$row['id']);
-            $row['student']=self::isStudentUser($row);
-            $row['selectable']=$student?self::isStaffUser($row):(!$row['student']||self::isStaffUser($user));
-            if(!$row['selectable'])continue;
-            $rows[]=['id'=>(int)$row['id'],'name'=>(string)$row['name'],'role'=>(string)$row['role'],
-                'initials'=>(string)$row['initials'],'selectable'=>true,
+            // Reuse the exact backend eligibility check used by Community shortcuts.
+            // Contact may be adult-to-student with mandatory guardian inclusion.
+            $eligible=self::eligibleForNewMessage($db,$user,(int)$row['id']);
+            if($eligible===null)continue;
+            $rows[]=$eligible+[
+                'selectable'=>true,
                 'has_avatar'=>MemberProfilePhotoService::row($db,(int)$row['id'])!==null
-                    &&MemberProfilePhotoService::canView($db,$user,(int)$row['id']),
-                'identifier'=>'Member #'.(int)$row['id']];
+                    &&MemberProfilePhotoService::canView($db,$user,(int)$row['id'])
+            ];
         }
         return $rows;
     }
