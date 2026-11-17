@@ -39,8 +39,11 @@ jobs:
           extensions: pdo_mysql, mbstring, dom, fileinfo, openssl, curl
           coverage: none
           tools: none
-      - name: Install local MySQL client
-        run: sudo apt-get update -qq && sudo apt-get install -y mysql-client
+      - name: Install MySQL command-line client (server runs in CI service container)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mysql-client-core
+          mysql --version
       - name: RC1 tooling contracts and syntax
         run: |
           php tests/rc1_tooling.php
