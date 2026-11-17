@@ -1,4 +1,4 @@
-export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[];permissions?:string[];caregiver_only?:boolean;participant_classification?:'adult'|'student'|'unclassified'};
+export type CtsmdUser={id:number;name:string;first_name:string;last_name:string;email:string;initials:string;role:string;roles:string[];permissions?:string[];has_avatar?:boolean;caregiver_only?:boolean;participant_classification?:'adult'|'student'|'unclassified'};
 export type MeResult={user:CtsmdUser};
 export type HelpGuide={id:string;category:string;title:string;audience:string;where:string;intro:string;steps:string[];tip:string;route:string;permission:string;prompt?:string};
 export type HelpGuidesResult={guides:HelpGuide[]};
