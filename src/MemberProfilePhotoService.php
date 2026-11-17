@@ -69,13 +69,24 @@ final class MemberProfilePhotoService
                 if(!imagejpeg($canvas,$absolute,85)){imagedestroy($canvas);throw new RuntimeException('Unable to save the profile image.');}
                 imagedestroy($canvas);@chmod($absolute,0660);$keys[$name]=$key;$created[]=$absolute;
             }
-            // Keep uploaded originals in existing secure storage, never under public assets.
-            $stored=StorageService::store($db,$projectRoot,$actorId,$upload);
-            $old=self::row($db,$actorId);
-            $stmt=$db->prepare('INSERT INTO member_profile_photos (user_id,stored_file_id,avatar_large_key,avatar_medium_key,avatar_small_key) VALUES (:user,:file,:large,:medium,:small) ON DUPLICATE KEY UPDATE stored_file_id=VALUES(stored_file_id),avatar_large_key=VALUES(avatar_large_key),avatar_medium_key=VALUES(avatar_medium_key),avatar_small_key=VALUES(avatar_small_key),updated_at=CURRENT_TIMESTAMP');
-            $stmt->execute(['user'=>$actorId,'file'=>(int)$stored['stored_file_id'],'large'=>$keys['large'],'medium'=>$keys['medium'],'small'=>$keys['small']]);
-            // A successful mapping owns the new renditions even when stale file
-            // cleanup fails. No further exceptions should discard the new image.
+            // Store the original metadata and current-photo mapping atomically.
+            // Roll back both records and the physical file if the mapping fails.
+            $ownsTransaction=!$db->inTransaction();
+            if($ownsTransaction)$db->beginTransaction();
+            $stored=null;
+            try{
+                $stored=StorageService::store($db,$projectRoot,$actorId,$upload);
+                $old=self::row($db,$actorId);
+                $stmt=$db->prepare('INSERT INTO member_profile_photos (user_id,stored_file_id,avatar_large_key,avatar_medium_key,avatar_small_key) VALUES (:user,:file,:large,:medium,:small) ON DUPLICATE KEY UPDATE stored_file_id=VALUES(stored_file_id),avatar_large_key=VALUES(avatar_large_key),avatar_medium_key=VALUES(avatar_medium_key),avatar_small_key=VALUES(avatar_small_key),updated_at=CURRENT_TIMESTAMP');
+                $stmt->execute(['user'=>$actorId,'file'=>(int)$stored['stored_file_id'],'large'=>$keys['large'],'medium'=>$keys['medium'],'small'=>$keys['small']]);
+                if($ownsTransaction)$db->commit();
+            }catch(Throwable $e){
+                if($ownsTransaction&&$db->inTransaction())$db->rollBack();
+                if($stored!==null)StorageService::deletePhysical($projectRoot,$stored);
+                throw $e;
+            }
+            // The committed mapping owns the new renditions. A stale photo's
+            // original is retained in existing private file history.
             $created=[];
             if($old){foreach(['avatar_large_key','avatar_medium_key','avatar_small_key'] as $field)self::unlinkKey($root,(string)$old[$field]);}
         }catch(Throwable $e){
