@@ -1,22 +1,37 @@
-import React,{useCallback,useMemo,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {Alert,Keyboard,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {ConversationViewport} from '../../src/components/ConversationViewport';
 import {TouchTarget as Pressable} from '../../src/components/TouchTarget';
 import {recipients,createConversation} from '../../src/api/client';
-import {LoadState,useScreenData} from '../../src/components/LoadState';
+
 import {colors} from '../../src/theme/colors';
 
 export default function NewMessage(){
- const load=useCallback(()=>recipients(),[]);
- const {data,error,loading,retry}=useScreenData(load);
  const [recipient,setRecipient]=useState<number|null>(null);
+ const [selected,setSelected]=useState<{id:number;name:string;role:string;identifier?:string}|null>(null);
  const [query,setQuery]=useState('');
+ const [people,setPeople]=useState<Array<{id:number;name:string;role:string;identifier?:string;selectable:boolean}>>([]);
+ const [loading,setLoading]=useState(false);
+ const [error,setError]=useState('');
  const [message,setMessage]=useState('');
  const [busy,setBusy]=useState(false);
- const selected=data?.recipients.find(person=>person.id===recipient);
- const people=useMemo(()=>data?.recipients.filter(person=>person.selectable&&(person.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())||person.role.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))||[],[data,query]);
+ const generation=useRef(0);
+ useEffect(()=>{
+  const current=++generation.current;
+  const q=query.trim();
+  if(q.length<2){setPeople([]);setLoading(false);setError('');return;}
+  setLoading(true);setError('');
+  const timer=setTimeout(()=>{
+   void recipients(q).then(response=>{
+    if(current!==generation.current)return;
+    setPeople(response.recipients.filter(person=>person.selectable).slice(0,25));
+   }).catch(e=>{if(current===generation.current)setError(e instanceof Error?e.message:'Search unavailable.');})
+    .finally(()=>{if(current===generation.current)setLoading(false)});
+  },300);
+  return ()=>clearTimeout(timer);
+ },[query]);
  async function send(){
   if(busy||!recipient||!message.trim())return;
   setBusy(true);
@@ -36,16 +51,17 @@ export default function NewMessage(){
    <Text style={styles.helper}>Find an approved recipient to begin a conversation.</Text>
    <View style={styles.search}>
     <Ionicons name="search-outline" color={colors.muted} size={20}/>
-    <TextInput accessibilityLabel="Search recipients" placeholder="Search by name or role" placeholderTextColor={colors.muted} autoCorrect={false} value={query} onChangeText={setQuery} style={styles.searchInput}/>
-    {!!query&&<Pressable accessibilityLabel="Clear recipient search" onPress={()=>setQuery('')}><Ionicons name="close-circle" color={colors.muted} size={19}/></Pressable>}
+    <TextInput accessibilityLabel="Search recipients" placeholder="Type at least 2 letters" placeholderTextColor={colors.muted} autoCorrect={false} value={query} onChangeText={v=>{setQuery(v);setRecipient(null);setSelected(null)}} style={styles.searchInput}/>
+    {!!query&&<Pressable accessibilityLabel="Clear recipient search" onPress={()=>{setQuery('');setRecipient(null);setSelected(null)}}><Ionicons name="close-circle" color={colors.muted} size={19}/></Pressable>}
    </View>
-   <LoadState loading={loading} error={error} onRetry={retry}/>
-   {selected&&<Text style={styles.selected}>To: {selected.name}</Text>}
-   {people.map(person=><Pressable key={person.id} accessibilityRole="radio" accessibilityState={{checked:recipient===person.id}} onPress={()=>{setRecipient(person.id);Keyboard.dismiss()}} style={[styles.person,recipient===person.id&&styles.activePerson]}>
+   {loading&&<Text style={styles.helper}>Searching for members…</Text>}
+   {!!error&&<Text accessibilityRole="alert" style={styles.helper}>{error}</Text>}
+   {selected&&<Text style={styles.selected}>To: {selected.name} · {selected.identifier||selected.role}</Text>}
+   {people.map(person=><Pressable key={person.id} accessibilityRole="radio" accessibilityState={{checked:recipient===person.id}} onPress={()=>{setRecipient(person.id);setSelected(person);setPeople([]);Keyboard.dismiss()}} style={[styles.person,recipient===person.id&&styles.activePerson]}>
     <Ionicons name={recipient===person.id?'checkmark-circle':'ellipse-outline'} color={colors.primary} size={21}/>
-    <View style={{flex:1}}><Text style={styles.personName}>{person.name}</Text><Text style={styles.role}>{person.role}</Text></View>
+    <View style={{flex:1}}><Text style={styles.personName}>{person.name}</Text><Text style={styles.role}>{person.role} · {person.identifier||('Member #'+person.id)}</Text></View>
    </Pressable>)}
-   {!loading&&!error&&people.length===0&&<Text style={styles.helper}>{query?'No recipients match that search.':'No eligible recipients are available right now.'}</Text>}
+   {!loading&&!error&&people.length===0&&!selected&&<Text style={styles.helper}>{query.trim().length>=2?'No eligible members match that search.':'Search by name to find an eligible recipient. No full member directory is shown.'}</Text>}
   </ScrollView>
   <View style={styles.composer}>
    <TextInput accessibilityLabel="Message body" placeholder={recipient?'Write a message':'Choose a recipient first'} placeholderTextColor={colors.muted} multiline maxLength={4000} value={message} onChangeText={setMessage} style={styles.input}/>
