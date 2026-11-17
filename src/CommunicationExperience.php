@@ -81,10 +81,6 @@ final class CommunicationExperience
         $recipient['roles']=Auth::roles($db,$recipientId);$subject=trim($subject)!==''?$subject:(string)$recipient['name'];
         $initiatorStudent=self::isStudentUser($initiator);$recipientStudent=self::isStudentUser($recipient);
         if($initiatorStudent&&$recipientStudent)throw new RuntimeException('Student-to-student direct messaging is not available.');
-        // The backend must honor the same staff-only student contact choices as
-        // the composer. Neither a forged ID nor a Community shortcut may bypass it.
-        if(($initiatorStudent&&!self::isStaffUser($recipient))||($recipientStudent&&!self::isStaffUser($initiator)))
-            throw new RuntimeException('Students can only start private conversations with authorized CTSMD staff.');
 
         $type='direct';$participants=[];
         if($initiatorStudent||$recipientStudent){
