@@ -30,7 +30,7 @@ foreach([
 foreach([
     'Recipient lookup minimum length'=>'mb_strlen($query)<2',
     'Recipient lookup limit'=>'LIMIT 25',
-    'Server-side student contact restriction'=>"Students can only start private conversations with authorized CTSMD staff.",
+    'Student-to-student prohibition'=>"Student-to-student direct messaging is not available.",
     'Safeguarded participant validation'=>'SafeguardedConversationPolicy::enforceForSend',
     'Recipient search API'=>'/messages/recipient-search',
     'Prefilled recipients validated'=>'eligibleForNewMessage($db,$user',
