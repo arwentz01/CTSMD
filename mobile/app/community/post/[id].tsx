@@ -1,5 +1,7 @@
 import {TouchTarget as Pressable} from '../../../src/components/TouchTarget';
 import {CommunityBody} from '../../../src/components/CommunityBody';
+import {MemberAvatar} from '../../../src/components/MemberAvatar';
+import {Ionicons} from '@expo/vector-icons';
 import React,{useCallback,useState} from 'react';
 import {Alert,StyleSheet,Text,TextInput,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
@@ -26,10 +28,10 @@ export default function CommunityPost(){
   <Pressable accessibilityRole="button" onPress={()=>router.back()}><Text style={s.link}>‹ Back to Community</Text></Pressable>
   <LoadState loading={loading} error={error} onRetry={retry}/>
   {data&&<>
-   <View style={s.card}><Text style={s.muted}>{data.channel.name}</Text><Text style={s.name}>{data.post.author}</Text><CommunityBody body={data.post.body}/><CommunityPhotos attachments={data.post.attachments}/><CommunityHeart postId={data.post.id} count={data.post.heart_count} hearted={data.post.hearted}/><Text style={s.muted}>{data.post.created_at}</Text></View>
+   <View style={s.card}><Text style={s.muted}>{data.channel.name}</Text><View style={{flexDirection:'row',alignItems:'center',gap:9}}><MemberAvatar userId={data.post.author_user_id} initials={data.post.initials||'?'} size={36} hasAvatar={!!data.post.has_avatar}/><Text style={s.name}>{data.post.author}</Text>{data.post.can_message&&<Pressable accessibilityRole="button" accessibilityLabel={'Message '+data.post.author} onPress={()=>router.push({pathname:'/messages/new',params:{recipient_id:String(data.post.author_user_id),recipient_name:data.post.author}})}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary}/></Pressable>}</View><CommunityBody body={data.post.body}/><CommunityPhotos attachments={data.post.attachments}/><CommunityHeart postId={data.post.id} count={data.post.heart_count} hearted={data.post.hearted}/><Text style={s.muted}>{data.post.created_at}</Text></View>
    <Text style={s.heading}>Replies</Text>
    {data.replies.length===0&&<Text style={s.muted}>No replies yet.</Text>}
-   {data.replies.map(r=><View key={r.id} style={s.card}><Text style={s.name}>{r.initials} · {r.author}</Text><CommunityBody body={r.body}/><Text style={s.muted}>{r.created_at}</Text></View>)}
+   {data.replies.map(r=><View key={r.id} style={s.card}><View style={{flexDirection:'row',alignItems:'center',gap:9}}><MemberAvatar userId={r.author_user_id} initials={r.initials||'?'} size={34} hasAvatar={!!r.has_avatar}/><Text style={s.name}>{r.author}</Text>{r.can_message&&<Pressable accessibilityRole="button" accessibilityLabel={'Message '+r.author} onPress={()=>router.push({pathname:'/messages/new',params:{recipient_id:String(r.author_user_id),recipient_name:r.author}})}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary}/></Pressable>}</View><CommunityBody body={r.body}/><Text style={s.muted}>{r.created_at}</Text></View>)}
    {data.channel.can_post&&<View style={s.card}><TextInput accessibilityLabel="Write a reply" placeholder="Write a reply…" multiline maxLength={4000} value={draft} onChangeText={setDraft} style={s.input}/><Pressable accessibilityRole="button" disabled={!draft.trim()||busy} onPress={()=>void submit()} style={[s.button,(!draft.trim()||busy)&&{opacity:.5}]}><Text style={s.buttonText}>{busy?'Sending…':'Reply'}</Text></Pressable></View>}
   </>}
  </Screen>;
