@@ -77,6 +77,11 @@ final class CommunicationExperience
         $recipient['roles']=Auth::roles($db,$recipientId);$subject=trim($subject)!==''?$subject:(string)$recipient['name'];
         $initiatorStudent=self::isStudentUser($initiator);$recipientStudent=self::isStudentUser($recipient);
         if($initiatorStudent&&$recipientStudent)throw new RuntimeException('Student-to-student direct messaging is not available.');
+        // The backend must honor the same staff-only student contact choices as
+        // the composer. Neither a forged ID nor a Community shortcut may bypass it.
+        if(($initiatorStudent&&!self::isStaffUser($recipient))||($recipientStudent&&!self::isStaffUser($initiator)))
+            throw new RuntimeException('Students can only start private conversations with authorized CTSMD staff.');
+
         $type='direct';$participants=[];
         if($initiatorStudent||$recipientStudent){
             $student=$initiatorStudent?$initiator:$recipient;$adult=$initiatorStudent?$recipient:$initiator;
@@ -151,6 +156,25 @@ final class CommunicationExperience
     private static function currentUser(PDO $db):array{$user=Auth::currentUser($db);if(!$user)throw new RuntimeException('Sign in to use Messages.');return$user;}
     private static function isStudentUser(array $user):bool{return in_array('student',(array)($user['roles']??[]),true);}
     private static function isStaffUser(array $user):bool{return in_array('production_staff',(array)($user['roles']??[]),true)||in_array('administrator',(array)($user['roles']??[]),true);}
+    /** Eligibility for a shortcut is a hint; createConversation checks again on POST. */
+    public static function eligibleForNewMessage(PDO $db,array $viewer,int $subjectId):?array
+    {
+        if($subjectId<1||$subjectId===(int)$viewer['id'])return null;
+        $stmt=$db->prepare("SELECT id,CONCAT(first_name,' ',last_name) name,display_role role,initials FROM users WHERE id=:subject AND active=1 AND account_status='active' LIMIT 1");
+        $stmt->execute(['subject'=>$subjectId]);$person=$stmt->fetch();if(!$person)return null;
+        $person['roles']=Auth::roles($db,$subjectId);
+        $viewerIsStudent=self::isStudentUser($viewer);$subjectIsStudent=self::isStudentUser($person);
+        if($viewerIsStudent&&$subjectIsStudent)return null;
+        if(($viewerIsStudent&&!self::isStaffUser($person))||($subjectIsStudent&&!self::isStaffUser($viewer)))return null;
+        if($viewerIsStudent||$subjectIsStudent){
+            $student=$viewerIsStudent?$viewer:$person;$adult=$viewerIsStudent?$person:$viewer;
+            if(!SafeguardedConversationPolicy::canContactStudent($db,(int)$adult['id'],(int)$student['id']))return null;
+            if(!SafeguardedConversationPolicy::eligibleGuardians($db,(int)$student['id']))return null;
+        }
+        return ['id'=>(int)$person['id'],'name'=>(string)$person['name'],'role'=>(string)$person['role'],
+            'initials'=>(string)$person['initials'],'identifier'=>'Member #'.(int)$person['id']];
+    }
+
     /** Searchable, bounded recipient candidates. Keep authoritative checks in createConversation. */
     public static function searchRecipients(PDO $db,array $user,string $query):array
     {
