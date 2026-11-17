@@ -24,10 +24,10 @@ Run `database/migrations/129_member_profile_photos.sql` before deploying the PHP
 7. Verify no message author avatar is substituted for an organization/represented identity if that attribution is enabled in future. This version follows CTSMD's existing user-attributed Community records.
 8. Confirm account photos appear in feed, channel, replies, thread list, participants and the mobile app. Check large feeds for acceptable query performance.
 9. Confirm existing attachments, recall, archive, notifications, reactions and safeguarding audit still work.
-10. Before any deployment, run `php tests/member_profile_identity.php`, `php -l` for changed PHP, mobile `npm run typecheck`, integration tests, isolated MySQL acceptance and an authenticated browser review.
+10. Before any deployment, run `php tests/member_profile_identity.php`, `php tests/member_profile_identity_mysql.php`, `php tests/member_profile_photo_http.php`, `php -l` for changed PHP, mobile `npm run typecheck`, integration tests, isolated MySQL acceptance and an authenticated browser/device review.
 
 ## Known verification and operational limits
-- An authenticated staging/database run, device testing, image security penetration tests and end-to-end browser acceptance have not been performed as part of this repository-only pass.
-- The GitHub Actions PHP safety workflow contains an unrelated existing `RegistrationOperationsExperience` baseline-contract failure.
+- Isolated MySQL checks now cover guardian photo access, revoked conversation participants, unrelated member denial and account identity rules. Real loopback HTTP acceptance covers authenticated multipart upload, private thumbnail delivery, replacing photos, stale thumbnail cleanup, invalid uploads and unrelated member denial. Manual staging browser/device accessibility and image security testing remain outstanding.
+- The GitHub Actions PHP safety workflow contains an unrelated existing `RegistrationOperationsExperience` baseline-contract failure. The wider isolated acceptance workflow also encounters an existing Playbill staff editorial-scoping assertion after member photo tests pass.
 - The Expo workflow currently reports dependency compatibility drift (`expo install --check`), separate from avatar functionality.
 - No email, push message, app-store submission, website deployment or production schema migration was performed.
